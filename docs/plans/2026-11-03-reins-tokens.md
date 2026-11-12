@@ -1,91 +1,203 @@
-# Reins: Tokens tab
+# SpaceVibe: Tokens history and accounting
 
-Spec: [2026-11-02-reins.md](../specs/2026-11-02-reins.md) (Interface: Tokens; Scope: Tab: Tokens; acceptance criteria AC5, AC6, AC8, AC9).
-Parent plan: [the SwiftUI plan](2026-11-02-reins-swiftui.md), whose packaging and cut-over phases still apply.
-Mock: `mocks/tokens-board/index.html` with synthetic data, plus `shot-dark.png` and `shot-light-price.png`, so a cloud run can see the target. The owner's copy with real numbers stays outside git at `~/scratch/spacevibe-reins/tokens-d-board.html` (`AGENTS.md` R2, S-R2).
-Status: direction accepted by the owner on 2026-11-03; no Swift written. Started 2026-11-03.
+Record: Active task plan
+Started: 2026-11-03
+Updated: 2026-11-12 after the approved TokenTracker scout
+Base revision: `b877e3a37dc511eec9e28f2fc37db3b7bde4cee1`
+
+## Requirements reference and delivery scope
+
+Requirements: [Tokens](../specs/2026-11-02-reins.md#tab-tokens), [Board direction](../specs/2026-11-02-reins.md#interface) and [AC3, AC5, AC6, AC8, AC9](../specs/2026-11-02-reins.md#acceptance-criteria).
+Architecture: [Go core and SwiftUI shell](../internals/overview.md); vocabulary: [D65](../specs/2026-11-06-reins-linear-identity-decisions.md) and [glossary](../../GLOSSARY.md).
+The current [design language](../DESIGN-LANGUAGE.md) supplies shared controls and styling.
+This is the existing Tokens execution record, not a new feature proposal. The owner approved the scout shortlist and then its implementation direction on 2026-11-12. No application implementation has landed for this plan.
+
+The accepted Board reference remains [the synthetic mock](../../mocks/tokens-board/index.html), with [dark](../../mocks/tokens-board/shot-dark.png) and [light](../../mocks/tokens-board/shot-light-price.png) targets.
+Use its information arrangement inside the current shell; do not restore the obsolete shell or copy old font/spacing literals. Do not redesign other pages.
+The spec's excluded features remain excluded; Limits pace, menu-bar additions and pricing network fetches are not tasks here.
+Owner eye approval stays at T8 after the implementation, not between tasks.
+
+## Current implementation and scout decisions
+
+| Area | Current target, checked at base revision | Decision |
+| --- | --- | --- |
+| Accounting | [Claude fold](../../core/internal/activity/fold-claude.go) keeps per-message maxima; [Codex fold](../../core/internal/activity/fold-codex.go) deduplicates totals and subtracts cached input | **Adapt:** extract existing behavior, then correct only independently evidenced cases |
+| History | [Usage scanner](../../core/internal/usage/scanner.go) rebuilds its cache from remaining files; [cache](../../core/internal/usage/cache.go) is disposable | **Adapt:** add a separate durable ledger; never reuse the disposable cache as history |
+| Coverage | [Activity](../../core/internal/activity/report.go) limits history to 14 days and tails large logs | **Reuse the fold, not Activity reports:** Tokens streams full supported logs through [logs](../../core/internal/logs/log-files.go) |
+| Persistence | [Atomic writes](../../core/internal/fsx/atomic-write.go), [write lock](../../core/internal/fsx/write-lock.go), [guarded roots](../../core/internal/roots/guard.go) exist | **Reuse:** no database, daemon or new persistence dependency initially |
+| Query and prices | [Pricing](../../core/internal/pricing/pricing.go) embeds [the table](../../core/internal/pricing/pricing.json); unknown price yields no estimate | **Adapt:** query priced subtotal and unpriced coverage separately; preserve Activity's cost contract |
+| UI | [TabRegistry](../../Sources/SpaceVibe/Shell/TabRegistry.swift) has Agents, Activity and Limits | **Adapt:** add TokenUsage as the fourth page after core/query integration |
+| Reference breadth | Online quotas, cloud and gamification are outside the target's requirements | **Skip:** no runtime architecture or feature expansion from TokenTracker |
+
+Reference revision: TokenTracker `a2483443ee2f1fe8d77955edccc96b21c8ac62ec`, MIT root license; ideas and fixture scenarios only, no copied code.
+Source inspection established the following constraints, not measured runtime accuracy:
+
+- [Queue keys](https://github.com/xiufengsun/TokenTracker/blob/a2483443ee2f1fe8d77955edccc96b21c8ac62ec/src/lib/local-api.js#L355) and [reader](https://github.com/xiufengsun/TokenTracker/blob/a2483443ee2f1fe8d77955edccc96b21c8ac62ec/src/lib/async-queue-reader.js#L68) use last-write-wins snapshots; duplicate keys are not additive deltas.
+- [Claude normalization](https://github.com/xiufengsun/TokenTracker/blob/a2483443ee2f1fe8d77955edccc96b21c8ac62ec/src/lib/rollout.js#L5438) separates reasoning from output; Codex output already includes reasoning.
+- [Compaction handling](https://github.com/xiufengsun/TokenTracker/blob/a2483443ee2f1fe8d77955edccc96b21c8ac62ec/src/lib/codex-usage-record.js#L39) and [tests](https://github.com/xiufengsun/TokenTracker/blob/a2483443ee2f1fe8d77955edccc96b21c8ac62ec/test/codex-token-usage-record.test.js#L211) identify useful cases. They do not make every reference heuristic correct.
+- [Claude dedup](https://github.com/xiufengsun/TokenTracker/blob/a2483443ee2f1fe8d77955edccc96b21c8ac62ec/src/lib/rollout.js#L3209) keeps the first usable snapshot. Do not replace the target's maxima with it.
+- [UTC half-hour buckets](https://github.com/xiufengsun/TokenTracker/blob/a2483443ee2f1fe8d77955edccc96b21c8ac62ec/src/lib/rollout.js#L4704) still lose local-day boundaries at quarter-hour timezone offsets. Preserve original timestamps instead.
+- Reference project aggregates require public-repository verification in that path and do not retain a model dimension. Use local session metadata for SpaceVibe projects; do not import that restriction.
+- Queue append and cursor generation commits are separate operations. SpaceVibe should publish rows and scan metadata in one atomic document.
 
 ## Approach
 
-A new engine module folds token usage out of the same logs the other scans read and keeps a rollup that outlives them; a new tab draws it.
+### Location and shared accounting
 
-```
-Sources/ReinsCore/  TokenLedger (fold, persist, merge), TokenLedgerQuery (series, ranking, cost)
-Sources/Reins/TokenUsage/  TokensTab, TokensModel, one file per card (Sources/Reins/Tokens/ already holds the design tokens)
-Sources/Reins/Components/  FilterChip gains a dismiss variant; ProviderMark
-Tests/ReinsCoreTests/  TokenLedgerTests against TempHome
-```
+New code follows the existing layout: planned `core/internal/tokens/` for accounting, ledger and query with adjacent Go tests; planned `Sources/SpaceVibe/TokenUsage/` for the screen and its model; planned `CoreTypesTokens.swift` under the existing shell `Core/`; Swift tests under `Tests/SpaceVibeTests/`.
+These paths are proposed, not existing implementation. Use small responsibility-named files such as `counts.go`, `fold-claude.go`, `fold-codex.go`, `ledger.go`, `scan.go` and `query.go` only when their task needs them.
+The Go tokens package must not import Activity: Activity may consume its pure accounting functions, while its tools, failures and command text stay outside the ledger.
+Shared Swift chart primitives belong in the existing `Components/`, not styled inside the screen.
 
-Facts this plan rests on, read 2026-11-03:
+First extract current counting behavior with no change to existing Activity projections or frozen goldens. Keep cache-write-long metadata for pricing even though the UI has four token kinds.
+Later accounting corrections get explicit synthetic inputs, expected outputs and dedicated tests; never regenerate frozen fixtures to hide a change.
+For unsupported or inconsistent records, expose coverage problems rather than inventing a zero or trusting an inconsistent counter.
 
-- `ActivityFold.claudeAssistant` keeps the largest usage per `model:messageId` because streaming blocks repeat it. `ActivityFold.codexUsage` skips repeated totals, trusts `last_token_usage` and subtracts cached tokens from input. Both are private to Activity and write into its state, so T1 lifts the counting into a function both call, with Activity's goldens as the guard against a behaviour change.
-- `UsageScanCache` drops an entry when its log disappears (`UsageScanner` rebuilds from the files present), so the rollup cannot live there. `Roots.data` is the right folder.
-- `projectName(_:hint:memo:)` in `SessionTitles.swift` already handles worktree slugs. TokenTracker's project queue covers about 22% of tokens on this Mac; Reins attributes from the log's `cwd`, so its coverage is unmeasured until T1 runs.
-- `TabRegistry.makeTabs()` is the one place to add a tab. `ReinsTab` supplies the title, hints and palette entries.
-- `Pricing.models` is a Swift literal that a test compares with `core/pricing.json`.
+### Timestamp, identity and attribution
 
-## Decisions made in this plan (reversible)
+Persist normalized usage contributions with their source UTC timestamps, CLI, logical source/session identity, model, project identity, counters and completeness/version metadata.
+Group by the requested local calendar at query time; no persisted hour/day rollup is the only source of truth.
+A repeated response's counters reconcile at its original established timestamp; do not shift old usage to the day a file was rescanned.
+Source identity separates a parent session from its child transcript, while query session counts use the parent session identity.
 
-- **Buckets are UTC hours; a day is computed from them in the machine's time zone when read.** A rollup stored by local day would be wrong after a time zone change.
-- **The ledger keeps one row set per log file**, keyed by path with the same `<size>:<mtime>` stamp as the usage cache. A changed log replaces its own rows; a missing log keeps them. Rows hold hour, CLI, model, project name and four counts, never log text. File: `token-ledger.json` under `Roots.data`, mode 0600, written atomically.
-- **A corrupt ledger is moved aside and reported, never silently replaced by an empty one**, because it can hold days no log has any more. This is the opposite of the usage cache, which may be thrown away.
-- **Plain SwiftUI views for the charts, not Swift Charts.** Every column is a keyboard-selectable control and the axis cut needs a notch and a printed value; a stack of shapes does this in fewer lines. Swift Charts under Command Line Tools is also unverified here.
-- **"Sessions", not "conversations".** TokenTracker's `conversation_count` sums per model and hour (10,887 in 30 days from about 1,500 Claude logs on this Mac), so the mock's figure is inflated. Reins counts distinct session files per bucket. This number is not part of AC8.
-- **Marks are converted once into SwiftUI shapes or bundled the way `spacevibe-board/Sources/SpaceVibeBoard/UI/ProviderLogo.swift` does**; T5 picks the shorter path; a cloud run without that repo converts the paths to SwiftUI shapes. The paths are already in `mocks/tokens-board/mock-shell/tokens-logos.js`, copied from `spacevibe-bench/public/brand/providers/{anthropic,openai}.svg` and `spacevibe-board/Resources/Brand/codex-blossom-white.svg`, so a cloud run needs neither repo.
+Prefer recorded session/transcript identity, namespaced by CLI. Keep source paths/fingerprints as locations of that identity, not its primary key.
+Plain and compressed representations of the same identifiable source merge into one contribution; copies/renames with the same recorded identity do not add usage.
+For legacy sources lacking stable identity, use a scoped path identity with normalized log suffix, retain it across encoding changes, and report unresolved relocation/identity conflicts. Never equate unrelated logs solely by basename or matching totals.
+Do not introduce global cross-session Claude message dedup or TokenTracker's fork timing heuristic in this slice. The previously accepted cross-session duplication limit remains a documented parity difference; exact copies of one logical source are a separate case.
+Codex compaction response identity must be reconciled across related parent/fork records without duplicating independently new responses.
+Use cwd plus recorded worktree hints for project identity and the existing [ProjectName behavior](../../core/internal/activity/project-name.go) for display. T3 extracts only the shared naming/worktree logic and its required matchers into a planned lower-level `core/internal/projectname/` package, consumed by Activity and Tokens; Tokens must not import Activity and create a cycle. A display basename is not a project key; private and non-Git projects remain eligible.
+Missing or invalid usage timestamps produce incomplete temporal coverage, never a fabricated event date from the file mtime. A repeated response with inconsistent attribution preserves its committed contribution and reports the conflict.
 
-## Where each task runs
+### Ledger transaction and failure behavior
 
-This is the one plan for the whole tab. The owner runs it on the cloud; what cannot run there is marked.
+Start with one versioned `token-ledger.json` under resolved `Roots.Data`, mode `0600`. It contains contributions and their scan metadata in one snapshot.
+Use streaming log reads and cancellation outside the write lock. At publication, acquire the existing write lock, reread/validate the ledger generation, then merge or retry if another process published. Do not overwrite a concurrent writer with a stale snapshot.
+Publish through `fsx.AtomicWrite` with read-back validation; update the in-memory committed view only after success. Return a fixed error on failure, never log file contents.
+Keep the old ledger on cancellation, partial decode/decompression, invalid future schema, or conflicting source identity. A skipped oversized line is incomplete coverage, not a successful full read.
+Missing/unreadable sources preserve their committed contributions. A changed source is not blindly replaced:
+- New proven events and higher observations of an already identified response may add usage.
+- Missing events after truncation do not subtract history.
+- Conflicting timestamp/model/project attribution, lower corrected counters or an incompatible parser reinterpretation keep the affected committed contribution and surface a problem. Automatic history repair/rewrite is outside this slice.
+- A parser-version change refolds available logs into a candidate and applies these same checks; absent logs retain their prior provenance and version.
+Do not solve corrections with a fieldwise maximum over whole-file aggregates.
 
-| Tasks | Where | Why |
-| --- | --- | --- |
-| T0 | This Mac, done | A cloud token may not be allowed to push workflow files, and the owner approves the macOS minutes |
-| T1 to T4 | Cloud, with CI as the check | The sandbox is Ubuntu with no Swift, and `download.swift.org` is blocked by its proxy (routine run, 2026-11-03), so nothing compiles there |
-| T5, T6 | Cloud, with CI as the check | SwiftUI compiles on macOS only. The cloud agent pushes and reads the CI result and screenshots instead of building locally. Whether `gh` can read CI from the sandbox is unverified |
-| T7 | This Mac | It reads the owner's real logs, which never leave the machine |
-| T8 | The owner | Eyes on the built app |
+Corrupt history is preserved in place and reported; refuse to overwrite it. A retry may reread repaired history. Do not silently create a fresh empty ledger or discard unavailable historical rows.
+Existing files must not become more permissive when rewritten. No app configuration journal entry is created for a scan: this is the app's derived history, not a CLI configuration edit.
+Measure synthetic scan time, warm-read time and ledger size before considering a different storage format; do not assert performance from architecture alone.
+
+### Query and protocol boundary
+
+Proposed additive methods: `tokens.scan` with request-correlated `tokens/progress`, and `tokens.query` over the last committed ledger.
+Do not change `usage.scan`, which serves inventory counts. Reuse its cancellation/progress pattern.
+Query inputs select period and optional day/model/project scope plus an explicit IANA timezone. Reject invalid inputs and support historical DST rules; do not pass only today's UTC offset.
+Return period summary independently of the selected scope, scoped series/rankings, per-CLI coverage start, distinct session counts, priced subtotal, unpriced token coverage, source freshness and problems.
+One scan at a time; reads during a scan use the last committed generation with a scanning indicator. With no generation, show pending rather than zero.
+An additive method set retains the current wire version only if existing initialize/method contracts remain compatible; prove this with old transcript tests and the method-table gate.
+The shell owns presentation/filter state only; no token accounting, filesystem reads or pricing arithmetic in SwiftUI.
 
 ## Tasks
 
-- [x] T0 macOS CI. `.github/workflows/swift.yml` runs on pushes to `claude/**`, PRs and by hand: `macos-15`, `scripts/test.sh`, `scripts/build-app.sh`, a `minos 15.0` check, and screenshots from the fixture home as the `shots` artifact. T6 must add `REINS_SHOT_SCREEN=tokens` for the Tokens shots; the workflow picks them up when `Sources/Reins/TokenUsage` exists.
-  Done 2026-11-03, run 41500297865, about 2 minutes: Swift 6.1.2 and Xcode 16.4 (this Mac has 6.3.2, so code must compile on both), `Test run with 267 tests passed`, `minos 15.0`, ad-hoc signature, 10 screenshots. `macos-26` was never acquired by a hosted runner in 15 minutes. It also exposed and fixed an empty-array bug in `scripts/test.sh` on Xcode.
-- [ ] T1 Fold. Lift Claude and Codex usage counting out of `ActivityFold` into a shared function with Activity's goldens unchanged, then fold a log into hour, CLI, model, project and session rows, reading `.jsonl` and `.jsonl.zst` through `LogFiles`. Tests against `TempHome`: repeated streaming blocks, repeated Codex totals, Codex input without cached tokens, a sidechain, an unknown model, a line with no timestamp.
-  Answered 2026-11-03 on the owner's Mac (read-only, counts only): of 1,805 Claude logs (880 under `subagents/`), 150 of 76,977 messages repeat across files, in 36 files, 20.9M of 15.2B tokens (0.14%). The per-file ledger stays and this small overcount is accepted, because it is inside AC8's 1% and spanning files would keep every message id forever. Fold `subagents/` logs too: they are about half the files.
-- [ ] T2 Ledger (AC9). Load, merge, save per the decisions above; a scan version forces a refold of files still present and keeps rows of files that are gone. Tests: deleting a counted log and rescanning leaves every past day unchanged; a corrupt file is moved aside and reported; the file is mode 0600; `REINS_TEST=1` refuses the real home. Runs in an actor off the main thread with progress, like `UsageScanner`.
-- [ ] T3 Query. Series by day (last 30), week (last 12), month (all); ranking of models and projects; four kinds per CLI; cost from `Pricing` with priced subtotal and unpriced tokens kept apart, for any scope of day, model or project. A model with no price yields no cost, never 0. The date counting starts from, per CLI. Unit tests with a fixed clock and a fixed time zone, including a day that crosses UTC.
-- [ ] T4 Price table. Add the logged models that have none (`gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.5`, `claude-opus-5`, `claude-fable-5-1`, `claude-haiku-5-5` and the rest of the 4.21B of 24.57B tokens measured 2026-11-03) to `Pricing.swift` and `core/pricing.json` together, each with its source and `fetchedAt`. A model that needs tier information stays unpriced on purpose. Prices come from the vendors' pages at the time of the task, not from memory or from TokenTracker. If a golden changes, run `node scripts/make-golden.mjs` and read the diff.
-- [ ] T5 Shared pieces. `ProviderMark`. Text roles come from the [design-language spec](../specs/2026-11-03-reins-design-language.md): Inter at 12/14/16, card titles in `title`, and the one leading number per card in `figure` (24/32); no other size. The dismissible `FilterChip` is built by the [design-language plan](2026-11-03-reins-design-language.md) (T4). Starts after that plan's T2 to T4; the Tokens screen falls under its policy test from the first commit.
-- [ ] T6 Screen. `TokensTab` in `TabRegistry`, so `⌘4` follows. Build the Board from the spec's Interface list and the mock: tools row, summary, By day with the axis cut, Models, Projects, Cache reuse, Estimated cost with the price popover, Days with rows that open. Keyboard: `←` `→` move the day, `↵` opens its token kinds, `Esc` clears the scope; visible focus; VoiceOver labels on columns and bars; reduced motion. Palette entries for period, measure and clear scope. States: first scan with progress, no logs, no price, a CLI with nothing in scope, ledger moved aside. No file over 400 lines. Screenshots from the fixture home, dark and light: the CI artifact on the cloud, `~/scratch/spacevibe-reins/shots/swift-tokens/` on the Mac. Compare them with the two PNGs in `mocks/tokens-board/` before ticking this.
-- [ ] T7 Parity (AC8, on the owner's Mac, read-only). Compare with `~/.tokentracker/tracker/queue.jsonl` per local day, CLI and field for the last 30 full days. Explain or fix each difference above 1%, including the 10 duplicated (source, model, hour) keys in that file. Record the summary here; per-day output stays out of git. Start from this gap, measured 2026-11-03: the largest usage per Claude message id sums to 15.2B, while TokenTracker's queue says 21.0B for Claude. Hypothesis, unverified: TokenTracker counts repeated streaming blocks. Record how long the first scan took on the owner's 8 GB of logs; if it blocks use, fix it in this task.
-- [ ] T8 Owner eye approval (AC6). Open the built app and the screenshots in one batch, after T1 to T7. This is the only eye gate in this plan. When it passes, delete `mocks/tokens-board/` and its line in `AGENTS.md`.
+- [x] **T0 — Historical CI prerequisite**
+  - Completed 2026-11-03: run 41500297865 recorded 267 Swift tests, minos 15.0 and 10 screenshots. This is historical evidence, not a current pass.
+  - Rechecked 2026-11-12: [Swift workflow](../../.github/workflows/swift.yml) already conditionally renders Tokens when TokenUsage exists; the screenshot renderer still needs its Tokens case. Local macOS verification is available; the old cloud-only restriction is obsolete.
 
-T0 first for anything UI. T1 to T3 run in order. T4 and T5 are independent. T6 needs T3 and T5. T7 needs T6's engine wiring, not its polish.
+- [ ] **T1 — Accounting fixtures and shared extraction** (AC3, AC8)
+  - Files: new `core/internal/tokens/` counting files/tests; existing [Activity folds](../../core/internal/activity), [pricing](../../core/internal/pricing/pricing.go). Depends on: none.
+  - Add independent synthetic expected values for the matrix below; separate characterization of existing behavior from proposed compatibility corrections.
+  - Extract existing counting without moving Activity UI/session-control logic. Reuse the existing full-log reader for later history scanning.
+  - Verify: from `core/`, `SPACEVIBE_TEST=1 go test -count=1 ./internal/tokens ./internal/activity ./internal/pricing`; frozen Activity goldens stay byte-identical. New correction cases remain visibly pending until T1a.
 
-## Verification
+- [ ] **T1a — Evidence-backed compatibility and coverage** (AC3, AC8)
+  - Files: T1 accounting files/tests and affected Activity integration tests. Depends on: T1.
+  - Resolve compaction counted/not-counted-by-cumulative, response identity and record-only state across read boundaries.
+  - For last-only usage, cache-write fields and inconsistent last/total, verify the producer schema at implementation time using primary sources or approved synthetic captures. If a shape cannot be supported safely, preserve known counts and expose incomplete coverage; do not infer a producer contract solely from TokenTracker.
+  - Missing identities never all collapse into one synthetic response. Do not replace working interleaved-stream handling without a failing discriminating fixture.
+  - Verify: the T1 command plus chunk-boundary, model-change and malformed-input cases; freeze files remain unchanged.
 
-- `scripts/test.sh`: read the `Test run with N tests ... passed` line, N above 0, on macOS. Never bare `swift test` on the Mac (B2). A Linux result alone does not tick a task that touches `Sources/Reins`.
-- `scripts/build-app.sh` prints `minos 15.0` (B1).
-- `git status --porcelain` shows no real names or numbers in fixtures (S-R2).
+- [ ] **T2 — Durable ledger and scan lifecycle** (AC3, AC5, AC9)
+  - Files: new token ledger/scan/identity files/tests; reuse [roots](../../core/internal/roots/roots.go), [logs](../../core/internal/logs/log-files.go) and [fsx](../../core/internal/fsx). Depends on: T1a.
+  - Implement the transaction and failure rules above, progress, cancellation and source identity. Do not persist prompts, responses or commands.
+  - Verify: `SPACEVIBE_TEST=1 go test -count=1 ./internal/tokens ./internal/logs ./internal/fsx ./internal/roots` from `core/`.
+  - Cases: repeat/append; delete; inode replacement; plain→zstd; copy/rename; same basename in unrelated projects; child transcripts; truncated file; partial/oversized line; corrupt zstd/ledger; permission errors; cancellation; failed write; concurrent publication; parser-version conflict. Assert mode 0600 and unchanged committed bytes on failure. Use temporary homes only.
 
-## Acceptance map
+- [ ] **T3 — Local-calendar query and estimated costs** (AC5, AC8, AC9)
+  - Files: token query/tests; planned `core/internal/projectname/` extracted from Activity with its naming tests/callers; existing [price table](../../core/internal/pricing/pricing.json). Depends on: T2.
+  - Query full period and intersected filters from one ledger, including unknown project/model and priced/unpriced coverage. Count sessions once within each requested scope.
+  - Audit coverage of the shipped price table; update only verified vendor rates with source/date, never fetch at runtime. Preserve Activity's unknown-price contract.
+  - Verify: from `core/`, `SPACEVIBE_TEST=1 go test -count=1 ./internal/tokens ./internal/projectname ./internal/activity ./internal/pricing`, with fixed time, timezone and prices: UTC+07, +05:30, +05:45, DST, timezone change after log deletion, sessions spanning days/models, missing timestamps, empty data, no price and mixed price coverage. Existing frozen fixture values are not rewritten.
 
-| AC | Covered by |
+- [ ] **T4 — RPC and Swift contract** (AC3, AC5, AC8, AC9)
+  - Files: existing [methods](../../core/internal/rpc/methods), [method list](../../core/internal/rpc/methods.go), [protocol](../internals/core-protocol.md), [CoreService](../../Sources/SpaceVibe/Core/CoreService.swift), [CoreClient](../../Sources/SpaceVibe/Core/CoreClient.swift), [CoreConnection](../../Sources/SpaceVibe/Core/CoreConnection.swift); new token DTOs/tests. Depends on: T3.
+  - Wire scan/query, lifecycle shutdown, cancellation, stale/pending/errors and request-correlated progress. Update the method table and test doubles as well as production callers.
+  - Add synthetic request/response examples to [RPC transcripts](../../core/testdata/rpc); extend [DTO tests](../../Tests/SpaceVibeTests/CoreTypesTests.swift). Existing transcripts advertise the complete method list during initialize: update those lists for the additive methods and inspect the diff, keeping all other legacy payloads unchanged. These protocol transcripts are distinct from the immutable files under `core/testdata/fixtures/`.
+  - Verify: `scripts/test.sh` → Go vet/tests, fixture hashes and a Swift test count above zero. Check compatibility of existing clients/transcripts, not merely new DTO decoding.
+
+- [ ] **T5 — Shared UI primitives** (AC5, AC6)
+  - Files: existing [Components](../../Sources/SpaceVibe/Components), [design tokens](../../Sources/SpaceVibe/Tokens), [gallery](../../Sources/SpaceVibe/Gallery). Depends on: T3's query shapes.
+  - Reuse CLIMark, FilterChip, current layout/typography and accessible controls. Add only missing shared bar/axis/row primitives; do not import mock code or add Swift Charts.
+  - Compose the approved Board arrangement using current design-language roles. New primitives land before the screen consumes them.
+  - Verify: `scripts/test.sh` → style boundary, contrast, hue, pointer and relevant state checks pass; synthetic gallery rendering covers new primitives.
+
+- [ ] **T6 — Tokens page and screenshot integration** (AC5, AC6)
+  - Files: new `Sources/SpaceVibe/TokenUsage/` and Swift tests; existing [TabRegistry](../../Sources/SpaceVibe/Shell/TabRegistry.swift), [ShotRenderer](../../Sources/SpaceVibe/Gallery/ShotRenderer.swift), [fixture wrapper](../../scripts/dev-fixture.sh), [Swift workflow](../../.github/workflows/swift.yml). Depends on: T4, T5.
+  - Build the spec's Board, filter chips, palette/keyboard actions and all pending/empty/partial/error/unpriced states. Add Tokens as the fourth page; preserve existing pages.
+  - Register the Tokens screenshot selector and self-contained synthetic cases. New fixtures must not rewrite frozen fixture trees.
+  - Run impeccable distill/clarify on the new surface. Update applicable living docs when the feature is actually wired, with code links; no claim of shipped behavior before then.
+  - Verify: `scripts/test.sh`, `scripts/build-app.sh` (app minos 15.0), then `SPACEVIBE_SHOT_SCREEN=tokens scripts/dev-fixture.sh --shots /tmp/spacevibe-tokens-shots`. Inspect light/dark, narrow, large/empty/unpriced/error states; no browser or dev server needed.
+  - Manually verify keyboard/focus, VoiceOver and reduced motion on synthetic data. Headless screenshots do not establish those gates or owner acceptance.
+
+- [ ] **T7 — Normalized parity and measured scan cost** (AC8)
+  - Files: new `scripts/compare-token-usage.py` only if no equivalent exists when this task starts; adjacent synthetic tests and usage documented here. Depends on: T4 (can run before T6 finishes).
+  - Tool is read-only, takes explicit input/output paths, uses synthetic data by default and never auto-discovers the real home. Reference queue is data; do not execute reference code.
+  - Collapse queue snapshots, normalize four token kinds and timezones as below; compare 30 full local days, with reasoned differences. Persist raw results only in scratch, counts/summary only in this plan.
+  - Verify: proposed `python3 scripts/compare-token-usage.py --self-test` covers repeated snapshots, reasoning mapping, zero denominator and timezone-boundary differences before any real-data comparison. The comparison mode requires explicit `--candidate`, `--reference`, `--timezone`, `--from`, `--to` and scratch `--output` arguments; document these when implemented.
+  - Real logs remain a separate owner-authorized local acceptance run under S-R1; this scout approval did not authorize reading them. Preserve credentials/config, keep raw data out of git and do not uninstall TokenTracker.
+  - Record cold/warm scan elapsed time and ledger size on a declared synthetic corpus; real-corpus measurements only when that acceptance run is authorized. An unavailable gate stays unchecked.
+
+- [ ] **T8 — Owner eye approval and acceptance** (AC6; final gate)
+  - Depends on: T1–T7 verification. Present one batch of final synthetic screenshots and the app against the accepted Board reference.
+  - Record the owner's approval, outstanding native/parity gates and implementation commits here. A build, merge or test pass is not eye approval.
+  - After approval, remove the now-replaced mock and its owning references in the same authorized cleanup; retain the specification and this plan as historical records only when all acceptance gates are met.
+  - Push/merge/release and removal of the installed TokenTracker app are not authorized by this plan.
+
+## Accounting and parity checks
+
+| Case | Required discriminator |
 | --- | --- |
-| AC5 all four tabs offline | T6, parent plan S8.1 |
-| AC6 owner approves the UI by eye | T8 |
-| AC8 Tokens matches TokenTracker | T7 |
-| AC9 history survives a deleted log | T2 |
+| Claude duplicate snapshots | One identified response counts once |
+| Claude increasing snapshot 10→20 | 20 when the latter is a valid final observation; reference first-seen behavior is not the oracle |
+| Missing request/message identity | Supported identity fallback is explicit; unrelated records never merge into undefined |
+| Copied source vs separate sessions | Same logical log does not duplicate; cross-session replay policy remains explicit |
+| Codex cache/reasoning | input 1000, cached 400, output 50, reasoning 10 → uncached 600, read 400, output 50; test cache-write separately |
+| Codex interleaved totals | 100,200,100,250,130 with last 100,200,100,50,30 → 380, not a repeat of 100 |
+| Codex last-only or inconsistent total | Producer-supported interpretation or explicit incomplete coverage, never blind preference |
+| Compaction omitted from cumulative | Identified RC contributes exactly once |
+| Compaction already in cumulative | RC is not added twice |
+| Compaction copied into a fork | Replayed response ID not counted twice; new response ID counted |
+| Read split at every record boundary | Full and incremental reads agree |
+| Record-only vs unfinished record | Final missing count is unmeasurable; unfinished input remains pending |
 
-## Action needed from the owner
+For AC8, pin reference version and coverage. Use the last queue row per `source/model/hour_start`, not a sum over repeated keys.
+Claude output maps to `output_tokens + reasoning_output_tokens`; Codex output maps to `output_tokens` alone.
+Align input/cache semantics, timezone, full local-day boundaries and supported CLI sources. Reference half-hour buckets can explain edge differences for some timezones.
+Do not compare cost or conversation_count. Preserve the spec's ±1% or stated-cause criterion.
 
-- T7 reads the real logs, so it runs on this Mac with the owner's say-so in that session.
-- T8 eye approval.
-- Uninstalling TokenTracker is the owner's step, after T7 and T8. It also installed hooks and a Codex `notify` entry; check those go with it.
+## Verification evidence and historical context
+
+- 2026-11-12: read current source, protocol, wrappers and workflows; target has no Tokens ledger, query RPC or screen. No application tests/build were run for this documentation update.
+- Documentation verification on 2026-11-12: all 63 local Markdown links/heading anchors in this plan and the owning spec resolved; `git diff --check` reported no whitespace errors. Proposed implementation paths are marked as new, not linked as existing files.
+- Scout read reference source and tests without executing them. An independent Python datetime check passed: UTC 18:20/18:40 share an hour but cross a local date at +05:30; UTC 18:10/18:20 share a half-hour but cross a date at +05:45.
+- 2026-11-03 historical measurement: 150 of 76,977 Claude messages repeated across 1,805 files; 20.9M of 15.2B tokens (0.14%). The owner accepted that limited cross-session overcount. It is not a current benchmark or permission to duplicate the same log's alternate encoding.
+- Historical comparison reported 15.2B from Claude message maxima versus 21.0B in a TokenTracker queue. Cause remains unverified; the scout does not prove that the old comparison summed snapshots incorrectly.
+- All T1–T8 implementation and acceptance gates remain unrun. Preserve [frozen fixture hashes](../../core/testdata/fixtures/SHA256SUMS); there is no supported regeneration step.
 
 ## Handoff
 
-- Checkout: `main`. Another session is working on the parent plan in the same checkout, so commit with `git commit -- <paths>` and read `git status` first: `4b45a25` swept that session's spec edits into a Tokens commit.
-- Cloud run: routine `trig_01RkCKKMMrxNXKw5pXcK3zRP` fired on 2026-11-03 and stopped at once because the sandbox has no Swift; it changed nothing and no branch exists. **A cloud run works on branch `claude/reins-tokens-engine`, continuing it if it exists, in one PR.**
-- Remaining: T1 to T8.
+Checkout: `/Users/kyantran/Documents/Development/spacevibe-workspace/spacevibe-reins`, branch `main`; no task branch or PR.
+Status: scout complete; this plan and the owning Tokens requirements updated in place. Implementation has not started.
+Next action: T1's synthetic matrix and behavior-preserving extraction, followed by T1a. Do not reopen the approved Board direction or add scout features outside this scope.
+Execution uses the current checkout by default, preserving unrelated work; commit only task paths. A PR requires an explicitly requested branch/worktree. The old cloud branch instruction is obsolete.
+Remaining owner-only gates: authorization for the real-data T7 run and final T8 eye approval. No duplicate approval is required for the already accepted approach.
+At implementation handoff, replace this status with completed tasks, observed commands, commit IDs, unrun gates and the next task.
 
-`/goal` Build the Reins Tokens tab per docs/specs/2026-11-02-reins.md: complete docs/plans/2026-11-03-reins-tokens.md tasks T1 to T6 on branch claude/reins-tokens-engine, continuing it if it exists, so that AC9 holds and the Board matches mocks/tokens-board/ in the macOS CI build and its screenshots, recording each task's evidence under it and opening one PR; stop and report if T0's workflow is missing or CI cannot build, and never read real logs, merge to main or release.
+`/goal` Implement the Tokens scope of docs/specs/2026-11-02-reins.md through docs/plans/2026-11-03-reins-tokens.md T1–T8: preserve Activity goldens, count Claude/Codex with independent synthetic fixtures, retain timestamped history through log deletion/encoding changes and failed reads/writes, expose local-calendar query RPC and the approved SwiftUI Board, pass scripts/test.sh and build/synthetic visual/native checks, satisfy normalized AC8 in an owner-authorized local run, then obtain one final eye approval; keep real configs untouched, preserve unrelated work, and do not push, merge, release or uninstall TokenTracker without authorization.
