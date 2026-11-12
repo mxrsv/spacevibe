@@ -65,7 +65,7 @@ struct Row<Lead: View, Main: View, Cells: View, Actions: View>: View {
 }
 
 /// Focusable, Return and Space act, a click acts, and VoiceOver's default action acts; nothing without `onActivate`.
-/// `LimitWindowTile` uses it too, so a tile and a row answer the same keys.
+/// Shared row activation keeps keyboard and pointer behavior aligned.
 struct RowActivation: ViewModifier {
     let onActivate: (() -> Void)?
     var focused: FocusState<Bool>.Binding

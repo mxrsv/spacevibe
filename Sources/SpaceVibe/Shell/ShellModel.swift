@@ -8,14 +8,7 @@ import SwiftUI
 final class ShellModel {
     let tabs: [any SpaceVibeTab]
     let appearance: AppearanceStore
-    /// The v5 shell (`SPACEVIBE_UI_V5`, W17): the sidebar holds the tabs (Agents, Activity, Limits) and Limits is one of them.
-    /// Read once by whoever builds the model, so the window, the commands and the palette never ask the environment again.
-    let isV5: Bool
-
     var activeID: String
-    /// The Limits page shows in the content area instead of the active tab (spec, Interface: Limits). Its sidebar entry, the
-    /// sidebar tiles and `⌘L` open it; choosing a tab closes it.
-    var isLimitsOpen = false
     /// Settings covers the whole window (spec `docs/specs/2026-11-04-reins-settings.md`); the tab or Limits page under it
     /// stays as it was and shows again when Settings closes.
     var isSettingsOpen = false
@@ -25,39 +18,28 @@ final class ShellModel {
     /// A short line at the bottom of the sidebar ("Counting usage 3/9"). Nil hides it.
     var statusMessage: String?
 
-    init(tabs: [any SpaceVibeTab], appearance: AppearanceStore, activeID: String? = nil, isV5: Bool = false) {
+    init(tabs: [any SpaceVibeTab], appearance: AppearanceStore, activeID: String? = nil) {
         precondition(!tabs.isEmpty, "TabRegistry returned no tabs")
         self.tabs = tabs
         self.appearance = appearance
-        self.isV5 = isV5
         self.activeID = activeID ?? tabs[0].id
     }
 
     var activeTab: any SpaceVibeTab { tabs.first { $0.id == activeID } ?? tabs[0] }
 
     /// The top bar's title: the active tab's, or the Limits page's while it shows.
-    var title: String { isLimitsOpen ? LimitsPage.title : activeTab.title }
+    var title: String { activeTab.title }
     /// The hint bar's middle part, likewise.
-    var hints: [KeyHint] { isLimitsOpen ? LimitsPage.hints : activeTab.hints }
+    var hints: [KeyHint] { activeTab.hints }
 
     func select(_ id: String) {
         guard tabs.contains(where: { $0.id == id }) else { return }
         activeID = id
-        isLimitsOpen = false
         isSettingsOpen = false
         isPaletteOpen = false
     }
 
-    /// In the v5 shell Limits is a tab (`⌘3`, id `limits`), so this selects it; the old shell shows its page in the content area.
-    func openLimits() {
-        if isV5 {
-            select(TabRegistry.limitsID)
-            return
-        }
-        isLimitsOpen = true
-        isSettingsOpen = false
-        isPaletteOpen = false
-    }
+    func openLimits() { select(TabRegistry.limitsID) }
 
     func openSettings() {
         isSettingsOpen = true

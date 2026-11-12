@@ -1,5 +1,10 @@
 # Reins design language v5
 
+## Cut-over authorization — 2026-11-12
+
+The owner requested: "cần áp giao diện mới vào hẳn main đi, clean luôn cái giao diện cũ đi". The existing native v5 surfaces become the default in development and distribution builds; the old UI and its switch are removed together. This supersedes the build-time coexistence requirements below, not the safety restriction on gallery/screenshot launch modes. The 2026-11-12 scratch mock proposals are outside this cut-over. Verification and remaining acceptance are recorded in the [owning plan](../plans/2026-11-07-reins-ui-v5-build.md#x1-cut-over-handoff--2026-11-12).
+
+
 Status: rewritten 2026-11-07 to cover the whole ledger (D1 to D68, 68 decision lines) and the mock the owner froze as the build reference on 2026-11-07 (D68, ledger line 79). Not built: no Swift for v5 exists. Light mode was not eye-checked after the D66 spacing change. Execution: [build plan](../plans/2026-11-07-reins-ui-v5-build.md).
 
 Sources, in this order of authority:

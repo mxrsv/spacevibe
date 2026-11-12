@@ -70,7 +70,7 @@ struct UsageCell: View {
 }
 
 /// A 6 pt capsule track with a fill from the leading edge: the usage bar of Loadout and Activity. Limits does not use it
-/// (see `Ruler`).
+/// (the Limits page uses its own meter).
 struct UsageBar: View {
     let fraction: Double
     let fill: Color

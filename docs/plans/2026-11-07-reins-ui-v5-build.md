@@ -3,7 +3,7 @@
 Spec: [design language v5](../specs/2026-11-06-reins-design-language-v5.md): requirements V5-R1 to V5-R76, acceptance V5-A1 to V5-A24, the traceability table for ledger D1 to D68, the open questions and the data gaps (G1 to G13). This plan does not restate them.
 Reference: the frozen mock at `~/scratch/spacevibe-reins/linear-directions/` (outside git, F4); see the spec's "Reference mock".
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. When this plan was written the go-core rename R1 (`REINS_*` to `SPACEVIBE_*`) was being applied, uncommitted, in the same checkout. Commit with `git commit -- <paths>` only (W11).
-Started 2026-11-07. Status: U0 to U4 done 2026-11-07, U5 to U12 done 2026-11-08 and U13 audited (live checks and a green `test.sh` outstanding, see Handoff); U14 next.
+Started 2026-11-07. Status: X1 implemented and locally verified on 2026-11-12; native owner review and the historical live-accessibility gates remain open. See the current cut-over handoff below.
 
 ## Relation to other plans (D0)
 
@@ -907,3 +907,28 @@ decision remains. Checkout: this repo, `main`; no push or cut-over in this follo
   - The Answer lists 3 dead hooks then "N more"; the lock joins the slot; the clock only on Codex-only hooks; no spine count; plain run counts; global scope only.
   - W3 for go-core: `Events()` has 17 of Claude Code's 33 documented events; Codex's list is observation only; Codex's event list read on learn.chatgpt.com (14 events, the core has 10).
 - For U12 onward (from U11): a write made of several journal entries is `env.performBatchWithUndo(label:undone:via:afterChange:onFailure:_ steps:)` (one toast, one Undo newest first, all or nothing); `AppEnvironment.undoAll` is the one newest-first undo. Engine suites build their home with `await CoreFixtureHome.make()` and read it with `await fixture.tree()` (both off the main actor); never call the synchronous `CoreFixtureHome()` from a `@MainActor` suite. A page with an Answer that has Claude Code and Codex rows uses `ListRows { ListRow(name, leading: { CLIMark(CoreCLI.claude, size: .control) }, trailing: { ... }) }` inside `AnswerCard`'s fixes, bled 4 with `Metrics.Rules.fixesBleed`; a button that opens a menu is `VerdictMenuButton`'s pattern (an `anchoredOverlay` with `.menu(.trailing)` and `RadioMenu`); an overlay cannot be placed from inside another overlay, so a menu opened from a popover hangs from the row and takes the popover's place. `CountCell(text:width:alignment:)` takes `.leading` for a column that starts at a fixed place. A shot over an in-memory page builds the model's snapshot or data directly (`RulesModel(env:snapshot:)`, `AgentsPage(env:loadout:rules:)`); `RulesSynthetic` is the pattern. Two `CoreSession` timing tests failed in every full run of U11 on this shared machine (Hypothesis, unverified: load; see "U11"); rerun once, then run `scripts/test.sh --filter CoreSession` alone before blaming a change.
+
+
+## X1 cut-over handoff — 2026-11-12
+
+Owner authorization: "cần áp giao diện mới vào hẳn main đi, clean luôn cái giao diện cũ đi".
+Scope: promote the existing native v5 UI on `main`, remove the classic UI and its environment switch. The 2026-11-12 scratch HTML icon/label proposals are not part of this cut-over. No push or release is authorized by this request.
+
+- [x] Make Agents, Activity and Limits the only runtime registry, independent of environment/build mode.
+- [x] Remove classic screens, launch branches, obsolete screenshot paths and exclusively used components; keep shared data models, writes, Undo and Settings.
+- [x] Update launch/navigation tests, screenshot harness, living docs and this spec's cut-over status.
+- [x] Run the full test wrapper, signed build, screenshots without the switch and a synthetic native launch; commit exact paths on main.
+
+Baseline: before edits, `GOFLAGS=-p=1 scripts/test.sh` failed in Go `TestCodexThreadsLsofFailureMarksLocksUnknown`: `killed: [], process state unknown; want [{900  true}]`. Swift tests were not reached. Core code is outside this cut-over and remains unchanged. Evidence: `/tmp/spacevibe-cutover-baseline.log`.
+
+
+### Verification and retained boundaries
+
+- Final command: `GOMAXPROCS=2 GOFLAGS=-p=1 scripts/test.sh` passed Go vet/tests, fixture hashes and **521 Swift tests in 53 suites**. The earlier unrestricted run reproduced the baseline Go proc timing failure; limiting Go scheduling passed it without core changes. Log: `/tmp/spacevibe-cutover-final-tests.log`.
+- Sixteen obsolete tests were retired: five switch tests, six Ruler tests, four old Rules-toolbar scope tests and one old Limits-overlay test. Default navigation, Activity Stop wording/modal, palette, Settings, Undo and model/core tests remain. Two obsolete Solar-glyph adapters and the old Activity badge assertion found by the first Swift run were removed before the final pass.
+- `scripts/build-app.sh` passed with Developer ID signing: app `minos 15.0`, helper `minos 12.0`. The development compile flag is now `SPACEVIBE_DEVELOPMENT_TOOLS`; it only gates gallery/shots. Removing it entirely would expose or disable those tools rather than remove the UI switch. Log: `/tmp/spacevibe-cutover-bundle.log`.
+- All eight screenshot runs passed with `SPACEVIBE_UI_V5` explicitly unset: shell, Skills, Subagents, Hooks, Rules, Activity, Limits and Settings; **340 PNGs** under `/tmp/spacevibe-cutover-shots/`. Their data/write checks passed (3, 44, 25, 35, 31, 16, 6 and 6 checks respectively). Representative dark/light images of all six main surfaces were inspected. The earlier approved screenshot set was not pixel-compared; live keyboard and VoiceOver remain unverified.
+- The signed bundle was relaunched on a synthetic home, PID 3724, with `SPACEVIBE_TEST=1` and no UI switch. Runtime evidence: `/tmp/spacevibe-cutover-runtime.txt`. The owner is left with that window for review; the synthetic home is retained while it is open. No real CLI configuration was changed.
+- `git diff --check`, shell syntax checks, `docs-compliance.sh` and `docs-anchors.sh` passed. Source/tests/scripts/CI contain no UI switch, `isV5`, classic Limits overlay state or old development flag.
+- Removed the classic screen/shot files and their exclusive components; retained Settings' Row/UsageCell components, status data contracts and engine-facing models. Five inventory model files moved from `Loadout/` to `Agents/`; 31 unused classic metrics were removed. Reference mocks and the unrelated `wt-agents` worktree were not deleted.
+- This change is committed on `main` locally. No push, merge, release or deployment. The owning plan is not marked historical because its previously outstanding live-accessibility and owner-eye gates are not claimed by this cut-over.

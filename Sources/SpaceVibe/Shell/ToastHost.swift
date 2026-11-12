@@ -1,38 +1,17 @@
 import SwiftUI
 
-/// Draws the current toast over the window, above the hint bar. Mounted once by `ShellView`. In the v5 shell (`isV5`) it
+/// Draws the current toast over the window, above the hint bar. Mounted once by `AppShell`; it
 /// is the v5 toast (`ToastBar`), 24 from the content panel's right edge and 48 above its bottom. `Z` runs the newest Undo of the
 /// session (`ToastCenter.undoKey`) while the stack holds one, also after the toast that offered it has gone, or the Undo on the
 /// toast showing when that one is not on the stack (Dismiss in Activity), unless the
 /// palette, Settings, a confirmation or a menu holds the keyboard.
 struct ToastHost: View {
-    var isV5 = false
 
     @Environment(ToastCenter.self) private var toasts
     @Environment(ShellModel.self) private var shell
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        if isV5 { panelToast } else { classic }
-    }
-
-    private var classic: some View {
-        VStack {
-            Spacer()
-            if let toast = toasts.current {
-                ToastView(toast: toast, run: toasts.runCurrentAction, dismiss: toasts.dismiss)
-                    .onHover { $0 ? toasts.hold() : toasts.release() }
-                    .padding(.bottom, Metrics.toastBottomInset)
-                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                    .id(toast.id)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: toasts.current?.id)
-        .allowsHitTesting(toasts.current != nil)
-    }
-
-    private var panelToast: some View {
         ZStack {
             bar
             if isUndoKeyOn { undoKey }

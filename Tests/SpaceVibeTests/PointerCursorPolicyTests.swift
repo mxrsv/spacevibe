@@ -32,11 +32,8 @@ struct PointerCursorPolicyTests {
         "Components/ToolbarMenu.swift": 3,        // taps on a `MenuLine`
     ]
 
-    /// Screen files that still hold a hand-made control. Both are old-screen code that the cut-over (X1) deletes.
-    static let allowed: [String: Int] = [
-        "Limits/LimitsSidebarBlock.swift": 1, // old sidebar tile; the v5 sidebar uses `SidebarBlocks`
-        "Rules/RulesList.swift": 1,           // old Rules list: a `Menu` whose label takes `.spaceVibe(.icon)`
-    ]
+    /// Every screen now composes shared controls.
+    static let allowed: [String: Int] = [:]
 
     /// Constructs declared in a screen folder that a screen may not hand-make.
     static let screenConstructs = [

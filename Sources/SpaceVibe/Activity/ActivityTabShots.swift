@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The v5 Activity shots (`SPACEVIBE_UI_V5=1 SPACEVIBE_SHOT_SCREEN=activity`): the real page on the synthetic home in every state
+/// The v5 Activity shots (`SPACEVIBE_SHOT_SCREEN=activity`): the real page on the synthetic home in every state
 /// of V5-R62, dark and light. The run first checks every figure against what the core's report holds (the V5-A20 trace), then
 /// draws:
 /// - the real report: `activity-running`, `-running-filtered`, `-running-detail`, `-running-warning`, `-running-limit` (the clock on a running session), `-menu-filter`, `-stop` (the
@@ -15,7 +15,7 @@ import SwiftUI
 enum ActivityTabShots {
     static func run(into directory: URL) throws {
         let env = AppEnvironment.shared
-        let tab = ActivityTab(env: env, isV5: true)
+        let tab = ActivityTab(env: env)
         let model = tab.model
         let agents = AgentsPage(env: env)
         agents.start()
@@ -32,11 +32,11 @@ enum ActivityTabShots {
         func shoot(_ name: String, _ choice: AppearanceChoice, tab shown: ActivityTab? = nil, toasts: ToastCenter? = nil, shownSlot: String? = nil,
                    size: CGSize? = nil, limits: LimitsModel? = nil) throws {
             let size = size ?? ShotRenderer.size
-            let tabs: [any SpaceVibeTab] = TabRegistry.makeTabs(isV5: true).map { registered in
+            let tabs: [any SpaceVibeTab] = TabRegistry.makeTabs().map { registered in
                 registered.id == ActivityTab.tabID ? (shown ?? tab) : (registered is AgentsPage ? agents : registered)
             }
-            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), activeID: ActivityTab.tabID, isV5: true)
-            let view = ShellView()
+            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), activeID: ActivityTab.tabID)
+            let view = AppShell()
                 .environment(limits ?? env.limits)
                 .spaceVibeRoot(shell: shell, toasts: toasts ?? ToastCenter(announce: false), env: env)
                 .environment(\.shownWarningSlot, shownSlot.map { AnyHashable($0) })
@@ -54,7 +54,7 @@ enum ActivityTabShots {
         }
         /// A page over an in-memory report: the state the fixture cannot show.
         func synthetic(_ report: CoreActivityReport?, failure: String? = nil, pane: ActivityPane = .running) -> ActivityTab {
-            let other = ActivityTab(env: env, isV5: true)
+            let other = ActivityTab(env: env)
             other.model.preview(report: report, failure: failure)
             other.model.pane = pane
             return other

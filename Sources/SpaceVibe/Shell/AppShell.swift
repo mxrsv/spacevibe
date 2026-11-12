@@ -43,7 +43,7 @@ struct AppShell: View {
                 AppCommandPalette()
                     .transition(.opacity)
             }
-            ToastHost(isV5: true)
+            ToastHost()
         }
         .pageBackground()
         .ignoresSafeArea()

@@ -46,8 +46,6 @@ final class LoadoutModel {
     var revealRowActions = false
     var shotKinds: Set<LoadoutKind>?
 
-    /// Set by the screen, so a palette entry can switch to this tab.
-    @ObservationIgnored weak var shell: ShellModel?
     @ObservationIgnored private var raw: CoreLoadoutRows?
     @ObservationIgnored private var started = false
     @ObservationIgnored private var scanRunning = false
@@ -205,15 +203,6 @@ final class LoadoutModel {
     }
 
     func select(_ key: String) { selectedKey = key }
-
-    /// From the palette: show the row, with the filter off and its scope on.
-    func jump(to row: LoadoutRow) {
-        scope = row.project ?? LoadoutRows.globalScope
-        filter = .all
-        selectedKey = row.key
-        jumpToken += 1
-        shell?.select(LoadoutTab.tabID)
-    }
 
     // MARK: Writes
 

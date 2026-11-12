@@ -7,9 +7,7 @@ struct SpaceVibeApp: App {
 
     init() {
         // The app's own store applies the theme to `NSApp.appearance` and the font size to every text role.
-        // The v5 switch is read here, once; the model carries it to the window, the commands and the palette.
-        let isV5 = LaunchMode.uiV5Enabled()
-        _shell = State(initialValue: ShellModel(tabs: TabRegistry.makeTabs(isV5: isV5), appearance: AppearanceStore(live: true), isV5: isV5))
+        _shell = State(initialValue: ShellModel(tabs: TabRegistry.makeTabs(), appearance: AppearanceStore(live: true)))
         AppEnvironment.shared.updates.start(mode: mode)
     }
 
@@ -19,7 +17,7 @@ struct SpaceVibeApp: App {
                 if case .gallery = mode {
                     ComponentGalleryWindow()
                 } else {
-                    ShellView()
+                    AppShell()
                 }
             }
             .spaceVibeRoot(shell: shell, toasts: env.toasts, env: env)

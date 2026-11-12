@@ -9,9 +9,9 @@ import Testing
 @Suite("Style boundary: screens compose components")
 struct StyleBoundaryTests {
     /// Folders that are screens. A listed folder need not exist yet: `measured()` skips a missing one and checks it the day it
-    /// appears. `Loadout` goes at the v5 cut-over (X1); `TokenUsage/` joins when it exists.
+    /// appears. `TokenUsage/` joins when it exists.
     static let screenFolders = [
-        "Loadout", "Rules", "Activity", "Shell", "TokenUsage", "Limits", "Settings",
+        "Rules", "Activity", "Shell", "TokenUsage", "Limits", "Settings",
         "Agents", "Skills", "Subagents", "Hooks",
     ]
 

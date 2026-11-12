@@ -3,7 +3,7 @@ import Observation
 
 /// The Limits readings, shared by the sidebar block on every tab and the Limits page; in the v5 shell by the sidebar's CLI
 /// status rows (whose loop runs `run()`) and the Limits tab (`LimitsCanvas`). One instance per run, created beside
-/// `ShellModel` and injected through the environment. Whether the old page shows is the shell's (`ShellModel.isLimitsOpen`).
+/// `ShellModel` and injected through the environment. Limits is a registered tab.
 ///
 /// A read is `limits.read` on the Go core (`env.goCore`): local files only, no request, no credential, no CLI started (spec, Limits). It runs off the
 /// main actor and never throws to the UI; a missing or odd file is a state inside the result. Reads happen at launch,

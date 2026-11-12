@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The v5 Hooks shots (`SPACEVIBE_UI_V5=1 SPACEVIBE_SHOT_SCREEN=hooks`): the real tab on the synthetic home and the states the
+/// The v5 Hooks shots (`SPACEVIBE_SHOT_SCREEN=hooks`): the real tab on the synthetic home and the states the
 /// fixture cannot hold, dark and light. The run first checks every hook's runs against what `scripts/fixture-home.mjs` writes into
 /// the logs (the V5-A20 trace), then draws:
 /// - `hooks-page`, `-filtered`, `-detail` (a dead hook's popover), `-detail-both`, `-warning` (the danger popover), `-menu-filter`,
@@ -37,9 +37,9 @@ enum HooksShots {
             configure()
             let size = size ?? ShotRenderer.size
             let used = shown ?? page
-            let tabs = TabRegistry.makeTabs(isV5: true).map { $0 is AgentsPage ? used : $0 }
-            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), isV5: true)
-            let view = ShellView()
+            let tabs = TabRegistry.makeTabs().map { $0 is AgentsPage ? used : $0 }
+            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice))
+            let view = AppShell()
                 .environment(limits ?? env.limits)
                 .spaceVibeRoot(shell: shell, toasts: toasts ?? ToastCenter(announce: false), env: env)
                 .environment(\.shownWarningSlot, shownSlot.map { AnyHashable($0) })

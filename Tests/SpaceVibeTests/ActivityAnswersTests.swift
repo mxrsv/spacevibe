@@ -337,22 +337,19 @@ struct ActivityAnswersTests {
         #expect(ActivityStopWording.toast(session, exited: false) == "Sent SIGTERM to pid 41002, but \u{201C}Fix leaderboard 500\u{201D} is still running.")
     }
 
-    @Test("the v5 tab shows the confirmation over the window while a stop is pending, and the old tab never does")
+    @Test("the default Activity tab shows the confirmation over the window while a stop is pending")
     func modal() {
         let env = AppEnvironment(toasts: ToastCenter(announce: false))
-        let v5 = ActivityTab(env: env, isV5: true)
+        let v5 = ActivityTab(env: env)
         #expect(v5.modal == nil)
         v5.model.requestStop(session("a"))
         #expect(v5.modal != nil && v5.model.isMenuOpen)
-        let old = ActivityTab(env: env)
-        old.model.requestStop(session("a"))
-        #expect(old.modal == nil)
     }
 
     // MARK: Dismissal and its Undo
 
     private func model(_ report: CoreActivityReport?) -> ActivityModel {
-        let model = ActivityModel(env: AppEnvironment(toasts: ToastCenter(announce: false)), isV5: true)
+        let model = ActivityModel(env: AppEnvironment(toasts: ToastCenter(announce: false)))
         model.preview(report: report)
         return model
     }
@@ -378,19 +375,16 @@ struct ActivityAnswersTests {
         #expect(model.query().count(.failed) == 1)
     }
 
-    @Test("the v5 sidebar gives Activity no count (V5-R50); the old sidebar keeps its recent-failures badge")
+    @Test("the default sidebar gives Activity no count (V5-R50)")
     func badge() {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         var recent = failure("1")
         recent.last = formatter.string(from: Date().addingTimeInterval(-3600))
         let env = AppEnvironment(toasts: ToastCenter(announce: false))
-        let v5 = ActivityTab(env: env, isV5: true)
+        let v5 = ActivityTab(env: env)
         v5.model.preview(report: report(failures: [recent]))
         #expect(v5.badge == nil)
-        let old = ActivityTab(env: env)
-        old.model.preview(report: report(failures: [recent]))
-        #expect(old.badge?.value == 1)
     }
 
     @Test("Copy puts the whole command on the pasteboard; a cut one is refused with a sentence")

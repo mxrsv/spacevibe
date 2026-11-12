@@ -203,7 +203,7 @@ struct ActivityModelTests {
         let model = model(core)
         try await stop(core, model, FakeActivityCore.session("s1", cli: .codex))
         #expect(core.stops == ["codex:s1"])
-        #expect(model.env.toasts.current?.message == "Stopped task s1")
+        #expect(model.env.toasts.current?.message == ActivityStopWording.toast(FakeActivityCore.session("s1"), exited: true))
         #expect(model.env.toasts.current?.tone == .info)
     }
 
@@ -213,7 +213,7 @@ struct ActivityModelTests {
         core.answerStop(.success(CoreStopResult(exited: false)))
         let model = model(core)
         try await stop(core, model, FakeActivityCore.session("s1"))
-        #expect(model.env.toasts.current?.message == "The process ignored the signal")
+        #expect(model.env.toasts.current?.message == ActivityStopWording.toast(FakeActivityCore.session("s1"), exited: false))
         #expect(model.env.toasts.current?.tone == .danger)
     }
 
@@ -266,7 +266,7 @@ struct ActivityModelTests {
 
     @Test("The old Stop dialog says the pid, the CLI and the consequence")
     func oldDialogNamesPid() {
-        let message = ActivityStopConfirmation.message(FakeActivityCore.session("s1"))
+        let message = ActivityStopWording.plainMessage(FakeActivityCore.session("s1")) + " " + ActivityStopWording.note
         #expect(message.contains("pid 100"))
         #expect(message.contains("Claude Code"))
         #expect(message.contains("cannot be undone"))
@@ -357,7 +357,7 @@ struct ActivityModelCoreTests {
             while model.pendingStop != nil || model.isStopping, Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
             seen.append(try #require(model.env.toasts.current?.message))
         }
-        #expect(seen.count == 2 && seen[0].hasPrefix("Stopped ") && seen[1] == "That session is no longer running.")
+        #expect(seen.count == 2 && seen[0].hasPrefix("Sent SIGTERM ") && seen[1] == "That session is no longer running.")
     }
 
     @Test("when the helper is missing, the screen shows the fixed startup sentence and nothing else")

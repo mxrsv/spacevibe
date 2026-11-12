@@ -1,38 +1,5 @@
 import SwiftUI
 
-/// The confirmation in front of Stop, the one action with no Undo. Cancel holds the focus and Esc cancels; neither works
-/// while the stop runs. The text is the v5 wording: it names the pid, the CLI and the consequence, and that it cannot be undone.
-struct ActivityStopConfirmation: View {
-    let session: CoreActivitySession
-    let isStopping: Bool
-    let cancel: () -> Void
-    let confirm: () -> Void
-
-    var body: some View {
-        ConfirmationDialog(
-            ActivityStopWording.title(session),
-            message: Self.message(session),
-            spokenLabel: "\(ActivityStopWording.title(session)) \(ActivityStopWording.plainMessage(session))",
-            canCancel: !isStopping,
-            cancel: cancel
-        ) {
-            Button("Cancel", action: cancel)
-                .buttonStyle(.spaceVibe(.normal))
-                .spaceVibeFocusable(cornerRadius: Metrics.controlRadius, focusOnAppear: true)
-                .disabled(isStopping)
-                .keyboardShortcut(.cancelAction)
-            Button(isStopping ? "Stopping\u{2026}" : ActivityStopWording.confirmTitle, action: confirm)
-                .buttonStyle(.spaceVibe(.danger))
-                .disabled(isStopping)
-        }
-    }
-
-    /// The dialog's message: the plain v5 sentence and the note that the pid is checked again.
-    static func message(_ session: CoreActivitySession) -> String {
-        "\(ActivityStopWording.plainMessage(session)) \(ActivityStopWording.note)"
-    }
-}
-
 /// The words of the v5 Stop confirmation and of the toast after it (V5-R59). The pid is the session's real one; the core
 /// looks it up again before it sends anything, and the dialog says so.
 enum ActivityStopWording {

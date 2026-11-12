@@ -2,44 +2,9 @@ import Foundation
 import Testing
 @testable import SpaceVibe
 
-/// The v5 dev switch (W17, V5-A21): honoured only in a development build, never in a distribution build.
-@Suite("Launch mode: the v5 dev switch")
+/// Gallery and shot entry points remain development-only after the UI cut-over.
+@Suite("Development launch modes")
 struct LaunchModeTests {
-    private var switchName: String { LaunchMode.uiV5SwitchName }
-
-    @Test("the switch is SPACEVIBE_UI_V5, named once")
-    func name() {
-        #expect(switchName == "SPACEVIBE_UI_V5")
-    }
-
-    @Test("on in a development build when the value is 1")
-    func onInDevelopmentBuild() {
-        #expect(LaunchMode.uiV5Enabled(environment: [switchName: "1"], isDevelopmentBuild: true))
-    }
-
-    @Test("off when unset or any value but 1", arguments: [nil, "", "0", "true", "yes", " 1"] as [String?])
-    func off(value: String?) {
-        let environment = value.map { [switchName: $0] } ?? [:]
-        #expect(!LaunchMode.uiV5Enabled(environment: environment, isDevelopmentBuild: true))
-    }
-
-    @Test("ignored in a distribution build, whatever the environment says")
-    func ignoredInDistributionBuild() {
-        #expect(!LaunchMode.uiV5Enabled(environment: [switchName: "1"], isDevelopmentBuild: false))
-    }
-
-    @Test("the switch does not change the launch mode")
-    func modeUnchanged() {
-        guard case .normal = LaunchMode.current(environment: [switchName: "1"], isDevelopmentBuild: true) else {
-            Issue.record("SPACEVIBE_UI_V5 alone must leave the launch mode normal")
-            return
-        }
-        guard case .gallery = LaunchMode.current(environment: [switchName: "1", "SPACEVIBE_GALLERY": "1"], isDevelopmentBuild: true) else {
-            Issue.record("the switch must combine with the gallery")
-            return
-        }
-    }
-
     @Test("the gallery and shot modes need a development build")
     func modesNeedDevelopmentBuild() {
         let gallery = ["SPACEVIBE_GALLERY": "1"]
@@ -79,7 +44,7 @@ struct LaunchModeTests {
     /// building with `--distribution`.
     @Test("build-app.sh adds the dev flag only outside --distribution; release.sh builds with --distribution")
     func buildFlagStaysOutOfDistribution() throws {
-        let flag = "-DSPACEVIBE_DEV_BUILD"
+        let flag = "-DSPACEVIBE_DEVELOPMENT_TOOLS"
         let flagLines = try script("build-app.sh").split(separator: "\n").filter { $0.contains(flag) }
         #expect(flagLines.count == 1, "the flag must be set in one place")
         #expect(flagLines.first.map { $0.trimmingCharacters(in: .whitespaces).hasPrefix("\"\")") } == true,

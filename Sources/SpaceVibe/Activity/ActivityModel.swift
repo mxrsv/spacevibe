@@ -34,8 +34,6 @@ final class ActivityModel {
 
     // MARK: The v5 page's state (V5-R69 to V5-R72)
 
-    /// The page the v5 shell draws; the old screen has none of this. Only the toast after a stop depends on it.
-    let isV5: Bool
     var pane = ActivityPane.running
     var filter = ActivityFilter()
     var isFilterOpen = false
@@ -62,9 +60,8 @@ final class ActivityModel {
 
     @ObservationIgnored private var isReading = false
 
-    init(env: AppEnvironment, isV5: Bool = false) {
+    init(env: AppEnvironment) {
         self.env = env
-        self.isV5 = isV5
         limitsResults = { env.limits.results }
     }
 
@@ -153,17 +150,12 @@ final class ActivityModel {
     func confirmStop() {
         guard let session = pendingStop, !isStopping else { return }
         isStopping = true
-        let isV5 = isV5
         Task {
             let message: String
             var tone = ToastTone.info
             do {
                 let result = try await core.activityStop(cli: session.cli, id: session.id)
-                if isV5 {
-                    message = ActivityStopWording.toast(session, exited: result.exited)
-                } else {
-                    message = result.exited ? "Stopped \(session.title)" : "The process ignored the signal"
-                }
+                message = ActivityStopWording.toast(session, exited: result.exited)
                 if !result.exited { tone = .danger }
             } catch {
                 // The core's sentence (404, 403, 409 "could not be verified", 500) is shown as it is.

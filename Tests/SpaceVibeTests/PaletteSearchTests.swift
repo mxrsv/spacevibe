@@ -24,7 +24,7 @@ struct PaletteSearchTests {
     func emptyQuery() {
         let sections = PaletteSearch.sections(shell: .forTests(), query: "")
         #expect(sections.map(\.title) == ["Go to", "Actions"])
-        #expect(titles(sections, "Go to") == ["Loadout", "Rules", "Activity"])
+        #expect(titles(sections, "Go to") == ["Agents", "Activity", "Limits"])
         #expect(sections.first?.entries.map(\.trailing) == ["\u{2318}1", "\u{2318}2", "\u{2318}3"])
         // The active tab's own actions come first, then the theme switch (the shell is forced dark) and Settings.
         #expect(titles(sections, "Actions") == ["Rescan usage", "Switch to light theme", "Settings"])
@@ -36,7 +36,7 @@ struct PaletteSearchTests {
         #expect(sections.map(\.title) == ["Items"])
         let entry = try #require(sections.first?.entries.first)
         #expect(entry.title == "ponytail")
-        #expect(entry.subtitle == "Loadout")
+        #expect(entry.subtitle == "Agents")
     }
 
     @Test("every word of the query must match, and a section with no match is dropped")

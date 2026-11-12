@@ -38,19 +38,13 @@ struct PaletteEntry: Identifiable {
 /// Make a screen a `final class` conforming to this, mark it `@Observable` if its count or actions change:
 /// the shell reads `badge`, `hints` and the palette entries while rendering, so Observation updates them.
 ///
-///     @MainActor @Observable final class LoadoutTab: SpaceVibeTab {
-///         let id = "loadout"; let title = "Loadout"; let icon = SpaceVibeGlyph.loadout
-///         var badge: TabBadge? { TabBadge(value: items.count) }
-///         var content: AnyView { AnyView(LoadoutScreen(model: model)) }
-///     }
-///
 /// Screens read shared services from the environment: `@Environment(ToastCenter.self)` and `@Environment(ShellModel.self)`.
 @MainActor
 protocol SpaceVibeTab: AnyObject {
     /// Stable, lowercase. Position in `TabRegistry` decides the `⌘1`, `⌘2`, `⌘3` shortcut.
     var id: String { get }
     var title: String { get }
-    /// The old sidebar's glyph (Solar). A v5 tab sets `glyph` and leaves this at its default.
+    /// Fallback glyph for legacy-format palette entries; tabs may provide a richer `glyph`.
     var icon: SpaceVibeGlyph { get }
     /// The glyph the v5 sidebar and palette draw: a Phosphor, MingCute or verdict glyph (`GlyphSource`).
     var glyph: any GlyphSource { get }

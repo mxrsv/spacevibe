@@ -2,54 +2,9 @@ import AppKit
 import SwiftUI
 
 /// `SPACEVIBE_SHOT_SCREEN=limits`, read from the synthetic home in both appearances; `SPACEVIBE_FIXTURE_LIMITS=typical|edge`
-/// (scripts/fixture-home.mjs) chooses what the files say. Without the v5 switch: the sidebar block on a demo shell, then the
-/// Limits page it opens. With `SPACEVIBE_UI_V5=1`: the v5 Limits page (`runV5`).
+/// (scripts/fixture-home.mjs) chooses what the files say. The run renders the current Limits page.
 @MainActor
 enum LimitsShots {
-    static func run(into directory: URL) throws {
-        if LaunchMode.uiV5Enabled() {
-            try runV5(into: directory)
-            return
-        }
-        let env = AppEnvironment.shared
-        Task { await env.limits.readOnce() }
-        try ShotHarness.wait("the Limits read") { env.limits.readAt != nil }
-        try ShotHarness.check(env.limits.results.count == 3, "Limits read Claude Code, Codex and Gemini CLI")
-        let entries = LimitsWording.entries(env.limits.results, showInactive: false)
-        // Both fixture variants put the least left in the Codex weekly window (39% typical, 4% edge).
-        try ShotHarness.check(env.limits.selection(in: entries, now: Date()) == "codex:secondary", "the page selects the window with the least left")
-        for choice in [AppearanceChoice.dark, .light] {
-            let shell = ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice))
-            let toasts = ToastCenter(announce: false)
-            try ShotRenderer.write(page(shell, toasts, env), name: "limits-sidebar", choice: choice, to: directory)
-            shell.openLimits()
-            try ShotHarness.check(shell.isLimitsOpen && shell.title == LimitsPage.title, "the sidebar block's action opens the page")
-            try ShotRenderer.write(page(shell, toasts, env), name: "limits-page", choice: choice, to: directory)
-            env.limits.showInactive = true
-            try ShotRenderer.write(page(shell, toasts, env), name: "limits-page-inactive", choice: choice, to: directory)
-            env.limits.showInactive = false
-            // Claude Code's entry carries the source line with `Copy /usage` (a window), or its state note (no reading).
-            env.limits.selectedID = entries.first { $0.cli == .claude }?.id
-            try ShotRenderer.write(page(shell, toasts, env), name: "limits-page-claude", choice: choice, to: directory)
-            // The edge fixture has a window past its reset: the dash figure, the dashed ruler and "Reset was".
-            if let passed = entries.first(where: { $0.window.map { !$0.current } ?? false }) {
-                env.limits.selectedID = passed.id
-                try ShotRenderer.write(page(shell, toasts, env), name: "limits-page-passed", choice: choice, to: directory)
-            }
-            env.limits.selectedID = nil
-            shell.select("rules")
-            try ShotHarness.check(!shell.isLimitsOpen, "choosing a tab closes the page")
-        }
-    }
-
-    private static func page(_ shell: ShellModel, _ toasts: ToastCenter, _ env: AppEnvironment) -> some View {
-        ShellView()
-            .spaceVibeRoot(shell: shell, toasts: toasts, env: env)
-            .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
-    }
-
-    // MARK: v5
-
     /// The smallest window (`SpaceVibeApp`'s minimum): the canvas, inside its 32 edge, is under 700 pt, so the halves stack
     /// (V5-R52).
     private static var narrow: CGSize { CGSize(width: 960, height: 600) }
@@ -62,9 +17,9 @@ enum LimitsShots {
     /// The v5 window on its Limits page, read from the synthetic home: the V5-A20 trace printed and checked against the
     /// engine's DTOs, then the page, Show unused, a tall and a narrow window, and the V5-R62 states the fixture cannot hold,
     /// drawn from in-memory readings (`states`).
-    private static func runV5(into directory: URL) throws {
+    static func run(into directory: URL) throws {
         let env = AppEnvironment.shared
-        let tabs = TabRegistry.makeTabs(isV5: true)
+        let tabs = TabRegistry.makeTabs()
         let agents = tabs.compactMap { $0 as? AgentsPage }.first
         agents?.start()
         Task { await env.limits.readOnce() }
@@ -75,8 +30,8 @@ enum LimitsShots {
         for choice in [AppearanceChoice.dark, .light] {
             func write(_ model: LimitsModel, _ name: String, size: CGSize? = nil) throws {
                 let size = size ?? ShotRenderer.size
-                let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), activeID: TabRegistry.limitsID, isV5: true)
-                let view = ShellView()
+                let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), activeID: TabRegistry.limitsID)
+                let view = AppShell()
                     .environment(model)
                     .spaceVibeRoot(shell: shell, toasts: ToastCenter(announce: false), env: env)
                     .frame(width: size.width, height: size.height)

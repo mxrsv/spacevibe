@@ -20,11 +20,6 @@ struct ShellCommands: Commands {
             Divider()
             Button("Search or Run a Command") { shell.togglePalette() }
                 .keyboardShortcut("k", modifiers: .command)
-            // In the v5 shell Limits is the third page, `⌘3`, so the View menu has no second way in.
-            if !shell.isV5 {
-                Button("Show Limits") { shell.openLimits() }
-                    .keyboardShortcut("l", modifiers: .command)
-            }
             Button("Switch to \(shell.appearance.choice.toggled.rawValue.capitalized) Theme") { shell.appearance.toggle() }
         }
     }

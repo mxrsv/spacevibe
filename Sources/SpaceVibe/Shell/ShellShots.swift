@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The v5 shell's shots (`SPACEVIBE_UI_V5=1`): `SPACEVIBE_SHOT_SCREEN=shell` draws the window on every page, with the palette,
+/// The v5 shell's shots (development build): `SPACEVIBE_SHOT_SCREEN=shell` draws the window on every page, with the palette,
 /// the toast and Settings; `skills`, `subagents` and `hooks` draw the Agents page with that tab selected. They read the
 /// synthetic home like the other real-screen runs: the counts and the CLI status rows are the fixture's own, and each shot
 /// run checks them against what the engine returned (V5-A20) before drawing.
@@ -9,7 +9,7 @@ import SwiftUI
 enum ShellShots {
     static func run(into directory: URL, tab: AgentsCategory?) throws {
         let env = AppEnvironment.shared
-        let tabs = TabRegistry.makeTabs(isV5: true)
+        let tabs = TabRegistry.makeTabs()
         guard let page = tabs.compactMap({ $0 as? AgentsPage }).first else { throw ShotHarness.Failure("the v5 registry has no Agents page") }
         page.start()
         Task { await env.limits.readOnce() }
@@ -20,7 +20,7 @@ enum ShellShots {
 
         for choice in [AppearanceChoice.dark, .light] {
             func shell(_ configure: (ShellModel) -> Void = { _ in }) -> ShellModel {
-                let model = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), isV5: true)
+                let model = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice))
                 configure(model)
                 return model
             }
@@ -62,7 +62,7 @@ enum ShellShots {
 
     private static func write(_ shell: ShellModel, _ env: AppEnvironment, _ name: String, _ choice: AppearanceChoice,
                               to directory: URL, toasts: ToastCenter? = nil) throws {
-        let view = ShellView()
+        let view = AppShell()
             .spaceVibeRoot(shell: shell, toasts: toasts ?? ToastCenter(announce: false), env: env)
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: name, choice: choice, to: directory)

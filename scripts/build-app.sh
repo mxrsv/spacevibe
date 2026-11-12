@@ -2,7 +2,7 @@
 # Builds, assembles and signs `SpaceVibe.app` into build/.
 #
 #   scripts/build-app.sh                 development build: Developer ID when present, else ad-hoc; no timestamp; compiled
-#                                        with SPACEVIBE_DEV_BUILD, so the SPACEVIBE_UI_V5 switch works
+#                                        with SPACEVIBE_DEVELOPMENT_TOOLS, so gallery and screenshot entry points work
 #   scripts/build-app.sh --distribution  release candidate: Developer ID required, secure timestamp (notarization
 #                                        rejects a signature without one), SPACEVIBE_UPDATE_FEED_URL required
 #
@@ -21,8 +21,8 @@ DISTRIBUTION=0
 TIMESTAMP_OPTION="--timestamp=none"
 BUILD_FLAGS=()
 case "${1:-}" in
-  # Only a development build honours SPACEVIBE_UI_V5 (LaunchMode.uiV5Enabled); a distribution build never gets the flag.
-  "") BUILD_FLAGS=(-Xswiftc -DSPACEVIBE_DEV_BUILD) ;;
+  # Only development builds enable gallery and screenshot entry points; distribution builds never get the flag.
+  "") BUILD_FLAGS=(-Xswiftc -DSPACEVIBE_DEVELOPMENT_TOOLS) ;;
   --distribution) DISTRIBUTION=1; TIMESTAMP_OPTION="--timestamp" ;;
   --help) echo "Usage: scripts/build-app.sh [--distribution]"; exit 0 ;;
   *) echo "Unknown build option: $1" >&2; exit 2 ;;

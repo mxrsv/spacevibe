@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The v5 Skills shots (`SPACEVIBE_UI_V5=1 SPACEVIBE_SHOT_SCREEN=skills`): the real tab on the synthetic home, in every state the
+/// The v5 Skills shots (`SPACEVIBE_SHOT_SCREEN=skills`): the real tab on the synthetic home, in every state the
 /// plan names, dark and light. The run first checks every skill's sessions against what `scripts/fixture-home.mjs` writes into
 /// the logs (the V5-A20 trace), then draws:
 /// - `skills-page`, `-short` (1062 x 685), `-narrow` (960 x 600), `-filtered`, `-grouped` (by status), `-multi` (two rows picked and the bottom bar, before any write), `-multi-added` (after the real bulk add on the synthetic home: Codex lit, the toast with Undo above the bar; undone after), `-warning`
@@ -38,9 +38,9 @@ enum SkillsShots {
             let size = size ?? ShotRenderer.size
             configure()
             let used = shown ?? page
-            let tabs = TabRegistry.makeTabs(isV5: true).map { $0 is AgentsPage ? used : $0 }
-            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), isV5: true)
-            let view = ShellView()
+            let tabs = TabRegistry.makeTabs().map { $0 is AgentsPage ? used : $0 }
+            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice))
+            let view = AppShell()
                 .spaceVibeRoot(shell: shell, toasts: toasts ?? ToastCenter(announce: false), env: env)
                 .environment(\.shownWarningSlot, shownSlot.map { AnyHashable($0) })
                 .frame(width: size.width, height: size.height)

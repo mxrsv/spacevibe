@@ -109,7 +109,7 @@ struct SpaceVibeType {
     /// The other exception (v3): the share left on the Limits page, one at a time. The line box is the face's own height at 72.
     static var display: SpaceVibeType { role(size: 72, scales: false, weight: .semibold, lineBox: 88, trackingEm: -0.03, tabular: true) }
 
-    // v5 roles (spec, "Type"): only the v5 build behind `SPACEVIBE_UI_V5` uses them. Every one carries the mock body's
+    // v5 roles (spec, "Type"): the current UI uses them. Every one carries the mock body's
     // features (`cv11`, `ss03`, tabular figures) and moves with the Font size setting. The spec's table maps 12 and 14 to
     // `caption`, `label` and `body`; `meta`, `metaLabel` and `field` are those sizes with the v5 features, so a v5 page never
     // mixes the two shapes of the a.

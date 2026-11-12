@@ -24,7 +24,7 @@ enum SettingsShots {
         for choice in [AppearanceChoice.dark, .light] {
             let shell = ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice))
             let toasts = ToastCenter(announce: false)
-            shell.select("rules")
+            shell.select("activity")
             shell.openSettings()
             try ShotHarness.check(shell.isSettingsOpen && shell.settingsSection == .appearance, "Settings opens on Appearance")
             try write(shell, toasts, env, "settings-appearance", choice, to: directory)
@@ -49,10 +49,10 @@ enum SettingsShots {
             shell.openPalette()
             try ShotHarness.check(shell.isSettingsOpen && shell.isPaletteOpen, "the palette opens over Settings")
             try write(shell, toasts, env, "settings-palette", choice, to: directory)
-            shell.select("loadout")
+            shell.select("agents")
             try ShotHarness.check(!shell.isSettingsOpen && !shell.isPaletteOpen, "choosing a tab closes Settings")
 
-            for tab in ["loadout", "activity", "rules"] {
+            for tab in ["agents", "activity", "limits"] {
                 shell.select(tab)
                 try atLarge(shell) { try write(shell, toasts, env, "large-\(tab)", choice, to: directory) }
             }
@@ -72,7 +72,7 @@ enum SettingsShots {
 
     private static func write(_ shell: ShellModel, _ toasts: ToastCenter, _ env: AppEnvironment, _ name: String,
                               _ choice: AppearanceChoice, to directory: URL) throws {
-        let view = ShellView()
+        let view = AppShell()
             .spaceVibeRoot(shell: shell, toasts: toasts, env: env)
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: name, choice: choice, to: directory)

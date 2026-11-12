@@ -38,7 +38,7 @@ enum ShotHarness {
 
     /// The shell as one 1440x900 frame, with the services of `env` (and its toasts) in the environment.
     static func view(_ shell: ShellModel, env: AppEnvironment) -> some View {
-        ShellView()
+        AppShell()
             .spaceVibeRoot(shell: shell, toasts: env.toasts, env: env)
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
     }

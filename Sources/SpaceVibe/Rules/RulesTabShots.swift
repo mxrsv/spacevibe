@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The v5 Rules shots (`SPACEVIBE_UI_V5=1 SPACEVIBE_SHOT_SCREEN=rules`): the real tab on the synthetic home and the states the fixture
+/// The v5 Rules shots (`SPACEVIBE_SHOT_SCREEN=rules`): the real tab on the synthetic home and the states the fixture
 /// cannot hold, dark and light. `SPACEVIBE_FIXTURE_CODEX=unrestricted|both` (read by `scripts/fixture-home.mjs`) rewrites the Codex
 /// config; those runs write under their own name (`rules-unrestricted-*`, `rules-both-*`) and shoot only what the variant changes.
 /// The default run first prints and checks the V5-A20 trace (every count, stance and Codex fact against what the fixture writes), then:
@@ -45,9 +45,9 @@ enum RulesTabShots {
             configure()
             let size = size ?? ShotRenderer.size
             let used = shown ?? page
-            let tabs = TabRegistry.makeTabs(isV5: true).map { $0 is AgentsPage ? used : $0 }
-            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), isV5: true)
-            let view = ShellView()
+            let tabs = TabRegistry.makeTabs().map { $0 is AgentsPage ? used : $0 }
+            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice))
+            let view = AppShell()
                 .environment(limits ?? env.limits)
                 .spaceVibeRoot(shell: shell, toasts: toasts ?? ToastCenter(announce: false), env: env)
                 .environment(\.openStateStore, store)

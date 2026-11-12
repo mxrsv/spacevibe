@@ -5,24 +5,11 @@
 #   scripts/dev-fixture.sh --shots <dir>      build, then write headless screenshots (no window) into <dir>
 #   scripts/dev-fixture.sh --prepare          build and print the environment, do not start the app
 #
-# Environment: SPACEVIBE_FIXTURE_ACTIVITY=empty (no live session) or =loading (the first process question waits 20 s, so the
-# screen sits on "Reading logs...") is passed to scripts/fixture-home.mjs. SPACEVIBE_BUILD_PATH overrides the scratch path.
-# SPACEVIBE_SHOT_SCREEN=shell|loadout|rules|activity|limits|settings picks the --shots run (default shell: the demo shell states
-# and the gallery); loadout, rules and activity read this synthetic home and assert their writes, Undo included; limits reads
-# the files SPACEVIBE_FIXTURE_LIMITS=typical|edge adds and shoots the sidebar block and the page; settings shoots Settings and the
-# demo tabs at the Large font size. With SPACEVIBE_UI_V5=1 (a development build) `shell` shoots the v5 window instead of the demo
-# states (it reads this synthetic home for the counts and the CLI status rows, then adds the gallery),
-# subagents, hooks and rules shoot the real tab in every state (rules prints and checks the trace of every rule, family and Codex fact, draws
-# every state, and runs a real family change and a real Remove with Undo and an invalid settings file; scripts/rules-shots.sh runs its
-# Codex variants; hooks checks every hook's runs against what fixture-home.mjs writes,
-# then draws the dead-hook states, the popovers and the in-memory states, and runs a real Remove with Undo), skills shoots the real
-# Skills tab in every state (it checks every skill's
-# sessions against what fixture-home.mjs writes, then draws filtered, grouped, multi-select, the warning popover, the menus, the
-# pane states, nothing matches and an empty category), activity shoots the v5 Activity page (it prints and checks the trace of every
-# figure against the core's report, draws every state from the real home and from in-memory reports, then runs a real Dismiss passed
-# with Undo and a real Stop on the one fixture session the core can verify, pid 52003), and limits shoots the v5 Limits page (it prints and checks the
-# trace of every window against the engine's reading, then draws the remaining V5-R62 states from in-memory readings); without
-# the switch skills|subagents|hooks refuse (rules then shoots the old screen). Nothing else selects a screen.
+# SPACEVIBE_BUILD_PATH overrides the build scratch path. SPACEVIBE_SHOT_SCREEN selects
+# shell (default), skills, subagents, hooks, rules, activity, limits or settings.
+# All screens render the current UI without a feature switch. The shell run also renders the gallery.
+# SPACEVIBE_FIXTURE_ACTIVITY=empty|loading and SPACEVIBE_FIXTURE_LIMITS=typical|edge select synthetic states.
+# Screenshot runs verify the displayed data and guarded writes against the synthetic home.
 #
 # What the fake process list says (written by fixture-home.mjs to <home>/.reins/activity-proc.json, used because
 # SPACEVIBE_TEST=1 and SPACEVIBE_PROC_FIXTURE name it; the pids are made up and only the fake answers for them):

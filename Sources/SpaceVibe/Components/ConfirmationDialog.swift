@@ -136,7 +136,7 @@ struct ConfirmationPanel: View {
             HStack(spacing: Metrics.Dialog.actionSpacing) {
                 Spacer(minLength: 0)
                 // Esc reaches Cancel even when no button can take the focus (macOS keyboard navigation off), as
-                // `ActivityStopConfirmation` does.
+                // `StopSessionPanel` does.
                 Button(action: cancel) { ActionLabel("Cancel", key: "esc") }
                     .buttonStyle(ActionButtonStyle())
                     .focused($focus, equals: .cancel)

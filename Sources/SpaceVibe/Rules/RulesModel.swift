@@ -50,7 +50,6 @@ final class RulesModel {
 
     /// The CLIs on this Mac: the shell's reading (`limits.read`), which a shot or a test replaces.
     @ObservationIgnored var limitsResults: () -> [CoreLimitsEntry]
-    @ObservationIgnored weak var shell: ShellModel?
     /// The ids listed now, in order: the tab writes them, so a removal can hand the current rule to its neighbour (D2).
     @ObservationIgnored var listedKeys: [String] = []
     @ObservationIgnored private var started = false
@@ -222,12 +221,6 @@ final class RulesModel {
 
     func showAllTrust() { showsAllTrust = true }
 
-    /// From the palette: the Codex page, brought forward.
-    func jumpToCodex() {
-        selectCLI(.codex)
-        shell?.select(RulesTab.tabID)
-    }
-
     /// Selects `~/.codex/config.toml` (or the Codex folder when there is none) in the Finder. Editing stays in the user's
     /// editor; SpaceVibe starts no other app (AGENTS.md S-R4).
     func revealCodexConfig() {
@@ -248,20 +241,6 @@ final class RulesModel {
     }
 
     func setExpanded(_ capabilities: Set<CoreCapability>) { expanded = capabilities }
-
-    /// From the palette: show a scope and bring the tab forward.
-    /// The scope jumps name Claude Code settings files, so they open the Claude Code page.
-    func jump(to choice: RulesSelection) {
-        selectCLI(.claude)
-        select(choice)
-        shell?.select(RulesTab.tabID)
-    }
-
-    func focusAddRule() {
-        selectCLI(.claude)
-        shell?.select(RulesTab.tabID)
-        addFocusToken += 1
-    }
 
     // MARK: Grid writes
 

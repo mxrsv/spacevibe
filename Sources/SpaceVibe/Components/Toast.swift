@@ -1,48 +1,5 @@
 import SwiftUI
 
-/// The toast itself: inverted surface, message, its action (or a dismiss button when it has none). 40 pt: 6 around a 28 pt button.
-struct ToastView: View {
-    let toast: Toast
-    let run: () -> Void
-    let dismiss: () -> Void
-
-    var body: some View {
-        HStack(spacing: Space.s12) {
-            if toast.tone == .danger {
-                SpaceVibeIcon(.warning)
-            }
-            Text(toast.message).spaceVibeText(.body)
-            if let action = toast.action {
-                Button(action: run) {
-                    HStack(spacing: Space.s6) {
-                        SpaceVibeIcon(action.icon)
-                        Text(action.title)
-                    }
-                    .spaceVibeText(.bodyStrong)
-                }
-                .buttonStyle(.spaceVibe(.inverse))
-            } else {
-                Button(action: dismiss) { SpaceVibeIcon(.close) }
-                    .buttonStyle(.spaceVibe(.inverse))
-                    .accessibilityLabel("Dismiss")
-            }
-        }
-        .foregroundStyle(TextTone.inverse.color)
-        .padding(.leading, Space.s16)
-        .padding(.trailing, Space.s6)
-        .padding(.vertical, Space.s6)
-        .background(RoundedRectangle(cornerRadius: Metrics.groupRadius, style: .continuous).fill(Palette.text))
-        .shadow(color: Palette.overlayShadow, radius: Metrics.toastShadowRadius, y: Metrics.toastShadowOffset)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(toast.message)
-    }
-}
-
-/// The v5 toast (V5-R38, V5-R59): 40 high on `bgPop` with a `hair2` edge, radius 8, the top-edge highlight and the pop
-/// shadow; the message in 13/20 `fg`, 12 before its one action, a 24-high accent button (`Undo` with its `Z` cap). Without an
-/// action it is the message alone (the Stop toast has no Undo). A danger toast leads with the danger triangle, so the tone
-/// is not colour alone. Placed by the content panel 24 from the right and 48 above the bottom (104 over the bottom bar);
-/// it stays 5 s (`ToastCenter`).
 struct ToastBar: View {
     let toast: Toast
     let run: () -> Void

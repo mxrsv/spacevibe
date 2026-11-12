@@ -27,13 +27,7 @@ enum LoadoutKind: CaseIterable {
         }
     }
 
-    var icon: SpaceVibeGlyph {
-        switch self {
-        case .skill: .skill
-        case .agent: .agent
-        case .hook: .hook
-        }
-    }
+
 }
 
 /// One installed thing in one CLI: a skill or agent folder/file, or one hook command.

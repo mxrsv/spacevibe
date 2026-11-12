@@ -262,9 +262,6 @@ struct ContrastTests {
                 let row = ListRow("Synthetic skill", isCurrent: true, isPicked: picked, onActivate: {})
                 try expectVisibleFocus(row, scheme: scheme)
             }
-            let tile = LimitWindowTile(cli: .claude, title: "5-hour", subtitle: "Synthetic window", meter: .none,
-                                       value: "78%", selected: true, onActivate: {})
-            try expectVisibleFocus(tile, scheme: scheme)
             let row = Row(selected: true, onActivate: {}) { Text("Synthetic skill") }
             try expectVisibleFocus(row, scheme: scheme)
         }

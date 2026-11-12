@@ -75,38 +75,6 @@ struct RulesScopesTests {
         #expect(RulesScopes.title(for: RulesSelection(dir: "/work/gone/old-thing", file: .local), projects: []) == "old-thing (local)")
     }
 
-    // MARK: Rules toolbar scope options
-
-    private let discovered = RulesScopes.projects(from: ["/work/a/app", "/work/b/app", "/work/web"])
-
-    @Test("the options start with Global (no id), then one per project keyed by its folder and labelled with its name")
-    func scopeOptionsOrder() {
-        let options = RulesToolbar.scopeOptions(projects: discovered)
-        #expect(options.first == ScopeOption(id: nil, label: "Global"))
-        #expect(options.dropFirst().map(\.id) == ["/work/a/app", "/work/b/app", "/work/web"])
-        #expect(options.dropFirst().map(\.label) == ["a/app", "b/app", "web"])
-        #expect(RulesToolbar.scopeOptions(projects: []) == [ScopeOption(id: nil, label: "Global")])
-    }
-
-    @Test("every option has its own id, so the picker's checkmark marks exactly one")
-    func scopeOptionIdsAreUnique() {
-        let ids = RulesToolbar.scopeOptions(projects: discovered).map(\.id)
-        #expect(Set(ids).count == ids.count)
-    }
-
-    @Test("the current scope is the matching option; no selected folder means Global")
-    func currentScopeMatches() {
-        let options = RulesToolbar.scopeOptions(projects: discovered)
-        #expect(RulesToolbar.currentScope(options: options, dir: nil) == ScopeOption(id: nil, label: "Global"))
-        #expect(RulesToolbar.currentScope(options: options, dir: "/work/b/app") == ScopeOption(id: "/work/b/app", label: "b/app"))
-    }
-
-    @Test("a selected folder that is no longer discovered shows as Project and keeps its folder as the id")
-    func currentScopeFallback() {
-        let options = RulesToolbar.scopeOptions(projects: discovered)
-        #expect(RulesToolbar.currentScope(options: options, dir: "/work/gone") == ScopeOption(id: "/work/gone", label: "Project"))
-    }
-
     // MARK: The Claude Code line on the Codex page
 
     private func cell(_ capability: CoreCapability, _ state: CoreCapabilityState) -> CoreCapabilityCell {

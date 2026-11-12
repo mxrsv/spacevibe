@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The v5 Subagents shots (`SPACEVIBE_UI_V5=1 SPACEVIBE_SHOT_SCREEN=subagents`): the real tab on the synthetic home, in every
+/// The v5 Subagents shots (`SPACEVIBE_SHOT_SCREEN=subagents`): the real tab on the synthetic home, in every
 /// state of V5-R62, dark and light. The run first checks every subagent's sessions against what `scripts/fixture-home.mjs`
 /// writes into the logs (the V5-A20 trace), then draws:
 /// - `subagents-page`, `-filtered`, `-flat` (Group: None), `-detail` (a row's popover open), `-warning` (the never-ran popover),
@@ -37,10 +37,10 @@ enum SubagentsShots {
             configure()
             let size = size ?? ShotRenderer.size
             let used = shown ?? page
-            let tabs = TabRegistry.makeTabs(isV5: true).map { $0 is AgentsPage ? used : $0 }
-            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice), isV5: true)
+            let tabs = TabRegistry.makeTabs().map { $0 is AgentsPage ? used : $0 }
+            let shell = ShellModel(tabs: tabs, appearance: AppearanceStore(forced: choice))
             // A state with its own CLI reading (Codex not installed) puts it in the environment, so the sidebar says what the page does.
-            let view = ShellView()
+            let view = AppShell()
                 .environment(limits ?? env.limits)
                 .spaceVibeRoot(shell: shell, toasts: toasts ?? ToastCenter(announce: false), env: env)
                 .environment(\.shownWarningSlot, shownSlot.map { AnyHashable($0) })
