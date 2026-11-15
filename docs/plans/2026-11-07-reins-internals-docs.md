@@ -26,12 +26,12 @@ Link to symbols, do not copy implementation. Use the terms of [GLOSSARY.md](../.
 | Task | Page | Source area |
 | --- | --- | --- |
 | T1 | `docs/internals/README.md`: index table (subsystem to page), maintenance rule | none |
-| T2 | `inventory.md` | `Inventory*.swift`, `Frontmatter.swift`, `Roots.swift` |
-| T3 | `usage.md` | `UsageScan*.swift`, `LogFiles.swift`, `TailReader.swift`, `ZstdStream.swift`, `Pricing.swift` |
-| T4 | `mutations.md` | `Mutate*.swift`, `Journal*.swift`, `FileEdit*.swift`, `WriteLock.swift`, `OrderedJSON.swift`, `TOMLReader.swift` |
-| T5 | `limits.md` | `Limits*.swift`, `StatuslineSetup.swift` |
-| T6 | `activity.md` | `Activity*.swift`, `ProcessAdapter.swift`, `SessionTitles.swift` |
-| T7 | `rules.md` | `Rules*.swift` |
+| T2 | `inventory.md` | `core/internal/inventory`, `core/internal/roots`, `core/internal/hashes` |
+| T3 | `usage.md` | `core/internal/usage`, `core/internal/logs`, `core/internal/pricing` |
+| T4 | `mutations.md` | `core/internal/mutate`, `core/internal/fsx`, `core/internal/ojson`, `core/internal/toml` |
+| T5 | `limits.md` | `core/internal/limits`, `core/internal/statusline` |
+| T6 | `activity.md` | `core/internal/activity`, `core/internal/proc`, `core/internal/textjs`, `core/internal/redact` |
+| T7 | `rules.md` | `core/internal/rules` |
 | T8 | Move "Known traps" from `AGENTS.md` into the matching pages and link back; run the doc scripts | `AGENTS.md` |
 
 Each of T2 to T7 is one commit. Write from the code and the Node oracle's behavior, not from memory; a claim a page cannot link to is left out (D6). Pages describe current behavior only; planned work stays in specs and plans.

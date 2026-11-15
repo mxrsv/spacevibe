@@ -7,8 +7,9 @@ Reference pages for the engine (the Go core): what each subsystem is responsible
 | Shell and core split, data flow, fixtures and goldens, Swift-to-Go traps | [overview.md](overview.md) | `core/`, `Sources/SpaceVibe` |
 | Stdio protocol between the shell and the core: framing, lifecycle, errors, every method and its JSON | [core-protocol.md](core-protocol.md) | `core/internal/rpc` (PR.2), `core/internal/goldentest` |
 | Skills, subagents and hooks installed for both CLIs, and their usage cells | [inventory.md](inventory.md) | `core/internal/inventory`, `core/internal/roots` |
+| Usage scan: which skills, subagents and hooks ran, the scan cache, and the price table behind cost estimates | [usage.md](usage.md) | `core/internal/usage`, `core/internal/logs`, `core/internal/pricing` |
 
-Planned pages (usage scan and pricing, mutations and journal, limits, activity, rules) are tracked in the [plan](../plans/2026-11-07-reins-internals-docs.md); a page is added to this table when it exists.
+Planned pages (mutations and journal, limits, activity, rules) are tracked in the [plan](../plans/2026-11-07-reins-internals-docs.md); a page is added to this table when it exists.
 
 ## Maintain a page
 
