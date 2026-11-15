@@ -22,12 +22,6 @@ private final class DemoTab: SpaceVibeTab {
         self.glyph = glyph
     }
 
-    var paletteItems: [PaletteEntry] {
-        guard id == "agents" else { return [] }
-        return ["ponytail", "impeccable", "review-change", "skill-creator"].map { name in
-            PaletteEntry(id: "demo.skill.\(name)", title: name, glyph: CategoryGlyph.skill, keywords: ["skill"]) {}
-        }
-    }
     var paletteActions: [PaletteEntry] {
         guard id == "agents" else { return [] }
         return [PaletteEntry(id: "demo.rescan", title: "Rescan usage", glyph: ContentGlyph.enter) {}]

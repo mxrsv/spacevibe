@@ -8,12 +8,10 @@ struct PaletteSection: Identifiable {
 }
 
 /// Builds what the palette lists: "Go to" (the tabs), "Actions" (the active tab's, plus global ones, plus Undo of the newest
-/// write in `toasts`' session stack) and, once
-/// the user has typed something, "Items" (every tab's searchable items). Matching is case-insensitive and every
-/// word of the query must appear in the title, subtitle or keywords.
+/// write in `toasts`' session stack). Matching is case-insensitive and every word of the query must appear in the title or
+/// the keywords.
 @MainActor
 enum PaletteSearch {
-    static let itemLimit = 30
 
     static func sections(shell: ShellModel, toasts: ToastCenter? = nil, query: String) -> [PaletteSection] {
         let words = query.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
@@ -55,26 +53,16 @@ enum PaletteSearch {
         }
         actions += [global, settings]
 
-        var sections = [
+        let sections = [
             PaletteSection(title: "Go to", entries: goTo.filter { matches($0, words) }),
             PaletteSection(title: "Actions", entries: actions.filter { matches($0, words) }),
         ]
-        if !words.isEmpty {
-            let items = shell.tabs.flatMap { tab in
-                tab.paletteItems.map { entry -> PaletteEntry in
-                    var copy = entry
-                    if copy.subtitle == nil { copy.subtitle = tab.title }
-                    return copy
-                }
-            }
-            sections.append(PaletteSection(title: "Items", entries: Array(items.filter { matches($0, words) }.prefix(itemLimit))))
-        }
         return sections.filter { !$0.entries.isEmpty }
     }
 
     private static func matches(_ entry: PaletteEntry, _ words: [String]) -> Bool {
         guard !words.isEmpty else { return true }
-        let haystack = ([entry.title, entry.subtitle ?? ""] + entry.keywords).joined(separator: " ").lowercased()
+        let haystack = ([entry.title] + entry.keywords).joined(separator: " ").lowercased()
         return words.allSatisfy { haystack.contains($0) }
     }
 }

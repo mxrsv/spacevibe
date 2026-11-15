@@ -14,13 +14,11 @@ struct KeyHint: Hashable {
     var label: String
 }
 
-/// One row in the `⌘K` palette. A screen contributes these as actions ("Rescan usage") or items
-/// ("ponytail", "Bash(git push:*)"). `perform` runs on the main actor after the palette closes; to move to
-/// another tab first, call `ShellModel.select(_:)` from it.
+/// One row in the `⌘K` palette: a tab to go to or a real command ("Refresh", V5-R37). `perform` runs on the main actor
+/// after the palette closes; to move to another tab first, call `ShellModel.select(_:)` from it.
 struct PaletteEntry: Identifiable {
     let id: String
     var title: String
-    var subtitle: String?
     /// The glyph at the row's left (a Phosphor or MingCute glyph).
     var glyph: (any GlyphSource)?
     /// Right-aligned hint such as a shortcut.
@@ -52,8 +50,6 @@ protocol SpaceVibeTab: AnyObject {
     var hints: [KeyHint] { get }
     /// Shown under "Actions" while this tab is active.
     var paletteActions: [PaletteEntry] { get }
-    /// Searchable under "Items" from any tab, once the user has typed something.
-    var paletteItems: [PaletteEntry] { get }
     var content: AnyView { get }
     /// A head menu or filter of this tab holds the keyboard, so the shell's plain keys (`Z` for Undo) are off.
     var isMenuOpen: Bool { get }
@@ -66,7 +62,6 @@ extension SpaceVibeTab {
     var badge: TabBadge? { nil }
     var hints: [KeyHint] { [] }
     var paletteActions: [PaletteEntry] { [] }
-    var paletteItems: [PaletteEntry] { [] }
     var isMenuOpen: Bool { false }
     var modal: AnyView? { nil }
 }

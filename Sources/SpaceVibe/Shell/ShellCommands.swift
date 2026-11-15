@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Menu items and their shortcuts: `⌘1`..`⌘9` for the tabs, `⌘K` for the palette, `⌘L` for Limits in the View menu, and
+/// Menu items and their shortcuts: `⌘1`..`⌘9` for the tabs (Limits is `⌘3`), `⌘K` for the palette in the View menu, and
 /// `⌘,` for Settings in the app menu, so they work from any focus and show up for VoiceOver and Full Keyboard Access.
 struct ShellCommands: Commands {
     let shell: ShellModel
