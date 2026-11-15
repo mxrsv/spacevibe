@@ -10,8 +10,9 @@ Reference pages for the engine (the Go core): what each subsystem is responsible
 | Usage scan: which skills, subagents and hooks ran, the scan cache, and the price table behind cost estimates | [usage.md](usage.md) | `core/internal/usage`, `core/internal/logs`, `core/internal/pricing` |
 | Limits: how much of each usage Window is left per CLI, and the status-line capture that records Claude Code's | [limits.md](limits.md) | `core/internal/limits`, `core/internal/statusline` |
 | Mutations: every write to a CLI's configuration, the journal, Undo, restorable copies, the write lock, and the JSON and TOML handling writes depend on | [mutations.md](mutations.md) | `core/internal/mutate`, `core/internal/fsx`, `core/internal/ojson`, `core/internal/toml` |
+| Activity: sessions running now, their titles, failed commands and open tool calls, and Stop | [activity.md](activity.md) | `core/internal/activity`, `core/internal/proc`, `core/internal/textjs`, `core/internal/redact` |
 
-Planned pages (activity, rules) are tracked in the [plan](../plans/2026-11-07-reins-internals-docs.md); a page is added to this table when it exists.
+Planned pages (rules) are tracked in the [plan](../plans/2026-11-07-reins-internals-docs.md); a page is added to this table when it exists.
 
 ## Maintain a page
 
