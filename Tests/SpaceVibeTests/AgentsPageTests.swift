@@ -82,14 +82,14 @@ struct AgentsPageTests {
     @Test("every limits state maps to one sidebar state, or none when the shell cannot tell")
     func cliStatus() {
         let expected: [CoreLimitsState: SidebarCLIState?] = [
-            .measured: .reading, .notRecorded: .reading, .notInstalled: .notInstalled, .notMeasurable: .noLog, .unreadable: nil,
+            .measured: .reading, .notRecorded: .noReading, .notInstalled: .notInstalled, .notMeasurable: .noLog, .unreadable: nil,
         ]
         for (state, shown) in expected {
             #expect(CLIStatusDerivation.state(of: entry(.claude, state)) == shown, "\(state)")
         }
         #expect(CLIStatusDerivation.state(of: nil) == nil)
-        #expect([SidebarCLIState.reading, .notInstalled, .noLog].map(\.label) == ["reading", "not installed", "no log"])
-        #expect(SidebarCLIState.reading.isOK && !SidebarCLIState.notInstalled.isOK && !SidebarCLIState.noLog.isOK)
+        #expect([SidebarCLIState.reading, .noReading, .notInstalled, .noLog].map(\.label) == ["reading", "no data", "not installed", "no log"])
+        #expect(SidebarCLIState.reading.isOK && !SidebarCLIState.noReading.isOK && !SidebarCLIState.notInstalled.isOK && !SidebarCLIState.noLog.isOK)
     }
 
     @Test("the sidebar count is spoken by what it counts, never as items")

@@ -135,11 +135,13 @@ struct SidebarPageItem: View {
 /// `mute` otherwise. The shell derives the state from what it can know (`CLIStatusDerivation`); a state it cannot derive is
 /// not drawn.
 enum SidebarCLIState: Equatable, Sendable {
-    case reading, notInstalled, noLog
+    case reading, noReading, notInstalled, noLog
 
     var label: String {
         switch self {
         case .reading: "reading"
+        // "no reading" (the Limits page's word) does not fit beside "Claude Code" in the 164 pt row.
+        case .noReading: "no data"
         case .notInstalled: "not installed"
         case .noLog: "no log"
         }

@@ -5,16 +5,17 @@ import Foundation
 ///
 /// - `notInstalled` (the CLI's folder is missing) is `not installed`;
 /// - `notMeasurable` (Gemini CLI keeps no limit on disk, and the app reads no Gemini log) is `no log`;
-/// - `measured` and `notRecorded` (the folder is there and the app reads it) are `reading`;
+/// - `measured` (the app holds a reading) is `reading`;
+/// - `notRecorded` (the folder is there but holds no reading yet) is `no data` (the Limits page's "no reading", shortened to fit the row);
 /// - `unreadable` (a record the app cannot parse) and a CLI not read yet have no state in the mock, so they show none.
 ///
-/// "reading" is therefore "the CLI's folder exists and the app can read it", not a live check that a log is open
-/// (Hypothesis, unverified; the departure is named in the plan).
+/// "reading" is therefore "the app holds a usage reading for this CLI", not a live check that a log is open.
 enum CLIStatusDerivation {
     static func state(of entry: CoreLimitsEntry?) -> SidebarCLIState? {
         guard let entry else { return nil }
         switch entry.state {
-        case .measured, .notRecorded: return .reading
+        case .measured: return .reading
+        case .notRecorded: return .noReading
         case .notInstalled: return .notInstalled
         case .notMeasurable: return .noLog
         case .unreadable: return nil
