@@ -7,13 +7,13 @@ import Foundation
 enum SubagentsWording {
     // MARK: The row
 
-    /// The text before the logos: "142 sessions", "never ran" (also a file too new to have run, S3), "unmeasurable",
-    /// "counting" while the scan runs.
-    static func sessionsText(_ row: LoadoutRow) -> String {
+    /// The text before the logos: "142 sessions", "unmeasurable", "counting" while the scan runs. Nil for a subagent that never
+    /// ran: the row's warning mark says that (D69).
+    static func sessionsText(_ row: LoadoutRow) -> String? {
         let usage = row.skillUsage
         switch usage.state {
         case .ran: return SkillsWording.sessions(usage.sessions ?? 0)
-        case .neverRan: return "never ran"
+        case .neverRan: return nil
         case .unmeasurable: return "unmeasurable"
         case .loading: return "counting"
         }
@@ -79,13 +79,6 @@ enum SubagentsWording {
     /// sentence is read before the click.
     static func detailLines(for row: LoadoutRow, adding target: CoreCLI?, now: Date) -> [String] {
         lines(for: row, now: now) + (target.map { [copyNote(to: $0)] } ?? [])
-    }
-
-    /// The sentences under the `In one CLI only` list: one per CLI a row there would be added to, in list order.
-    static func addableNotes(_ addable: SubagentsAddable) -> [String] {
-        var targets: [CoreCLI] = []
-        for entry in addable.entries where !targets.contains(entry.target) { targets.append(entry.target) }
-        return targets.map { copyNote(to: $0) }
     }
 
     // MARK: Toasts (V5-R38)

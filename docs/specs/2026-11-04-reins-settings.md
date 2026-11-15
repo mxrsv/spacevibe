@@ -33,7 +33,7 @@ Mock, outside git: `~/scratch/spacevibe-reins/settings/index.html` (synthetic da
     dark, half light). The chosen tile takes the `selection` fill.
   - Font size: Small, Default, Large in a segmented control in the card header, over two Loadout rows that show the
     size.
-  - Language: the value "English" in the card header, no control, until a second language exists.
+  - Language: no card while English is the only language (dropped 2026-11-15, D69 in `2026-11-06-reins-linear-identity-decisions.md`).
 - **Update.**
   - A lead card: the Reins mark, "Reins <version>" and "Build <build>", a status tag with the time of the last check,
     and one button.

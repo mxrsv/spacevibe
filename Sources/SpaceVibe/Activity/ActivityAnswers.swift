@@ -84,9 +84,9 @@ struct ActivityAnswer: Equatable, Sendable {
         let file = top.file
         return ActivityAnswer(
             sentence: "\(top.name) is the most-edited file.",
-            verdict: Verdict(targetID: top.id, title: "Edited \(file.edits == 1 ? "once" : "\(file.edits) times")",
-                             text: "Across \(ActivityFormat.plural(file.sessions, "session")), last edit \(ActivityFormat.ago(file.last, now: query.now)).",
-                             small: file.path),
+            // The edit count sits on the file's row and the full path in its popover (D69), so the verdict carries neither.
+            verdict: Verdict(targetID: top.id, title: "Last edit \(ActivityFormat.ago(file.last, now: query.now))",
+                             text: "Across \(ActivityFormat.plural(file.sessions, "session")).", small: nil),
             more: 0)
     }
 }
@@ -121,12 +121,6 @@ enum ActivityFigures {
         guard let first, let last else { return nil }
         let from = ActivityFormat.shortDay(first, calendar: calendar), to = ActivityFormat.shortDay(last, calendar: calendar)
         return from == to ? from : "\(from) to \(to)"
-    }
-
-    /// The Failed spine's count: "5 commands, Oct 25 to Nov 7".
-    static func failedCount(_ query: ActivityQuery, calendar: Calendar = .current) -> String {
-        let n = ActivityFormat.plural(query.failures.count, "command")
-        return failedRange(query.failures, calendar: calendar).map { "\(n), \($0)" } ?? n
     }
 
     /// The `Passed later` card: one sentence, nothing about a fix (one pass is not proof). Nil when no command passed later.

@@ -248,19 +248,19 @@ enum RulesTabShots {
             let written = fixture.filter { RuleFamily.of(tool: RulesSynthetic.rule($0.rule, $0.verdict).tool) == band.family }
             try ShotHarness.check(band.rules.count == written.count, "\(band.family.title) lists \(written.count) rules")
             guard variant != .both else { continue }
-            try ShotHarness.check(band.fact?.text == (band.family == .bash || band.family == .edit ? "Sandbox: \(sandbox)" : nil), "\(band.family.title)'s Codex cell reads the config's sandbox_mode (\(sandbox))")
+            try ShotHarness.check(band.fact?.text == (band.family == .bash || band.family == .edit ? "Sandbox: \(sandbox)" : nil), "\(band.family.title)'s Codex fact reads the config's sandbox_mode (\(sandbox))")
         }
         print("trace: Answer \"\(page.answer.sentence ?? "nil")\", family \(page.answer.family?.family.title ?? "none"), Codex note \"\(page.reading.note ?? "none")\"")
         switch variant {
         case .standard:
             try ShotHarness.check(page.answer.sentence == "Codex's sandbox is workspace-write, so it opens or closes no tool outright." && !page.layout.hasComparison && page.layout.redundant.isEmpty,
                                   "the default fixture's workspace sandbox is neither open nor off for any family, so nothing is compared")
-            try ShotHarness.check(page.reading.note == "Codex is read only here. Approval policy on-request, from ~/.codex/config.toml.", "the note reads approval_policy")
+            try ShotHarness.check(page.reading.note == "Codex is read only here. Sandbox workspace-write, approval policy on-request, from ~/.codex/config.toml.", "the note reads sandbox_mode and approval_policy")
         case .unrestricted:
             try ShotHarness.check(page.answer.sentence == "No tool is open in one CLI and denied in the other." && page.layout.hasComparison,
                                   "Edit(~/.ssh/**) is a path rule: Edit/Write is compared with Codex's full access and is no mismatch (C1)")
             try ShotHarness.check(page.layout.mismatches.isEmpty && page.layout.bands.allSatisfy { !$0.holdsProblem }, "no family is flagged")
-            try ShotHarness.check(page.reading.note == "Codex is read only here. Approval policy never, from ~/.codex/config.toml.", "the note reads approval_policy never")
+            try ShotHarness.check(page.reading.note == "Codex is read only here. Sandbox danger-full-access, approval policy never, from ~/.codex/config.toml.", "the note reads sandbox_mode and approval_policy never")
         case .both:
             try ShotHarness.check(page.answer.sentence == "Nothing to compare: Codex has two permission models set.", "two models: nothing is compared")
             try ShotHarness.check(page.layout.bands.allSatisfy { $0.fact == nil }, "two models: no Codex cell")

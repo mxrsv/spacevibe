@@ -256,9 +256,7 @@ extension Metrics {
         static let limitsSmallMaxHeight: CGFloat = 380
         static let spineMaxHeight: CGFloat = 680
         static let rulesSmallMaxHeight: CGFloat = 304
-        /// Subagents' `In one CLI only`: the kit sets no cap, so it takes what the canvas leaves, up to the spine's height.
-        static let subagentsSmallMaxHeight: CGFloat = 680
-        /// Hooks' `Missing in Codex` and `Can't copy to Codex`: the kit sets no cap either.
+        /// Hooks' `Missing in Codex`: the kit sets no cap either.
         static let hooksSmallMaxHeight: CGFloat = 680
     }
 
@@ -351,8 +349,6 @@ extension Metrics {
     /// The Subagents spine row: the sessions text before the logos.
     enum Subagents {
         static let sessionsWidth: CGFloat = 96
-        /// The "Not listed" note under `In one CLI only`: 8 above it.
-        static let noteTop: CGFloat = 8
     }
 
     /// The Activity page's row columns (`b-activity`): a session's project (112) and state (104), a failure's reason (up to 176),
@@ -409,9 +405,8 @@ extension Metrics {
         static let barMinWidth: CGFloat = 96
         /// A Next resets row: the time before the logo.
         static let resetTime: CGFloat = 72
-        /// The Source card: between its lines, and between its two buttons.
+        /// The Source card: between its lines.
         static let sourceLineSpacing: CGFloat = 8
-        static let sourceActionSpacing: CGFloat = 8
     }
 
     enum Menu {
@@ -468,13 +463,9 @@ extension Metrics {
         static let fileRowHeight: CGFloat = 32
         static let meterPadding: CGFloat = 16
         static let meterBarHeight: CGFloat = 8
-        /// The head: the tile 16 before the name; the name 8 before the plugin tag; the meta line 2 under the name, its
-        /// parts 8 apart around a 2 pt dot.
+        /// The head: the tile 16 before the name; the name 8 before the plugin tag.
         static let headSpacing: CGFloat = 16
         static let nameSpacing: CGFloat = 8
-        static let metaAbove: CGFloat = 2
-        static let metaSpacing: CGFloat = 8
-        static let metaDot: CGFloat = 2
         /// The plugin tag: 20 high, 6 at the sides, the lock 12, 4 apart.
         static let tagHeight: CGFloat = 20
         static let tagPadding: CGFloat = 6

@@ -271,8 +271,6 @@ struct ActivityAnswersTests {
         untimed.first = nil
         untimed.last = nil
         #expect(ActivityFigures.failedRange([ActivityFailureItem(failure: untimed)], calendar: Self.calendar) == nil)
-        let q = query(report(failures: [failure("1", first: 24 * 13, last: 5), failure("2")]))
-        #expect(ActivityFigures.failedCount(q, calendar: Self.calendar) == "2 commands, Oct 26 to Nov 8")
     }
 
     @Test("a title the core cut at 120 characters is not whole")
@@ -290,7 +288,7 @@ struct ActivityAnswersTests {
         let answer = ActivityAnswer.files(q)
         #expect(answer.sentence == "c.ts is the most-edited file.")
         #expect(q.files.first?.id == "/work/c.ts", "a tie goes to the later edit")
-        #expect(answer.verdict?.title == "Edited 23 times" && answer.verdict?.small == "/work/c.ts")
+        #expect(answer.verdict?.title.hasPrefix("Last edit ") == true && answer.verdict?.small == nil)
         #expect(ActivityAnswer.files(query(report())).sentence == "No file edits are in the session logs.")
     }
 

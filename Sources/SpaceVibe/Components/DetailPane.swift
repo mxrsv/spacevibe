@@ -18,16 +18,14 @@ struct DetailPane<Content: View>: View {
     }
 }
 
-/// The pane's head: a 48 tile holding the category glyph in its colour, the name (20/28 600) with the plugin tag, the meta
-/// line, and the logo strip at the right.
+/// The pane's head: a 48 tile holding the category glyph in its colour, the name (20/28 600) with the plugin tag, and the
+/// logo strip at the right. The tab and the scope picker already say "Skill" and the scope, so the head does not (D69).
 struct PaneHead<Strip: View>: View {
     let name: String
     let glyph: any GlyphSource
     let tone: TabTone
     /// "plugin: neon" when a plugin owns the item.
     var pluginTag: String?
-    /// "Skill", "Global": the meta line's parts, with a 2 pt dot between them.
-    let meta: [String]
     @ViewBuilder var strip: Strip
 
     var body: some View {
@@ -36,18 +34,9 @@ struct PaneHead<Strip: View>: View {
                 .frame(width: Metrics.DetailPane.headTile, height: Metrics.DetailPane.headTile)
                 .blockSurface(Palette.bgRaise, edge: Palette.hair2)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: Metrics.DetailPane.metaAbove) {
-                HStack(spacing: Metrics.DetailPane.nameSpacing) {
-                    Text(name).spaceVibeText(.heading, tone: .primary).lineLimit(1).truncationMode(.tail).lineBox(.heading)
-                    if let pluginTag { PaneTag(pluginTag) }
-                }
-                HStack(spacing: Metrics.DetailPane.metaSpacing) {
-                    ForEach(Array(meta.enumerated()), id: \.offset) { index, part in
-                        if index > 0 { Circle().fill(Palette.fg4).frame(width: Metrics.DetailPane.metaDot, height: Metrics.DetailPane.metaDot) }
-                        Text(part).spaceVibeText(.meta, tone: .tertiary).lineLimit(1).lineBox(.meta)
-                    }
-                }
-                .accessibilityElement(children: .combine)
+            HStack(spacing: Metrics.DetailPane.nameSpacing) {
+                Text(name).spaceVibeText(.heading, tone: .primary).lineLimit(1).truncationMode(.tail).lineBox(.heading)
+                if let pluginTag { PaneTag(pluginTag) }
             }
             Spacer(minLength: 0)
             strip.padding(.top, Metrics.Radius.edge * 2)
@@ -116,7 +105,8 @@ struct SessionMeter: Equatable {
     let figure: Int?
     /// 0 to 1 over the busiest skill; nil draws the dashed line.
     let share: Double?
-    let caption: String
+    /// The line under the bar; nil draws none ("Not in Codex" already says it in the head).
+    let caption: String?
     /// The part of the caption read in `fg2`: "Last ran" then "2 days ago".
     let emphasis: String?
 
@@ -161,10 +151,13 @@ private struct MeterColumn: View {
         .lineBox(.answer)
     }
 
+    @ViewBuilder
     private var caption: some View {
-        let text = meter.emphasis.map { Text("\(meter.caption) ") .spaceVibeText(.meta, tone: .tertiary) + Text($0).spaceVibeText(.meta, tone: .secondary) }
-            ?? Text(meter.caption).spaceVibeText(.meta, tone: .tertiary)
-        return text.fixedSize(horizontal: false, vertical: true).lineBox(.meta)
+        if let line = meter.caption {
+            let text = meter.emphasis.map { Text("\(line) ").spaceVibeText(.meta, tone: .tertiary) + Text($0).spaceVibeText(.meta, tone: .secondary) }
+                ?? Text(line).spaceVibeText(.meta, tone: .tertiary)
+            text.fixedSize(horizontal: false, vertical: true).lineBox(.meta)
+        }
     }
 
     private var spoken: String {

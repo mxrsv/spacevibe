@@ -1,6 +1,6 @@
 import Foundation
 
-/// The counts the Agents page shows: one per tab and the total the sidebar's Agents item carries. A count is nil until the
+/// The counts the Agents page shows, one per tab (the sidebar's Agents item carries none, D69). A count is nil until the
 /// read it comes from has landed, and stays nil when that read failed, so the UI never shows a 0 it does not know (V5-R75).
 ///
 /// Skills, subagents and hooks are the rows of the global scope that `loadout.rows` returns (a skill present in both CLIs is
@@ -10,8 +10,6 @@ struct AgentsCounts: Equatable {
     var subagents: Int?
     var hooks: Int?
     var rules: Int?
-    /// Skills, subagents and hooks together: the sidebar's Agents count.
-    var total: Int?
 
     init(loadout: LoadoutData?, rules: Int?) {
         self.rules = rules
@@ -21,7 +19,6 @@ struct AgentsCounts: Equatable {
         skills = count(.skill)
         subagents = count(.agent)
         hooks = count(.hook)
-        total = loadout.globalCount
     }
 
     func count(for category: AgentsCategory) -> Int? {

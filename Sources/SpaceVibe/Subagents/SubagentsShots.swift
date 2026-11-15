@@ -235,7 +235,7 @@ enum SubagentsShots {
                 default: throw ShotHarness.Failure("\(entry.name) \(cli.label): cell \(cell) is neither counted nor newly added")
                 }
             }
-            print("trace: \(entry.name) row text \"\(SubagentsWording.sessionsText(row))\", slot \(SubagentsWording.slot(for: row)?.mark.label ?? "none")")
+            print("trace: \(entry.name) row text \"\(SubagentsWording.sessionsText(row) ?? "")\", slot \(SubagentsWording.slot(for: row)?.mark.label ?? "none")")
         }
         let answer = model.answer
         print("trace: Answer \"\(answer.sentence ?? "nil")\", verdict \(answer.verdict?.name ?? "none"): \(answer.verdict?.text ?? "") \(answer.verdict?.small ?? ""), more \(answer.more)")
@@ -246,9 +246,9 @@ enum SubagentsShots {
         try ShotHarness.check(order == ["Claude Code only: architect, typescript-reviewer, react-reviewer, database-reviewer", "In both: security-reviewer"],
                               "the band holding the never-ran subagent comes first; rows by sessions")
         let addable = model.addable
-        print("trace: In one CLI only \(addable.entries.map(\.row.name).joined(separator: ", ")); not listed \(addable.leftOut.joined(separator: ", "))")
-        try ShotHarness.check(addable.entries.map(\.row.name) == ["typescript-reviewer", "react-reviewer", "database-reviewer"]
-                              && addable.leftOut == ["architect (never ran)"], "In one CLI only lists the three that ran; the never-ran one is named as left out")
+        print("trace: addable \(addable.entries.map(\.row.name).joined(separator: ", "))")
+        try ShotHarness.check(addable.entries.map(\.row.name) == ["typescript-reviewer", "react-reviewer", "database-reviewer"],
+                              "Add to Codex is offered for the three that ran in one CLI; the never-ran one is not")
         try ShotHarness.check(model.detected == [.claude, .codex], "the logo strip lists the detected CLIs")
         try ShotHarness.check(page.counts.subagents == rows.count, "the tab's count is the number of subagents listed")
         print("trace: usage note \(page.loadout.usageNote)")

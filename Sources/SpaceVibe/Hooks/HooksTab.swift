@@ -104,11 +104,9 @@ struct HooksCanvas: View {
             }
         } else {
             let missing = model.missing
-            let cantCopy = model.cantCopy
             SplitCanvas {
                 answerCard(model.answer)
                 if !missing.isEmpty { missingCard(missing) }
-                if !cantCopy.isEmpty { cantCopyCard(cantCopy) }
             } spine: {
                 spineCard(layout, current: current)
             }
@@ -168,22 +166,6 @@ struct HooksCanvas: View {
         }
     }
 
-    private func cantCopyCard(_ cantCopy: HooksCantCopy) -> some View {
-        Tile("Can't copy to Codex", count: "\(cantCopy.entries.count) \(cantCopy.entries.count == 1 ? "hook" : "hooks")",
-             maxHeight: Metrics.Tile.hooksSmallMaxHeight, isOpen: open("cantcopy")) {
-            ListRows {
-                ForEach(cantCopy.entries) { entry in
-                    ListRow(entry.row.hookTitle, onActivate: { model.reveal(entry.row.key, store: store) },
-                            accessibilityName: "\(entry.row.hookTitle), \(HooksWording.short(entry.block))") {
-                        MetaCell(text: HooksWording.short(entry.block))
-                    }
-                }
-            }
-        } actions: {
-            WhyButton(model: model, entries: cantCopy.entries)
-        }
-    }
-
     // MARK: The spine
 
     private func spineCard(_ layout: HooksQuery.Layout, current: LoadoutRow?) -> some View {
@@ -212,9 +194,9 @@ struct HooksCanvas: View {
                     }
                 }
             }
-            let notShown = model.notShown
-            if !notShown.isEmpty {
-                Text(notShown.joined(separator: " "))
+            let notes = model.notShown + model.spineNotes
+            if !notes.isEmpty {
+                Text(notes.joined(separator: " "))
                     .spaceVibeText(.metaLine, tone: .tertiary)
                     .fixedSize(horizontal: false, vertical: true)
                     .lineBox(.metaLine)
@@ -345,31 +327,5 @@ struct HooksCanvas: View {
             HiddenKey(KeyboardShortcut("/", modifiers: [])) { model.isFilterOpen = true }
             if model.detailKey != nil { HiddenKey(KeyboardShortcut(.escape, modifiers: [])) { model.detailKey = nil } }
         }
-    }
-}
-
-/// `Why` in the header of `Can't copy to Codex` (V5-R65): a 28-high button that opens the popover of the reasons under itself.
-private struct WhyButton: View {
-    @Bindable var model: HooksModel
-    let entries: [HooksCantCopy.Entry]
-
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        Button { model.isWhyOpen.toggle() } label: { ActionLabel("Why") }
-            .buttonStyle(ActionButtonStyle(size: .compact))
-            .focused($focused)
-            .accessibilityLabel("Why these hooks can't go to Codex")
-            .anchoredOverlay(isPresented: model.isWhyOpen, id: "hooks.why", placement: .popover, onOutsideTap: { model.isWhyOpen = false }) {
-                PopoverSurface(onExit: {
-                    model.isWhyOpen = false
-                    focused = true
-                }) {
-                    PopoverHead(name: "Why these stay in Claude Code") { EmptyView() }
-                    VStack(alignment: .leading, spacing: Metrics.Popover.actionSpacing) {
-                        ForEach(HooksWording.why(entries), id: \.self) { PopoverSentence($0) }
-                    }
-                }
-            }
     }
 }

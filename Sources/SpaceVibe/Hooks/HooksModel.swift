@@ -15,8 +15,6 @@ final class HooksModel {
     var currentKey: String?
     /// The row whose detail popover is open (V5-R57).
     var detailKey: String?
-    /// The `Why` popover of `Can't copy to Codex` is open.
-    var isWhyOpen = false
     /// `<row key>:<cli>` of the logos just pressed: they play the pop once (V5-R42 drops it under reduced motion).
     private(set) var changed: Set<String> = []
     var isFilterOpen = false
@@ -72,6 +70,13 @@ final class HooksModel {
     var problems: [String] { AgentsPage.problems(in: loadout.data) }
 
     /// The core's lines about hooks it does not list (a handler other than `command`), so the tab's count is not read as all of them.
+    /// The one line under the bands that says a Claude Code hook stays there, while SpaceVibe writes no Codex hooks (D69: it
+    /// replaces the `Can't copy to Codex` card, which listed every such hook with the same reason).
+    var spineNotes: [String] {
+        let notWritten = cantCopy.entries.contains { if case .notWritten = $0.block { true } else { false } }
+        return notWritten ? [HooksWording.long(.notWritten(.codex))] : []
+    }
+
     var notShown: [String] { (loadout.data?.problems ?? []).filter(HooksWording.isOtherTypesProblem) }
 
     // MARK: Current row and the detail

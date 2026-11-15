@@ -43,7 +43,7 @@ enum HooksWording {
 
     // MARK: The copy rule's sentences
 
-    /// The reason in a few words, for a row of `Can't copy to Codex`.
+    /// The reason in a few words.
     static func short(_ block: LoadoutRows.HookCopyBlock) -> String {
         switch block {
         case .notInstalled(let cli): "\(cli.label) is not installed"
@@ -65,7 +65,7 @@ enum HooksWording {
         }
     }
 
-    /// The order the reasons list in, in the card and in the `Why` popover.
+    /// The order `HooksCantCopy` lists the reasons in.
     static func order(_ block: LoadoutRows.HookCopyBlock) -> Int {
         switch block {
         case .notInstalled: 0
@@ -74,31 +74,6 @@ enum HooksWording {
         case .plugin: 3
         case .notWritten: 4
         }
-    }
-
-    /// The `Why` popover: one paragraph per reason that some listed hook has. The Codex facts are the inventory's own lists and the
-    /// core's own refusal; whether Codex would load a hook SpaceVibe wrote is not verified.
-    static func why(_ entries: [HooksCantCopy.Entry]) -> [String] {
-        var seen: Set<Int> = []
-        var out: [String] = []
-        for entry in entries where seen.insert(order(entry.block)).inserted {
-            switch entry.block {
-            case .noEvent:
-                let events = Array(Set(entries.compactMap { entry -> String? in
-                    if case .noEvent(_, let event) = entry.block { event } else { nil }
-                })).sorted()
-                out.append("Codex has no \(list(events)) \(events.count == 1 ? "event" : "events") in the list SpaceVibe reads (unverified), so a hook on \(events.count == 1 ? "it" : "them") has nothing to fire on.")
-            case .scriptGone: out.append("A hook whose script is gone has nothing to copy.")
-            case .plugin: out.append("A plugin's hook is read-only: SpaceVibe does not copy it.")
-            case .notWritten: out.append("SpaceVibe does not write hooks into Codex. Codex runs a hook only after it is reviewed and trusted (Codex's hooks page), so a hook SpaceVibe wrote would not run until then.")
-            case .notInstalled: out.append("Codex is not installed on this Mac.")
-            }
-        }
-        return out
-    }
-
-    private static func list(_ items: [String]) -> String {
-        items.count < 2 ? items.joined() : items.dropLast().joined(separator: ", ") + " or " + (items.last ?? "")
     }
 
     // MARK: The detail popover (V5-R57, V5-R66)

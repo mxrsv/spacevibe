@@ -51,7 +51,6 @@ enum HooksShots {
             model.query = HooksQuery()
             model.detailKey = nil
             model.isFilterOpen = false
-            model.isWhyOpen = false
             model.currentKey = nil
         }
         /// A page over in-memory rows: the state the fixture cannot show.
@@ -112,8 +111,6 @@ enum HooksShots {
             openBand.setOpen(true, page: HooksModel.page, id: "event:PermissionRequest")
             try snap("hooks-sample-detail", page: sample, store: openBand) { if let codexOnly { sampleModel.open(codexOnly.key) } }
             sampleModel.detailKey = nil
-            try snap("hooks-sample-why", page: sample) { sampleModel.isWhyOpen = true }
-            sampleModel.isWhyOpen = false
             try snap("hooks-sample-clock", shownSlot: codexOnly.map(HooksCanvas.slotID), page: sample, store: openBand)
             // Every band of the sample open.
             let allOpen = OpenStateStore()
@@ -195,7 +192,7 @@ enum HooksShots {
         let bands = model.layout.bands.map { "\($0.event)\($0.lead.map { " (\($0.label) only)" } ?? ""): \($0.rows.map(\.hookTitle).joined(separator: ", "))" }
         print("trace: bands \(bands.joined(separator: " | "))")
         let cant = model.cantCopy.entries.map { "\($0.row.hookTitle) (\(HooksWording.short($0.block)))" }
-        print("trace: Can't copy to Codex \(cant.joined(separator: ", ")); Missing in Codex \(model.missing.rows.map(\.hookTitle))")
+        print("trace: stays in Claude Code \(cant.joined(separator: ", ")); spine notes \(model.spineNotes); Missing in Codex \(model.missing.rows.map(\.hookTitle))")
         try ShotHarness.check(model.missing.isEmpty, "SpaceVibe writes no hook into Codex, so nothing is \"missing in Codex\" that it could copy")
         try ShotHarness.check(page.counts.hooks == rows.count, "the tab's count is the number of hooks listed")
         try ShotHarness.check(model.detected == [.claude, .codex], "the logo strip lists the detected CLIs")

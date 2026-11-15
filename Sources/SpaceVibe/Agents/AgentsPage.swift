@@ -3,7 +3,7 @@ import Observation
 import SwiftUI
 
 /// The Agents page (V5-R49): one sidebar page holding the tabs Skills, Subagents, Hooks and Rules. It owns the models the
-/// tabs read (`LoadoutModel` for the first three, `RulesModel`), so the sidebar's count and each tab's count come from real reads
+/// tabs read (`LoadoutModel` for the first three, `RulesModel`), so each tab's count comes from real reads
 /// on every tab. Building it reads nothing; the page's first appearance starts the reads.
 @MainActor
 @Observable
@@ -60,16 +60,6 @@ final class AgentsPage: SpaceVibeTab {
     static let shownProblems = 5
 
     var counts: AgentsCounts { AgentsCounts(loadout: loadout.data, rules: rules.badge) }
-
-    /// The total of skills, subagents and hooks.
-    var badge: TabBadge? {
-        counts.total.map { TabBadge(value: $0, spoken: Self.spokenTotal($0)) }
-    }
-
-    /// What VoiceOver says after "Agents": the three kinds the total counts, never a generic "items" (V5-R45).
-    static func spokenTotal(_ total: Int) -> String {
-        total == 1 ? "1 skill, subagent or hook" : "\(total) skills, subagents and hooks"
-    }
 
     /// The status bar's keys and data source follow the selected tab; a tab not built yet lists none.
     var hints: [KeyHint] {

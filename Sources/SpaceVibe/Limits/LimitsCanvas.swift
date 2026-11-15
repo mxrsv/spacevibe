@@ -135,11 +135,8 @@ struct LimitsCanvas: View {
                         .lineBox(.metaLine)
                 }
             }
-            HStack(spacing: Metrics.Limits.sourceActionSpacing) {
-                Button(action: refresh) { ActionLabel("Refresh", key: Self.refreshCap) }
-                Button(action: toggleUnused) { ActionLabel(model.showInactive ? "Hide unused" : "Show unused", key: "U") }
-            }
-            .buttonStyle(ActionButtonStyle())
+            Button(action: toggleUnused) { ActionLabel(model.showInactive ? "Hide unused" : "Show unused", key: "U") }
+                .buttonStyle(ActionButtonStyle())
             Text("Current snapshot only. No history.").spaceVibeText(.metaLine, tone: .tertiary).lineBox(.metaLine)
         }
     }

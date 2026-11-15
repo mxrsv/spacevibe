@@ -196,7 +196,6 @@ struct HooksModelTests {
         #expect(card.entries.map(\.row.hookTitle) == ["failure.sh", "gone.sh", "stop.sh"])
         #expect(card.entries.map { HooksWording.short($0.block) } == ["No PostToolUseFailure event", "Script is gone", "SpaceVibe doesn't write Codex hooks"])
         #expect(HooksCantCopy(rows([spec("shared", "Stop", both)]), context: context()).isEmpty)
-        #expect(HooksWording.why(card.entries).count == 3)
     }
 
     @Test("Missing in Codex is empty while Codex takes no hook; with it on, the rows are the ones the rule lets through")

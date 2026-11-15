@@ -150,12 +150,12 @@ struct LimitsAnswerTests {
         #expect(facts.bands[1].staleAge == nil)
     }
 
-    @Test("Gemini CLI is never measured: its band says so, its source line says no log, and it never enters the Answer")
+    @Test("Gemini CLI is never measured: its band says so, it has no source line, and it never enters the Answer")
     func geminiNotMeasurable() {
         let facts = answer(typical)
         #expect(facts.bands[2].body == .note("Not measurable. Gemini CLI exposes no usage numbers.", nil))
         #expect(facts.bands[2].count == nil)
-        #expect(facts.sources[2] == LimitsAnswer.SourceLine(cli: .gemini, name: "Gemini CLI", state: "no log"))
+        #expect(!facts.sources.contains { $0.cli == .gemini })
         #expect(facts.sentence?.contains("Gemini") == false)
     }
 
@@ -165,7 +165,7 @@ struct LimitsAnswerTests {
         #expect(facts.bands[0].body == .note("Can't read usage from local files.", .retry))
         #expect(facts.bands[0].mark == LimitsAnswer.Mark(kind: .warn, label: "Unreadable"))
         #expect(facts.bands[1].body == .note("Not installed. SpaceVibe found no Codex on this Mac.", nil))
-        #expect(facts.sources.map(\.state) == ["no reading", "not installed", "no log"])
+        #expect(facts.sources.map(\.state) == ["no reading", "not installed"])
         #expect(facts.sentence == "No reading yet.")
     }
 

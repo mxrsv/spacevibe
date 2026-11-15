@@ -95,16 +95,16 @@ struct RuleFamiliesTests {
         #expect(CodexReading(codex: nil, installed: true) == .unknown(.notRead))
     }
 
-    @Test("the note under the bands names the approval policy as written, 'granular' for the table form, 'not set' when absent, and hides free text")
+    @Test("the note under the bands names the sandbox and the approval policy as written, 'granular' for the table form, 'not set' when absent, and hides free text")
     func note() {
         func note(_ approval: String?) -> String? { CodexReading(codex: RulesSynthetic.codex(approval: approval), installed: true).note }
-        #expect(note("on-request") == "Codex is read only here. Approval policy on-request, from ~/.codex/config.toml.")
-        #expect(note(nil) == "Codex is read only here. Approval policy not set, from ~/.codex/config.toml.")
-        #expect(note("My Token 1234") == "Codex is read only here. Approval policy \(CodexWording.hiddenText), from ~/.codex/config.toml.")
+        #expect(note("on-request") == "Codex is read only here. Sandbox workspace-write, approval policy on-request, from ~/.codex/config.toml.")
+        #expect(note(nil) == "Codex is read only here. Sandbox workspace-write, approval policy not set, from ~/.codex/config.toml.")
+        #expect(note("My Token 1234") == "Codex is read only here. Sandbox workspace-write, approval policy \(CodexWording.hiddenText), from ~/.codex/config.toml.")
         var granular = RulesSynthetic.codex()
         granular.approvalPolicy = .granular([])
-        #expect(CodexReading(codex: granular, installed: true).note == "Codex is read only here. Approval policy granular, from ~/.codex/config.toml.")
-        #expect(Self.reading(installed: false).note == nil && Self.reading(notReadable: true).note == nil)
+        #expect(CodexReading(codex: granular, installed: true).note == "Codex is read only here. Sandbox workspace-write, approval policy granular, from ~/.codex/config.toml.")
+        #expect(Self.reading(installed: false).note == "Codex is not installed on this Mac." && Self.reading(notReadable: true).note == nil)
         #expect(Self.reading(model: .both).note?.contains("two permission models") == true)
     }
 

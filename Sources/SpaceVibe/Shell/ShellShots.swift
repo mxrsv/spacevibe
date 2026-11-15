@@ -14,7 +14,7 @@ enum ShellShots {
         page.start()
         Task { await env.limits.readOnce() }
         try ShotHarness.wait("the counts and the CLI reads") {
-            page.counts.total != nil && page.counts.rules != nil && env.limits.readAt != nil
+            page.counts.skills != nil && page.counts.rules != nil && env.limits.readAt != nil
         }
         try check(page: page, limits: env.limits.results)
 
@@ -49,10 +49,9 @@ enum ShellShots {
     /// The V5-A20 trace: the numbers the sidebar and the tabs show equal what the engine returned for this fixture.
     private static func check(page: AgentsPage, limits: [CoreLimitsEntry]) throws {
         let counts = page.counts
-        print("trace: skills \(counts.skills.map(String.init) ?? "-"), subagents \(counts.subagents.map(String.init) ?? "-"), hooks \(counts.hooks.map(String.init) ?? "-"), rules \(counts.rules.map(String.init) ?? "-"), total \(counts.total.map(String.init) ?? "-")")
-        try ShotHarness.check(counts.skills != nil && counts.total == (counts.skills ?? 0) + (counts.subagents ?? 0) + (counts.hooks ?? 0),
-                              "the Agents total is the skills, subagents and hooks together")
-        try ShotHarness.check(page.badge?.value == counts.total, "the sidebar's Agents count is that total")
+        print("trace: skills \(counts.skills.map(String.init) ?? "-"), subagents \(counts.subagents.map(String.init) ?? "-"), hooks \(counts.hooks.map(String.init) ?? "-"), rules \(counts.rules.map(String.init) ?? "-")")
+        try ShotHarness.check(counts.skills != nil, "the Agents tabs have their counts")
+        try ShotHarness.check(page.badge == nil, "the sidebar's Agents item carries no count (D69)")
         for entry in limits {
             let state = CLIStatusDerivation.state(of: entry)
             print("trace: \(entry.cli.label) limits \(entry.state.rawValue) -> \(state?.label ?? "no state drawn")")

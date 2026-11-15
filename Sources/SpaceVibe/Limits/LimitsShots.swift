@@ -23,7 +23,7 @@ enum LimitsShots {
         let agents = tabs.compactMap { $0 as? AgentsPage }.first
         agents?.start()
         Task { await env.limits.readOnce() }
-        try ShotHarness.wait("the Limits read and the Agents counts") { env.limits.readAt != nil && agents?.counts.total != nil }
+        try ShotHarness.wait("the Limits read and the Agents counts") { env.limits.readAt != nil && agents?.counts.skills != nil }
         try ShotHarness.check(env.limits.results.map(\.cli) == CoreLimitsCLI.allCases, "Limits read Claude Code, Codex and Gemini CLI, in that order")
         try trace(env.limits.results, now: Date())
 

@@ -51,7 +51,7 @@ struct RulesTabEngineTests {
         #expect(page.layout.bands.map(\.rules.count) == [7, 1, 2, 1] && page.layout.bands.flatMap(\.rules).count == model.badge, "the tab's count is the rows listed")
         #expect(page.layout.bands.map(\.stance.summary) == ["Allow 4 \u{00B7} Ask 2 \u{00B7} Deny 1", "Deny", "Allow 1 \u{00B7} Deny 1", "Allow"])
         #expect(page.layout.bands.map { $0.fact?.text } == ["Sandbox: workspace-write", "Sandbox: workspace-write", nil, nil])
-        #expect(page.reading.note == "Codex is read only here. Approval policy on-request, from ~/.codex/config.toml.")
+        #expect(page.reading.note == "Codex is read only here. Sandbox workspace-write, approval policy on-request, from ~/.codex/config.toml.")
         #expect(page.answer.sentence == "Codex's sandbox is workspace-write, so it opens or closes no tool outright." && !page.layout.hasComparison && page.layout.redundant.isEmpty)
     }
 

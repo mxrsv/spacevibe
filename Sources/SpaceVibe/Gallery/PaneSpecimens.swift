@@ -57,7 +57,7 @@ struct PaneSpecimens: View {
         let detected: [CoreCLI] = [.claude, .codex]
         let now = Date()
         return DetailPane {
-            PaneHead(name: row.name, glyph: CategoryGlyph.skill, tone: .skill, pluginTag: row.plugin.map { "plugin: \($0)" }, meta: ["Skill", "Global"]) {
+            PaneHead(name: row.name, glyph: CategoryGlyph.skill, tone: .skill, pluginTag: row.plugin.map { "plugin: \($0)" }) {
                 LogoStrip {
                     ForEach(detected, id: \.self) { cli in
                         LogoToggle(cli: CoreLimitsCLI(cli), isLit: row.members[cli] != nil, mode: row.plugin != nil ? .readOnly : .toggles) {}

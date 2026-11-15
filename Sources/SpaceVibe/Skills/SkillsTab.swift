@@ -113,7 +113,7 @@ struct SkillsCanvas: View {
                     SkillsList(model: model, layout: layout, current: current, detected: detected)
                 } pane: {
                     SkillsPane(model: model, row: current, detected: detected,
-                               status: current.map { model.status(of: $0, among: rows) } ?? .loading, scopeLabel: model.scopeLabel,
+                               status: current.map { model.status(of: $0, among: rows) } ?? .loading,
                                now: context.date)
                 } bar: {
                     bar(picked, detected: detected)

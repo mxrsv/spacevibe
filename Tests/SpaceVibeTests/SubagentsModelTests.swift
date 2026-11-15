@@ -88,7 +88,7 @@ struct SubagentsModelTests {
         #expect(result.sentence == "1 subagent never ran.")
         #expect(result.verdict?.text.hasPrefix("Installed in Claude Code.") == true)
         let addable = SubagentsAddable(list, detected: [.claude])
-        #expect(addable.isEmpty && addable.leftOut == ["architect (never ran)", "typescript-reviewer (Codex is not installed)"])
+        #expect(addable.entries.isEmpty)
     }
 
     @Test("a plugin's subagent that never ran is counted, but its verdict offers no Remove")
@@ -149,8 +149,8 @@ struct SubagentsModelTests {
     func sessionsText() {
         #expect(SubagentsWording.sessionsText(row("a", claude: counted(142))) == "142 sessions")
         #expect(SubagentsWording.sessionsText(row("a", claude: counted(1))) == "1 session")
-        #expect(SubagentsWording.sessionsText(row("a", claude: counted(0))) == "never ran")
-        #expect(SubagentsWording.sessionsText(row("a", claude: SkillRowsFixture.addedToday)) == "never ran")
+        #expect(SubagentsWording.sessionsText(row("a", claude: counted(0))) == nil)
+        #expect(SubagentsWording.sessionsText(row("a", claude: SkillRowsFixture.addedToday)) == nil)
         #expect(SubagentsWording.sessionsText(row("a", claude: SkillRowsFixture.noLogs)) == "unmeasurable")
         #expect(SubagentsWording.sessionsText(row("a", claude: SkillRowsFixture.scanning)) == "counting")
         #expect(SubagentsWording.sessionsText(row("a", claude: counted(5), codex: counted(2))) == "7 sessions", "every CLI that counted")
@@ -164,7 +164,7 @@ struct SubagentsModelTests {
         #expect(SubagentsWording.presence(list) == "In both CLIs" && SubagentsWording.presence(row("a", codex: counted(1))) == "Codex only")
     }
 
-    @Test("the copy sentence is read before Add: in the popover of an addable row and under the In one CLI only list (G10)")
+    @Test("the copy sentence is read before Add, in the popover of an addable row (G10)")
     func copyNoteBeforeAdd() {
         let claudeOnly = row("a", claude: counted(5))
         let toCodex = "A copy added to Codex carries its name, description and instructions, not its model or tools."
@@ -174,9 +174,6 @@ struct SubagentsModelTests {
         #expect(SubagentsWording.detailLines(for: claudeOnly, adding: .codex, now: SkillRowsFixture.now).last == toCodex)
         #expect(SubagentsWording.detailLines(for: claudeOnly, adding: nil, now: SkillRowsFixture.now) == SubagentsWording.lines(for: claudeOnly, now: SkillRowsFixture.now),
                 "a row with no Add offers no copy sentence")
-        let addable = SubagentsAddable([claudeOnly, row("b", codex: counted(2))], detected: [.claude, .codex])
-        #expect(SubagentsWording.addableNotes(addable) == [toCodex, toClaude])
-        #expect(SubagentsWording.addableNotes(SubagentsAddable([], detected: [.claude, .codex])).isEmpty)
     }
 
     // MARK: Filters (V5-R64)
@@ -209,7 +206,7 @@ struct SubagentsModelTests {
 
     // MARK: The addable rule (V5-R63)
 
-    @Test("In one CLI only: one CLI, the other installed, no plugin, did not go unused; most sessions first; the rest named with the reason")
+    @Test("addable: one CLI, the other installed, no plugin, did not go unused; most sessions first")
     func addable() {
         let list = rows([("ran-small", counted(2), nil, "user"), ("ran-big", counted(30), nil, "user"), ("never", counted(0), nil, "user"),
                          ("plug", counted(9), nil, "neon"), ("x-only", nil, counted(5), "user"), ("both", counted(1), counted(1), "user"),
@@ -217,9 +214,8 @@ struct SubagentsModelTests {
         let result = SubagentsAddable(list, detected: both)
         #expect(result.entries.map(\.row.name) == ["ran-big", "x-only", "ran-small", "new"])
         #expect(result.entries.map(\.target) == [.codex, .claude, .codex, .codex])
-        #expect(result.leftOut == ["never (never ran)", "plug (plugin-owned)"])
-        #expect(SubagentsAddable(rows([("both", counted(1), counted(1), "user")]), detected: both).isEmpty, "the card is dropped when it has no row")
-        #expect(SubagentsAddable([row("x-only", codex: counted(5))], detected: [.codex]).leftOut == ["x-only (Claude Code is not installed)"])
+        #expect(SubagentsAddable(rows([("both", counted(1), counted(1), "user")]), detected: both).entries.isEmpty, "a row in both CLIs has nothing to add")
+        #expect(SubagentsAddable([row("x-only", codex: counted(5))], detected: [.codex]).entries.isEmpty, "the other CLI is not installed")
     }
 
     // MARK: Toasts (G10)

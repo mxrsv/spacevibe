@@ -106,14 +106,16 @@ enum CodexReading: Equatable, Sendable {
         if case .known(let codex) = self { codex } else { nil }
     }
 
-    /// "Codex is read only here. Approval policy <value>, from ~/.codex/config.toml." Only while the file was read.
+    /// The one line under the bands that says how Codex stands (the Codex column was dropped, D69): "Codex is read only here.
+    /// Sandbox <mode>, approval policy <value>, from ~/.codex/config.toml." while the file was read.
     var note: String? {
         switch self {
         case .known(let codex):
-            "Codex is read only here. Approval policy \(CodexWording.approval(codex).map(CodexWording.word) ?? "not set"), from ~/.codex/config.toml."
+            "Codex is read only here. Sandbox \(codex.sandboxMode.map(CodexWording.word) ?? "not set"), approval policy \(CodexWording.approval(codex).map(CodexWording.word) ?? "not set"), from ~/.codex/config.toml."
         case .unknown(let reason) where reason == .bothModels || reason == .profile:
             "Codex is read only here. \(reason.sentence) Its settings are not compared with these rules."
-        case .unknown, .notInstalled: nil
+        case .notInstalled: "Codex is not installed on this Mac."
+        case .unknown: nil
         }
     }
 }

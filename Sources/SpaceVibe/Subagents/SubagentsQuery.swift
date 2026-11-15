@@ -125,7 +125,7 @@ struct SubagentsQuery: Equatable, Sendable {
 
 // MARK: The addable rule (V5-R63)
 
-/// Which subagents `In one CLI only` offers `Add to <CLI>` for, and why the others are left out.
+/// Which subagents the detail popover offers `Add to <CLI>` for (the `In one CLI only` card was dropped, D69).
 struct SubagentsAddable: Equatable, Sendable {
     struct Entry: Equatable, Sendable, Identifiable {
         var id: String { row.key }
@@ -138,31 +138,22 @@ struct SubagentsAddable: Equatable, Sendable {
     /// Rows with exactly one CLI whose other CLI is on this Mac (`detected`), that no plugin owns and that did not go unused:
     /// most sessions first, then by name.
     var entries: [Entry]
-    /// "name (never ran)" for a one-CLI subagent that is left out, in list order.
-    var leftOut: [String]
 
     init(_ rows: [LoadoutRow], detected: [CoreCLI]) {
         var entries: [Entry] = []
-        var why: [String: String] = [:]
-        for row in rows.sorted(by: SubagentsQuery.rank) {
+        for row in rows {
             guard row.presentCLIs.count == 1, let here = row.presentCLIs.first else { continue }
             let target = here.other
-            if row.plugin != nil { why[row.key] = "plugin-owned" }
-            else if row.isUnused { why[row.key] = "never ran" }
-            else if !detected.contains(target) { why[row.key] = "\(target.label) is not installed" }
-            else if LoadoutRows.copyPlan(row, to: target, events: [:]) == nil { why[row.key] = "cannot be copied" }
-            else { entries.append(Entry(row: row, here: here, target: target)) }
+            guard row.plugin == nil, !row.isUnused, detected.contains(target),
+                  LoadoutRows.copyPlan(row, to: target, events: [:]) != nil else { continue }
+            entries.append(Entry(row: row, here: here, target: target))
         }
         self.entries = entries.sorted { a, b in
             let x = a.row.skillUsage.sessions ?? -1, y = b.row.skillUsage.sessions ?? -1
             if x != y { return x > y }
             return a.row.name.localizedCaseInsensitiveCompare(b.row.name) == .orderedAscending
         }
-        self.leftOut = rows.sorted(by: SubagentsQuery.rank).compactMap { row in why[row.key].map { "\(row.name) (\($0))" } }
     }
-
-    /// The card is dropped when it has no row (no card without an action).
-    var isEmpty: Bool { entries.isEmpty }
 }
 
 // MARK: The Answer (V5-R53, V5-R63)

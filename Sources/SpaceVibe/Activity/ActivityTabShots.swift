@@ -24,7 +24,7 @@ enum ActivityTabShots {
             await model.readOnce()
         }
         try ShotHarness.wait("the Activity read, the CLI readings and the counts", seconds: ShotHarness.settleSeconds) {
-            (model.report != nil || model.failure != nil) && env.limits.readAt != nil && agents.counts.total != nil
+            (model.report != nil || model.failure != nil) && env.limits.readAt != nil && agents.counts.skills != nil
         }
         guard let real = model.report else { throw ShotHarness.Failure(model.failure ?? "the Activity read returned no report") }
         try check(model, real)
@@ -269,7 +269,7 @@ enum ActivityTabShots {
         try ShotHarness.check(query.count(.failed) == real.failures.count, "the Failed tab counts the \(real.failures.count) failures listed")
         let still = real.failures.filter { $0.laterPass == nil }
         try ShotHarness.check(ActivityAnswer.failed(query).sentence == "\(still.count) still failing", "the Failed Answer counts the failures with no later pass")
-        print("trace: Failed count \"\(ActivityFigures.failedCount(query))\", Passed later \(ActivityFigures.passedLater(query)?.sentence ?? "none")")
+        print("trace: Failed range \"\(ActivityFigures.failedRange(query.failures) ?? "none")\", Passed later \(ActivityFigures.passedLater(query)?.sentence ?? "none")")
         try ShotHarness.check(ActivityFigures.passedLater(query)?.count == real.failures.count - still.count, "Passed later counts the failures that have a later pass")
 
         let files = query.files

@@ -97,10 +97,8 @@ struct SubagentsCanvas: View {
             }
         } else {
             let answer = model.answer
-            let addable = model.addable
             SplitCanvas {
                 answerCard(answer)
-                if !addable.isEmpty { oneCLICard(addable) }
             } spine: {
                 spineCard(layout, current: current, now: now)
             }
@@ -128,41 +126,6 @@ struct SubagentsCanvas: View {
             }
         } else {
             AnswerCard(sentence: answer.sentence, isOpen: open("answer"))
-        }
-    }
-
-    // MARK: In one CLI only
-
-    private func oneCLICard(_ addable: SubagentsAddable) -> some View {
-        let count = "\(addable.entries.count) \(addable.entries.count == 1 ? "subagent" : "subagents")"
-        return Tile("In one CLI only", count: count, maxHeight: Metrics.Tile.subagentsSmallMaxHeight, isOpen: open("onecli")) {
-            ListRows {
-                ForEach(addable.entries) { entry in
-                    ListRow(entry.row.name, onActivate: { model.review(entry.row.key, store: store) },
-                            accessibilityName: "\(entry.row.name), only in \(entry.here.label)") {
-                        CLIMark(entry.here, size: .control)
-                    } trailing: {
-                        ChipButton("Add to \(entry.target.label)", glyph: .plus,
-                                   accessibilityLabel: "Add \(entry.row.name) to \(entry.target.label)") { model.add(entry.row, to: entry.target) }
-                    }
-                }
-            }
-            ForEach(SubagentsWording.addableNotes(addable), id: \.self) { note in
-                Text(note)
-                    .spaceVibeText(.metaLine, tone: .tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineBox(.metaLine)
-                    .padding(.horizontal, Metrics.ListRow.leading)
-                    .padding(.top, Metrics.Subagents.noteTop)
-            }
-            if !addable.leftOut.isEmpty {
-                Text("Not listed: \(addable.leftOut.joined(separator: ", ")).")
-                    .spaceVibeText(.metaLine, tone: .tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineBox(.metaLine)
-                    .padding(.horizontal, Metrics.ListRow.leading)
-                    .padding(.top, Metrics.Subagents.noteTop)
-            }
         }
     }
 
@@ -217,7 +180,7 @@ struct SubagentsCanvas: View {
     private func listRow(_ row: LoadoutRow, current: LoadoutRow?, detected: [CoreCLI], now: Date) -> some View {
         ListRow(row.name, isCurrent: row.key == current?.key, onActivate: { model.open(row.key) },
                 accessibilityName: SubagentsWording.spoken(row)) {
-            MetaCell(text: SubagentsWording.sessionsText(row), width: Metrics.Subagents.sessionsWidth)
+            MetaCell(text: SubagentsWording.sessionsText(row) ?? "", width: Metrics.Subagents.sessionsWidth)
             LogoStrip {
                 ForEach(detected, id: \.self) { cli in
                     LogoToggle(cli: CoreLimitsCLI(cli), isLit: row.members[cli] != nil, mode: model.mode(row, cli: cli),

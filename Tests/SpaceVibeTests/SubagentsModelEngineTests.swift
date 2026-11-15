@@ -207,7 +207,7 @@ struct SubagentsModelEngineTests {
         #expect(env.toasts.current?.message == "neon-helper is owned by the neon plugin. SpaceVibe cannot change it.")
         try await Task.sleep(for: .milliseconds(300))
         #expect(try await fixture.tree().difference(from: before).isEmpty)
-        #expect(SubagentsAddable(model.rows, detected: model.detected).leftOut.contains("neon-helper (plugin-owned)"))
+        #expect(!SubagentsAddable(model.rows, detected: model.detected).entries.contains { $0.row.name == "neon-helper" })
     }
 
     @Test("the only copy is not a toggle: its last lit logo does nothing")

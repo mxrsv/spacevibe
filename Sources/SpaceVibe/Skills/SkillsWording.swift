@@ -79,11 +79,10 @@ enum SkillsWording {
             // The count is the meter's: the sentence says where, not how many (V5-R60).
             let where_ = ranIn.count == 1 ? "only in \(ranIn[0].label)" : "in both CLIs"
             return Verdict(status: status, title: status.title, text: "Ran \(where_). One of the busiest skills you have.",
-                           small: lock ?? (missingElsewhere ? "\(other?.label ?? "") does not have it yet." : idleNote(usage)))
+                           small: lock ?? (missingElsewhere ? nil : idleNote(usage)))
         case .ran:
             if oneOnly {
-                let text = "Used only in \(present[0].label)." + (missingElsewhere ? " \(other?.label ?? "") does not have it." : "")
-                return Verdict(status: status, title: status.title, text: text,
+                return Verdict(status: status, title: status.title, text: "Used only in \(present[0].label).",
                                small: lock ?? (missingElsewhere ? "Adding it gives \(other?.label ?? "") the same skill with a fresh count." : nil))
             }
             if ranIn.count == 1 {
@@ -137,7 +136,8 @@ enum SkillsWording {
         let usage = row.skillUsage
         switch usage.cells[cli] ?? .missing {
         case .missing:
-            let caption = row.plugin != nil ? "Plugin-owned skills stay in their CLI" : "\(name) does not have this skill."
+            // "Not in <CLI>" in the head says it; only a plugin's skill needs the reason it cannot be added (D69).
+            let caption = row.plugin != nil ? "Plugin-owned skills stay in their CLI" : nil
             return SessionMeter(cli: cli, status: "Not in \(name)", figure: nil, share: nil, caption: caption, emphasis: nil)
         case .loading:
             return SessionMeter(cli: cli, status: nil, figure: nil, share: nil, caption: "Counting sessions", emphasis: nil)

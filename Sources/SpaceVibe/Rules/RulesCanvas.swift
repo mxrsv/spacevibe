@@ -188,7 +188,7 @@ struct RulesCanvas: View {
                     Button { model.clearFilters() } label: { ActionLabel("Clear filters") }.buttonStyle(ActionButtonStyle(size: .compact))
                 }
             } else {
-                ColumnHead(reading: page.reading, column: columnWidth)
+                ColumnHead(column: columnWidth)
                 BandStack {
                     ForEach(Array(page.layout.bands.enumerated()), id: \.element.id) { offset, band in
                         Band(band.family.title, count: band.rules.count,
@@ -198,10 +198,7 @@ struct RulesCanvas: View {
                         } lead: {
                             EmptyView()
                         } extras: {
-                            HStack(spacing: Metrics.ListRow.spacing) {
-                                Text(band.stance.summary).frame(width: columnWidth, alignment: .leading).help(band.stance.summary)
-                                Text(band.fact?.text ?? "").frame(width: columnWidth, alignment: .leading).help(band.fact?.text ?? "")
-                            }
+                            Text(band.stance.summary).frame(width: columnWidth, alignment: .leading).help(band.stance.summary)
                             .spaceVibeText(.meta, tone: .tertiary)
                             .lineLimit(1)
                             .fixedSize()
@@ -245,7 +242,6 @@ struct RulesCanvas: View {
     private func row(_ rule: CoreRule, band: RuleBand, current: CoreRule?) -> some View {
         ListRow(rule.rule, isCurrent: rule.id == current?.id, onActivate: { model.open(rule) }, accessibilityName: RulesTabWording.spoken(rule)) {
             CountCell(text: RulesWording.title(rule.verdict), width: columnWidth, alignment: .leading)
-            Color.clear.frame(width: columnWidth, height: 0).accessibilityHidden(true)
         }
         .help(rule.rule)
         .id(rule.id)
@@ -300,25 +296,15 @@ struct RulesCanvas: View {
     }
 }
 
-/// The spine's column head: Claude Code, and Codex with a lock (read only), or "Codex not installed" (V5-R67). It sits over the
-/// two 168 columns of the bands and the rows.
+/// The spine's column head: Claude Code, over the 168 column of the bands and the rows. Codex has no column (D69): the note under
+/// the bands says how it stands.
 private struct ColumnHead: View {
-    let reading: CodexReading
     let column: CGFloat
 
     var body: some View {
         HStack(spacing: Metrics.ListRow.spacing) {
             Spacer(minLength: 0)
             cell { CLIMark(CoreCLI.claude, size: .glyph); Text("Claude Code") }
-            cell {
-                CLIMark(CoreCLI.codex, size: .glyph)
-                if reading == .notInstalled {
-                    Text("Codex not installed")
-                } else {
-                    Text("Codex")
-                    SpaceVibeIcon(content: .lock, size: .inline, ink: TextTone.tertiary.color, label: "read only")
-                }
-            }
         }
         .spaceVibeText(.meta, tone: .tertiary)
         .padding(.horizontal, Metrics.ListRow.leading)

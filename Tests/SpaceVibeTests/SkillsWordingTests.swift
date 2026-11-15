@@ -58,10 +58,10 @@ struct SkillsWordingTests {
             return try #require(SkillsWording.verdict(for: row, status: SkillStatus.of(row, marks: marks[row.key] ?? []), detected: detected))
         }
         let heavy = SkillsWording.verdict(for: F.row("a", claude: F.counted(142)), status: .heavy, detected: [.claude, .codex])
-        #expect(heavy?.text == "Ran only in Claude Code. One of the busiest skills you have." && heavy?.small == "Codex does not have it yet.")
+        #expect(heavy?.text == "Ran only in Claude Code. One of the busiest skills you have." && heavy?.small == nil)
         #expect(SkillsWording.verdict(for: F.row("a", claude: F.counted(142)), status: .heavy, detected: [.claude])?.small == nil)
         let one = try verdict(F.row("b", claude: F.counted(1)))
-        #expect(one.title == "Ran" && one.text == "Used only in Claude Code. Codex does not have it.")
+        #expect(one.title == "Ran" && one.text == "Used only in Claude Code.")
         #expect(one.small == "Adding it gives Codex the same skill with a fresh count.")
         let both = SkillsWording.verdict(for: F.row("c", claude: F.counted(20), codex: F.counted(5)), status: .ran, detected: [.claude, .codex])
         #expect(both?.text == "Used in both CLIs.")
@@ -107,7 +107,7 @@ struct SkillsWordingTests {
         #expect(try verdict(F.row("e", claude: F.counted(20), codex: F.counted(5)), .ran).text == "Used in both CLIs.")
         #expect(try verdict(F.row("f", claude: F.counted(80), codex: F.counted(30)), .heavy).text == "Ran in both CLIs. One of the busiest skills you have.")
         // The skill is in one CLI only: the CLI that has it is the CLI that ran it.
-        #expect(try verdict(F.row("g", claude: F.counted(9)), .ran).text == "Used only in Claude Code. Codex does not have it.")
+        #expect(try verdict(F.row("g", claude: F.counted(9)), .ran).text == "Used only in Claude Code.")
         // Never ran names the CLIs whose logs were counted.
         let neverBoth = try verdict(F.row("h", claude: F.counted(0), codex: F.counted(0)), .neverRan)
         #expect(neverBoth.text == "Installed in both CLIs. Nothing in the local logs shows a session in either.")
@@ -128,7 +128,7 @@ struct SkillsWordingTests {
         let claude = SkillsWording.meter(for: row, cli: .claude, maxSessions: 100, now: F.now)
         #expect(claude.figure == 50 && claude.share == 0.5 && claude.caption == "Last ran" && claude.emphasis == "yesterday")
         let codex = SkillsWording.meter(for: row, cli: .codex, maxSessions: 100, now: F.now)
-        #expect(codex.figure == nil && codex.share == nil && codex.status == "Not in Codex" && codex.caption == "Codex does not have this skill.")
+        #expect(codex.figure == nil && codex.share == nil && codex.status == "Not in Codex" && codex.caption == nil)
         #expect(SkillsWording.meter(for: F.row("b", claude: F.counted(0)), cli: .claude, maxSessions: 100, now: F.now).emphasis == "never")
         #expect(SkillsWording.meter(for: F.row("c", claude: F.scanning), cli: .claude, maxSessions: 100, now: F.now).figure == nil)
         #expect(SkillsWording.meter(for: F.row("d", codex: F.noLogs), cli: .codex, maxSessions: 100, now: F.now).caption == "No Codex logs to count from")
@@ -149,7 +149,7 @@ struct SkillsWordingTests {
             if let verdict = SkillsWording.verdict(for: row, status: status, detected: [.claude, .codex]) { text += [verdict.title, verdict.text, verdict.small ?? ""] }
             for cli in CoreCLI.allCases {
                 let meter = SkillsWording.meter(for: row, cli: cli, maxSessions: 10, now: F.now)
-                text += [meter.caption, meter.status ?? "", meter.emphasis ?? ""]
+                text += [meter.caption ?? "", meter.status ?? "", meter.emphasis ?? ""]
             }
         }
         text += SkillStatus.allCases.map(\.title) + SkillsQuery().orderLine.components(separatedBy: " ")

@@ -58,18 +58,17 @@ struct AgentsPageTests {
     @Test("counts show nothing until the reads land: no 0 for a number that is not known")
     func countsUnknown() {
         let counts = AgentsCounts(loadout: nil, rules: nil)
-        #expect(counts.total == nil && counts.skills == nil && counts.rules == nil)
+        #expect(counts.skills == nil && counts.rules == nil)
         #expect(AgentsCategory.allCases.allSatisfy { counts.count(for: $0) == nil })
         let page = AgentsPage(env: AppEnvironment(toasts: ToastCenter(announce: false)))
         #expect(page.badge == nil)
     }
 
-    @Test("a tab counts the global scope's rows of its kind; the total is the core's global count; Rules is its own read")
+    @Test("a tab counts the global scope's rows of its kind; Rules is its own read")
     func countsByKind() {
         let rows = [row("a", .skill), row("b", .skill), row("c", .agent), row("d", .hook), row("p", .skill, project: "/work/app")]
         let counts = AgentsCounts(loadout: data(rows, globalCount: 4), rules: 11)
         #expect(counts.skills == 2 && counts.subagents == 1 && counts.hooks == 1 && counts.rules == 11)
-        #expect(counts.total == 4)
         #expect(AgentsCategory.allCases.map { counts.count(for: $0) } == [2, 1, 1, 11])
     }
 
@@ -92,11 +91,6 @@ struct AgentsPageTests {
         #expect(SidebarCLIState.reading.isOK && !SidebarCLIState.noReading.isOK && !SidebarCLIState.notInstalled.isOK && !SidebarCLIState.noLog.isOK)
     }
 
-    @Test("the sidebar count is spoken by what it counts, never as items")
-    func spokenTotal() {
-        #expect(AgentsPage.spokenTotal(22) == "22 skills, subagents and hooks")
-        #expect(AgentsPage.spokenTotal(1) == "1 skill, subagent or hook")
-    }
 
     @Test("first-read failures replace the empty page; later failures warn without hiding cached rows")
     func failures() {

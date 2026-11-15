@@ -130,7 +130,8 @@ struct LimitsAnswer: Equatable {
         case .read(let entries):
             (sentence, verdict) = Self.answer(entries, now: now, calendar: calendar)
             resets = Self.resets(entries, showUnused: showUnused, now: now, calendar: calendar)
-            sources = entries.map { Self.source($0, now: now) }
+            // A CLI that keeps no limit (Gemini CLI) has no source to name; its band says "Not measurable" once (D69).
+            sources = entries.filter { $0.state != .notMeasurable }.map { Self.source($0, now: now) }
             bands = entries.map { Self.band($0, showUnused: showUnused, now: now, calendar: calendar) }
         }
     }
@@ -232,11 +233,7 @@ struct LimitsAnswer: Equatable {
             let name = entry.plan.map { "\(cli) \(LimitsWording.planName($0))" } ?? cli
             return SourceLine(cli: entry.cli, name: name, state: "read \(LimitsWording.readAge(at: reading.at, now: now))")
         }
-        let state = switch entry.state {
-        case .notInstalled: "not installed"
-        case .notMeasurable: "no log"
-        case .measured, .notRecorded, .unreadable: "no reading"
-        }
+        let state = entry.state == .notInstalled ? "not installed" : "no reading"
         return SourceLine(cli: entry.cli, name: cli, state: state)
     }
 

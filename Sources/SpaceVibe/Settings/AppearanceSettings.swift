@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Settings > Appearance: Theme as three tiles, Font size over two Loadout rows that show it, and the interface language.
+/// Settings > Appearance: Theme as three tiles and Font size over two Loadout rows that show it. No Language card while English is
+/// the only language (D69).
 struct AppearanceSettings: View {
     @Environment(AppearanceStore.self) private var appearance
 
@@ -31,12 +32,6 @@ struct AppearanceSettings: View {
                     .padding(.horizontal, Metrics.rowHorizontalPadding)
                     .padding(.bottom, Space.s8)
                     .groupedListPart(.plain)
-            }
-
-            GroupedList {
-                CardHeader("Language", lead: { SpaceVibeIcon(.globe, size: .row) }, columns: {
-                    Text(SettingsWording.language).spaceVibeText(.body, tone: .secondary)
-                })
             }
         }
     }

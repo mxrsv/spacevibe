@@ -10,7 +10,6 @@ struct ActivityCards: View {
     let now: Date
 
     @Environment(\.openStateStore) private var store
-    @Environment(ShellModel.self) private var shell
 
     var body: some View {
         switch pane {
@@ -36,20 +35,16 @@ extension ActivityCards {
         let answer = ActivityAnswer.running(query)
         let figures = ActivityFigures.rightNow(query)
         return SplitCanvas {
-            answerCard(answer, id: "running.answer", fix: runningFix(answer))
+            answerCard(answer, id: "running.answer", fix: nil)
             if query.isLoading {
                 Tile("Right now", layout: .bare, isOpen: open("running.now")) { LoadingSkeleton() }
             } else if !figures.isEmpty {
                 Tile("Right now", layout: .content, isOpen: open("running.now")) {
                     StatFigures(figures: figures)
-                    HStack {
-                        Spacer(minLength: 0)
-                        Button { shell.openLimits() } label: { ActionLabel("Limits", glyph: .gauge) }.buttonStyle(ActionButtonStyle())
-                    }
                 }
             }
         } spine: {
-            Tile("Running", count: query.isLoading ? nil : ActivityFormat.plural(query.sessions.count, "session"), layout: spineLayout(empty: query.sessions.isEmpty),
+            Tile("Running", layout: spineLayout(empty: query.sessions.isEmpty),
                  maxHeight: Metrics.Tile.spineMaxHeight, stretches: true, scrollTarget: current, isOpen: open("running.spine")) {
                 runningSpine
             } actions: {
@@ -163,11 +158,6 @@ extension ActivityCards {
         }
     }
 
-    private func runningFix(_ answer: ActivityAnswer) -> (() -> AnyView)? {
-        guard let target = answer.verdict?.targetID, let item = query.sessions.first(where: { $0.id == target }), item.isWaiting, item.canStop else { return nil }
-        return { AnyView(stopButton(item)) }
-    }
-
     // MARK: The Answer card
 
     @ViewBuilder
@@ -200,7 +190,7 @@ extension ActivityCards {
                 }
             }
         } spine: {
-            Tile("Failed commands", count: query.isLoading ? nil : ActivityFigures.failedCount(query), layout: spineLayout(empty: query.failures.isEmpty),
+            Tile("Failed commands", count: query.isLoading ? nil : ActivityFigures.failedRange(query.failures), layout: spineLayout(empty: query.failures.isEmpty),
                  maxHeight: Metrics.Tile.spineMaxHeight, stretches: true, scrollTarget: current, isOpen: open("failed.spine")) {
                 failedSpine
             } actions: {
@@ -299,7 +289,7 @@ extension ActivityCards {
                 busiestCard(busiest)
             }
         } spine: {
-            Tile("Edited files", count: query.isLoading ? nil : ActivityFormat.plural(query.files.count, "file"), layout: spineLayout(empty: query.files.isEmpty),
+            Tile("Edited files", layout: spineLayout(empty: query.files.isEmpty),
                  maxHeight: Metrics.Tile.spineMaxHeight, stretches: true, scrollTarget: current, isOpen: open("files.spine")) {
                 filesSpine
             } actions: {

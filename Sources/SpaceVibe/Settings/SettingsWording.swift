@@ -35,8 +35,6 @@ extension ThemeSetting {
 enum SettingsWording {
     static let automaticChecks = "Check for updates automatically"
     static let automaticChecksDetail = "Once a day. Installing always takes a click."
-    /// The only language until a second one exists (spec, Interface: Language).
-    static let language = "English"
 
     /// The status tag of the Update card; nil when there is nothing to say beyond the time.
     struct StatusTag: Equatable {
