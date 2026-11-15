@@ -4,6 +4,7 @@ import (
 	"math"
 	"strconv"
 
+	"spacevibe.dev/core/internal/redact"
 	"spacevibe.dev/core/internal/textjs"
 )
 
@@ -80,7 +81,8 @@ func claudeHookFailure(st *logState, r, a jv) {
 			break
 		}
 	}
-	reason := previewText(firstLine)
+	// Masked before the cut, as in errorLine.
+	reason := previewText(redact.Command(firstLine))
 	if reason == "" {
 		if hasExit {
 			reason = "Exit " + itoa(exitValue)

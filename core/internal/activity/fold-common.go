@@ -38,7 +38,8 @@ func errorLine(output string) string {
 			continue
 		}
 		if matchesErrorLine(line) && !matchesZeroCount(line) {
-			return textjs.Prefix(line, previewLen)
+			// Masked before the cut: a credential that straddles it would be too short for redact to recognise.
+			return textjs.Prefix(redact.Command(line), previewLen)
 		}
 	}
 	return ""

@@ -84,3 +84,36 @@ func TestToolTargetMasksBeforeItCuts(t *testing.T) {
 		t.Errorf("current tool = %+v", s.CurrentTool)
 	}
 }
+
+// A failure reason is masked before the 160-character cut, for a command's error line and for a hook's first output
+// line alike, so a credential that straddles the cut leaves no first characters on the wire.
+func TestFailureReasonMasksBeforeItCuts(t *testing.T) {
+	sb := newSandbox(t)
+	m := activityMinutes
+	const key = "sk-abcdefghijklmnopqrstuvwxyz0123456789"
+	line := "error: request failed " + strings.Repeat("x", 121) + " " + key
+	if i := strings.Index(line, key); i >= previewLen || i+len(key) <= previewLen {
+		t.Fatalf("the key does not straddle the cut: starts at %d", i)
+	}
+	c := claudeRecords{cwd: "/work/app", session: activitySid(93)}
+	sb.status(93, obj{"status": "busy"})
+	hook := c.hookFail(1, "Stop", "sh /h/check.sh", m(10))
+	hook["attachment"].(obj)["stderr"] = line + "\nsecond line"
+	sb.claudeLog("/work/app", activitySid(93), []obj{
+		c.user("call the api", m(30)),
+		c.tool("c1", "Bash", obj{"command": "run-the-api"}, m(20)),
+		c.result("c1", "Exit code 1\n"+line, true, m(19)),
+		hook,
+	}, 2000)
+	report := sb.read(newFakeProc([]int{93}, nil, nil))
+
+	for _, kind := range []FailureKind{KindCommand, KindHook} {
+		failure, ok := findFailure(report, func(f Failure) bool { return f.Kind == kind })
+		if !ok {
+			t.Fatalf("no %s failure", kind)
+		}
+		if strings.Contains(failure.Reason, "sk-") || !strings.Contains(failure.Reason, "•••") {
+			t.Errorf("%s reason = %q", kind, failure.Reason)
+		}
+	}
+}
