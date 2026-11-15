@@ -247,7 +247,9 @@ struct LimitsAnswer: Equatable {
         guard let reading = entry.reading else {
             switch entry.state {
             case .notRecorded:
-                return Band(cli: entry.cli, count: nil, mark: nil, staleAge: nil, body: .note("No reading yet.", .readNow))
+                // Rereading cannot help Claude Code until it has fetched usage once, so its note says how and copies `/usage`.
+                let note = entry.cli == .claude ? "Run \(LimitsWording.copyHint) once in Claude Code for a first reading." : "No reading yet."
+                return Band(cli: entry.cli, count: nil, mark: nil, staleAge: nil, body: .note(note, entry.cli == .claude ? .copyUsage : .readNow))
             case .notInstalled:
                 return Band(cli: entry.cli, count: nil, mark: nil, staleAge: nil,
                             body: .note("Not installed. \(SpaceVibeMark.productName) found no \(cli) on this Mac.", nil))

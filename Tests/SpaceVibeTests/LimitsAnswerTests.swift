@@ -120,7 +120,7 @@ struct LimitsAnswerTests {
         ])
         #expect(facts.sentence == "Hold heavy work until Wed 21:00.")
         #expect(facts.verdict == LimitsAnswer.Verdict(glyph: .used, title: "Codex is low", text: "Its tightest window has 4% left."))
-        #expect(facts.bands[0].body == .note("No reading yet.", .readNow))
+        #expect(facts.bands[0].body == .note("Run /usage once in Claude Code for a first reading.", .copyUsage))
         #expect(facts.bands[2].body == .note("Not installed. SpaceVibe found no Gemini CLI on this Mac.", nil))
         #expect(facts.bands[1].staleAge == nil, "5 hours is not stale")
         #expect(facts.resets?.map(\.title) == ["Codex Weekly"])
