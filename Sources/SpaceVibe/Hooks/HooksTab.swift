@@ -1,9 +1,11 @@
 import SwiftUI
 
 /// The key hints and the data source the status bar shows on the Hooks tab (V5-R36, V5-R66). Only keys `HooksCanvas.keys` wires.
+/// While SpaceVibe writes no Codex hooks, `A` can only copy a Codex hook into Claude Code, so the hint names that CLI.
 enum HooksStatusBar {
     static let hints: [KeyHint] = [
-        KeyHint(keys: "J K", label: "move"), KeyHint(keys: "\u{21B5}", label: "detail"), KeyHint(keys: "A", label: "copy to other CLI"),
+        KeyHint(keys: "J K", label: "move"), KeyHint(keys: "\u{21B5}", label: "detail"),
+        KeyHint(keys: "A", label: LoadoutRows.codexTakesHooks ? "copy to other CLI" : "copy to Claude Code"),
         KeyHint(keys: "R", label: "remove"), KeyHint(keys: "/", label: "filter"), KeyHint(keys: "1 2 3 4", label: "category"),
     ]
 

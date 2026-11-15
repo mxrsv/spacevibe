@@ -48,17 +48,19 @@ struct SkillsPane: View {
                 FileList(files: model.files(of: row).map { FileList.Entry(cli: $0.cli, path: $0.path) })
             }
             VStack(alignment: .leading, spacing: Metrics.DetailPane.noteAbove) {
+                // While rows are picked, A, R and O act on the picks (`SkillsTab.keys`), so the pane's buttons show no key cap.
+                let caps = model.picked.isEmpty
                 HStack(spacing: Metrics.DetailPane.actionSpacing) {
                     ForEach(detected.filter { row.members[$0] == nil && model.mode(row, cli: $0) == .toggles }, id: \.self) { cli in
-                        Button { model.add([row], to: cli) } label: { ActionLabel("Add to \(cli.label)", key: "A") }
+                        Button { model.add([row], to: cli) } label: { ActionLabel("Add to \(cli.label)", key: caps ? "A" : nil) }
                             .buttonStyle(ActionButtonStyle(kind: .primary))
                             .focused($actionFocus, equals: .add)
                     }
-                    Button { model.remove([row]) } label: { ActionLabel("Remove", glyph: .trash, key: "R") }
+                    Button { model.remove([row]) } label: { ActionLabel("Remove", glyph: .trash, key: caps ? "R" : nil) }
                         .buttonStyle(ActionButtonStyle(kind: .danger))
                         .disabled(!writable)
                         .focused($actionFocus, equals: .remove)
-                    Button { model.openFile(of: row) } label: { ActionLabel("Open", glyph: .open, key: "O") }
+                    Button { model.openFile(of: row) } label: { ActionLabel("Open", glyph: .open, key: caps ? "O" : nil) }
                         .buttonStyle(ActionButtonStyle())
                         .focused($actionFocus, equals: .open)
                 }
