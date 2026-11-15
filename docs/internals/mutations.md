@@ -1,0 +1,81 @@
+# Mutations
+
+Every change SpaceVibe makes to what Claude Code and Codex are equipped with: copying and removing Skills, Subagents and Hooks, removing dead Hooks, adding, removing and re-grading Rules, the status line capture setup, and Undo of each. The Agents page calls `loadout.copyToOther`, `loadout.removeItem` and `loadout.removeDeadHooks`, the Rules page calls `rules.*`, and every Undo calls `journal.undo`. `spacevibe statusline install` and `uninstall` are command-line subcommands with no RPC route. Wire shapes and error codes are in [core-protocol.md](core-protocol.md); journal retention and the trash sweep are in [overview.md](overview.md#data-flow). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
+
+## Responsibilities and sources of truth
+
+| Part | Responsibility | Source |
+| --- | --- | --- |
+| RPC entry | Five methods; looks at the request context before queueing for the lock and again inside it | [service.go](../../core/internal/mutate/service.go) `Service` |
+| Lock handle | One `Tx` per held lock; every locked step is a `Tx` method | [tx.go](../../core/internal/mutate/tx.go) `WithLockContext`, `Tx` |
+| Item writes | Copy and remove Skills, Subagents, Hooks; removable and read-only decision | [items.go](../../core/internal/mutate/items.go) `removeItem`, `copyToOther`; [copy-skill.go](../../core/internal/mutate/copy-skill.go) |
+| Hook edits | Add or remove one hook inside a hook file, undo of hook ops | [hook-edit.go](../../core/internal/mutate/hook-edit.go), [hooks.go](../../core/internal/mutate/hooks.go) |
+| File edit | Backup, validate, re-check, atomic replace of one config file; one journal op | [file-edit.go](../../core/internal/mutate/file-edit.go) `Tx.Apply`, `EditJSON` |
+| Journal and Undo | `<data>/journal.json`, rollback of a failed change, all-or-nothing Undo | [journal.go](../../core/internal/mutate/journal.go), [journal-undo.go](../../core/internal/mutate/journal-undo.go) `Tx.Undo`, [ops.go](../../core/internal/mutate/ops.go) |
+| Containment | Which paths an entry read from the journal may touch | [containment.go](../../core/internal/mutate/containment.go) `containment` |
+| Trash | Restorable copies under `<data>/trash`, slot sweep | [trash.go](../../core/internal/mutate/trash.go) `slot`, `pruneTrash` |
+| Rules writes | One locked `EditJSON` per Rules change | [store.go](../../core/internal/rules/store.go) `Store.edit` |
+| Atomic write | Temp file, validate, re-check, rename; symlink-aware target; byte re-check | [atomic-write.go](../../core/internal/fsx/atomic-write.go) `AtomicWrite`, [target.go](../../core/internal/fsx/target.go) `ResolveTarget`, `UnchangedSince` |
+| Write lock and guard | Process semaphore plus `flock`; real-home refusal under `SPACEVIBE_TEST=1` | [write-lock.go](../../core/internal/fsx/write-lock.go), [write-guard.go](../../core/internal/fsx/write-guard.go) |
+| JSON and TOML | `ojson` splices bytes; `toml` only reads | [document.go](../../core/internal/ojson/document.go), [edit.go](../../core/internal/ojson/edit.go), [toml.go](../../core/internal/toml/toml.go) |
+
+## Where each write lands
+
+| Operation | File written | What is kept for Undo |
+| --- | --- | --- |
+| Copy a Skill | New folder `<other CLI>/skills/<folder name>` (folders 0700, files 0600 plus the owner execute bit) | `created`; Undo moves the folder to the trash |
+| Copy a Subagent | New `<other CLI>/agents/<name>.md` (Claude Code) or `.toml` (Codex), 0600 | `created` |
+| Remove a Skill or Subagent | Moved to `<data>/trash/<ms>-<hex>/`; a symlink is unlinked and its text kept | `moved` or `link-removed` |
+| Copy, remove or remove dead Hooks | Claude Code `settings.json` or Codex `hooks.json`, the global file only; copies go only into Claude Code | `hook-added` or `hook-removed`, each with the exact file edit that made it |
+| Rules change | The scope's settings file (global, project or local), one edit per change | `file-edited`: old bytes in the trash, SHA-256 of what was written |
+| Status line capture | Claude `settings.json` `statusLine`, plus the executable copy at `<data>/bin/spacevibe` (0700, not journaled, kept on Undo) | `file-edited` for the settings only |
+
+Every row also adds one entry to `<data>/journal.json` (0600). Data-folder caches (`first-seen.json`, `usage-cache.json`) use the same atomic write without the lock or a journal entry.
+
+## Runtime path
+
+One write:
+
+1. The service looks at the context, then waits for the lock (at most 30 s) and looks at the context again as the first step inside it.
+2. `PrepareMutation` reads the journal; one that cannot be read refuses before anything changes.
+3. An item write re-reads the inventory under the lock and finds the id again (404 if gone), then applies the removable test (403).
+4. Every refusal that can be known comes before the first write (names, existing paths, the whole skill tree is listed and capped).
+5. A file edit reads the bytes, computes the next text, copies the old bytes to a new trash slot, writes a temp file, validates the bytes read back, re-checks the target and renames.
+6. `RecordMutation` puts the entry first, drops what is past 200 entries or 30 days, writes the journal atomically, then prunes the trash. If the journal write fails, the ops are reversed last first.
+
+One Undo: lock, read the journal, find the id (404), refuse if already undone (409) or if any op kind is unknown (400), check every path of every op against `containment` (400), reverse the ops last first (a batch of dead-hook removals as one), mark the entry `undone`, write the journal. A refusal at any op puts back the ones already reversed.
+
+## Rules that are easy to get wrong
+
+- **Nothing in the engine writes TOML.** `toml.Read` never fails, skips lines it cannot read and keeps no comments or spacing, so a `toml.Document` cannot be written back. Codex `config.toml` is never edited; a Codex Subagent `.toml` is only created whole from generated text. Do not rebuild a TOML file from its parsed form; an edit needs a splice editor like `ojson` first. [toml.go](../../core/internal/toml/toml.go), [text.go](../../core/internal/mutate/text.go)
+- **A JSON edit changes one byte range and refuses a file it cannot parse.** `Document.apply` replaces the range of the edited value, parses the result again, and copies the file's indent unit, line ending and colon spacing for new text; a new key goes last in its object, duplicate keys edit the last one, number text is kept. The parser is strict: a comment, trailing comma or BOM makes `ParseObject` answer 409 `<file> is not valid JSON` with no position, and the file is never "repaired". Never route config through `encoding/json` ([overview](overview.md#swift-to-go-traps)). [edit.go](../../core/internal/ojson/edit.go), [style.go](../../core/internal/ojson/style.go), [file-edit.go](../../core/internal/mutate/file-edit.go)
+- **A CLI can still win a race with SpaceVibe.** The re-check is `UnchangedSince` inside `BeforeRename`: it compares the target with the bytes read at the start, so a hand edit or a CLI write during the edit gives 409 and nothing is written. The lock does not exclude a CLI, and the check and the rename are two calls, so the window is small, not zero. [atomic-write.go](../../core/internal/fsx/atomic-write.go), [file-edit.go](../../core/internal/mutate/file-edit.go)
+- **The write is a temp file in the target's folder, and it keeps permission bits only.** `<path>.spacevibe-<pid>-<hex>.tmp` is created with `O_EXCL`, set to the old file's mode (0600 for a new file), fsynced, validated and renamed; a link is resolved first so the target is written and the link stays. A crash before the rename leaves the target untouched and may leave the `.tmp` file; nothing sweeps it. [atomic-write.go](../../core/internal/fsx/atomic-write.go), [target.go](../../core/internal/fsx/target.go)
+- **The trash holds whole old files, secrets included.** The backup of an edit is a byte copy of `settings.json` or `hooks.json` (0600 in a 0700 slot), and a `hook-*` op in the journal carries the hook object with its command. Neither leaves the core: `EntryRef` carries a `count`, not ops, and `redact.Command` is not applied inside the journal. Never log, return or copy an op or a slot. [trash.go](../../core/internal/mutate/trash.go), [ops.go](../../core/internal/mutate/ops.go), [S-R3](../../AGENTS.md)
+- **Undo restores only what the entry wrote, and only while the file still holds it.** For `file-edited` the current bytes must hash to `after`, otherwise 409 `changed since this edit`, so a Rules change cannot be undone under a newer edit of the same file: undo newest first. Hook ops try that exact restore, then fall back to removing or re-adding just that hook, which keeps later hand edits. A `created` op has no content check: whatever sits at the path, later edits included, goes to the trash. `moved` and `link-removed` refuse when the path exists again. [journal-undo.go](../../core/internal/mutate/journal-undo.go), [hooks.go](../../core/internal/mutate/hooks.go)
+- **Undo trusts nothing in `journal.json`.** The file is user-editable, so `containment` checks every path first: `file`, `path` and `from` must be inside the Claude Code, Codex or data folder or a discovered project's `.claude` (lexically or by real path), `backup` and `to` inside `<data>/trash`, with no relative path and no `..`. Ops of a kind this version does not know are kept verbatim as raw JSON and refuse Undo with 400. A link planted inside a managed folder is not resolved for the last component. [containment.go](../../core/internal/mutate/containment.go), [ops.go](../../core/internal/mutate/ops.go)
+- **Read-only items are decided by the inventory, not by a refusal list.** Only `removable` items (owner empty, outside any project) are removed; a plugin item answers 403 `belongs to a plugin`, a project item 403 `belongs to a project folder`, and both can still be copied. `removeFile` also requires the item path under the CLI's skills or agents folder and its parent to resolve to that folder. No write names a managed settings file: the targets are the fixed `HookFile`, the Rules scope file and the CLI folders. [items.go](../../core/internal/mutate/items.go), [reader.go](../../core/internal/inventory/reader.go) `isUserLevel`
+- **The write guard is a test seatbelt, not a root allow-list.** `fsx.InstallWriteGuard` refuses a path under the real home (spelling, case, firmlink, inode) in every `fsx` primitive and the lock, and only when `SPACEVIBE_TEST=1`; otherwise there is no guard. In production the confinement is the code that builds the path: roots, `validName`, the `removeFile` check, `requireInsideProject` for project Rules (a settings file that is a link, or a `.claude` that leaves the project, is 409; a global link is written through) and `containment` for Undo. A new writer takes its path from `roots`, never from the shell, and uses `fsx`. [write-guard.go](../../core/internal/fsx/write-guard.go), [store.go](../../core/internal/rules/store.go), S-R1
+- **The lock is not re-entrant, so take it once.** `WithLockContext` hands out a `*Tx`; calling an exported locked function inside the body waits 30 s and fails with the fixed 500. The lock is the `flock` on `<data>/write.lock` plus a process semaphore: the kernel drops it when the holder dies, so there is no stale lock to clear. It is per data folder, so two `SPACEVIBE_HOME` values do not exclude each other, and a non-Unix build has only the process lock. Cancel and wait behaviour: [core-protocol.md](core-protocol.md#notifications-and-cancellation). [write-lock.go](../../core/internal/fsx/write-lock.go), [tx.go](../../core/internal/mutate/tx.go)
+- **Hooks are matched by event, matcher and command, and never copied into Codex.** `hookRemoving` removes the first hook with that command in the first group with that matcher, and drops an emptied group and event. `CopyToOther` refuses a Codex target with 400 because whether Codex loads a hook SpaceVibe wrote is unverified; `AddHook`, `AddSkill` and `AddAgent` have no RPC route. [hook-edit.go](../../core/internal/mutate/hook-edit.go), [items.go](../../core/internal/mutate/items.go)
+- **A skill copy is vetted whole before the first byte.** Links that point outside the skill folder, FIFOs, sockets, a file over 16 MiB or a folder over 64 MiB are refused; `.git` is skipped, links are copied as links. Skill and Subagent names must match lowercase letters, digits and dashes (64 at most), and a copy is named after the folder, not the `name:` in `SKILL.md`. [copy-skill.go](../../core/internal/mutate/copy-skill.go), [items.go](../../core/internal/mutate/items.go)
+
+## Failure behavior
+
+- **File changed underneath, or not parseable.** 409 with a sentence that names the file and never quotes it: not valid JSON, not an object, not UTF-8, a link to nothing, not a regular file, a stat failure other than "absent", an unexpected hook layout. Nothing is written; the temp file and the unused backup slot are removed.
+- **Item gone.** 404 `Refresh the list` for an id; 409 when the hook is no longer in the file.
+- **Lock held.** After 30 s the fixed 500 `Could not lock the SpaceVibe data folder, so nothing was changed.`; a cancel while queued answers -32800 and writes nothing. A cancel after the body started is ignored.
+- **Corrupt journal.** `journal.json` that exists but is not an array of entries with string ids, is unreadable or is over 64 MiB gives 409 `UnreadableMessage` on every write and on `journal.history`; it is never read as empty.
+- **Journal write fails after the change.** The ops are reversed with their exact backups. If that fails too, 500 `RollbackFailureMessage` names the trash; the first error stays reachable behind it, not in the message.
+- **Multi-target create fails part way.** What this call created is moved to the trash; a path someone else made is never touched.
+- **Undo refused or part way.** 404 gone, 409 already undone, target changed, path exists again or saved copy gone, 400 unknown op or a path outside the managed folders. A failed put-back gives 500 `PartlyUndoneMessage`. The entry is never marked `undone` on an error, so a retry meets whatever state is left.
+- **Crash.** The target is whole or untouched. A crash between the config rename and the journal write leaves a change with no entry, so no Undo; an unreferenced trash slot is swept after 30 days.
+- **Cross-volume move.** If the copy succeeds but the original cannot be removed, 500 names both paths and keeps both.
+
+## Verification
+
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/mutate/... ./internal/fsx/... ./internal/ojson/... ./internal/toml/...` (all four packages pass; `scripts/test.sh` runs it first). Every test writes under `t.TempDir()`; `TestMain` in [main_test.go](../../core/internal/mutate/main_test.go) arms the real-home guard.
+
+- mutate: [file_edit_test.go](../../core/internal/mutate/file_edit_test.go) (edit, hand edit, links, canary), [journal_test.go](../../core/internal/mutate/journal_test.go), [journal_retention_test.go](../../core/internal/mutate/journal_retention_test.go), [mutation_transaction_test.go](../../core/internal/mutate/mutation_transaction_test.go) (rollback), [phase2_test.go](../../core/internal/mutate/phase2_test.go) (containment, copy caps, cancel), [concurrency_test.go](../../core/internal/mutate/concurrency_test.go) (two processes), [write_guard_test.go](../../core/internal/mutate/write_guard_test.go), [golden_test.go](../../core/internal/mutate/golden_test.go).
+- fsx: [atomic-write_test.go](../../core/internal/fsx/atomic-write_test.go), [write-lock_test.go](../../core/internal/fsx/write-lock_test.go), [write-guard_test.go](../../core/internal/fsx/write-guard_test.go), [file-ops_test.go](../../core/internal/fsx/file-ops_test.go).
+- ojson and toml: [roundtrip_test.go](../../core/internal/ojson/roundtrip_test.go), [edit_test.go](../../core/internal/ojson/edit_test.go), [reject_test.go](../../core/internal/ojson/reject_test.go), [toml_test.go](../../core/internal/toml/toml_test.go), [parser_edge_test.go](../../core/internal/toml/parser_edge_test.go).
