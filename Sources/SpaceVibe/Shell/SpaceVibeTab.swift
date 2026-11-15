@@ -21,8 +21,7 @@ struct PaletteEntry: Identifiable {
     let id: String
     var title: String
     var subtitle: String?
-    var icon: SpaceVibeGlyph?
-    /// The v5 shell draws this instead of `icon` (a Phosphor or MingCute glyph).
+    /// The glyph at the row's left (a Phosphor or MingCute glyph).
     var glyph: (any GlyphSource)?
     /// Right-aligned hint such as a shortcut.
     var trailing: String?
@@ -44,9 +43,7 @@ protocol SpaceVibeTab: AnyObject {
     /// Stable, lowercase. Position in `TabRegistry` decides the `⌘1`, `⌘2`, `⌘3` shortcut.
     var id: String { get }
     var title: String { get }
-    /// Fallback glyph for legacy-format palette entries; tabs may provide a richer `glyph`.
-    var icon: SpaceVibeGlyph { get }
-    /// The glyph the v5 sidebar and palette draw: a Phosphor, MingCute or verdict glyph (`GlyphSource`).
+    /// The glyph the sidebar and palette draw: a Phosphor, MingCute or verdict glyph (`GlyphSource`).
     var glyph: any GlyphSource { get }
     /// The data source named at the right of the v5 status bar ("Counted from local logs"). Nil names none.
     var source: String? { get }
@@ -65,9 +62,6 @@ protocol SpaceVibeTab: AnyObject {
 }
 
 extension SpaceVibeTab {
-    /// Until the cut-over (X1) removes `icon`, a tab with no Solar glyph of its own takes this one and draws `glyph`.
-    var icon: SpaceVibeGlyph { .loadout }
-    var glyph: any GlyphSource { icon }
     var source: String? { nil }
     var badge: TabBadge? { nil }
     var hints: [KeyHint] { [] }

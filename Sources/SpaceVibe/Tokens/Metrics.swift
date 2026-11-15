@@ -12,7 +12,6 @@ enum Metrics {
     static let groupRadius: CGFloat = 12
     /// A row's hover and selection block inside a card.
     static let rowRadius: CGFloat = 8
-    static let paletteRadius: CGFloat = 12
     /// Buttons, scope picker, sidebar items.
     static let controlRadius: CGFloat = 8
     /// Search field, palette row and the segmented control's frame.
@@ -50,8 +49,6 @@ enum Metrics {
     static var usageNumberWidth: CGFloat { TypeScale.shared.width(52, at: 14) }
     /// Fits "~$148.20" in `SpaceVibeType.number`.
     static var costWidth: CGFloat { TypeScale.shared.width(72, at: 14) }
-    /// Activity's state tag column; fits "not measurable" with its 16 pt icon (125 measured in Inter 12/500, v3 tag).
-    static var stateWidth: CGFloat { TypeScale.shared.width(128, at: 12) }
 
     /// The usage and limit ruler: ten cells, each a tenth of the real track width with this gap at its trailing end.
     /// The usage bar of Loadout and Activity: one continuous capsule, 6 pt. Only Limits uses the ten-cell ruler below.
@@ -59,7 +56,6 @@ enum Metrics {
 
     /// Every control: button, chip, segmented frame, scope picker, search field.
     static let controlHeight: CGFloat = 28
-    static let chipHeight: CGFloat = 28
     /// A segment inside its 28 pt frame.
     static let segmentHeight: CGFloat = 24
     static let tagHeight: CGFloat = 24
@@ -69,7 +65,6 @@ enum Metrics {
 
     /// Icon sizes (`IconSize`): sidebar 22, row lead and banner 20, buttons, tags and fields 16, beside 12 pt text 14 (the
     /// smallest: Solar Bold Duotone loses detail below it), an empty state's mark 24.
-    static let iconSidebar: CGFloat = 22
     static let iconRow: CGFloat = 20
     static let iconControl: CGFloat = 16
     static let iconInline: CGFloat = 14
@@ -102,17 +97,6 @@ enum Metrics {
     /// The SpaceVibe mark on the Update card, and its corner as a share of its side (`Resources/AppIcon.svg`: 57.5 of 256).
     static let spaceVibeMarkSize: CGFloat = 56
     static let spaceVibeMarkRadiusFraction: CGFloat = 57.5 / 256
-
-    /// Confirmation cards (Stop, a rule write).
-    static let dialogWidth: CGFloat = 420
-    /// Overlays only (palette, confirmation, toast). Cards are fill on the well, with no border and no shadow.
-    static let overlayShadowRadius: CGFloat = 30
-    static let overlayShadowOffset: CGFloat = 24
-
-    static let paletteWidth: CGFloat = 600
-    static let paletteFieldHeight: CGFloat = 48
-    static let paletteFooterHeight: CGFloat = 36
-    static let paletteRowHeight: CGFloat = 36
 
     /// Toast stays about this long unless the pointer rests on it (5 s, the kit's duration; app-wide, spec C10).
     static let toastDuration: Duration = .seconds(5)
@@ -164,9 +148,6 @@ extension Metrics {
         static let statusDotGap: CGFloat = 6
         static let searchAbove: CGFloat = 8
         static let searchBelow: CGFloat = 20
-        /// A group label (`small` type): 24 above, 12 at the sides, 8 below.
-        static let groupLabelTop: CGFloat = 24
-        static let groupLabelBottom: CGFloat = 8
         static let statusRowHeight: CGFloat = 32
         static let statusRowSpacing: CGFloat = 4
         static let statusAbove: CGFloat = 12
@@ -182,8 +163,6 @@ extension Metrics {
         /// The panel's content width in a 1440 pt window (the window less the sidebar, the right inset and the panel's two
         /// edges); the gallery draws its tab heads at it so crops line up with the mock's.
         static let widthAt1440: CGFloat = 1440 - AppSidebar.width - inset - 2 * Radius.edge
-        /// A menu opens this far below the tab head's top.
-        static let menuOffset: CGFloat = 52
         static let statusBarHeight: CGFloat = 32
         static let statusBarPadding: CGFloat = 16
         static let statusBarSpacing: CGFloat = 16
@@ -325,17 +304,6 @@ extension Metrics {
     enum Stats {
         static let columnMinWidth: CGFloat = 88
         static let spacing: CGFloat = 12
-    }
-
-    /// `Column chart`: bars 72 high at most, 2 apart, top corners 2; an empty bucket is a 2 pt line; the axis labels 16
-    /// below the base line.
-    enum ColumnChart {
-        static let height: CGFloat = 72
-        static let spacing: CGFloat = 2
-        static let barRadius: CGFloat = 2
-        static let barMinWidth: CGFloat = 2
-        static let emptyHeight: CGFloat = 2
-        static let axisAbove: CGFloat = 16
     }
 
     enum SkillsList {

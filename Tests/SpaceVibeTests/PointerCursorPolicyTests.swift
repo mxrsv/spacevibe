@@ -26,7 +26,7 @@ struct PointerCursorPolicyTests {
     /// takes the arrow, and a tap on a `MenuLine` rides the cursor `MenuLine` sets. Counted per file; a count that differs in
     /// either direction fails.
     static let notControls: [String: Int] = [
-        "Components/ConfirmationDialog.swift": 2, // the scrim around the dialog
+        "Components/ConfirmationDialog.swift": 1, // the scrim around `ConfirmationPanel`
         "Components/OverlayHost.swift": 1,        // a click outside an open overlay
         "Components/PaletteParts.swift": 1,       // `Scrim`
         "Components/ToolbarMenu.swift": 3,        // taps on a `MenuLine`

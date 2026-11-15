@@ -243,11 +243,6 @@ enum LoadoutRows {
         if to == .codex && !codexTakesHooks { return .notWritten(to) }
         return nil
     }
-
-    /// Why a row with nothing removable cannot be changed.
-    static func readOnlyReason(_ row: LoadoutRow) -> String {
-        row.project != nil ? "Read-only: project configuration" : "Read-only: owned by a plugin"
-    }
 }
 
 // MARK: Skills (V5-R21 to V5-R33)

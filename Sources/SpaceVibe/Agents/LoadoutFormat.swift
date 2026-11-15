@@ -2,21 +2,6 @@ import Foundation
 
 /// Wording and mapping of the Loadout screen. Pure.
 enum LoadoutFormat {
-    /// The engine says "Usage scan has not finished" for a pending cell while the scan runs. When the scan failed it will not
-    /// finish, so the cell says that instead.
-    static let scanPendingReason = "Usage scan has not finished"
-
-    static func cellModel(_ state: CoreUsageCell, scanFailure: String?) -> UsageCellModel {
-        switch state {
-        case .counted(let runs, _, _): return .counted(runs: runs)
-        case .pending(let reason):
-            if let scanFailure, reason == scanPendingReason { return .pending(reason: "The usage scan failed: \(scanFailure)") }
-            return .pending(reason: reason)
-        case .unmeasurable(let reason): return .unmeasurable(reason: reason)
-        case .missing: return .missing
-        }
-    }
-
     /// The date of the oldest session log the scan read, over both CLIs; nil when no log has a date.
     static func usageSince(_ result: CoreUsageResult?) -> String? {
         guard let result else { return nil }
@@ -44,9 +29,5 @@ enum LoadoutFormat {
 
     static func addLabel(row: LoadoutRow, to cli: CoreCLI) -> String {
         "Added \(row.kind.noun) \(row.name) to \(cli.label)"
-    }
-
-    static func removeAction(row: LoadoutRow, member: LoadoutMember) -> String {
-        "Remove \(row.name) from \(member.cli.label)"
     }
 }

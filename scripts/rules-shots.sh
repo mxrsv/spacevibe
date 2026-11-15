@@ -3,7 +3,6 @@
 # then the Codex "unrestricted" and "both models" variants. Each run builds nothing new after the first and uses its own
 # synthetic home (see scripts/dev-fixture.sh); nothing real is read.
 #
-#   scripts/rules-shots.sh <dir>                       the old Rules screen
 #   scripts/rules-shots.sh <dir>     the Rules tab (RulesTabShots): rules-*, rules-unrestricted-*, rules-both-*
 set -euo pipefail
 

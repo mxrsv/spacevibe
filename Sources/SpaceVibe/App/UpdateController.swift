@@ -126,7 +126,7 @@ final class UpdateController: NSObject, @preconcurrency SPUStandardUserDriverDel
     }
 
     static func viewAction(_ run: @escaping @MainActor () -> Void) -> ToastAction {
-        ToastAction(title: "View", icon: .download, run: run)
+        ToastAction(title: "View", run: run)
     }
 
     /// What a finished check leaves: the found or not-found callback has set the result (a probe reaches both through

@@ -39,7 +39,6 @@ enum CodexWording {
 
     /// `config.toml` exists but cannot be read: nothing about Codex's settings is known, so nothing is guessed, least of all the defaults.
     static let notReadableSentence = "Cannot read ~/.codex/config.toml, so Codex's settings are not known."
-    static let trustNotReadableSentence = "Cannot read ~/.codex/config.toml, so project trust is not known."
 
     /// A config string as it may be shown: itself when it is a short lowercase word, else `hiddenText`.
     static func word(_ text: String) -> String { isWord(text) ? text : hiddenText }

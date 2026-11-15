@@ -7,7 +7,6 @@ final class ActivityTab: SpaceVibeTab {
 
     let id = ActivityTab.tabID
     let title = "Activity"
-    let icon = SpaceVibeGlyph.activity
     let model: ActivityModel
 
     init(env: AppEnvironment? = nil) { model = ActivityModel(env: env ?? .shared) }
@@ -19,7 +18,7 @@ final class ActivityTab: SpaceVibeTab {
     var badge: TabBadge? { nil }
 
     var paletteActions: [PaletteEntry] {
-        [PaletteEntry(id: "activity.refresh", title: "Refresh activity", icon: .refresh, keywords: ["reload", "sessions", "failures"]) { [model] in
+        [PaletteEntry(id: "activity.refresh", title: "Refresh activity", glyph: ContentGlyph.enter, keywords: ["reload", "sessions", "failures"]) { [model] in
             model.refreshNow()
         }]
     }

@@ -289,7 +289,6 @@ enum Palette {
     static let codexTint = PaletteValue.tint(of: PaletteValue.codex).color
     static let successTint = PaletteValue.tint(of: PaletteValue.ok).color
     static let warnTint = PaletteValue.tint(of: PaletteValue.warn).color
-    static let dangerTint = PaletteValue.tint(of: PaletteValue.bad).color
 
     static let markGround = PaletteValue.markGround.color
     static let markInk = PaletteValue.markInk.color

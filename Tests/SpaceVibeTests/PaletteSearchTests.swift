@@ -7,7 +7,7 @@ import Testing
 private final class ItemsTab: SpaceVibeTab {
     let id = "stub"
     let title = "Stub"
-    let icon = SpaceVibeGlyph.info
+    let glyph: any GlyphSource = ContentGlyph.stack
     let paletteItems: [PaletteEntry]
     init(items: [PaletteEntry]) { paletteItems = items }
     var content: AnyView { AnyView(EmptyView()) }

@@ -14,7 +14,7 @@ struct ContainerSpecimens: View {
             panel("Band: open, collapsed, problem, hover, focus; closed bands 10 apart, then the two-column grid of Hooks") { bands }
             panel("Row: rest, hover, current, picked, current and picked, focus; in a list with the lead slot, then in a card") { rows }
             panel("Bar, share, count and secondary text cells: neutral, warn, danger, unknown") { cells }
-            panel("Stats with 2, 3 and 4 figures; column chart with empty buckets and the current one") { figures }
+            panel("Stats with 2, 3 and 4 figures") { figures }
             panel("Empty state: no items, nothing matches with Clear filters (in a card, in a list); loading skeleton") { empties }
         }
     }
@@ -234,19 +234,7 @@ struct ContainerSpecimens: View {
                     StatFigures(figures: [.init(value: "9", label: "sessions"), .init(value: "1,204", label: "tool calls"),
                                           .init(value: "2", label: "failed"), .init(value: "41", label: "file edits")])
                 })),
-            ("column chart: 14 buckets, two empty, today bright", AnyView(
-                Tile("Today", layout: .content, isOpen: open("chart")) {
-                    ColumnChart(buckets: chartBuckets, currentIndex: chartBuckets.count - 1,
-                                axis: ["13 days ago", "estimated cost per day, last 14 days", "today"],
-                                summary: "Estimated cost per day, last 14 days")
-                })),
         ])
-    }
-
-    private var chartBuckets: [ColumnChart.Bucket] {
-        [2.1, 3.4, 0, 1.2, 4.8, 3.9, 2.2, 0, 5.6, 4.1, 3.3, 2.7, 4.4, 3.42].enumerated().map { index, value in
-            ColumnChart.Bucket(id: index, value: value, label: String(format: "$%.2f", value))
-        }
     }
 
     // MARK: - Empty states

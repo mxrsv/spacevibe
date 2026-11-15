@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The v5 Limits page (V5-R73, V5-R74; the `b-limits` mock), registered by `TabRegistry` with the v5 switch on. It reads the
+/// The Limits page (V5-R73, V5-R74; the `b-limits` mock), registered by `TabRegistry`. It reads the
 /// one `LimitsModel`, whose loop the sidebar runs (`AppSidebar`): the page starts no second loop, and Refresh is one read.
 @MainActor
 final class LimitsTab: SpaceVibeTab {

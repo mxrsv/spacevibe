@@ -6,7 +6,6 @@ enum ToastTone { case info, danger }
 /// The one button a toast can carry. Undo is the common case; without an action the toast offers only dismiss.
 struct ToastAction {
     let title: String
-    let icon: SpaceVibeGlyph
     /// The key that runs it, shown as a cap in the v5 toast: `Z` for Undo (V5-R38).
     var keyCap: String?
     let run: @MainActor () -> Void
@@ -15,7 +14,7 @@ struct ToastAction {
     static let undoKeyCap = "Z"
 
     static func undo(_ run: @escaping @MainActor () -> Void) -> ToastAction {
-        ToastAction(title: "Undo", icon: .undo, keyCap: undoKeyCap, run: run)
+        ToastAction(title: "Undo", keyCap: undoKeyCap, run: run)
     }
 }
 

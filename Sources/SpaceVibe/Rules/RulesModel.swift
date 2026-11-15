@@ -16,10 +16,6 @@ final class RulesModel {
     /// The last read could not run. With a snapshot on screen it shows as a banner over the stale data.
     private(set) var failure: String?
     private(set) var selection = RulesSelection.global
-    /// The page on screen: Claude Code's rules or Codex's settings. Both read from the same snapshot.
-    private(set) var cli = InventoryCLI.claude
-    /// The Codex page lists every project's trust level instead of the first few.
-    private(set) var showsAllTrust = false
     /// Grid rows opened to show the rules and Codex keys behind them.
     private(set) var expanded: Set<CoreCapability> = []
     /// The grid write waiting for Confirm or Cancel.
@@ -212,35 +208,9 @@ final class RulesModel {
         select(RulesSelection(dir: selection.dir, file: file))
     }
 
-    /// Shows one CLI's page. A grid confirmation belongs to the Claude Code page, so leaving it closes the confirmation.
-    func selectCLI(_ choice: InventoryCLI) {
-        guard choice != cli else { return }
-        cli = choice
-        pending = nil
-    }
-
-    func showAllTrust() { showsAllTrust = true }
-
-    /// Selects `~/.codex/config.toml` (or the Codex folder when there is none) in the Finder. Editing stays in the user's
-    /// editor; SpaceVibe starts no other app (AGENTS.md S-R4).
-    func revealCodexConfig() {
-        let root = Self.codexFolder()
-        let file = root.appendingPathComponent("config.toml")
-        NSWorkspace.shared.activateFileViewerSelecting([FileManager.default.fileExists(atPath: file.path) ? file : root])
-    }
-
-    /// `CODEX_HOME`, else `.codex` in the home folder: where the core reads Codex from.
-    private static func codexFolder(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
-        func value(_ key: String) -> String? { environment[key].flatMap { $0.isEmpty ? nil : $0 } }
-        let home = value("HOME") ?? NSHomeDirectory()
-        return URL(fileURLWithPath: value("CODEX_HOME") ?? (home as NSString).appendingPathComponent(".codex"), isDirectory: true)
-    }
-
     func toggle(_ capability: CoreCapability) {
         if expanded.contains(capability) { expanded.remove(capability) } else { expanded.insert(capability) }
     }
-
-    func setExpanded(_ capabilities: Set<CoreCapability>) { expanded = capabilities }
 
     // MARK: Grid writes
 
@@ -272,8 +242,6 @@ final class RulesModel {
             }
         }
     }
-
-    func cancelPending() { pending = nil }
 
     /// Writes what the confirmation listed, to the scope it was previewed for, through `performWithUndo`. A write that would
     /// change nothing never opens the confirmation (`requestSet` says so in a toast instead).

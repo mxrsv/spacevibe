@@ -34,6 +34,6 @@ struct ControlSpokenTests {
     @Test("Undo in a toast carries its Z cap; other toast actions carry none unless they say so")
     func undoKeyCap() {
         #expect(ToastAction.undo {}.keyCap == "Z")
-        #expect(ToastAction(title: "View", icon: .download, run: {}).keyCap == nil)
+        #expect(ToastAction(title: "View", run: {}).keyCap == nil)
     }
 }

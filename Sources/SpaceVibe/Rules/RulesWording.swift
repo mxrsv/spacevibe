@@ -1,8 +1,6 @@
 /// Words and tones for verdicts, grid states and the confirmation. Pure.
 enum RulesWording {
     static let verdicts: [CoreVerdict] = [.allow, .ask, .deny]
-    /// The rule list reads strictest first.
-    static let listOrder: [CoreVerdict] = [.deny, .ask, .allow]
 
     static func title(_ verdict: CoreVerdict) -> String {
         switch verdict {
@@ -33,11 +31,6 @@ enum RulesWording {
         case .none: "no rule"
         }
     }
-
-    /// Where a "mixed" cell's tag explains itself (tooltip and accessibility hint).
-    static let mixedHelp = "Disabled because this cell holds rules for specific paths or commands, so it has no single value. Edit those rules in the list below."
-
-    static let invalidFileHelp = "Disabled because the settings file is not valid JSON."
 
     static func ruleCount(_ count: Int) -> String {
         count == 0 ? "" : "\(count) \(count == 1 ? "rule" : "rules")"

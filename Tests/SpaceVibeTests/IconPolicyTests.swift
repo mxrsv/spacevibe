@@ -151,10 +151,10 @@ struct IconPolicyTests {
         }
     }
 
-    @Test("icon sizes: 16, 14, 12 and 24 for v5, the old 22 and 20 until the cut-over, never under 12")
+    @Test("icon sizes: 16, 14, 12, 24 and the verdict box's 20, never under 12")
     func sizes() {
         #expect(IconSize.control.points == 16 && IconSize.inline.points == 14 && IconSize.small.points == 12 && IconSize.large.points == 24)
-        #expect(IconSize.sidebar.points == 22 && IconSize.row.points == 20)
+        #expect(IconSize.row.points == 20)
         for size in IconSize.allCases { #expect(size.points >= 12, "\(size)") }
         #expect(IconSize.allCases.map(\.points).min() == 12)
     }

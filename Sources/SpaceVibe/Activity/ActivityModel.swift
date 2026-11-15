@@ -15,8 +15,6 @@ final class ActivityModel {
     /// The wait before subscribing again after a failed or ended subscription.
     static let liveInterval: Duration = .seconds(3)
     static let firstReadInterval: Duration = .milliseconds(500)
-    /// What the engine reads by default (the core's `HistoryDays`); the empty states name it.
-    static let historyDays = 14
     private static let unreadable = "The session logs could not be read."
 
     let env: AppEnvironment

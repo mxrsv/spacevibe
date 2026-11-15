@@ -17,18 +17,6 @@ enum SpaceVibeButtonKind {
     case plainIcon
 }
 
-/// Row actions are hidden until the row is hovered, focused or selected. `Row` sets this for its `actions` slot.
-private struct ActionsConcealedKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    var actionsConcealed: Bool {
-        get { self[ActionsConcealedKey.self] }
-        set { self[ActionsConcealedKey.self] = newValue }
-    }
-}
-
 struct SpaceVibeButtonStyle: ButtonStyle {
     var kind: SpaceVibeButtonKind = .normal
 
@@ -40,8 +28,6 @@ struct SpaceVibeButtonStyle: ButtonStyle {
         let configuration: ButtonStyle.Configuration
         let kind: SpaceVibeButtonKind
         @Environment(\.isEnabled) private var isEnabled
-        @Environment(\.isFocused) private var isFocused
-        @Environment(\.actionsConcealed) private var concealed
         @Environment(\.controlGround) private var ground
         @State private var hovering = false
 
@@ -72,8 +58,6 @@ struct SpaceVibeButtonStyle: ButtonStyle {
 
         private var opacity: Double {
             if !isEnabled { return 0.45 }
-            // A hidden row action reveals itself when it takes keyboard focus.
-            if concealed && !isFocused && !hovering { return 0 }
             return configuration.isPressed ? 0.8 : 1
         }
 
@@ -101,41 +85,6 @@ struct SpaceVibeButtonStyle: ButtonStyle {
 
 extension ButtonStyle where Self == SpaceVibeButtonStyle {
     static func spaceVibe(_ kind: SpaceVibeButtonKind = .normal) -> SpaceVibeButtonStyle { SpaceVibeButtonStyle(kind: kind) }
-}
-
-/// A small button for a row's trailing actions: revealed on hover, focus or selection (see `Row`).
-/// `iconOnly` with an `icon` makes a square icon button; the title is then its accessibility label and tooltip.
-struct RowActionButton: View {
-    let title: String
-    var icon: SpaceVibeGlyph?
-    var kind: SpaceVibeButtonKind = .normal
-    var iconOnly = false
-    /// A CLI's dot in the icon button's corner: which CLI this action touches ("Remove from Codex").
-    var badge: InventoryCLI?
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            if iconOnly, let icon {
-                SpaceVibeIcon(icon)
-                    .foregroundStyle(kind == .danger ? Palette.dangerInk : Palette.text)
-                    .frame(width: Metrics.controlHeight, height: Metrics.controlHeight)
-                    .overlay(alignment: .topTrailing) {
-                        if let badge { CLIDot(badge, decorative: true, size: Space.s6).padding(Space.s4) }
-                    }
-            } else if let icon {
-                HStack(spacing: Space.s6) {
-                    SpaceVibeIcon(icon)
-                    Text(title)
-                }
-            } else {
-                Text(title)
-            }
-        }
-        .buttonStyle(.spaceVibe(iconOnly ? .icon : kind))
-        .help(title)
-        .accessibilityLabel(title)
-    }
 }
 
 /// The v5 buttons (spec, "Components": buttons with an optional key cap). Only the v5 build uses them; the kinds above
