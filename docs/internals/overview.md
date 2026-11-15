@@ -40,6 +40,6 @@ Condensed; the plan's [full list](../plans/2026-11-07-go-core-and-spacevibe-iden
 - **Paths.** `Roots.resolvedPath` resolves the deepest existing ancestor of a missing path; `filepath.EvalSymlinks` fails on it. The real home comes from the password database, never `HOME` or `os.UserHomeDir`, or the real-home guard (S-R1, AC3) is void.
 - **Writes.** An atomic write is a `O_EXCL` temp file, `fchmod`, `fsync`, read-back, a byte re-check, rename, and `unlink` on failure ([`fsx`](../../core/internal/fsx)). A symlinked target stays a link. A trash move across volumes needs a copy fallback, because `os.Rename` returns EXDEV.
 - **Locks.** Go's mutex is not re-entrant: split each write into a locked entry and an unlocked body. Two processes write the same data folder, so the lock also takes `flock` on `<data>/write.lock`.
-- **Lines and sizes.** `bufio.Scanner` stops at 64 KB; log lines go up to 32 MiB and zstd streams are capped at 512 MiB.
+- **Lines and sizes.** `bufio.Scanner` stops at 64 KB; log lines go up to 32 MiB in the usage scan and 16 MiB in the tail readers that Activity and Limits use ([tail-reader.go](../../core/internal/logs/tail-reader.go)), and zstd streams are capped at 512 MiB.
 - **Equality.** Swift compares strings by canonical equivalence; Go compares bytes. A decomposed file name can sort or match differently.
 - **Numbers.** Swift and Go print floats differently. Bytes on disk differ; parsed values agree. Only the golden writer needs JavaScript's text.
