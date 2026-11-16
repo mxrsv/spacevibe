@@ -119,12 +119,7 @@ private struct MeterColumn: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.DetailPane.meterSpacing) {
-            HStack(spacing: Metrics.DetailPane.meterHeadSpacing) {
-                CLIMark(meter.cli, size: .control)
-                Text(meter.cli.label).spaceVibeText(.meta, tone: .secondary)
-                Spacer(minLength: 0)
-                if let status = meter.status { Text(status).spaceVibeText(.small, tone: .tertiary).lineLimit(1).fixedSize() }
-            }
+            head
             figure
             BarCell(share: meter.share, tone: meter.cli == .claude ? .claude : .codex)
                 .frame(height: Metrics.DetailPane.meterBarHeight)
@@ -135,6 +130,36 @@ private struct MeterColumn: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(spoken)
+    }
+
+    /// The logo, the CLI's name and the status word on one line. A column too narrow for all three (the window at its
+    /// smallest) drops the name and never breaks it: the logo and the status ("Not in Codex") still say which CLI.
+    @ViewBuilder
+    private var head: some View {
+        let mark = CLIMark(meter.cli, size: .control)
+        let name = Text(meter.cli.label).spaceVibeText(.meta, tone: .secondary).lineLimit(1)
+        if let status = meter.status {
+            let word = Text(status).spaceVibeText(.small, tone: .tertiary).lineLimit(1)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Metrics.DetailPane.meterHeadSpacing) {
+                    mark
+                    name.fixedSize()
+                    Spacer(minLength: 0)
+                    word.fixedSize()
+                }
+                HStack(spacing: Metrics.DetailPane.meterHeadSpacing) {
+                    mark
+                    word
+                    Spacer(minLength: 0)
+                }
+            }
+        } else {
+            HStack(spacing: Metrics.DetailPane.meterHeadSpacing) {
+                mark
+                name
+                Spacer(minLength: 0)
+            }
+        }
     }
 
     @ViewBuilder

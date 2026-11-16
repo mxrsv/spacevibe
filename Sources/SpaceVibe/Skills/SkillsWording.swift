@@ -130,8 +130,9 @@ enum SkillsWording {
         clis.count == 1 ? clis[0].label : (either ? "either CLI" : "both CLIs")
     }
 
-    /// The meter of one CLI in "Sessions by CLI".
-    static func meter(for row: LoadoutRow, cli: CoreCLI, maxSessions: Int, now: Date) -> SessionMeter {
+    /// The meter of one CLI in "Sessions by CLI". `scanFailed`: the usage scan failed, so a cell without a count is not
+    /// "counting" any more.
+    static func meter(for row: LoadoutRow, cli: CoreCLI, maxSessions: Int, now: Date, scanFailed: Bool = false) -> SessionMeter {
         let name = cli.label
         let usage = row.skillUsage
         switch usage.cells[cli] ?? .missing {
@@ -140,7 +141,8 @@ enum SkillsWording {
             let caption = row.plugin != nil ? "Plugin-owned skills stay in their CLI" : nil
             return SessionMeter(cli: cli, status: "Not in \(name)", figure: nil, share: nil, caption: caption, emphasis: nil)
         case .loading:
-            return SessionMeter(cli: cli, status: nil, figure: nil, share: nil, caption: "Counting sessions", emphasis: nil)
+            return SessionMeter(cli: cli, status: nil, figure: nil, share: nil, caption: scanFailed ? "Could not be counted" : "Counting sessions",
+                                emphasis: nil)
         case .noLogs:
             return SessionMeter(cli: cli, status: nil, figure: nil, share: nil, caption: "No \(name) logs to count from", emphasis: nil)
         case .added(let added):

@@ -35,6 +35,8 @@ final class LoadoutModel {
     private(set) var usageResult: CoreUsageResult?
     private(set) var scanProgress: CoreUsageProgress?
     private(set) var scanFailure: String?
+    /// The usage scan failed and no earlier result stands in: the counts are missing, not still on their way.
+    var scanFailed: Bool { usageResult == nil && scanFailure != nil }
 
     var scope = LoadoutRows.globalScope
     var filter = LoadoutFilter.all
@@ -347,15 +349,23 @@ private extension LoadoutRows.SkillWrites.Step {
 
 extension LoadoutData {
     /// The same rows with no count yet, as they read while a usage scan has not landed (or failed): a shot of that state.
+    /// As the core does without a scan result (`attachUsage`), every counted and every pending cell reads "Usage scan has not
+    /// finished": "Added in the last 24 hours" is said only once a scan has counted zero sessions.
     func withoutCounts() -> LoadoutData {
         var copy = self
         copy.rows = rows.map { row in
             var row = row
-            let pending = CoreUsageCell.pending(reason: "Usage scan has not finished")
-            if case .counted = row.cells.claude { row.cells.claude = pending }
-            if case .counted = row.cells.codex { row.cells.codex = pending }
+            row.cells.claude = Self.uncounted(row.cells.claude)
+            row.cells.codex = Self.uncounted(row.cells.codex)
             return row
         }
         return copy
+    }
+
+    private static func uncounted(_ cell: CoreUsageCell) -> CoreUsageCell {
+        switch cell {
+        case .counted, .pending: .pending(reason: "Usage scan has not finished")
+        case .missing, .unmeasurable: cell
+        }
     }
 }

@@ -123,6 +123,24 @@ struct AgentsPageTests {
         counted.cells = CoreCells(claude: .counted(runs: 3, last: nil, errors: nil), codex: .missing)
         let shown = data([counted], globalCount: 1).withoutCounts()
         #expect(shown.rows[0].cells.claude == .pending(reason: "Usage scan has not finished") && shown.rows[0].cells.codex == .missing)
+        // Without a scan result the core says "has not finished" for every cell: "Added in the last 24 hours" needs a count of zero.
+        var added = row("b", .skill)
+        added.cells = CoreCells(claude: .pending(reason: "Added in the last 24 hours"), codex: .unmeasurable(reason: "x"))
+        let uncounted = data([added], globalCount: 1).withoutCounts()
+        #expect(uncounted.rows[0].cells.claude == .pending(reason: "Usage scan has not finished"))
+        #expect(uncounted.rows[0].cells.codex == .unmeasurable(reason: "x"))
+    }
+
+    @Test("a failed scan with no earlier result says so in the status bar, never that the sessions were counted")
+    func sourceOfAFailedScan() {
+        let env = AppEnvironment(toasts: ToastCenter(announce: false))
+        let page = AgentsPage(env: env, loadout: LoadoutModel(env: env, data: data([row("a", .skill)], globalCount: 1), scanFailure: "The usage scan could not run."))
+        page.select(.skills)
+        #expect(page.loadout.scanFailed && page.source == "Usage could not be counted")
+        page.select(.subagents)
+        #expect(page.source == "Usage could not be counted")
+        page.select(.hooks)
+        #expect(page.source == HooksStatusBar.source)
     }
 
     // MARK: Re-reading (D1)

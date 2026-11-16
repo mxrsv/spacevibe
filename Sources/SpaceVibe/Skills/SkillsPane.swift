@@ -40,7 +40,9 @@ struct SkillsPane: View {
                 VerdictBox(glyph: status.verdict, glyphLabel: verdict.title, title: verdict.title, text: verdict.text, small: verdict.small)
             }
             PaneSection(title: "Sessions by CLI") {
-                SessionMeters(meters: detected.map { SkillsWording.meter(for: row, cli: $0, maxSessions: model.maxSessions, now: now) })
+                SessionMeters(meters: detected.map {
+                    SkillsWording.meter(for: row, cli: $0, maxSessions: model.maxSessions, now: now, scanFailed: model.loadout.scanFailed)
+                })
             }
             PaneSection(title: "Lives in") {
                 FileList(files: model.files(of: row).map { FileList.Entry(cli: $0.cli, path: $0.path) })

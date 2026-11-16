@@ -4,6 +4,7 @@ import SwiftUI
 /// its right edge, the permanent pane in the rest, and the bottom bar floating 48 above the panel's bottom while one is
 /// given. The bar's presence lifts the toast (104 instead of 48): the layout tells the toast center. Layout only: the list's
 /// rows, the pane and the bar draw themselves.
+/// A headless shot has no scroll view, so both columns are cut at the frame there (`ShotFit`), as a scrolled page is.
 ///
 ///     ListPaneLayout(orderLine: "Ordered by sessions", scrollTarget: current, barShown: !picked.isEmpty) {
 ///         ListRows { ... }
@@ -29,6 +30,7 @@ struct ListPaneLayout<List: View, Pane: View, Bar: View>: View {
                     OrderLine(text: orderLine)
                     ScrollViewReader { reader in
                         SpaceVibeScrollView { list.padding(Metrics.SkillsList.listInsets) }
+                            .modifier(ShotFit())
                             .onChange(of: scrollTarget) { _, target in
                                 guard let target else { return }
                                 withAnimation(reduceMotion ? nil : .easeOut(duration: Metrics.Motion.quick)) { reader.scrollTo(target) }
@@ -37,7 +39,7 @@ struct ListPaneLayout<List: View, Pane: View, Bar: View>: View {
                 }
                 .frame(width: proxy.size.width * Metrics.SkillsList.widthFraction)
                 .overlay(alignment: .trailing) { Rectangle().fill(Palette.hair).frame(width: Metrics.Radius.edge).accessibilityHidden(true) }
-                pane.frame(maxWidth: .infinity, maxHeight: .infinity)
+                pane.modifier(ShotFit()).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .overlay(alignment: .bottom) {
                 if barShown {

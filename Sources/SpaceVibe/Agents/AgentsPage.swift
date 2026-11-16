@@ -73,9 +73,10 @@ final class AgentsPage: SpaceVibeTab {
 
     var source: String? {
         switch selected {
-        // The counts rest on the scan: once there is a result the bar says how many sessions and since when (GI6).
-        case .skills: loadout.usageResult == nil ? SkillsStatusBar.source : loadout.usageNote
-        case .subagents: loadout.usageResult == nil ? SubagentsStatusBar.source : loadout.usageNote
+        // The counts rest on the scan: once there is a result the bar says how many sessions and since when (GI6). A scan
+        // that failed says so, never that the sessions were counted.
+        case .skills: loadout.usageResult == nil && !loadout.scanFailed ? SkillsStatusBar.source : loadout.usageNote
+        case .subagents: loadout.usageResult == nil && !loadout.scanFailed ? SubagentsStatusBar.source : loadout.usageNote
         case .hooks: HooksStatusBar.source
         case .rules: RulesStatusBar.source
         }
