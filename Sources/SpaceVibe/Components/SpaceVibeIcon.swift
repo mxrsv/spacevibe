@@ -10,7 +10,7 @@ enum GlyphBox {
     static let side: CGFloat = 24
 }
 
-/// One glyph of a generated icon set (`SpaceVibeIconData.swift`, `CategoryIconData.swift`, `ContentIconData.swift`): its shapes in
+/// One glyph of a generated icon set (`CategoryIconData.swift`, `ContentIconData.swift`): its shapes in
 /// the 24 x 24 box and how the set is drawn. `SpaceVibeIcon` draws any of them.
 protocol GlyphSource: Sendable {
     /// The icon of the set this glyph is drawn from, for example `flash-line`.
@@ -63,7 +63,7 @@ struct GlyphShape: Shape {
 /// 12 for chevrons, checks and the filter-chip close; 24 in a pane head's tile (V5-R16). Never below 12. `row` stays for the
 /// verdict box.
 enum IconSize: CaseIterable {
-    /// A row's lead slot, a banner, in the old screens; the verdict glyph in a v5 verdict box (the kit's 20): 20.
+    /// The verdict glyph in a verdict box (the kit's 20): 20.
     case row
     /// Buttons, tags, fields, cells, tabs, rows, menus and the v5 sidebar: 16.
     case control
@@ -89,8 +89,8 @@ enum IconSize: CaseIterable {
 /// current foreground style, so an icon is neutral wherever it sits; `ink` is for the two places that tint one (a state tag, a
 /// banner). Hidden from VoiceOver unless it has a `label`, for an icon that carries meaning on its own.
 ///
-/// `SpaceVibeIcon(.lock)` draws a Solar glyph (old screens). The v5 sets have their own labels, so a name that exists in two sets
-/// never reads two ways: `SpaceVibeIcon(category: .skill)` (MingCute) and `SpaceVibeIcon(content: .stack)` (Phosphor).
+/// Each set has its own label, so a name that exists in two sets never reads two ways: `SpaceVibeIcon(category: .skill)`
+/// (MingCute) and `SpaceVibeIcon(content: .stack)` (Phosphor).
 struct SpaceVibeIcon: View {
     let source: any GlyphSource
     var size: IconSize = .control
@@ -102,10 +102,6 @@ struct SpaceVibeIcon: View {
         self.size = size
         self.ink = ink
         self.label = label
-    }
-
-    init(_ glyph: SpaceVibeGlyph, size: IconSize = .control, ink: Color? = nil, label: String? = nil) {
-        self.init(source: glyph, size: size, ink: ink, label: label)
     }
 
     init(category glyph: CategoryGlyph, size: IconSize = .control, ink: Color? = nil, label: String? = nil) {
@@ -146,54 +142,6 @@ private struct GlyphLayerView: View {
             }
         }
         .compositingGroup()
-    }
-}
-
-/// The disclosure chevron and the menu's up-and-down mark, drawn as a stroke because Solar's Bold Duotone chevron breaks up
-/// below 22 pt. The geometry is Solar's own Linear set in the same 24 box (`alt-arrow-right-linear`: M9 5 L15 12 L9 19;
-/// `chevrons-up-down-linear` for the pair), 1.5 wide with round caps and joins, scaled with the icon.
-struct Chevron: View {
-    enum Direction {
-        case right, left, down, upDown
-    }
-
-    let direction: Direction
-    var size: IconSize = .control
-    var label: String?
-
-    init(_ direction: Direction, size: IconSize = .control, label: String? = nil) {
-        self.direction = direction
-        self.size = size
-        self.label = label
-    }
-
-    var body: some View {
-        let scale = size.points / GlyphBox.side
-        ChevronShape(direction: direction)
-            .stroke(style: StrokeStyle(lineWidth: Metrics.chevronStroke * scale, lineCap: .round, lineJoin: .round))
-            .frame(width: size.points, height: size.points)
-            .modifier(IconAccessibility(label: label))
-    }
-}
-
-private struct ChevronShape: Shape {
-    let direction: Chevron.Direction
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let points: [[CGPoint]]
-        switch direction {
-        case .right: points = [[CGPoint(x: 9, y: 5), CGPoint(x: 15, y: 12), CGPoint(x: 9, y: 19)]]
-        case .left: points = [[CGPoint(x: 15, y: 5), CGPoint(x: 9, y: 12), CGPoint(x: 15, y: 19)]]
-        case .down: points = [[CGPoint(x: 5, y: 9), CGPoint(x: 12, y: 15), CGPoint(x: 19, y: 9)]]
-        case .upDown:
-            points = [[CGPoint(x: 18, y: 15), CGPoint(x: 12, y: 21), CGPoint(x: 6, y: 15)],
-                      [CGPoint(x: 18, y: 9), CGPoint(x: 12, y: 3), CGPoint(x: 6, y: 9)]]
-        }
-        for line in points { path.addLines(line) }
-        let side = min(rect.width, rect.height)
-        let scale = side / GlyphBox.side
-        return path.applying(CGAffineTransform(translationX: rect.midX - side / 2, y: rect.midY - side / 2).scaledBy(x: scale, y: scale))
     }
 }
 

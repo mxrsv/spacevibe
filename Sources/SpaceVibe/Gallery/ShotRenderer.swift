@@ -65,15 +65,15 @@ enum ShotRenderer {
         let shell = ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice))
         return VStack(alignment: .leading, spacing: 0) {
             Text("Component gallery")
-                .spaceVibeText(.title)
-                .padding(.horizontal, Metrics.pagePadding)
+                .spaceVibeText(.cardTitle)
+                .padding(.horizontal, Space.s24)
                 .padding(.top, 20)
                 .padding(.bottom, 4)
             ComponentGalleryContent(part: part)
         }
         .frame(width: size.width, alignment: .topLeading)
         .overlayHost()
-        .background(Palette.background)
+        .background(Palette.bgApp)
         .spaceVibeRoot(shell: shell, toasts: ToastCenter(announce: false))
     }
 

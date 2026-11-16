@@ -262,8 +262,6 @@ struct ContrastTests {
                 let row = ListRow("Synthetic skill", isCurrent: true, isPicked: picked, onActivate: {})
                 try expectVisibleFocus(row, scheme: scheme)
             }
-            let row = Row(selected: true, onActivate: {}) { Text("Synthetic skill") }
-            try expectVisibleFocus(row, scheme: scheme)
         }
     }
 

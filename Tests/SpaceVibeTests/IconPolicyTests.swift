@@ -4,9 +4,9 @@ import Testing
 @testable import SpaceVibe
 
 /// Every icon comes from a generated set or from SpaceVibe's own verdict glyphs (V5-A4; the v3 rule DL7 it extends): category
-/// glyphs from MingCute Line, sidebar and content glyphs from Phosphor Duotone, Solar only for the screens not yet rebuilt,
-/// the CLI marks from `CLIMark`; no SF Symbol outside `Gallery/`, no size under 12, and a credit for every set in use.
-/// The checks read `allCases`, so the cut-over that deletes Solar needs no edit here beyond dropping its row.
+/// glyphs from MingCute Line, sidebar, content and Settings glyphs from Phosphor Duotone, the CLI marks from `CLIMark`; no
+/// SF Symbol outside `Gallery/`, no size under 12, and a credit for every set in use. Solar went with the old Settings blocks
+/// (2026-11-16). The checks read `allCases`, so a glyph added to a set needs no edit here.
 @Suite("Icon policy: generated sets")
 struct IconPolicyTests {
     static var appSources: URL { StyleBoundaryTests.appSources }
@@ -24,8 +24,6 @@ struct IconPolicyTests {
     }
 
     static let sets: [GlyphSet] = [
-        GlyphSet(glyphs: SpaceVibeGlyph.allCases, file: "SpaceVibeIconData.swift", package: "@iconify-json/solar", suffix: "-bold-duotone", layers: 2,
-                 credit: "Solar by 480 Design", licence: "CC BY 4.0"),
         GlyphSet(glyphs: CategoryGlyph.allCases, file: "CategoryIconData.swift", package: "@iconify-json/mingcute", suffix: "-line", layers: 1,
                  credit: "MingCute by MingCute Design", licence: "Apache-2.0"),
         GlyphSet(glyphs: ContentGlyph.allCases, file: "ContentIconData.swift", package: "@iconify-json/ph", suffix: "-duotone", layers: 2,
@@ -83,7 +81,7 @@ struct IconPolicyTests {
         #expect(count(symbol, #"Image(systemName: "trash")"#) == 1)
         #expect(count(symbol, #"Label("Copy", systemImage: "doc.on.doc")"#) == 1)
         #expect(count(image, #"Image(systemName: "trash")"#) == 1)
-        #expect(count(image, "SpaceVibeIcon(.trash)") == 0)
+        #expect(count(image, "SpaceVibeIcon(content: .trash)") == 0)
         #expect(count(image, "ImageRenderer(content: view)") == 0)
     }
 
@@ -105,8 +103,7 @@ struct IconPolicyTests {
                 if !glyph.hasLightLayer { #expect(glyph.path(.light).isEmpty, "\(glyph.iconName) draws a light layer it does not have") }
             }
         }
-        // The light layer's opacity per set: Solar's own, and the mock's 25% for Phosphor's (its set gives 20%).
-        #expect(SpaceVibeGlyph.allCases.allSatisfy { $0.layerOpacity == 0.5 && $0.outlineWidth == 0 })
+        // The light layer's opacity: the mock's 25% for Phosphor's (its set gives 20%).
         #expect(ContentGlyph.allCases.allSatisfy { $0.layerOpacity == 0.25 && $0.outlineWidth == 0.75 })
         #expect(CategoryGlyph.allCases.allSatisfy { $0.outlineWidth == 0 })
     }
@@ -138,19 +135,6 @@ struct IconPolicyTests {
         #expect(Set(palette) == ["fg2", "onVerdict"], "D58: one neutral colour, the cut-out in onVerdict; found \(Set(palette))")
     }
 
-    @Test("v5 screen folders draw no Solar glyph")
-    func v5ScreensLeaveSolar() throws {
-        let solar = try NSRegularExpression(pattern: #"SpaceVibeGlyph|SpaceVibeIcon\(\s*\."#)
-        for folder in StyleBoundaryTests.v5Folders {
-            let root = Self.appSources.appendingPathComponent(folder)
-            guard let walker = FileManager.default.enumerator(atPath: root.path) else { continue }
-            for case let relative as String in walker where relative.hasSuffix(".swift") {
-                let text = try String(contentsOf: root.appendingPathComponent(relative), encoding: .utf8)
-                #expect(solar.numberOfMatches(in: text, range: NSRange(text.startIndex..., in: text)) == 0, "\(folder)/\(relative) uses a Solar glyph")
-            }
-        }
-    }
-
     @Test("icon sizes: 16, 14, 12, 24 and the verdict box's 20, never under 12")
     func sizes() {
         #expect(IconSize.control.points == 16 && IconSize.inline.points == 14 && IconSize.small.points == 12 && IconSize.large.points == 24)
@@ -171,10 +155,9 @@ struct IconPolicyTests {
         // Section 4(b) of Apache-2.0 and the notices of the others: each header says the paths were changed.
         #expect(try Self.source("Components/CategoryIconData.swift").contains("Changed from the original"))
         #expect(try Self.source("Components/ContentIconData.swift").contains("Changed from the original"))
-        #expect(Credits.text.contains("https://creativecommons.org/licenses/by/4.0/"))
     }
 
-    @Test("each licence a set asks for is shown: Solar's link, MIT's notice and the Apache-2.0 text in the bundle")
+    @Test("each licence a set asks for is shown: MIT's notice and the Apache-2.0 text in the bundle")
     func licences() throws {
         #expect(Credits.text.contains("Copyright (c) 2023 Phosphor Icons"))
         #expect(Credits.text.contains("The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software."))

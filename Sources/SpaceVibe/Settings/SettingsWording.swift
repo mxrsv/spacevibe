@@ -13,16 +13,16 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: SpaceVibeGlyph {
+    var icon: ContentGlyph {
         switch self {
         case .appearance: .palette
-        case .update: .update
+        case .update: .refresh
         }
     }
 }
 
 extension ThemeSetting {
-    var icon: SpaceVibeGlyph {
+    var icon: ContentGlyph {
         switch self {
         case .system: .monitor
         case .light: .sun
@@ -36,20 +36,21 @@ enum SettingsWording {
     static let automaticChecks = "Check for updates automatically"
     static let automaticChecksDetail = "Once a day. Installing always takes a click."
 
-    /// The status tag of the Update card; nil when there is nothing to say beyond the time.
+    /// The status of the Update card: its glyph, or the warn mark when the check failed; nil when there is nothing to say
+    /// beyond the time.
     struct StatusTag: Equatable {
         let text: String
-        let tone: TagTone
-        let icon: SpaceVibeGlyph?
+        let glyph: ContentGlyph?
+        var warns = false
     }
 
     static func tag(_ status: UpdateController.Status) -> StatusTag? {
         switch status {
         case .notChecked, .unavailable: nil
-        case .checking: StatusTag(text: "Checking\u{2026}", tone: .neutral, icon: .refresh)
-        case .upToDate: StatusTag(text: "Up to date", tone: .success, icon: nil)
-        case .available(let version): StatusTag(text: "\(SpaceVibeMark.productName) \(version) is available", tone: .neutral, icon: .download)
-        case .failed: StatusTag(text: "Check failed", tone: .warn, icon: nil)
+        case .checking: StatusTag(text: "Checking\u{2026}", glyph: .refresh)
+        case .upToDate: StatusTag(text: "Up to date", glyph: .check)
+        case .available(let version): StatusTag(text: "\(SpaceVibeMark.productName) \(version) is available", glyph: .download)
+        case .failed: StatusTag(text: "Check failed", glyph: nil, warns: true)
         }
     }
 

@@ -116,6 +116,30 @@ extension ListRow {
     }
 }
 
+/// A click, Return or Space on a row or a band header: one modifier, so keyboard and pointer behave alike.
+struct RowActivation: ViewModifier {
+    let onActivate: (() -> Void)?
+    var focused: FocusState<Bool>.Binding
+
+    func body(content: Content) -> some View {
+        if let onActivate {
+            content
+                .focusable()
+                .focused(focused)
+                .focusEffectDisabled()
+                .onKeyPress(keys: [.return, .space]) { _ in
+                    onActivate()
+                    return .handled
+                }
+                .onTapGesture(perform: onActivate)
+                .pointerCursor()
+                .accessibilityAction(.default, onActivate)
+        } else {
+            content
+        }
+    }
+}
+
 /// The pick checkbox in a row's lead slot: 16 with radius 4, an `fg3` outline, or the accent with a white check when picked.
 private struct RowCheckbox: View {
     let name: String

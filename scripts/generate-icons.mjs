@@ -1,16 +1,15 @@
 #!/usr/bin/env node
-// Writes the app's icons as SwiftUI path code into Sources/SpaceVibe/Components, from three icon sets in their Iconify JSON form.
+// Writes the app's icons as SwiftUI path code into Sources/SpaceVibe/Components, from two icon sets in their Iconify JSON form.
 // No SVG is shipped or parsed at run time (spec docs/specs/2026-11-03-reins-design-language.md, v3 "Icons"; v5 spec V5-R9,
 // V5-R10, V5-R12).
 //
-//   SpaceVibeIconData.swift     Solar Bold Duotone (480 Design, CC BY 4.0): the old screens, until the cut-over deletes them
 //   CategoryIconData.swift  MingCute Line (MingCute Design, Apache-2.0): the category glyphs
-//   ContentIconData.swift   Phosphor Duotone (Phosphor Icons, MIT): the v5 sidebar and content glyphs
+//   ContentIconData.swift   Phosphor Duotone (Phosphor Icons, MIT): the sidebar, content and Settings glyphs
 //
 //   cd <scratch folder outside the repo; never commit it>
-//   npm pack @iconify-json/solar@1.2.13 @iconify-json/mingcute@1.2.10 @iconify-json/ph@1.2.2
+//   npm pack @iconify-json/mingcute@1.2.10 @iconify-json/ph@1.2.2
 //   for f in *.tgz; do mkdir "${f%.tgz}" && tar xzf "$f" -C "${f%.tgz}"; done
-//   node scripts/generate-icons.mjs <solar>/package/icons.json <mingcute>/package/icons.json <ph>/package/icons.json
+//   node scripts/generate-icons.mjs <mingcute>/package/icons.json <ph>/package/icons.json
 //
 // Each glyph becomes one or two layers in its 24 x 24 box (Phosphor is scaled down from its 256 grid): the solid layer and,
 // for the duotone sets, the lighter one. Both take one colour in the app. Every path is reduced to absolute move, line, cubic
@@ -23,47 +22,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(REPO, 'Sources/SpaceVibe/Components');
-
-/** [Swift case, Solar icon without the "-bold-duotone" suffix, what it stands for (the SF Symbol it replaces)]. The old screens. */
-export const GLYPHS = [
-  ['activity', 'pulse', 'the Activity tab (waveform.path.ecg)'],
-  ['add', 'add', 'add (plus)'],
-  ['agent', 'bot', 'an agent (person.crop.square)'],
-  ['arrowRight', 'arrow-right', 'go to a scope or an item (arrow.right)'],
-  ['check', 'check', 'done, chosen (checkmark)'],
-  ['clock', 'clock-circle', 'a time, a reading that is old (clock)'],
-  ['close', 'close', 'dismiss, clear (xmark)'],
-  ['copy', 'copy', 'copy (doc.on.doc)'],
-  ['download', 'round-arrow-down', 'see an update (arrow.down.circle)'],
-  ['enter', 'undo-left-round', 'the Return key in the palette footer (return)'],
-  ['error', 'danger-circle', 'an error (xmark.octagon)'],
-  ['file', 'file-text', 'a file in the file history (doc)'],
-  ['globe', 'global', 'Settings: the interface language'],
-  ['hook', 'lightning', 'a hook (bolt)'],
-  ['info', 'info-circle', 'a note, a mixed cell (info.circle)'],
-  ['limits', 'speedometer-max', 'Limits (gauge.with.dots.needle.33percent)'],
-  ['loadout', 'layers', 'the Loadout tab (square.stack.3d.up)'],
-  ['lock', 'lock', 'owned by a plugin, read-only (lock)'],
-  ['monitor', 'monitor', 'Settings: the System theme, which follows macOS'],
-  ['moon', 'moon', 'switch to the dark theme (moon)'],
-  ['navigate', 'sort-vertical', 'the up and down keys in the palette footer (arrow.up.arrow.down)'],
-  ['palette', 'pallete-2', 'Settings: the Appearance section and its Theme card'],
-  ['refresh', 'refresh', 'read again, reading (arrow.clockwise, arrow.triangle.2.circlepath)'],
-  ['rules', 'shield-check', 'the Rules tab (checkmark.shield)'],
-  ['scriptMissing', 'folder-error', 'a hook script that is not there (questionmark.folder)'],
-  ['search', 'magnifer', 'the search field (magnifyingglass)'],
-  ['settings', 'settings', 'open Settings (gearshape)'],
-  ['skill', 'stars-minimalistic', 'a skill (sparkles)'],
-  ['stop', 'stop', 'stop a session (stop)'],
-  ['sun', 'sun', 'switch to the light theme (sun.max)'],
-  ['swap', 'transfer-horizontal', 'move a rule to another verdict (arrow.left.arrow.right)'],
-  ['text', 'text', 'Settings: Font size'],
-  ['tokens', 'chart-2', 'the Tokens tab, when it ships'],
-  ['trash', 'trash-bin-minimalistic', 'remove (trash)'],
-  ['undo', 'undo-left', 'Undo (arrow.uturn.backward)'],
-  ['update', 'refresh-circle', 'Settings: the Update section'],
-  ['warning', 'danger-triangle', 'a warning, not measurable (exclamationmark.triangle)'],
-];
 
 // MARK: SVG body
 
@@ -287,24 +245,31 @@ const CATEGORY_GLYPHS = [
 ];
 
 /** [Swift case, Phosphor icon without the "-duotone" suffix, what it stands for]. The mock's sidebar and content glyphs
- *  (system/shared.js sprite), plus the stop, copy and bug glyphs Activity drew page-locally. */
+ *  (system/shared.js sprite), plus the stop, copy and bug glyphs Activity drew page-locally, and the Settings and Undo glyphs
+ *  that were Solar until Settings moved to the v5 blocks (2026-11-16). */
 const CONTENT_GLYPHS = [
   ['bug', 'bug', 'a failed command (Activity: Failed tab); the mock draws its own bug, this is Phosphor\'s nearest'],
   ['caretDown', 'caret-down', 'a disclosure or menu chevron'],
+  ['caretLeft', 'caret-left', 'back (Settings)'],
   ['check', 'check', 'done, chosen'],
   ['clock', 'clock', 'a time, a stale or unknown reading, a newly added item'],
   ['close', 'x', 'dismiss, clear, remove a filter chip'],
   ['copy', 'copy', 'copy'],
+  ['download', 'arrow-circle-down', 'an update is available (Settings)'],
   ['enter', 'arrow-elbow-down-left', 'Return, and refresh in the mock'],
   ['file', 'file', 'a file (Activity: Files tab, file rows)'],
   ['filter', 'funnel', 'the Filter button and its menu'],
   ['gauge', 'gauge', 'Limits (sidebar)'],
+  ['info', 'info', 'a note (Settings: why this build cannot update)'],
   ['lock', 'lock', 'owned by a plugin, read-only; Codex read-only'],
+  ['monitor', 'monitor', 'the System theme, which follows macOS (Settings)'],
   ['moon', 'moon', 'switch to the dark appearance'],
   ['open', 'arrow-square-out', 'open a file or a session'],
+  ['palette', 'palette', 'the Appearance section (Settings)'],
   ['plus', 'plus', 'add'],
   ['pulse', 'pulse', 'Activity (sidebar, Running tab)'],
   ['rank', 'chart-bar', 'the Rank field of the filter menu; the mock draws three bars, this is Phosphor\'s nearest'],
+  ['refresh', 'arrows-clockwise', 'the Update section, checking for an update (Settings)'],
   ['rule', 'list-checks', 'Rules category glyph (the mock\'s checklist; D32 names none)'],
   ['search', 'magnifying-glass', 'search (sidebar, fields)'],
   ['sliders', 'sliders-horizontal', 'Settings (sidebar), the View button'],
@@ -313,6 +278,7 @@ const CONTENT_GLYPHS = [
   ['sun', 'sun', 'switch to the light appearance'],
   ['terminal', 'terminal-window', 'a CLI (the CLI field of the filter menu)'],
   ['trash', 'trash', 'remove'],
+  ['undo', 'arrow-counter-clockwise', 'Undo (the palette\'s Undo entry)'],
   ['warning', 'warning', 'a warning (never ran, can\'t run)'],
 ];
 
@@ -322,13 +288,6 @@ const CONTENT_GLYPHS = [
  * box units), reproduced so the app's glyphs weigh the same.
  */
 const SOURCES = [
-  {
-    key: 'solar', label: 'Solar', prefix: 'solar', pkg: '@iconify-json/solar', license: 'CC-BY-4.0', box: 24, suffix: '-bold-duotone',
-    glyphs: GLYPHS, out: 'SpaceVibeIconData.swift', type: 'SpaceVibeGlyph', light: true, sourceOpacity: 0.5, layerOpacity: 0.5, outline: 0,
-    credit: 'Solar by 480 Design, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).',
-    doc: ['Every icon the old screens draw, from Solar Bold Duotone. Each has a solid layer and a lighter one in a 24 x 24 box (`SpaceVibeIcon`',
-      'draws them in one colour, the lighter at `layerOpacity`). The v5 screens use `CategoryGlyph` and `ContentGlyph` instead.'],
-  },
   {
     key: 'mingcute', label: 'MingCute', prefix: 'mingcute', pkg: '@iconify-json/mingcute', license: 'Apache-2.0', box: 24, suffix: '-line',
     glyphs: CATEGORY_GLYPHS, out: 'CategoryIconData.swift', type: 'CategoryGlyph', light: false, sourceOpacity: 1, layerOpacity: 1, outline: 0,
@@ -444,7 +403,7 @@ export function swiftSource(source, set, version) {
 function main() {
   const paths = process.argv.slice(2);
   if (paths.length !== SOURCES.length) {
-    console.error('usage: node scripts/generate-icons.mjs <solar icons.json> <mingcute icons.json> <phosphor (ph) icons.json>');
+    console.error('usage: node scripts/generate-icons.mjs <mingcute icons.json> <phosphor (ph) icons.json>');
     process.exit(2);
   }
   const outputs = SOURCES.map((source, i) => {

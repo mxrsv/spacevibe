@@ -2,7 +2,7 @@ import SwiftUI
 
 /// An on/off setting (Settings > Update > Check for updates automatically), drawn rather than AppKit's switch so it
 /// renders in the screenshots too: a 32 x 20 capsule, `accentSolid` when on and `track` when off, with a 16 pt knob.
-/// Space and a click flip it; VoiceOver reads it as a switch with `label`. The row beside it shows the name.
+/// Space and a click flip it; VoiceOver reads it as a switch with `label`. The card beside it shows the name.
 struct SpaceVibeSwitch: View {
     let label: String
     @Binding var isOn: Bool
@@ -17,11 +17,11 @@ struct SpaceVibeSwitch: View {
                 .frame(width: Metrics.switchWidth, height: Metrics.switchHeight)
                 .overlay(alignment: isOn ? .trailing : .leading) {
                     Circle()
-                        .fill(isEnabled ? Palette.onAccent : Palette.surface)
+                        .fill(isEnabled ? Palette.onAccent : Palette.bgPanel)
                         .frame(width: Metrics.switchKnob, height: Metrics.switchKnob)
                         .padding(Space.s2)
                 }
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isOn)
+                .animation(reduceMotion ? nil : .easeOut(duration: Metrics.Motion.quick), value: isOn)
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

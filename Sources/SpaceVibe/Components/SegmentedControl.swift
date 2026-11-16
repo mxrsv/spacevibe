@@ -3,45 +3,39 @@ import SwiftUI
 struct SegmentOption<Value: Hashable>: Identifiable {
     let value: Value
     let title: String
-    var count: Int?
-    /// A CLI's bare glyph before the title (the Rules `Claude Code | Codex` switch).
-    var cli: InventoryCLI?
-    /// Picks this segment from anywhere in the window while the control is enabled (a hidden tab is disabled).
-    var shortcut: KeyboardShortcut?
 
     var id: Value { value }
 
-    init(_ title: String, value: Value, count: Int? = nil, cli: InventoryCLI? = nil, shortcut: KeyboardShortcut? = nil) {
+    init(_ title: String, value: Value) {
         self.title = title
         self.value = value
-        self.count = count
-        self.cli = cli
-        self.shortcut = shortcut
     }
 }
 
-/// A one-of-N switch (Allow / Ask / Deny, Shared / Local). Always has a selection. Left and Right arrows move it while a
-/// segment has focus. A 28 pt frame with 24 pt segments inside it, no outline: the frame takes the control ground's fill and
-/// the selected segment the `selection` tint. The selected segment is semibold, and every segment reserves its semibold
-/// width so the control never changes width.
+/// A one-of-N switch (Settings > Font size). Always has a selection; Left and Right arrows move it while a segment has
+/// focus. 28 high so it fits a card header: the frame is a normal button's surface (`bgRaise`, a `hair2` edge, the top-edge
+/// highlight, radius 6) with 24 pt segments inside it; the selected segment takes the `sel` fill and 600, a hovered one
+/// `hover`. Every segment reserves its 600 width so the control never changes width.
 struct SegmentedControl<Value: Hashable>: View {
     let label: String
     let options: [SegmentOption<Value>]
     @Binding var selection: Value
 
     @FocusState private var focused: Value?
-    @Environment(\.controlGround) private var ground
+    @State private var hovered: Value?
 
     var body: some View {
-        let frame = RoundedRectangle(cornerRadius: Metrics.fieldRadius, style: .continuous)
+        let frame = RoundedRectangle(cornerRadius: Metrics.Radius.control, style: Metrics.Radius.cornerStyle)
         HStack(spacing: 0) {
             ForEach(options) { option in
                 segment(option)
             }
         }
         .padding(Space.s2)
-        .frame(height: Metrics.controlHeight)
-        .background(frame.fill(ground.fill))
+        .frame(height: Metrics.ActionButton.compactHeight)
+        .background(frame.fill(Palette.bgRaise))
+        .overlay { TopEdgeHighlight(radius: Metrics.Radius.control).fill(Palette.hi).allowsHitTesting(false) }
+        .overlay { frame.strokeBorder(Palette.hair2, lineWidth: Metrics.Radius.edge).allowsHitTesting(false) }
         .onKeyPress(.leftArrow) { move(-1) }
         .onKeyPress(.rightArrow) { move(1) }
         .accessibilityElement(children: .contain)
@@ -50,33 +44,31 @@ struct SegmentedControl<Value: Hashable>: View {
 
     private func segment(_ option: SegmentOption<Value>) -> some View {
         let isOn = option.value == selection
-        let shape = RoundedRectangle(cornerRadius: Metrics.segmentRadius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Metrics.Radius.small, style: Metrics.Radius.cornerStyle)
         return Button {
             selection = option.value
         } label: {
-            HStack(spacing: Space.s6) {
-                if let cli = option.cli { CLIMark(cli, size: .glyph) }
-                // The hidden semibold copy holds the width; the visible title sits on it.
-                Text(option.title)
-                    .spaceVibeText(.bodyStrong)
-                    .hidden()
-                    .overlay { Text(option.title).spaceVibeText(isOn ? .bodyStrong : .body, tone: isOn ? .primary : .secondary) }
-                if let count = option.count { Count(count) }
-            }
-            .padding(.horizontal, Space.s8)
-            .frame(height: Metrics.segmentHeight)
-            .background(shape.fill(isOn ? Palette.selection : .clear))
-            .contentShape(shape)
+            // The hidden 600 copy holds the width; the visible title sits on it.
+            Text(option.title)
+                .spaceVibeText(Self.selectedType)
+                .hidden()
+                .overlay { Text(option.title).spaceVibeText(isOn ? Self.selectedType : .metaLabel, tone: isOn ? .primary : .secondary) }
+                .padding(.horizontal, Space.s8)
+                .frame(height: Metrics.segmentHeight)
+                .background(shape.fill(isOn ? Palette.sel : (hovered == option.value ? Palette.hover : .clear)))
+                .contentShape(shape)
         }
         .buttonStyle(.plain)
         .pointerCursor()
-        .keyboardShortcut(option.shortcut)
+        .onHover { hovered = $0 ? option.value : (hovered == option.value ? nil : hovered) }
         .focused($focused, equals: option.value)
         .focusEffectDisabled()
-        .focusFill(focused == option.value, cornerRadius: Metrics.segmentRadius)
+        .focusFill(focused == option.value, cornerRadius: Metrics.Radius.small)
         .accessibilityAddTraits(isOn ? .isSelected : [])
-        .accessibilityLabel(option.count.map { "\(option.title), \($0)" } ?? option.title)
+        .accessibilityLabel(option.title)
     }
+
+    private static var selectedType: SpaceVibeType { SpaceVibeType.metaLabel.weight(.semibold) }
 
     private func move(_ step: Int) -> KeyPress.Result {
         guard focused != nil, let index = options.firstIndex(where: { $0.value == selection }) else { return .ignored }

@@ -1,10 +1,8 @@
 import AppKit
 
-/// The licences the app must show: the bundled typeface, the three icon sets, the Sparkle updater, and the Go runtime and library inside the bundled core. Shown in the standard About panel (SpaceVibe menu,
+/// The licences the app must show: the bundled typeface, the two icon sets, the Sparkle updater, and the Go runtime and library inside the bundled core. Shown in the standard About panel (SpaceVibe menu,
 /// About SpaceVibe), which has no other credits.
 enum Credits {
-    /// Solar draws the old screens, until the v5 cut-over deletes them. CC BY 4.0 asks for the author, the licence with its link, and a note of what was changed.
-    static let icons = "Icons: Solar by 480 Design, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Converted to SwiftUI paths; each icon's lighter shapes are drawn as one layer."
     /// Apache-2.0 section 4(a) asks for a copy of the licence to go with the glyphs. It ships as a file in the bundle, beside
     /// Inter's `OFL.txt`: `Resources/Licenses/MingCute-Apache-2.0.txt` is the upstream `LICENSE` (mingcute-design/mingcute-icons,
     /// blob d645695, last changed in bcee804, 2026-07-30), copied by `scripts/build-app.sh` into `Contents/Resources/Licenses/`.
@@ -14,7 +12,7 @@ enum Credits {
 
     /// MIT asks for the copyright notice and the permission notice in all copies or substantial portions.
     static let contentIcons = """
-    Sidebar and content icons: Phosphor Icons (https://github.com/phosphor-icons/core), MIT. Converted to SwiftUI paths and scaled (changed from the original).
+    Sidebar, content and Settings icons: Phosphor Icons (https://github.com/phosphor-icons/core), MIT. Converted to SwiftUI paths and scaled (changed from the original).
 
     Copyright (c) 2023 Phosphor Icons
 
@@ -97,7 +95,7 @@ enum Credits {
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     """
 
-    static var text: String { [icons, categoryIcons, contentIcons, typeface, sparkle, goRuntime, compress, xxhash].joined(separator: "\n\n") }
+    static var text: String { [categoryIcons, contentIcons, typeface, sparkle, goRuntime, compress, xxhash].joined(separator: "\n\n") }
 
     @MainActor
     static func showAboutPanel() {

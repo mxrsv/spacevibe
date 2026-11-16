@@ -22,7 +22,7 @@ Inter is the only bundled font. Each [text role](../Sources/SpaceVibe/Tokens/Spa
 
 [ToastHost](../Sources/SpaceVibe/Shell/ToastHost.swift) owns the toast placement and Undo key. The newest journal write can be undone after its toast disappears; Activity dismissal has its own in-memory Undo. Stop uses [StopSessionPanel](../Sources/SpaceVibe/Activity/ActivityStopConfirmation.swift), identifies the process and consequence, and has no Undo.
 
-Settings retains the shared controls and preview components it uses, including [Row](../Sources/SpaceVibe/Components/Row.swift) and [UsageCell](../Sources/SpaceVibe/Components/UsageCell.swift). A component is removed only when no current surface or supporting data contract uses it.
+Settings composes the same blocks as the other pages ([Tile](../Sources/SpaceVibe/Components/Tile.swift), [ListRow](../Sources/SpaceVibe/Components/ListRow.swift), [ActionButtonStyle](../Sources/SpaceVibe/Components/ActionButtonStyle.swift), [StatusBar](../Sources/SpaceVibe/Components/StatusBar.swift)) plus its own [RailTab](../Sources/SpaceVibe/Components/RailTab.swift), [ThemeTile](../Sources/SpaceVibe/Components/ThemeTile.swift), [SegmentedControl](../Sources/SpaceVibe/Components/SegmentedControl.swift) and [SpaceVibeSwitch](../Sources/SpaceVibe/Components/SpaceVibeSwitch.swift) on the same tokens. Every glyph comes from MingCute or Phosphor ([IconPolicyTests](../Tests/SpaceVibeTests/IconPolicyTests.swift)). A component is removed only when no current surface or supporting data contract uses it.
 
 ## Gallery and verification
 

@@ -7,7 +7,7 @@ import Testing
 ///
 /// 1. In `Components/`, each file applies `pointerCursor(` (or `pointerStyle(`) at least once per click-taking construct it
 ///    declares: a `ButtonStyle`, a `.buttonStyle(.plain)` button, a `Menu`, a click on a row (`RowActivation`) or a menu line.
-/// 2. In a screen folder, a button uses `.spaceVibe(...)` or `ActionButtonStyle(...)`, which carry the cursor; a bare
+/// 2. In a screen folder, a button uses `ActionButtonStyle(...)`, which carries the cursor; a bare
 ///    `.buttonStyle(.plain)`, `.onTapGesture` or `Menu` is a hand-made control and fails unless `allowed` lists it.
 @Suite("Pointer cursor: clickable blocks set it, screens compose them")
 struct PointerCursorPolicyTests {
@@ -96,7 +96,7 @@ struct PointerCursorPolicyTests {
                 if found < allowed { problems.append("\(file): \(found) hand-made controls, the list says \(allowed). Lower its entry.") }
                 // A button style a screen names must be one that sets the cursor.
                 let styled = text.components(separatedBy: "\n").filter {
-                    $0.contains(".buttonStyle(") && !$0.contains(".buttonStyle(.spaceVibe(") && !$0.contains(".buttonStyle(ActionButtonStyle(")
+                    $0.contains(".buttonStyle(") && !$0.contains(".buttonStyle(ActionButtonStyle(")
                         && !$0.contains(".buttonStyle(.plain)") && !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//")
                 }
                 if !styled.isEmpty { problems.append("\(file): a button style that sets no cursor: \(styled)") }
@@ -111,7 +111,7 @@ struct PointerCursorPolicyTests {
         #expect(Self.count(Self.blockConstructs, in: "        .buttonStyle(.plain)") == 1)
         #expect(Self.count(Self.blockConstructs, in: "x.onTapGesture { go() }") == 1)
         #expect(Self.count(Self.blockConstructs, in: "// .buttonStyle(.plain) in a comment") == 0)
-        #expect(Self.count(Self.blockConstructs, in: "x.buttonStyle(.spaceVibe(.normal))") == 0)
+        #expect(Self.count(Self.blockConstructs, in: "x.buttonStyle(ActionButtonStyle())") == 0)
         #expect(Self.count([Self.cursorCalls], in: "x.pointerCursor()") == 1)
         #expect(Self.count([Self.cursorCalls], in: "x.pointerStyle(.link)") == 1)
             }

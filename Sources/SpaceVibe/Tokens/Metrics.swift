@@ -4,77 +4,17 @@ import SwiftUI
 /// (Spacing, sizes, radii, colour). Text roles live in `SpaceVibeType`. A width measured for text grows with the Font size
 /// setting (`TypeScale.width(_:at:)`, the size it was measured at) and never shrinks below the measured value.
 enum Metrics {
-    static let pagePadding: CGFloat = 24
-    static let pageBottomPadding: CGFloat = 32
-    static let hintBarHeight: CGFloat = 32
-
-    /// Card, banner, toast and palette.
-    static let groupRadius: CGFloat = 12
-    /// A row's hover and selection block inside a card.
-    static let rowRadius: CGFloat = 8
-    /// Buttons, scope picker, sidebar items.
-    static let controlRadius: CGFloat = 8
-    /// Search field, palette row and the segmented control's frame.
-    static let fieldRadius: CGFloat = 8
-    /// A segment inside the segmented control (the frame's radius less its padding).
-    static let segmentRadius: CGFloat = 6
-    static let tagRadius: CGFloat = 6
-    static let kbdRadius: CGFloat = 4
-
-    /// Every row: 6 pt above and below a 20 + 16 two-line block, or around a 28 pt control.
-    static let rowMinHeight: CGFloat = 48
-    static let rowVerticalPadding: CGFloat = 6
-    /// A row of three or more lines.
-    static let tallRowVerticalPadding: CGFloat = 12
-    static let rowSpacing: CGFloat = 12
-    /// Where a card's content starts: the row block's inset plus the row's own padding inside it.
-    static let rowHorizontalPadding: CGFloat = 16
-    /// A row is a block inset this far from the card's edges, so its hover and selection fill never touch them.
-    static let rowInset: CGFloat = 8
-    /// Inside that block, before the lead slot and after the last cell.
-    static var rowInnerPadding: CGFloat { rowHorizontalPadding - rowInset }
-    static let rowLeadWidth: CGFloat = 20
-    /// The divider between two rows starts this far from the row block's leading edge (where the text starts) and ends this
-    /// far from its trailing edge.
-    static let dividerLeadingInset: CGFloat = 40
-    static let dividerTrailingInset: CGFloat = 8
-
-    static let cardHeaderHeight: CGFloat = 56
-    /// Space under a card's last row.
-    static let cardBottomPadding: CGFloat = 8
-
-    /// One CLI's usage column: bar plus number. Header cells use the same width so columns line up.
-    static let usageCellWidth: CGFloat = 200
-    /// Fits "12,345" in `SpaceVibeType.body`.
-    static var usageNumberWidth: CGFloat { TypeScale.shared.width(52, at: 14) }
-    /// Fits "~$148.20" in `SpaceVibeType.number`.
-    static var costWidth: CGFloat { TypeScale.shared.width(72, at: 14) }
-
-    /// The usage and limit ruler: ten cells, each a tenth of the real track width with this gap at its trailing end.
-    /// The usage bar of Loadout and Activity: one continuous capsule, 6 pt. Only Limits uses the ten-cell ruler below.
-    static let barHeight: CGFloat = 6
-
-    /// Every control: button, chip, segmented frame, scope picker, search field.
-    static let controlHeight: CGFloat = 28
-    /// A segment inside its 28 pt frame.
+    /// A segment inside the segmented control's 28 pt frame.
     static let segmentHeight: CGFloat = 24
-    static let tagHeight: CGFloat = 24
-    /// The state dot at a tag's leading edge.
-    static let tagDotSize: CGFloat = 6
-    static let kbdHeight: CGFloat = 20
 
-    /// Icon sizes (`IconSize`): sidebar 22, row lead and banner 20, buttons, tags and fields 16, beside 12 pt text 14 (the
-    /// smallest: Solar Bold Duotone loses detail below it), an empty state's mark 24.
+    /// Icon sizes (`IconSize`): the verdict box's 20, controls and rows 16, beside 12 pt text 14, an empty state's mark and
+    /// a rail tab 24.
     static let iconRow: CGFloat = 20
     static let iconControl: CGFloat = 16
     static let iconInline: CGFloat = 14
     /// Chevrons, checks and the filter-chip close (V5-R16); the smallest an icon is ever drawn.
     static let iconSmall: CGFloat = 12
     static let iconLarge: CGFloat = 24
-    /// The hand-drawn chevron's stroke in its 24 pt box (Solar Linear's width), scaled with the icon.
-    static let chevronStroke: CGFloat = 1.5
-
-    static let emptyStateMessageWidth: CGFloat = 360
 
     /// Limits: the CLI mark (40, 28 in the page's list and detail title, 24 in a sidebar tile).
     static let cliMarkSize: CGFloat = 40
@@ -102,9 +42,8 @@ enum Metrics {
     static let toastDuration: Duration = .seconds(5)
 }
 
-/// The v5 sizes (spec, "Rhythm and sizes (D66)"), one group per block. The current UI uses
-/// them; the flat names above stay for the screens not yet rebuilt until the cut-over (X1). Spacing between blocks is in
-/// `Rhythm` (`edge`, `card`, `group`, `side`).
+/// The v5 sizes (spec, "Rhythm and sizes (D66)"), one group per block. Spacing between blocks is in `Rhythm` (`edge`,
+/// `card`, `group`, `side`).
 extension Metrics {
     /// The verdict glyphs' drawing (the kit's `v2-*` symbols): a hexagon in a 16 box, stroked 1.5 with round caps and joins.
     enum Verdict {

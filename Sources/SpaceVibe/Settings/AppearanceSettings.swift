@@ -1,57 +1,61 @@
 import SwiftUI
 
-/// Settings > Appearance: Theme as three tiles and Font size over two Loadout rows that show it. No Language card while English is
-/// the only language (D69).
+/// Settings > Appearance: Theme as three tiles and Font size over two Skills rows that show it. No Language card while English
+/// is the only language (D69).
 struct AppearanceSettings: View {
     @Environment(AppearanceStore.self) private var appearance
+    @Environment(\.openStateStore) private var store
 
     var body: some View {
         @Bindable var appearance = appearance
-        VStack(spacing: Rhythm.cards) {
-            GroupedList {
-                CardHeader("Theme", lead: { SpaceVibeIcon(.palette, size: .row) })
+        VStack(spacing: Rhythm.card) {
+            Tile("Theme", isOpen: open("theme")) {
                 HStack(spacing: Rhythm.tiles) {
                     ForEach(ThemeSetting.allCases, id: \.self) { theme in
-                        ThemeTile(title: theme.title, icon: theme.icon, appearance: theme.fixed?.colorScheme, isSelected: appearance.theme == theme) {
+                        ThemeTile(title: theme.title, glyph: theme.icon, appearance: theme.fixed?.colorScheme, isSelected: appearance.theme == theme) {
                             appearance.theme = theme
                         }
                     }
                 }
-                .padding(.horizontal, Metrics.rowInset)
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Theme")
-                .groupedListPart(.plain)
             }
 
-            GroupedList {
-                CardHeader("Font size", lead: { SpaceVibeIcon(.text, size: .row) }, columns: {
-                    SegmentedControl(label: "Font size", options: FontSizeChoice.allCases.map { SegmentOption($0.title, value: $0) },
-                                     selection: $appearance.fontSize)
-                })
+            Tile("Font size", isOpen: open("fontSize")) {
                 FontSizeSample()
-                    .padding(.horizontal, Metrics.rowHorizontalPadding)
-                    .padding(.bottom, Space.s8)
-                    .groupedListPart(.plain)
+            } actions: {
+                SegmentedControl(label: "Font size", options: FontSizeChoice.allCases.map { SegmentOption($0.title, value: $0) },
+                                 selection: $appearance.fontSize)
             }
         }
     }
+
+    private func open(_ id: String) -> Binding<Bool> {
+        store.binding(page: SettingsScreen.page, id: id, byDefault: true)
+    }
 }
 
-/// Two rows as Loadout draws them (synthetic names from the fixture home), so the size is judged on real rows.
+/// Two rows as the Skills list draws them (synthetic names from the fixture home), so the size is judged on real rows. They
+/// show and take no click.
 private struct FontSizeSample: View {
     var body: some View {
-        RaisedBlock(inset: EdgeInsets(top: Space.s4, leading: 0, bottom: Space.s4, trailing: 0)) {
-            sampleRow("ponytail", "Pick the laziest solution that works", runs: 142)
-            RowDivider()
-            sampleRow("impeccable", "Design, critique and polish a frontend interface", runs: 87)
+        ListRows {
+            sampleRow("ponytail", in: [.claude, .codex])
+            sampleRow("impeccable", in: [.claude])
         }
+        .allowsHitTesting(false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Sample rows at this font size")
     }
 
-    private func sampleRow(_ name: String, _ description: String, runs: Int) -> some View {
-        Row { RowText(name, subtitle: description) }
-            .lead { SpaceVibeIcon(.skill, size: .row) }
-            .cells { UsageCell(cli: .claude, model: .counted(runs: runs), max: 142) }
+    private func sampleRow(_ name: String, in clis: Set<CoreLimitsCLI>) -> some View {
+        ListRow(name, lead: CategoryGlyph.skill) {
+            LogoStrip {
+                ForEach([CoreLimitsCLI.claude, .codex], id: \.self) { cli in
+                    LogoToggle(cli: cli, isLit: clis.contains(cli), mode: .readOnly) {}
+                }
+            }
+            WarningSlot()
+        }
     }
 }

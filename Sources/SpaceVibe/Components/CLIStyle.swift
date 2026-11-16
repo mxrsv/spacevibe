@@ -14,5 +14,4 @@ extension InventoryCLI {
     /// For text in the CLI's colour.
     var ink: Color { self == .claude ? Palette.claudeInk : Palette.codexInk }
     var tint: Color { self == .claude ? Palette.claudeTint : Palette.codexTint }
-    var tagTone: TagTone { self == .claude ? .claude : .codex }
 }

@@ -46,7 +46,7 @@ enum PaletteSearch {
             actions.append(PaletteEntry(
                 id: "shell.undo",
                 title: "Undo: \(newest.label)",
-                glyph: SpaceVibeGlyph.undo,
+                glyph: ContentGlyph.undo,
                 trailing: ToastAction.undoKeyCap,
                 keywords: ["revert", "restore"]
             ) { [toasts] in toasts?.undoLast() })

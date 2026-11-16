@@ -1,17 +1,15 @@
 import SwiftUI
 
 extension View {
-    /// The `well` behind a screen.
+    /// The window's ground (`bgSide`) behind the shell and Settings.
     func pageBackground() -> some View {
-        background(Palette.well)
+        background(Palette.bgSide)
     }
 }
 
 /// Vertical rhythm between blocks on a page: nearness says what belongs together.
 enum Rhythm {
-    /// Between two cards of one screen (Settings).
-    static let cards = Space.s24
-    /// Between tiles in one row.
+    /// Between tiles in one row (Settings > Theme).
     static let tiles = Space.s8
 
     // Spec, "Rhythm and sizes (D66)": two levels, small inside a group, large between groups.

@@ -10,6 +10,8 @@ enum ContentGlyph: CaseIterable, GlyphSource {
     case bug
     /// A disclosure or menu chevron.
     case caretDown
+    /// Back (Settings).
+    case caretLeft
     /// Done, chosen.
     case check
     /// A time, a stale or unknown reading, a newly added item.
@@ -18,6 +20,8 @@ enum ContentGlyph: CaseIterable, GlyphSource {
     case close
     /// Copy.
     case copy
+    /// An update is available (Settings).
+    case download
     /// Return, and refresh in the mock.
     case enter
     /// A file (Activity: Files tab, file rows).
@@ -26,18 +30,26 @@ enum ContentGlyph: CaseIterable, GlyphSource {
     case filter
     /// Limits (sidebar).
     case gauge
+    /// A note (Settings: why this build cannot update).
+    case info
     /// Owned by a plugin, read-only; Codex read-only.
     case lock
+    /// The System theme, which follows macOS (Settings).
+    case monitor
     /// Switch to the dark appearance.
     case moon
     /// Open a file or a session.
     case open
+    /// The Appearance section (Settings).
+    case palette
     /// Add.
     case plus
     /// Activity (sidebar, Running tab).
     case pulse
     /// The Rank field of the filter menu; the mock draws three bars, this is Phosphor's nearest.
     case rank
+    /// The Update section, checking for an update (Settings).
+    case refresh
     /// Rules category glyph (the mock's checklist; D32 names none).
     case rule
     /// Search (sidebar, fields).
@@ -54,6 +66,8 @@ enum ContentGlyph: CaseIterable, GlyphSource {
     case terminal
     /// Remove.
     case trash
+    /// Undo (the palette's Undo entry).
+    case undo
     /// A warning (never ran, can't run).
     case warning
 
@@ -62,20 +76,26 @@ enum ContentGlyph: CaseIterable, GlyphSource {
         switch self {
         case .bug: "bug-duotone"
         case .caretDown: "caret-down-duotone"
+        case .caretLeft: "caret-left-duotone"
         case .check: "check-duotone"
         case .clock: "clock-duotone"
         case .close: "x-duotone"
         case .copy: "copy-duotone"
+        case .download: "arrow-circle-down-duotone"
         case .enter: "arrow-elbow-down-left-duotone"
         case .file: "file-duotone"
         case .filter: "funnel-duotone"
         case .gauge: "gauge-duotone"
+        case .info: "info-duotone"
         case .lock: "lock-duotone"
+        case .monitor: "monitor-duotone"
         case .moon: "moon-duotone"
         case .open: "arrow-square-out-duotone"
+        case .palette: "palette-duotone"
         case .plus: "plus-duotone"
         case .pulse: "pulse-duotone"
         case .rank: "chart-bar-duotone"
+        case .refresh: "arrows-clockwise-duotone"
         case .rule: "list-checks-duotone"
         case .search: "magnifying-glass-duotone"
         case .sliders: "sliders-horizontal-duotone"
@@ -84,6 +104,7 @@ enum ContentGlyph: CaseIterable, GlyphSource {
         case .sun: "sun-duotone"
         case .terminal: "terminal-window-duotone"
         case .trash: "trash-duotone"
+        case .undo: "arrow-counter-clockwise-duotone"
         case .warning: "warning-duotone"
         }
     }
@@ -106,6 +127,8 @@ enum ContentGlyph: CaseIterable, GlyphSource {
         case (.bug, .light): Self.bugLight(&p)
         case (.caretDown, .solid): Self.caretDownSolid(&p)
         case (.caretDown, .light): Self.caretDownLight(&p)
+        case (.caretLeft, .solid): Self.caretLeftSolid(&p)
+        case (.caretLeft, .light): Self.caretLeftLight(&p)
         case (.check, .solid): Self.checkSolid(&p)
         case (.check, .light): Self.checkLight(&p)
         case (.clock, .solid): Self.clockSolid(&p)
@@ -114,6 +137,8 @@ enum ContentGlyph: CaseIterable, GlyphSource {
         case (.close, .light): Self.closeLight(&p)
         case (.copy, .solid): Self.copySolid(&p)
         case (.copy, .light): Self.copyLight(&p)
+        case (.download, .solid): Self.downloadSolid(&p)
+        case (.download, .light): Self.downloadLight(&p)
         case (.enter, .solid): Self.enterSolid(&p)
         case (.enter, .light): Self.enterLight(&p)
         case (.file, .solid): Self.fileSolid(&p)
@@ -122,18 +147,26 @@ enum ContentGlyph: CaseIterable, GlyphSource {
         case (.filter, .light): Self.filterLight(&p)
         case (.gauge, .solid): Self.gaugeSolid(&p)
         case (.gauge, .light): Self.gaugeLight(&p)
+        case (.info, .solid): Self.infoSolid(&p)
+        case (.info, .light): Self.infoLight(&p)
         case (.lock, .solid): Self.lockSolid(&p)
         case (.lock, .light): Self.lockLight(&p)
+        case (.monitor, .solid): Self.monitorSolid(&p)
+        case (.monitor, .light): Self.monitorLight(&p)
         case (.moon, .solid): Self.moonSolid(&p)
         case (.moon, .light): Self.moonLight(&p)
         case (.open, .solid): Self.openSolid(&p)
         case (.open, .light): Self.openLight(&p)
+        case (.palette, .solid): Self.paletteSolid(&p)
+        case (.palette, .light): Self.paletteLight(&p)
         case (.plus, .solid): Self.plusSolid(&p)
         case (.plus, .light): Self.plusLight(&p)
         case (.pulse, .solid): Self.pulseSolid(&p)
         case (.pulse, .light): Self.pulseLight(&p)
         case (.rank, .solid): Self.rankSolid(&p)
         case (.rank, .light): Self.rankLight(&p)
+        case (.refresh, .solid): Self.refreshSolid(&p)
+        case (.refresh, .light): Self.refreshLight(&p)
         case (.rule, .solid): Self.ruleSolid(&p)
         case (.rule, .light): Self.ruleLight(&p)
         case (.search, .solid): Self.searchSolid(&p)
@@ -150,6 +183,8 @@ enum ContentGlyph: CaseIterable, GlyphSource {
         case (.terminal, .light): Self.terminalLight(&p)
         case (.trash, .solid): Self.trashSolid(&p)
         case (.trash, .light): Self.trashLight(&p)
+        case (.undo, .solid): Self.undoSolid(&p)
+        case (.undo, .light): Self.undoLight(&p)
         case (.warning, .solid): Self.warningSolid(&p)
         case (.warning, .light): Self.warningLight(&p)
         }
@@ -175,6 +210,15 @@ enum ContentGlyph: CaseIterable, GlyphSource {
 
     private static func caretDownLight(_ p: inout GlyphPen) {
         p.m(19.5, 9); p.l(12, 16.5); p.l(4.5, 9); p.z()
+    }
+
+    private static func caretLeftSolid(_ p: inout GlyphPen) {
+        p.m(15.287, 3.807); p.c(15.007, 3.691, 14.684, 3.755, 14.469, 3.969); p.l(6.969, 11.469); p.c(6.829, 11.61, 6.749, 11.801, 6.749, 12); p.c(6.749, 12.199, 6.829, 12.39, 6.969, 12.531); p.l(14.469, 20.031); p.c(14.684, 20.245, 15.007, 20.31, 15.287, 20.193); p.c(15.568, 20.077, 15.75, 19.804, 15.75, 19.5); p.l(15.75, 4.5); p.c(15.75, 4.197, 15.567, 3.923, 15.287, 3.807)
+        p.m(14.25, 17.69); p.l(8.56, 12); p.l(14.25, 6.31); p.z()
+    }
+
+    private static func caretLeftLight(_ p: inout GlyphPen) {
+        p.m(15, 4.5); p.l(15, 19.5); p.l(7.5, 12); p.z()
     }
 
     private static func checkSolid(_ p: inout GlyphPen) {
@@ -211,6 +255,16 @@ enum ContentGlyph: CaseIterable, GlyphSource {
 
     private static func copyLight(_ p: inout GlyphPen) {
         p.m(20.25, 3.75); p.l(20.25, 15.75); p.l(15.75, 15.75); p.l(15.75, 8.25); p.l(8.25, 8.25); p.l(8.25, 3.75); p.z()
+    }
+
+    private static func downloadSolid(_ p: inout GlyphPen) {
+        p.m(12, 2.25); p.c(6.615, 2.25, 2.25, 6.615, 2.25, 12); p.c(2.25, 17.385, 6.615, 21.75, 12, 21.75); p.c(17.385, 21.75, 21.75, 17.385, 21.75, 12); p.c(21.744, 6.618, 17.382, 2.256, 12, 2.25)
+        p.m(12, 20.25); p.c(7.444, 20.25, 3.75, 16.556, 3.75, 12); p.c(3.75, 7.444, 7.444, 3.75, 12, 3.75); p.c(16.556, 3.75, 20.25, 7.444, 20.25, 12); p.c(20.245, 16.554, 16.554, 20.245, 12, 20.25)
+        p.m(15.531, 12.219); p.c(15.671, 12.36, 15.751, 12.551, 15.751, 12.75); p.c(15.751, 12.949, 15.671, 13.14, 15.531, 13.281); p.l(12.531, 16.281); p.c(12.39, 16.421, 12.199, 16.501, 12, 16.501); p.c(11.801, 16.501, 11.61, 16.421, 11.469, 16.281); p.l(8.469, 13.281); p.c(8.176, 12.988, 8.176, 12.512, 8.469, 12.219); p.c(8.762, 11.926, 9.238, 11.926, 9.531, 12.219); p.l(11.25, 13.94); p.l(11.25, 8.25); p.c(11.25, 7.836, 11.586, 7.5, 12, 7.5); p.c(12.414, 7.5, 12.75, 7.836, 12.75, 8.25); p.l(12.75, 13.94); p.l(14.469, 12.219); p.c(14.61, 12.079, 14.801, 11.999, 15, 11.999); p.c(15.199, 11.999, 15.39, 12.079, 15.531, 12.219)
+    }
+
+    private static func downloadLight(_ p: inout GlyphPen) {
+        p.m(21, 12); p.c(21, 16.971, 16.971, 21, 12, 21); p.c(7.029, 21, 3, 16.971, 3, 12); p.c(3, 7.029, 7.029, 3, 12, 3); p.c(16.971, 3, 21, 7.029, 21, 12)
     }
 
     private static func enterSolid(_ p: inout GlyphPen) {
@@ -250,6 +304,17 @@ enum ContentGlyph: CaseIterable, GlyphSource {
         p.m(21.75, 14.25); p.l(21.75, 16.5); p.c(21.75, 16.914, 21.414, 17.25, 21, 17.25); p.l(3, 17.25); p.c(2.586, 17.25, 2.25, 16.914, 2.25, 16.5); p.l(2.25, 14.356); p.c(2.25, 8.967, 6.577, 4.519, 11.965, 4.5); p.c(14.557, 4.491, 17.046, 5.514, 18.882, 7.343); p.c(20.718, 9.173, 21.75, 11.658, 21.75, 14.25)
     }
 
+    private static func infoSolid(_ p: inout GlyphPen) {
+        p.m(13.5, 16.5); p.c(13.5, 16.914, 13.164, 17.25, 12.75, 17.25); p.c(11.922, 17.25, 11.25, 16.578, 11.25, 15.75); p.l(11.25, 12); p.c(10.836, 12, 10.5, 11.664, 10.5, 11.25); p.c(10.5, 10.836, 10.836, 10.5, 11.25, 10.5); p.c(12.078, 10.5, 12.75, 11.172, 12.75, 12); p.l(12.75, 15.75); p.c(13.164, 15.75, 13.5, 16.086, 13.5, 16.5)
+        p.m(21.75, 12); p.c(21.75, 17.385, 17.385, 21.75, 12, 21.75); p.c(6.615, 21.75, 2.25, 17.385, 2.25, 12); p.c(2.25, 6.615, 6.615, 2.25, 12, 2.25); p.c(17.382, 2.256, 21.744, 6.618, 21.75, 12)
+        p.m(20.25, 12); p.c(20.25, 7.444, 16.556, 3.75, 12, 3.75); p.c(7.444, 3.75, 3.75, 7.444, 3.75, 12); p.c(3.75, 16.556, 7.444, 20.25, 12, 20.25); p.c(16.554, 20.245, 20.245, 16.554, 20.25, 12)
+        p.m(11.625, 9); p.c(12.246, 9, 12.75, 8.496, 12.75, 7.875); p.c(12.75, 7.254, 12.246, 6.75, 11.625, 6.75); p.c(11.004, 6.75, 10.5, 7.254, 10.5, 7.875); p.c(10.5, 8.496, 11.004, 9, 11.625, 9)
+    }
+
+    private static func infoLight(_ p: inout GlyphPen) {
+        p.m(21, 12); p.c(21, 16.971, 16.971, 21, 12, 21); p.c(7.029, 21, 3, 16.971, 3, 12); p.c(3, 7.029, 7.029, 3, 12, 3); p.c(16.971, 3, 21, 7.029, 21, 12)
+    }
+
     private static func lockSolid(_ p: inout GlyphPen) {
         p.m(19.5, 7.5); p.l(16.5, 7.5); p.l(16.5, 5.25); p.c(16.5, 2.765, 14.485, 0.75, 12, 0.75); p.c(9.515, 0.75, 7.5, 2.765, 7.5, 5.25); p.l(7.5, 7.5); p.l(4.5, 7.5); p.c(3.672, 7.5, 3, 8.172, 3, 9); p.l(3, 19.5); p.c(3, 20.328, 3.672, 21, 4.5, 21); p.l(19.5, 21); p.c(20.328, 21, 21, 20.328, 21, 19.5); p.l(21, 9); p.c(21, 8.172, 20.328, 7.5, 19.5, 7.5)
         p.m(9, 5.25); p.c(9, 3.593, 10.343, 2.25, 12, 2.25); p.c(13.657, 2.25, 15, 3.593, 15, 5.25); p.l(15, 7.5); p.l(9, 7.5); p.z()
@@ -259,6 +324,16 @@ enum ContentGlyph: CaseIterable, GlyphSource {
 
     private static func lockLight(_ p: inout GlyphPen) {
         p.m(20.25, 9); p.l(20.25, 19.5); p.c(20.25, 19.914, 19.914, 20.25, 19.5, 20.25); p.l(4.5, 20.25); p.c(4.086, 20.25, 3.75, 19.914, 3.75, 19.5); p.l(3.75, 9); p.c(3.75, 8.586, 4.086, 8.25, 4.5, 8.25); p.l(19.5, 8.25); p.c(19.914, 8.25, 20.25, 8.586, 20.25, 9)
+    }
+
+    private static func monitorSolid(_ p: inout GlyphPen) {
+        p.m(19.5, 3.75); p.l(4.5, 3.75); p.c(3.257, 3.75, 2.25, 4.757, 2.25, 6); p.l(2.25, 16.5); p.c(2.25, 17.743, 3.257, 18.75, 4.5, 18.75); p.l(19.5, 18.75); p.c(20.743, 18.75, 21.75, 17.743, 21.75, 16.5); p.l(21.75, 6); p.c(21.75, 4.757, 20.743, 3.75, 19.5, 3.75)
+        p.m(20.25, 16.5); p.c(20.25, 16.914, 19.914, 17.25, 19.5, 17.25); p.l(4.5, 17.25); p.c(4.086, 17.25, 3.75, 16.914, 3.75, 16.5); p.l(3.75, 6); p.c(3.75, 5.586, 4.086, 5.25, 4.5, 5.25); p.l(19.5, 5.25); p.c(19.914, 5.25, 20.25, 5.586, 20.25, 6); p.z()
+        p.m(15.75, 21); p.c(15.75, 21.414, 15.414, 21.75, 15, 21.75); p.l(9, 21.75); p.c(8.586, 21.75, 8.25, 21.414, 8.25, 21); p.c(8.25, 20.586, 8.586, 20.25, 9, 20.25); p.l(15, 20.25); p.c(15.414, 20.25, 15.75, 20.586, 15.75, 21)
+    }
+
+    private static func monitorLight(_ p: inout GlyphPen) {
+        p.m(21, 6); p.l(21, 16.5); p.c(21, 17.328, 20.328, 18, 19.5, 18); p.l(4.5, 18); p.c(3.672, 18, 3, 17.328, 3, 16.5); p.l(3, 6); p.c(3, 5.172, 3.672, 4.5, 4.5, 4.5); p.l(19.5, 4.5); p.c(20.328, 4.5, 21, 5.172, 21, 6)
     }
 
     private static func moonSolid(_ p: inout GlyphPen) {
@@ -277,6 +352,19 @@ enum ContentGlyph: CaseIterable, GlyphSource {
 
     private static func openLight(_ p: inout GlyphPen) {
         p.m(17.25, 7.5); p.l(17.25, 19.5); p.c(17.25, 19.914, 16.914, 20.25, 16.5, 20.25); p.l(4.5, 20.25); p.c(4.086, 20.25, 3.75, 19.914, 3.75, 19.5); p.l(3.75, 7.5); p.c(3.75, 7.086, 4.086, 6.75, 4.5, 6.75); p.l(16.5, 6.75); p.c(16.914, 6.75, 17.25, 7.086, 17.25, 7.5)
+    }
+
+    private static func paletteSolid(_ p: inout GlyphPen) {
+        p.m(18.822, 5.052); p.c(17.007, 3.255, 14.555, 2.247, 12, 2.25); p.l(11.9, 2.25); p.c(6.554, 2.305, 2.25, 6.654, 2.25, 12); p.c(2.25, 16.031, 4.742, 19.412, 8.752, 20.828); p.c(9.67, 21.152, 10.688, 21.01, 11.483, 20.448); p.c(12.277, 19.886, 12.75, 18.973, 12.75, 18); p.c(12.75, 17.172, 13.422, 16.5, 14.25, 16.5); p.l(18.582, 16.5); p.c(19.984, 16.507, 21.202, 15.536, 21.507, 14.168); p.c(21.675, 13.429, 21.756, 12.674, 21.75, 11.918); p.c(21.731, 9.33, 20.676, 6.857, 18.822, 5.052)
+        p.m(20.041, 13.837); p.c(19.887, 14.519, 19.281, 15.003, 18.582, 15); p.l(14.25, 15); p.c(12.593, 15, 11.25, 16.343, 11.25, 18); p.c(11.249, 18.486, 11.013, 18.942, 10.616, 19.223); p.c(10.219, 19.503, 9.711, 19.574, 9.252, 19.413); p.c(5.858, 18.216, 3.75, 15.375, 3.75, 12); p.c(3.75, 7.477, 7.392, 3.797, 11.915, 3.75); p.l(11.999, 3.75); p.c(16.521, 3.768, 20.193, 7.408, 20.249, 11.93); p.c(20.255, 12.571, 20.186, 13.212, 20.045, 13.837); p.z()
+        p.m(13.125, 7.125); p.c(13.125, 7.746, 12.621, 8.25, 12, 8.25); p.c(11.379, 8.25, 10.875, 7.746, 10.875, 7.125); p.c(10.875, 6.504, 11.379, 6, 12, 6); p.c(12.621, 6, 13.125, 6.504, 13.125, 7.125)
+        p.m(9, 9.375); p.c(9, 9.996, 8.496, 10.5, 7.875, 10.5); p.c(7.254, 10.5, 6.75, 9.996, 6.75, 9.375); p.c(6.75, 8.754, 7.254, 8.25, 7.875, 8.25); p.c(8.496, 8.25, 9, 8.754, 9, 9.375)
+        p.m(9, 14.625); p.c(9, 15.246, 8.496, 15.75, 7.875, 15.75); p.c(7.254, 15.75, 6.75, 15.246, 6.75, 14.625); p.c(6.75, 14.004, 7.254, 13.5, 7.875, 13.5); p.c(8.496, 13.5, 9, 14.004, 9, 14.625)
+        p.m(17.25, 9.375); p.c(17.25, 9.996, 16.746, 10.5, 16.125, 10.5); p.c(15.504, 10.5, 15, 9.996, 15, 9.375); p.c(15, 8.754, 15.504, 8.25, 16.125, 8.25); p.c(16.746, 8.25, 17.25, 8.754, 17.25, 9.375)
+    }
+
+    private static func paletteLight(_ p: inout GlyphPen) {
+        p.m(21, 11.922); p.c(21.006, 12.622, 20.931, 13.319, 20.776, 14.002); p.c(20.542, 15.025, 19.632, 15.75, 18.582, 15.75); p.l(14.25, 15.75); p.c(13.007, 15.75, 12, 16.757, 12, 18); p.c(11.999, 18.73, 11.645, 19.415, 11.048, 19.836); p.c(10.452, 20.257, 9.688, 20.363, 9, 20.12); p.c(5.506, 18.885, 3, 15.92, 3, 12); p.c(3, 7.066, 6.972, 3.051, 11.906, 3); p.c(16.86, 2.95, 20.958, 6.97, 21, 11.922)
     }
 
     private static func plusSolid(_ p: inout GlyphPen) {
@@ -305,6 +393,15 @@ enum ContentGlyph: CaseIterable, GlyphSource {
 
     private static func rankLight(_ p: inout GlyphPen) {
         p.m(19.5, 3.75); p.l(19.5, 19.5); p.l(14.25, 19.5); p.l(14.25, 3.75); p.z()
+    }
+
+    private static func refreshSolid(_ p: inout GlyphPen) {
+        p.m(21, 4.5); p.l(21, 9); p.c(21, 9.414, 20.664, 9.75, 20.25, 9.75); p.l(15.75, 9.75); p.c(15.336, 9.75, 15, 9.414, 15, 9); p.c(15, 8.586, 15.336, 8.25, 15.75, 8.25); p.l(18.44, 8.25); p.l(17.068, 6.878); p.c(15.674, 5.478, 13.782, 4.688, 11.806, 4.682); p.l(11.764, 4.682); p.c(9.805, 4.677, 7.922, 5.444, 6.524, 6.817); p.c(6.226, 7.095, 5.761, 7.084, 5.476, 6.793); p.c(5.191, 6.501, 5.191, 6.035, 5.476, 5.744); p.c(9.003, 2.297, 14.646, 2.33, 18.132, 5.818); p.l(19.5, 7.19); p.l(19.5, 4.5); p.c(19.5, 4.086, 19.836, 3.75, 20.25, 3.75); p.c(20.664, 3.75, 21, 4.086, 21, 4.5)
+        p.m(17.476, 17.183); p.c(14.537, 20.054, 9.837, 20.026, 6.932, 17.122); p.l(5.56, 15.75); p.l(8.25, 15.75); p.c(8.664, 15.75, 9, 15.414, 9, 15); p.c(9, 14.586, 8.664, 14.25, 8.25, 14.25); p.l(3.75, 14.25); p.c(3.336, 14.25, 3, 14.586, 3, 15); p.l(3, 19.5); p.c(3, 19.914, 3.336, 20.25, 3.75, 20.25); p.c(4.164, 20.25, 4.5, 19.914, 4.5, 19.5); p.l(4.5, 16.81); p.l(5.872, 18.182); p.c(7.544, 19.863, 9.816, 20.811, 12.188, 20.818); p.l(12.237, 20.818); p.c(14.589, 20.824, 16.848, 19.904, 18.525, 18.256); p.c(18.81, 17.965, 18.81, 17.499, 18.525, 17.207); p.c(18.24, 16.916, 17.775, 16.905, 17.477, 17.183); p.z()
+    }
+
+    private static func refreshLight(_ p: inout GlyphPen) {
+        p.m(20.25, 12); p.c(20.25, 16.556, 16.556, 20.25, 12, 20.25); p.c(7.444, 20.25, 3.75, 16.556, 3.75, 12); p.c(3.75, 7.444, 7.444, 3.75, 12, 3.75); p.c(16.556, 3.75, 20.25, 7.444, 20.25, 12)
     }
 
     private static func ruleSolid(_ p: inout GlyphPen) {
@@ -402,6 +499,14 @@ enum ContentGlyph: CaseIterable, GlyphSource {
 
     private static func trashLight(_ p: inout GlyphPen) {
         p.m(18.75, 5.25); p.l(18.75, 19.5); p.c(18.75, 19.914, 18.414, 20.25, 18, 20.25); p.l(6, 20.25); p.c(5.586, 20.25, 5.25, 19.914, 5.25, 19.5); p.l(5.25, 5.25); p.z()
+    }
+
+    private static func undoSolid(_ p: inout GlyphPen) {
+        p.m(21, 12); p.c(21, 16.924, 17.044, 20.934, 12.121, 21); p.l(12, 21); p.c(9.701, 21.006, 7.489, 20.126, 5.822, 18.544); p.c(5.521, 18.259, 5.508, 17.784, 5.792, 17.483); p.c(6.077, 17.182, 6.552, 17.169, 6.853, 17.453); p.c(9.846, 20.276, 14.553, 20.161, 17.404, 17.196); p.c(20.256, 14.232, 20.187, 9.523, 17.251, 6.643); p.c(14.314, 3.763, 9.606, 3.785, 6.697, 6.693); p.c(6.689, 6.701, 6.681, 6.709, 6.672, 6.716); p.l(4.18, 9); p.l(6.75, 9); p.c(7.164, 9, 7.5, 9.336, 7.5, 9.75); p.c(7.5, 10.164, 7.164, 10.5, 6.75, 10.5); p.l(2.25, 10.5); p.c(1.836, 10.5, 1.5, 10.164, 1.5, 9.75); p.l(1.5, 5.25); p.c(1.5, 4.836, 1.836, 4.5, 2.25, 4.5); p.c(2.664, 4.5, 3, 4.836, 3, 5.25); p.l(3, 8.044); p.l(5.648, 5.625); p.c(8.225, 3.058, 12.093, 2.295, 15.452, 3.69); p.c(18.81, 5.084, 20.999, 8.363, 21, 12)
+    }
+
+    private static func undoLight(_ p: inout GlyphPen) {
+        p.m(20.25, 12); p.c(20.25, 16.556, 16.556, 20.25, 12, 20.25); p.c(7.444, 20.25, 3.75, 16.556, 3.75, 12); p.c(3.75, 7.444, 7.444, 3.75, 12, 3.75); p.c(16.556, 3.75, 20.25, 7.444, 20.25, 12)
     }
 
     private static func warningSolid(_ p: inout GlyphPen) {

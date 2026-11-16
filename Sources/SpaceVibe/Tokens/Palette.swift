@@ -161,10 +161,6 @@ enum PaletteValue {
     static let claudeInk = ColorValue(light: 0x663121, dark: 0xE6AF9D)
     /// Codex's colour is the text colour, so its ink is too.
     static let codexInk = fg
-    /// The text colour at 6%: the empty Limits ruler cells on a selected tile.
-    static let trackOnSelection = ColorValue(light: 0x1B1C1F, dark: 0xF2F3F4, lightAlpha: 0.06, darkAlpha: 0.06)
-    /// The old overlays' shadow (palette, confirmation, toast).
-    static let overlayShadow = ColorValue(light: 0x111111, dark: 0x000000, lightAlpha: 0.22, darkAlpha: 0.5)
 
     /// The share of its fill a tint takes (sidebar tiles, banners, state tiles).
     static let tintAlpha = 0.15
@@ -257,23 +253,11 @@ enum Palette {
     // Old names: the screens not yet rebuilt keep them, with the v5 value of the token that replaces each (D53, spec C3).
     // The cut-over (X1) moves their last uses to the v5 names and deletes them.
     static let background = bgApp
-    /// The ground of the content area and the sidebar.
-    static let well = bgSide
-    /// A card on the well.
-    static let surface = bgPanel
     /// A control or tag inside a card.
     static let surfaceRaised = bgRaise
-    /// `hair2`: the spec has `hair` replace `border` and `hair2` extend it; every use of `border` is a `hair2` role
-    /// (an overlay's edge, a field's outline), and its old light value `#DADADA` was black at 14.5%.
-    static let border = hair2
-    /// `hair`: between two rows of a card, and between the sidebar and the content area.
-    static let divider = hair
-    static let selection = sel
     static let text = fg
     static let textSecondary = fg2
     static let textTertiary = fg3
-    static let success = ok
-    static let danger = bad
     static let overlay = scrim
 
     static let successInk = PaletteValue.successInk.color
@@ -281,14 +265,10 @@ enum Palette {
     static let dangerInk = PaletteValue.dangerInk.color
     static let claudeInk = PaletteValue.claudeInk.color
     static let codexInk = PaletteValue.codexInk.color
-    static let trackOnSelection = PaletteValue.trackOnSelection.color
-    static let overlayShadow = PaletteValue.overlayShadow.color
 
     // Tints behind sidebar tiles, banners and state tiles: the fill at 15%; text on them uses the Ink twin.
     static let claudeTint = PaletteValue.tint(of: PaletteValue.claude).color
     static let codexTint = PaletteValue.tint(of: PaletteValue.codex).color
-    static let successTint = PaletteValue.tint(of: PaletteValue.ok).color
-    static let warnTint = PaletteValue.tint(of: PaletteValue.warn).color
 
     static let markGround = PaletteValue.markGround.color
     static let markInk = PaletteValue.markInk.color
