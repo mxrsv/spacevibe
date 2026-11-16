@@ -23,7 +23,7 @@ Mock, outside git: `~/scratch/spacevibe-reins/settings/index.html` (synthetic da
 - **Placement.** Settings takes the whole Reins window: the sidebar, top bar and tab are hidden while it shows, and stay
   mounted so a tab keeps its filters. It opens from `Reins > Settings…` (`⌘,`), a gear button in the sidebar footer next
   to the theme toggle, and the `⌘K` palette. It closes with `Esc` (while the palette is closed), the back button at the
-  top left, or anything that selects a tab or Limits (`⌘1`…`⌘3`, `⌘L`, a palette entry).
+  top left, or anything that selects a tab or Limits (`⌘1`…`⌘3`, a palette entry; Limits is `⌘3`, D70).
 - **Rail (mock A).** A horizontal rail at the top, centred: one tab per section, its icon above its name, the chosen one
   filled with `surface`. The back button sits at the top left, after the window buttons. The hint bar shows only
   `Esc Back to <page>`.

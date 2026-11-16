@@ -20,7 +20,6 @@ struct ShellCommands: Commands {
             Divider()
             Button("Search or Run a Command") { shell.togglePalette() }
                 .keyboardShortcut("k", modifiers: .command)
-            Button("Switch to \(shell.appearance.choice.toggled.rawValue.capitalized) Theme") { shell.appearance.toggle() }
         }
     }
 }
