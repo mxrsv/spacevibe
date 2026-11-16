@@ -30,11 +30,9 @@ final class ActivityModel {
     /// Screenshots only: show row actions without hover.
     var revealRowActions = false
 
-    // MARK: The v5 page's state (V5-R69 to V5-R72)
+    // MARK: The v5 page's state (V5-R69 to V5-R71)
 
     var pane = ActivityPane.running
-    var filter = ActivityFilter()
-    var isFilterOpen = false
     /// The row the keys act on and the row whose detail popover is open, by `ActivityQuery` ids.
     var currentID: String?
     var detailID: String?
@@ -44,16 +42,10 @@ final class ActivityModel {
     @ObservationIgnored var now: () -> Date = { Date() }
     /// The CLI readings the page's bands and Answer use: the shell's `limits.read`, which a shot or a test replaces.
     @ObservationIgnored var limitsResults: () -> [CoreLimitsEntry]
-    /// What `Copy` and `Open` do. A test or a shot replaces them so nothing leaves the process.
+    /// What `Copy` does. A test or a shot replaces it so nothing leaves the process.
     @ObservationIgnored var copyToPasteboard: (String) -> Void = { text in
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-    }
-    /// Shows a file in Finder (it never opens or runs it: a path from a log can be anything). False when it is not there.
-    @ObservationIgnored var revealFile: (URL) -> Bool = { url in
-        guard FileManager.default.fileExists(atPath: url.path) else { return false }
-        NSWorkspace.shared.activateFileViewerSelecting([url])
-        return true
     }
 
     @ObservationIgnored private var isReading = false
@@ -167,34 +159,23 @@ final class ActivityModel {
 
     // MARK: The v5 page
 
-    /// What the three tabs list at `now`: one derivation, read by the canvas, the tab head's counts and the keys.
+    /// What the two tabs list at `now`: one derivation, read by the canvas, the tab head's counts and the keys.
     func query(at date: Date? = nil) -> ActivityQuery {
-        ActivityQuery(report: report, filter: filter, dismissed: dismissed, limits: limitsResults(), readAt: readAt, now: date ?? now())
+        ActivityQuery(report: report, dismissed: dismissed, limits: limitsResults(), readAt: readAt, now: date ?? now())
     }
 
-    /// A head menu holds the keyboard, so the page's plain keys are off; so does the Stop confirmation.
-    var isMenuOpen: Bool { isFilterOpen || pendingStop != nil }
+    /// The Stop confirmation holds the keyboard, so the page's plain keys are off. The page has no head menu (D70).
+    var isMenuOpen: Bool { pendingStop != nil }
 
     func select(_ pane: ActivityPane) {
         self.pane = pane
         detailID = nil
-        isFilterOpen = false
     }
 
-    /// `1` is index 0; an index outside the three tabs does nothing.
+    /// `1` is index 0; an index outside the two tabs does nothing.
     func select(index: Int) {
         guard ActivityPane.allCases.indices.contains(index) else { return }
         select(ActivityPane.allCases[index])
-    }
-
-    func toggleFilter(_ value: String) {
-        filter.toggle(.cli, value)
-        detailID = nil
-    }
-
-    func clearFilters() {
-        filter.clear()
-        detailID = nil
     }
 
     /// The row the keys act on: the chosen one while it is listed, else the first listed.
@@ -218,7 +199,7 @@ final class ActivityModel {
         detailID = detailID == id ? nil : id
     }
 
-    // MARK: Copy, open and dismiss
+    // MARK: Copy and dismiss
 
     /// Puts the failed command on the pasteboard, whole: a title the core cut is refused with a sentence, never copied short.
     func copy(_ item: ActivityFailureItem) {
@@ -229,15 +210,6 @@ final class ActivityModel {
         }
         copyToPasteboard(item.failure.title)
         env.toasts.show("Copied the command.")
-    }
-
-    /// Shows the file in Finder (V5-R72). Sessions and failed commands have no folder to open: the report names a project, not a path (G11).
-    func reveal(_ item: ActivityFileItem) {
-        detailID = nil
-        guard revealFile(URL(fileURLWithPath: item.file.path)) else {
-            env.toasts.show("\(item.name) is no longer at \(item.file.path).", tone: .danger)
-            return
-        }
     }
 
     func dismiss(_ item: ActivityFailureItem) {

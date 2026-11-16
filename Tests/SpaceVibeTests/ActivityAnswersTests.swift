@@ -35,13 +35,8 @@ struct ActivityAnswersTests {
                             sessions: 1, first: iso(first), last: iso(last), laterPass: later ? iso(1) : nil, hook: nil)
     }
 
-    private func file(_ path: String, edits: Int, hoursAgo: Double = 30, projects: [String] = ["spacevibe-api"], clis: [CoreCLI] = [.claude]) -> CoreActivityFile {
-        CoreActivityFile(path: "/work/\(path)", label: path, edits: edits, sessions: edits, last: iso(hoursAgo), clis: clis, projects: projects)
-    }
-
-    private func report(sessions: [CoreActivitySession] = [], failures: [CoreActivityFailure] = [], files: [CoreActivityFile] = [],
-                        limits: [CoreActivityLimit] = []) -> CoreActivityReport {
-        CoreActivityReport(sessions: sessions, failures: failures, files: files, unmeasurable: limits, stats: CoreActivityStats(logs: 74, truncated: 0))
+    private func report(sessions: [CoreActivitySession] = [], failures: [CoreActivityFailure] = [], limits: [CoreActivityLimit] = []) -> CoreActivityReport {
+        CoreActivityReport(sessions: sessions, failures: failures, files: [], unmeasurable: limits, stats: CoreActivityStats(logs: 74, truncated: 0))
     }
 
     private static let claudeLimit = CoreActivityLimit(cli: .claude, code: "claude-prompt-vs-busy",
@@ -49,14 +44,8 @@ struct ActivityAnswersTests {
     private static let codexLimit = CoreActivityLimit(cli: .codex, code: "codex-tool-silent",
                                                       text: "Codex logs nothing while a tool runs and does not record approval waits.")
 
-    private func query(_ report: CoreActivityReport?, filter: ActivityFilter = ActivityFilter(), dismissed: Set<String> = [], limits: [CoreLimitsEntry] = []) -> ActivityQuery {
-        ActivityQuery(report: report, filter: filter, dismissed: dismissed, limits: limits, readAt: Self.now, now: Self.now, calendar: Self.calendar)
-    }
-
-    private func filter(_ values: String...) -> ActivityFilter {
-        var filter = ActivityFilter()
-        for value in values { filter.toggle(.cli, value) }
-        return filter
+    private func query(_ report: CoreActivityReport?, dismissed: Set<String> = [], limits: [CoreLimitsEntry] = []) -> ActivityQuery {
+        ActivityQuery(report: report, dismissed: dismissed, limits: limits, readAt: Self.now, now: Self.now)
     }
 
     private func entry(_ cli: CoreLimitsCLI, _ state: CoreLimitsState) -> CoreLimitsEntry {
@@ -126,7 +115,7 @@ struct ActivityAnswersTests {
     func loading() {
         let loading = query(nil)
         #expect(loading.isLoading)
-        #expect(ActivityAnswer.running(loading).sentence == nil && ActivityAnswer.failed(loading).sentence == nil && ActivityAnswer.files(loading).sentence == nil)
+        #expect(ActivityAnswer.running(loading).sentence == nil && ActivityAnswer.failed(loading).sentence == nil)
     }
 
     @Test("an ended session is not running: not counted, listed, costed or waited for")
@@ -136,28 +125,22 @@ struct ActivityAnswersTests {
         #expect(ActivityFigures.rightNow(q).first?.value == "~$1.00")
     }
 
-    @Test("a filter is named in the Answer, and a CLI the Limits reading calls not installed is said plainly")
-    func filterAndNotInstalled() {
-        let sessions = [session("a", state: .waiting), session("b", cli: .codex, state: .waiting, title: "Codex task")]
-        let codex = query(report(sessions: sessions), filter: filter("codex"))
-        #expect(ActivityAnswer.running(codex).sentence == "1 waiting for you in Codex" && codex.count(.running) == 1)
-        let none = query(report(sessions: [session("a")]), filter: filter("codex"))
-        #expect(ActivityAnswer.running(none).sentence == "Nothing in Codex is waiting for you.")
-        let both = query(report(sessions: [session("a")]), filter: filter("claude", "codex"))
-        #expect(ActivityAnswer.running(both).sentence == "Nothing in Claude Code or Codex is waiting for you.")
-        let missing = query(report(sessions: [session("a")]), filter: filter("codex"), limits: [entry(.claude, .measured), entry(.codex, .notInstalled)])
-        #expect(ActivityAnswer.running(missing).sentence == "Codex is not installed.")
-        #expect(missing.sessionBands.first?.extra == "not installed" && missing.sessionBands.first?.items.isEmpty == true)
+    @Test("a CLI the Limits reading calls not installed is a band with a note and no rows; the Answer names no filter (D70)")
+    func notInstalled() {
+        let missing = query(report(sessions: [session("a", state: .waiting)]), limits: [entry(.claude, .measured), entry(.codex, .notInstalled)])
+        #expect(ActivityAnswer.running(missing).sentence == "1 waiting for you" && missing.count(.running) == 1)
+        let codex = missing.sessionBands.first { $0.id == "codex" }
+        #expect(codex?.extra == "not installed" && codex?.items.isEmpty == true && codex?.note == "Codex is not installed on this Mac.")
+        #expect(ActivityAnswer.running(query(report(sessions: [session("a")]))).sentence == "Nothing is waiting for you.")
     }
 
-    @Test("bands: a band holding a waiting session comes first; Gemini CLI follows its reading and goes with a filter")
+    @Test("bands: a band holding a waiting session comes first; Gemini CLI is always the last band and follows its reading")
     func bands() {
         let q = query(report(sessions: [session("a"), session("b", cli: .codex, state: .waiting)]), limits: [entry(.gemini, .notMeasurable)])
         #expect(q.sessionBands.map(\.id) == ["codex", "claude", "gemini"])
         #expect(q.sessionBands.last?.extra == "no log")
         let gone = query(report(), limits: [entry(.gemini, .notInstalled)])
         #expect(gone.sessionBands.last?.extra == "not installed")
-        #expect(!query(report(sessions: [session("a")]), filter: filter("claude")).sessionBands.contains { $0.cli == .gemini })
     }
 
     @Test("a band holding a session the log cannot show comes after a waiting band and before the rest, and opens by default, so the row the Answer names is on screen")
@@ -196,7 +179,7 @@ struct ActivityAnswersTests {
     func rightNow() {
         let sessions = [session("a", age: 60_000, cost: 0.5), session("b", age: 3_600_000, cost: 1.25), session("c", age: nil)]
         let read = Self.now.addingTimeInterval(-120)
-        let q = ActivityQuery(report: report(sessions: sessions), readAt: read, now: Self.now, calendar: Self.calendar)
+        let q = ActivityQuery(report: report(sessions: sessions), readAt: read, now: Self.now)
         let figures = ActivityFigures.rightNow(q)
         #expect(figures.map(\.value) == ["~$1.75", "1 h 2 min"])
         #expect(figures.map(\.label) == ["estimated cost, 2 of 3 open sessions", "longest-open session"])
@@ -241,14 +224,6 @@ struct ActivityAnswersTests {
         #expect(ActivityFigures.passedLater(query(report(failures: [failure("1")]))) == nil)
     }
 
-    @Test("the Failed Answer names the filter, and the filter changes the tab count")
-    func failedFilter() {
-        let q = query(report(failures: [failure("1"), failure("2", cli: .codex)]), filter: filter("codex"))
-        #expect(ActivityAnswer.failed(q).sentence == "1 still failing in Codex" && q.count(.failed) == 1)
-        let clean = query(report(failures: [failure("1")]), filter: filter("codex"))
-        #expect(ActivityAnswer.failed(clean).sentence == "No command in Codex is still failing.")
-    }
-
     @Test("a dismissal hides the failure from the count, the Answer and Passed later until it fails again")
     func dismissal() {
         let one = failure("1"), two = failure("2", later: true)
@@ -278,41 +253,6 @@ struct ActivityAnswersTests {
         let cut = String(repeating: "a", count: 119) + "\u{2026}"
         #expect(ActivityFailureItem(failure: failure("1", title: cut)).isCut)
         #expect(!ActivityFailureItem(failure: failure("1", title: "short\u{2026}")).isCut)
-    }
-
-    // MARK: Files
-
-    @Test("the Answer names the file with the most edits over the logs read; no 'today' claim the core cannot support")
-    func mostEdited() {
-        let q = query(report(files: [file("a.ts", edits: 5), file("src/b.ts", edits: 23), file("c.ts", edits: 23, hoursAgo: 1)]))
-        let answer = ActivityAnswer.files(q)
-        #expect(answer.sentence == "c.ts is the most-edited file.")
-        #expect(q.files.first?.id == "/work/c.ts", "a tie goes to the later edit")
-        #expect(answer.verdict?.title.hasPrefix("Last edit ") == true && answer.verdict?.small == nil)
-        #expect(ActivityAnswer.files(query(report())).sentence == "No file edits are in the session logs.")
-    }
-
-    @Test("files split into 'Edited today' (the last edit is today) and 'Earlier'; with none today the one band is 'Edited files'")
-    func fileBands() {
-        let q = query(report(files: [file("old.ts", edits: 9, hoursAgo: 60), file("new.ts", edits: 2, hoursAgo: 2)]))
-        #expect(q.fileBands.map(\.title) == ["Edited today", "Earlier"] && q.fileBands.first?.items.map(\.name) == ["new.ts"])
-        let none = query(report(files: [file("old.ts", edits: 9, hoursAgo: 60)]))
-        #expect(none.fileBands.map(\.title) == ["Edited files"])
-        #expect(none.files.first?.folder == "" && file("src/x/y.ts", edits: 1).label == "src/x/y.ts")
-        #expect(ActivityFileItem(file: file("src/x/y.ts", edits: 1)).folder == "src/x/" && ActivityFileItem(file: file("src/x/y.ts", edits: 1)).name == "y.ts")
-    }
-
-    @Test("Busiest projects counts the edits of files one project touched; a file two projects touched is counted nowhere and said so")
-    func busiest() {
-        let q = query(report(files: [
-            file("a.ts", edits: 10, projects: ["spacevibe-api"]), file("b.ts", edits: 4, projects: ["spacevibe-api"]),
-            file("c.ts", edits: 30, projects: ["spacevibe-bench"]), file("d.ts", edits: 99, projects: ["spacevibe-api", "spacevibe-bench"]), file("e.ts", edits: 7, projects: []),
-        ]))
-        let busiest = ActivityFigures.busiest(q)
-        #expect(busiest.entries.map(\.name) == ["spacevibe-bench", "spacevibe-api"] && busiest.entries.map(\.edits) == [30, 14] && busiest.skipped == 1)
-        #expect(ActivityFigures.skippedNote(1) == "1 file edited in more than one project is not counted here.")
-        #expect(ActivityFigures.skippedNote(0) == nil)
-        #expect(ActivityFigures.busiestCount(q) == "file edits in 74 logs read")
     }
 
     // MARK: Stop
@@ -397,28 +337,21 @@ struct ActivityAnswersTests {
         #expect(model.env.toasts.current?.message.contains("only has its start") == true)
     }
 
-    @Test("Open on a file shows it in Finder; a file that is gone is said plainly, and nothing is opened")
-    func reveal() {
-        var shown: [URL] = []
-        let model = model(report(files: [file("src/a.ts", edits: 3)]))
-        model.revealFile = { url in shown.append(url); return url.path == "/work/src/a.ts" }
-        model.reveal(model.query().files[0])
-        #expect(shown.map(\.path) == ["/work/src/a.ts"] && model.env.toasts.current == nil)
-        model.revealFile = { _ in false }
-        model.reveal(model.query().files[0])
-        #expect(model.env.toasts.current?.message == "a.ts is no longer at /work/src/a.ts." && model.env.toasts.current?.tone == .danger)
-    }
-
-    @Test("keys 1 to 3 pick the tab; a tab change closes the detail and the filter menu")
+    @Test("keys 1 and 2 pick Running and Failed, the only tabs (D70); a tab change closes the detail")
     func tabs() {
         let model = model(report())
         model.detailID = "x"
-        model.isFilterOpen = true
         model.select(index: 1)
-        #expect(model.pane == .failed && model.detailID == nil && !model.isFilterOpen)
-        model.select(index: 7)
-        #expect(model.pane == .failed)
-        #expect(ActivityPane.allCases.map(\.hasFilter) == [true, true, false], "Files has no filter (V5-R61)")
+        #expect(model.pane == .failed && model.detailID == nil)
+        model.select(index: 2)
+        #expect(model.pane == .failed, "there is no third tab")
+        #expect(ActivityPane.allCases == [.running, .failed])
+    }
+
+    @Test("the status bar lists only the keys the page wires: no Filter key and no Show in Finder key (D70)")
+    func hints() {
+        #expect(ActivityStatusBar.hints(for: .running).map(\.keys) == ["J K", "\u{21B5}", "S", "1 2"])
+        #expect(ActivityStatusBar.hints(for: .failed).map(\.keys) == ["J K", "\u{21B5}", "C", "1 2"])
     }
 
     @Test("j and k stop at the first and last row, and a click opens its detail")

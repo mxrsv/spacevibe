@@ -1,10 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// The v5 Activity page (V5-R69 to V5-R72; the `b-activity` mock): the tab head with Running, Failed and Files and one `Filter`,
-/// the chip row while a filter is on, and the selected tab's split canvas. Every sentence and figure is `ActivityAnswers`',
-/// every list `ActivityQuery`'s; the cards are `ActivityCards`'. The page's plain keys (V5-R36) are off while the palette, the
-/// Filter menu or the Stop confirmation holds the keyboard.
+/// The v5 Activity page (V5-R69 to V5-R71; the `b-activity` mock): the tab head with Running and Failed, and the selected tab's
+/// split canvas. No Files tab and no Filter (D70): the lists are already banded and collapsible per CLI. Every sentence and figure
+/// is `ActivityAnswers`', every list `ActivityQuery`'s; the cards are `ActivityCards`'. The page's plain keys (V5-R36) are off while
+/// the palette or the Stop confirmation holds the keyboard.
 struct ActivityCanvas: View {
     static let page = "activity"
 
@@ -32,11 +32,7 @@ struct ActivityCanvas: View {
                             TabChip(title: pane.title, glyph: pane.glyph, count: query.isLoading ? nil : query.count(pane), tone: .accent,
                                     isActive: model.pane == pane) { model.select(pane) }
                         }
-                    } actions: {
-                        if model.pane.hasFilter { ActivityHeadActions(model: model) }
-                    }
-                    // The chips stay on every tab, Files included, so the filtered counts of the others are explained (V5-R69).
-                    if model.filter.isOn { ActivityChipRow(model: model) }
+                    } actions: {}
                     canvas(query, visible: visible, now: context.date)
                 }
             }
@@ -80,17 +76,13 @@ struct ActivityCanvas: View {
             return query.failureBands.enumerated().flatMap { offset, band in
                 open("fail:\(band.id)", problem: band.holdsProblem, offset: offset, needs: needs) ? band.items.map(\.id) : []
             }
-        case .files:
-            return query.fileBands.enumerated().flatMap { offset, band in
-                open("files:\(band.id)", problem: false, offset: offset, needs: false) ? band.items.map(\.id) : []
-            }
         }
     }
 
     // MARK: Keys
 
-    /// `j`/`k` and the arrows move, Return opens the detail, `s` stops, `c` copies, `o` shows the file, `/` opens Filter, `1` to `3`
-    /// switch the tabs, Esc closes the detail (V5-R36). A key acts on the current row of the tab it belongs to.
+    /// `j`/`k` and the arrows move, Return opens the detail, `s` stops, `c` copies, `1` and `2` switch the tabs, Esc closes the
+    /// detail (V5-R36). A key acts on the current row of the tab it belongs to.
     private func keys(_ query: ActivityQuery, visible: [String]) -> some View {
         let current = model.current(in: visible)
         return Group {
@@ -105,45 +97,10 @@ struct ActivityCanvas: View {
             HiddenKey(KeyboardShortcut("c", modifiers: [])) {
                 if model.pane == .failed, let item = query.failures.first(where: { $0.id == current }) { model.copy(item) }
             }
-            HiddenKey(KeyboardShortcut("o", modifiers: [])) {
-                if model.pane == .files, let item = query.files.first(where: { $0.id == current }) { model.reveal(item) }
-            }
-            HiddenKey(KeyboardShortcut("/", modifiers: [])) { if model.pane.hasFilter { model.isFilterOpen = true } }
             ForEach(Array(ActivityPane.allCases.enumerated()), id: \.element) { index, _ in
                 HiddenKey(KeyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [])) { model.select(index: index) }
             }
             if model.detailID != nil { HiddenKey(KeyboardShortcut(.escape, modifiers: [])) { model.detailID = nil } }
-        }
-    }
-}
-
-/// The one `Filter` button at the right of the tab head (V5-R61): one menu level, because the page has one field.
-struct ActivityHeadActions: View {
-    @Bindable var model: ActivityModel
-
-    var body: some View {
-        ToolbarMenuButton("Filter", glyph: .filter, isOpen: $model.isFilterOpen, id: "activity.filter") { close in
-            FilterMenu(fields: [field], onToggle: { _, value in model.toggleFilter(value) }, onClose: close)
-        }
-    }
-
-    private var field: FilterMenuField {
-        let values = ActivityFilterField.cli.values.map { value in
-            MenuEntry(id: value.id, title: value.title, kind: .check(isOn: model.filter.isPicked(.cli, value.id)))
-        }
-        return FilterMenuField(id: ActivityFilterField.cli.rawValue, title: ActivityFilterField.cli.title, lead: .glyph(.terminal), values: values)
-    }
-}
-
-/// The chips of the applied filters under the tab head, with `Clear` (V5-R28).
-struct ActivityChipRow: View {
-    let model: ActivityModel
-
-    var body: some View {
-        FilterChipRow(onClear: model.clearFilters) {
-            ForEach(model.filter.chips, id: \.value.id) { chip in
-                FilterFieldChip(field: chip.field.chipTitle, value: chip.value.chip) { model.toggleFilter(chip.value.id) }
-            }
         }
     }
 }

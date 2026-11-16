@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The cards of the three Activity tabs (V5-R70 to V5-R72): the Answer, the small cards and the spine of each, with the row
-/// detail popovers. Layout and wiring only: every sentence is `ActivityAnswers`', every list `ActivityQuery`'s.
+/// The cards of the two Activity tabs (V5-R70, V5-R71): the Answer, the small cards and the spine of each, with the row detail
+/// popovers. Layout and wiring only: every sentence is `ActivityAnswers`', every list `ActivityQuery`'s.
 struct ActivityCards: View {
     let pane: ActivityPane
     let model: ActivityModel
@@ -15,7 +15,6 @@ struct ActivityCards: View {
         switch pane {
         case .running: running
         case .failed: failed
-        case .files: files
         }
     }
 
@@ -72,8 +71,7 @@ extension ActivityCards {
         if query.isLoading {
             LoadingSkeleton()
         } else if query.sessions.isEmpty {
-            QuietEmptyState(query.filter.isOn ? "No session matches the filter" : "No session is running",
-                            message: query.filter.isOn ? "Clear the filter to see every CLI." : "Sessions show up here while a CLI runs.", placement: .card)
+            QuietEmptyState("No session is running", message: "Sessions show up here while a CLI runs.", placement: .card)
         } else {
             let needs = query.sessionBands.contains(where: \.holdsProblem)
             BandStack {
@@ -271,102 +269,6 @@ extension ActivityCards {
                 copyButton(item, key: "C")
                 Button { model.dismiss(item) } label: { ActionLabel("Dismiss") }
             }
-        }
-    }
-}
-
-// MARK: Files (V5-R72)
-
-extension ActivityCards {
-    fileprivate var files: some View {
-        let answer = ActivityAnswer.files(query)
-        let busiest = ActivityFigures.busiest(query)
-        return SplitCanvas {
-            filesAnswer(answer)
-            if query.isLoading {
-                Tile("Busiest projects", layout: .bare, isOpen: open("files.busiest")) { LoadingSkeleton() }
-            } else if !busiest.isEmpty {
-                busiestCard(busiest)
-            }
-        } spine: {
-            Tile("Edited files", layout: spineLayout(empty: query.files.isEmpty),
-                 maxHeight: Metrics.Tile.spineMaxHeight, stretches: true, scrollTarget: current, isOpen: open("files.spine")) {
-                filesSpine
-            } actions: {
-                staleSlot
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func filesAnswer(_ answer: ActivityAnswer) -> some View {
-        if let target = answer.verdict?.targetID, let item = query.files.first(where: { $0.id == target }) {
-            answerCard(answer, id: "files.answer") {
-                AnyView(Button { model.reveal(item) } label: { ActionLabel(ActivityWording.showFile, glyph: .open) })
-            }
-        } else {
-            answerCard(answer, id: "files.answer", fix: nil)
-        }
-    }
-
-    private func busiestCard(_ busiest: ActivityFigures.Busiest) -> some View {
-        let most = Double(busiest.entries.first?.edits ?? 1)
-        return Tile("Busiest projects", count: ActivityFigures.busiestCount(query), maxHeight: Metrics.Tile.limitsSmallMaxHeight, isOpen: open("files.busiest")) {
-            ListRows {
-                ForEach(busiest.entries) { entry in
-                    ListRow(entry.name, nameWidth: Metrics.Activity.projectNameWidth) {
-                        BarCell(share: Double(entry.edits) / most).frame(minWidth: Metrics.Limits.barMinWidth)
-                        CountCell(text: ActivityFormat.plural(entry.edits, "edit"), width: Metrics.Activity.editsWidth)
-                    }
-                }
-            }
-            if let note = ActivityFigures.skippedNote(busiest.skipped) {
-                Text(note)
-                    .spaceVibeText(.metaLine, tone: .tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineBox(.metaLine)
-                    .padding(.horizontal, Metrics.ListRow.leading)
-                    .padding(.top, Metrics.Activity.noteTop)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var filesSpine: some View {
-        if query.isLoading {
-            LoadingSkeleton()
-        } else if query.files.isEmpty {
-            QuietEmptyState("No files edited", message: "Files that sessions edit show up here.", placement: .card)
-        } else {
-            BandStack {
-                ForEach(Array(query.fileBands.enumerated()), id: \.element.id) { offset, item in
-                    Band(item.title, count: item.items.count, isOpen: band("files:\(item.id)", problem: false, offset: offset, needs: false)) {
-                        ListRows { ForEach(item.items) { fileRow($0) } }
-                    }
-                }
-            }
-        }
-    }
-
-    private func fileRow(_ item: ActivityFileItem) -> some View {
-        ListRow(item.name, isCurrent: item.id == current, onActivate: { model.open(item.id) }, accessibilityName: item.file.path) {
-            MetaCell(text: item.folder).frame(maxWidth: Metrics.Activity.folderMaxWidth, alignment: .trailing)
-            CountCell(text: item.editsText, width: Metrics.Activity.editsWidth)
-        }
-        .id(item.id)
-        .anchoredOverlay(isPresented: model.detailID == item.id, id: "\(page):detail", placement: .popover, onOutsideTap: { model.detailID = nil }) {
-            fileDetail(item)
-        }
-    }
-
-    private func fileDetail(_ item: ActivityFileItem) -> some View {
-        PopoverSurface(onExit: { model.detailID = nil }) {
-            PopoverHead(name: item.name, sub: item.folder.isEmpty ? "project root" : item.folder) { SpaceVibeIcon(content: .file, size: .row, ink: TextTone.tertiary.color) }
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(ActivityWording.fileLines(item, now: query.now), id: \.self) { PopoverSentence($0) }
-                PopoverPath(item.file.path)
-            }
-            PopoverActions { Button { model.reveal(item) } label: { ActionLabel(ActivityWording.showFile, key: "O") } }
         }
     }
 }

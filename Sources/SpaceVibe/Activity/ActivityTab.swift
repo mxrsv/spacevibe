@@ -44,11 +44,10 @@ enum ActivityStatusBar {
 
     static func hints(for pane: ActivityPane) -> [KeyHint] {
         let move = KeyHint(keys: "J K", label: "move"), detail = KeyHint(keys: "\u{21B5}", label: "detail")
-        let filter = KeyHint(keys: "/", label: "filter"), tabs = KeyHint(keys: "1 2 3", label: "tabs")
+        let tabs = KeyHint(keys: "1 2", label: "tabs")
         switch pane {
-        case .running: return [move, detail, KeyHint(keys: "S", label: "stop"), filter, tabs]
-        case .failed: return [move, detail, KeyHint(keys: "C", label: "copy"), filter, tabs]
-        case .files: return [move, detail, KeyHint(keys: "O", label: "show in Finder"), tabs]
+        case .running: return [move, detail, KeyHint(keys: "S", label: "stop"), tabs]
+        case .failed: return [move, detail, KeyHint(keys: "C", label: "copy"), tabs]
         }
     }
 }

@@ -4,11 +4,11 @@ import SwiftUI
 /// The v5 Activity shots (`SPACEVIBE_SHOT_SCREEN=activity`): the real page on the synthetic home in every state
 /// of V5-R62, dark and light. The run first checks every figure against what the core's report holds (the V5-A20 trace), then
 /// draws:
-/// - the real report: `activity-running`, `-running-filtered`, `-running-detail`, `-running-warning`, `-running-limit` (the clock on a running session), `-menu-filter`, `-stop` (the
-///   confirmation), `-failed`, `-failed-detail`, `-failed-warning`, `-files`, `-files-detail`;
+/// - the real report: `activity-running`, `-running-detail`, `-running-warning`, `-running-limit` (the clock on a running session), `-stop` (the
+///   confirmation), `-failed`, `-failed-detail`, `-failed-warning`;
 /// - the states from in-memory reports the fixture cannot show: `-loading`, `-error`, `-stale` (a report with a failed last read, and
 ///   its popover), `-healthy`, `-nothing-running`, `-many`,
-///   `-no-failures`, `-no-files`, `-not-installed`; and the V5-A22 sizes;
+///   `-no-failures`, `-not-installed`; and the V5-A22 sizes;
 /// - two real writes, last: `-stopped` (Stop on the Codex process the fixture can verify: its process list only edits itself, so
 ///   nothing real is signalled) and `-dismissed` (Dismiss passed with its Undo toast; undone after).
 @MainActor
@@ -46,10 +46,8 @@ enum ActivityTabShots {
         }
         func reset(_ model: ActivityModel) {
             model.pane = .running
-            model.filter.clear()
             model.detailID = nil
             model.currentID = nil
-            model.isFilterOpen = false
             model.pendingStop = nil
         }
         /// A page over an in-memory report: the state the fixture cannot show.
@@ -62,7 +60,6 @@ enum ActivityTabShots {
         let waiting = real.sessions.first { $0.state == .waiting }
         let toolRunning = real.sessions.first { $0.cli == .claude && $0.state == .running && $0.currentTool != nil }
         let stale = synthetic(real, failure: "The session logs could not be read.")
-        let fileToShow = ActivityQuery(report: real).files.first?.id
         let failureToShow = ActivityQuery(report: real).failures.first { $0.stillFailing }
         let withoutCodex = LimitsModel(env: env, results: [Self.entry(.claude, .measured), Self.entry(.codex, .notInstalled), Self.entry(.gemini, .notInstalled)])
         let healthy = synthetic(Self.healthy(real))
@@ -71,10 +68,8 @@ enum ActivityTabShots {
         let nothing = synthetic(Self.with(real) { $0.sessions = [] })
         let many = synthetic(Self.many(real))
         let noFailures = synthetic(Self.with(real) { $0.failures = [] }, pane: .failed)
-        let noFiles = synthetic(Self.with(real) { $0.files = [] }, pane: .files)
         let notInstalled = synthetic(Self.with(real) { $0.sessions = $0.sessions.filter { $0.cli == .claude } })
         notInstalled.model.limitsResults = { withoutCodex.results }
-        notInstalled.model.toggleFilter("codex")
 
         for choice in [AppearanceChoice.dark, .light] {
             func snap(_ name: String, tab shown: ActivityTab? = nil, toasts: ToastCenter? = nil, shownSlot: String? = nil, size: CGSize? = nil,
@@ -83,9 +78,6 @@ enum ActivityTabShots {
             }
             reset(model)
             try snap("activity-running")
-            model.toggleFilter("codex")
-            try snap("activity-running-filtered")
-            reset(model)
             if let waiting {
                 model.open("\(waiting.cli.rawValue):\(waiting.id)")
                 try snap("activity-running-detail")
@@ -100,9 +92,6 @@ enum ActivityTabShots {
                 try snap("activity-running-limit", shownSlot: "\(ActivityCanvas.page):warn:\(toolRunning.cli.rawValue):\(toolRunning.id)")
             }
             reset(model)
-            model.isFilterOpen = true
-            try snap("activity-menu-filter")
-            reset(model)
             model.select(.failed)
             try snap("activity-failed")
             if let failureToShow {
@@ -110,13 +99,6 @@ enum ActivityTabShots {
                 try snap("activity-failed-detail")
                 model.detailID = nil
                 try snap("activity-failed-warning", shownSlot: "\(ActivityCanvas.page):warn:\(failureToShow.id)")
-            }
-            reset(model)
-            model.select(.files)
-            try snap("activity-files")
-            if let fileToShow {
-                model.open(fileToShow)
-                try snap("activity-files-detail")
             }
             reset(model)
             try snap("activity-loading", tab: loading)
@@ -127,7 +109,6 @@ enum ActivityTabShots {
             try snap("activity-nothing-running", tab: nothing)
             try snap("activity-many", tab: many)
             try snap("activity-no-failures", tab: noFailures)
-            try snap("activity-no-files", tab: noFiles)
             try snap("activity-not-installed", tab: notInstalled, limits: withoutCodex)
             // V5-A22: below 700 pt of canvas the halves stack; and a window shorter than the cards.
             try snap("activity-narrow", size: CGSize(width: 960, height: 600))
@@ -271,15 +252,5 @@ enum ActivityTabShots {
         try ShotHarness.check(ActivityAnswer.failed(query).sentence == "\(still.count) still failing", "the Failed Answer counts the failures with no later pass")
         print("trace: Failed range \"\(ActivityFigures.failedRange(query.failures) ?? "none")\", Passed later \(ActivityFigures.passedLater(query)?.sentence ?? "none")")
         try ShotHarness.check(ActivityFigures.passedLater(query)?.count == real.failures.count - still.count, "Passed later counts the failures that have a later pass")
-
-        let files = query.files
-        let answer = ActivityAnswer.files(query)
-        print("trace: Files \(files.map { "\($0.file.label) \($0.file.edits)" }); Answer \"\(answer.sentence ?? "nil")\" \(answer.verdict?.title ?? "") \(answer.verdict?.text ?? "")")
-        try ShotHarness.check(query.count(.files) == real.files.count && answer.sentence == "\(files[0].name) is the most-edited file." && files[0].file.edits == real.files.map(\.edits).max(),
-                              "the Files Answer names the file with the most edits")
-        let busiest = ActivityFigures.busiest(query)
-        print("trace: Busiest \(busiest.entries.map { "\($0.name) \($0.edits)" }), skipped \(busiest.skipped), count \"\(ActivityFigures.busiestCount(query))\"")
-        let single = real.files.filter { $0.projects.count == 1 }.map(\.edits).reduce(0, +)
-        try ShotHarness.check(busiest.entries.map(\.edits).reduce(0, +) == single, "Busiest projects adds the edits of the single-project files")
     }
 }
