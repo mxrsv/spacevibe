@@ -375,6 +375,7 @@ The side-by-side check (V5-A1) expects these differences from the frozen mock an
 | S11 | Synthetic pids, "(mock only)" and "(stub)" toasts, fixed clock, the assumed ranges "last 14 days" and "last 30 days" (`b-activity:54`) | real pids, real actions, the range the engine covers (or no range label, open question 5) | V5-R75 |
 | S12 | Toast 5 s with `Undo Z` | same (the 2026-11-06 text said 7 s) | D68 (L79) |
 | S13 | Repeated counts and sentences: Activity spine-header counts, the Files verdict's edit count and path, Running's `Stop…` fix and the Right now `Limits` button; the sidebar's Agents total; the Skills meter caption "<CLI> does not have this skill.", the verdict clause "<CLI> does not have it", the pane's `Add to <CLI>` button and "Skill · Global" line; Subagents' "never ran" row text and `In one CLI only` card; Hooks' `Can't copy to Codex` card and `Why`; Rules' Codex column; Limits Source's Refresh and Gemini line; Settings' Language card | removed; Hooks says "SpaceVibe does not write hooks into Codex." under the bands; the Rules note names Codex's sandbox and approval policy | D69 |
+| S14 | Activity's Files tab (V5-R72) and one-field Filter; Skills' Status filter field and Last ran "Never"; Subagents' CLI filter field; the View menu's theme switch; `⌘L` for Limits; Settings on the pre-v5 blocks with Solar icons | removed; Limits is `⌘3`; Settings keeps its layout on `Tile`, `ListRow` and Phosphor glyphs | D70 |
 
 ## Acceptance criteria
 
