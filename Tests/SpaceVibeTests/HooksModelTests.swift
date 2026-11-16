@@ -266,6 +266,8 @@ struct HooksModelTests {
         #expect(try lines("claude", context(codexTakesHooks: true)).last == "Codex: not there. Press A to copy it.")
         #expect(try lines("codex") == ["Claude Code: not there. Press A to copy it.", "Codex: command handler, no matcher, runs Unmeasurable."])
         #expect(try lines("claude", context([.claude])).count == 1, "a CLI that is not installed has no line")
+        #expect(HooksWording.runs(.loading) == "counting runs")
+        #expect(HooksWording.runs(.loading, scanFailed: true) == "runs not counted", "a failed scan is not still counting")
     }
 
     @Test("a hook gets a name from its script, else its command; the core's line about other handler kinds is the only trace of them")

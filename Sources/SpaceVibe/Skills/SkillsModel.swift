@@ -42,7 +42,7 @@ final class SkillsModel {
         (loadout.view()?.all ?? []).filter { $0.kind == .skill }
     }
 
-    var layout: SkillsQuery.Layout { query.layout(rows, now: now()) }
+    var layout: SkillsQuery.Layout { query.layout(rows, now: now(), scanFailed: loadout.scanFailed) }
 
     /// The scope control's label: "Global" or a project's folder name.
     var scopeLabel: String { loadout.view()?.scope.label ?? "Global" }

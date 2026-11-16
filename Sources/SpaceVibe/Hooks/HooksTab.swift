@@ -282,7 +282,9 @@ struct HooksCanvas: View {
                 SpaceVibeIcon(source: CategoryGlyph.hook, size: .row, ink: TextTone.tertiary.color)
             }
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(HooksWording.lines(for: row, context: context, home: model.home), id: \.self) { PopoverSentence($0) }
+                ForEach(HooksWording.lines(for: row, context: context, home: model.home, scanFailed: model.loadout.scanFailed), id: \.self) {
+                    PopoverSentence($0)
+                }
             }
             if copyTarget != nil && row.hookMatcher != nil {
                 Text(HooksWording.matcherNote).spaceVibeText(.meta, tone: .tertiary).fixedSize(horizontal: false, vertical: true).lineBox(.meta)

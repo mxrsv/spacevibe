@@ -53,7 +53,8 @@ final class SubagentsModel {
     var detected: [CoreCLI] { LoadoutRows.detectedCLIs(limits: limitsResults(), rows: rows) }
 
     var answer: SubagentsAnswer {
-        SubagentsAnswer.of(rows, isLoaded: isLoaded, detected: detected, since: LoadoutFormat.usageSince(loadout.usageResult))
+        SubagentsAnswer.of(rows, isLoaded: isLoaded, detected: detected, since: LoadoutFormat.usageSince(loadout.usageResult),
+                           scanFailed: loadout.scanFailed)
     }
 
     var addable: SubagentsAddable { SubagentsAddable(rows, detected: detected) }

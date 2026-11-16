@@ -179,8 +179,8 @@ struct SubagentsCanvas: View {
 
     private func listRow(_ row: LoadoutRow, current: LoadoutRow?, detected: [CoreCLI], now: Date) -> some View {
         ListRow(row.name, isCurrent: row.key == current?.key, onActivate: { model.open(row.key) },
-                accessibilityName: SubagentsWording.spoken(row)) {
-            MetaCell(text: SubagentsWording.sessionsText(row) ?? "", width: Metrics.Subagents.sessionsWidth)
+                accessibilityName: SubagentsWording.spoken(row, scanFailed: model.loadout.scanFailed)) {
+            MetaCell(text: SubagentsWording.sessionsText(row, scanFailed: model.loadout.scanFailed) ?? "", width: Metrics.Subagents.sessionsWidth)
             LogoStrip {
                 ForEach(detected, id: \.self) { cli in
                     LogoToggle(cli: CoreLimitsCLI(cli), isLit: row.members[cli] != nil, mode: model.mode(row, cli: cli),
@@ -225,7 +225,9 @@ struct SubagentsCanvas: View {
                 SpaceVibeIcon(source: CategoryGlyph.subagent, size: .row, ink: TextTone.tertiary.color)
             }
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(SubagentsWording.detailLines(for: row, adding: add?.target, now: now), id: \.self) { PopoverSentence($0) }
+                ForEach(SubagentsWording.detailLines(for: row, adding: add?.target, now: now, scanFailed: model.loadout.scanFailed), id: \.self) {
+                    PopoverSentence($0)
+                }
             }
             if let plugin = row.plugin { PopoverNote("Owned by the \(plugin) plugin. SpaceVibe can read it but not change it.", glyph: .lock) }
             if add != nil || row.plugin == nil { detailActions(row, add: add) }

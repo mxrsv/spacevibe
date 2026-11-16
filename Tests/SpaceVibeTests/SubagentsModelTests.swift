@@ -153,6 +153,15 @@ struct SubagentsModelTests {
         #expect(SubagentsWording.sessionsText(row("a", claude: SkillRowsFixture.addedToday)) == nil)
         #expect(SubagentsWording.sessionsText(row("a", claude: SkillRowsFixture.noLogs)) == "unmeasurable")
         #expect(SubagentsWording.sessionsText(row("a", claude: SkillRowsFixture.scanning)) == "counting")
+        // A failed scan is not still counting: the row, its spoken name, its detail line and the Answer all say so.
+        let uncounted = row("a", claude: SkillRowsFixture.scanning)
+        #expect(SubagentsWording.sessionsText(uncounted, scanFailed: true) == "not counted")
+        #expect(SubagentsWording.spoken(uncounted, scanFailed: true) == "a, not counted")
+        #expect(SubagentsWording.lines(for: uncounted, now: Date(), scanFailed: true) == ["Claude Code: sessions could not be counted."])
+        #expect(SubagentsAnswer.of([uncounted], isLoaded: true, detected: [.claude], scanFailed: true).sentence == "Usage could not be counted.")
+        #expect(SubagentsAnswer.of([uncounted], isLoaded: false, detected: [.claude], scanFailed: true).sentence == nil, "nothing is read yet")
+        #expect(SubagentsAnswer.of([row("b", claude: counted(0))], isLoaded: true, detected: [.claude], scanFailed: true).sentence == "1 subagent never ran.",
+                "rows that have counts keep their answer")
         #expect(SubagentsWording.sessionsText(row("a", claude: counted(5), codex: counted(2))) == "7 sessions", "every CLI that counted")
     }
 

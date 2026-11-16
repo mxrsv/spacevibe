@@ -109,7 +109,7 @@ struct SkillsCanvas: View {
             let picked = model.pickedRows
             ZStack(alignment: .topLeading) {
                 if keysAreOn { keys(visible: visible, current: current, picked: picked) }
-                ListPaneLayout(orderLine: model.query.orderLine, scrollTarget: current?.key, barShown: !picked.isEmpty) {
+                ListPaneLayout(orderLine: model.query.orderLine(scanFailed: model.loadout.scanFailed), scrollTarget: current?.key, barShown: !picked.isEmpty) {
                     SkillsList(model: model, layout: layout, current: current, detected: detected)
                 } pane: {
                     SkillsPane(model: model, row: current, detected: detected,

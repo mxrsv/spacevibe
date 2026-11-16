@@ -88,20 +88,21 @@ enum HooksWording {
         row.presentCLIs.count == 2 ? "In both CLIs" : "\(row.presentCLIs.first?.label ?? "No CLI") only"
     }
 
-    static func runs(_ run: HookRun) -> String {
+    /// `scanFailed`: the usage scan failed, so a hook without a count is not being counted any more.
+    static func runs(_ run: HookRun, scanFailed: Bool = false) -> String {
         switch run {
         case .ran(let count, _): "\(count) \(count == 1 ? "run" : "runs")"
         case .neverRan: "never ran"
         case .newlyAdded: "never ran yet, the settings file is new"
         case .unmeasurable: "runs Unmeasurable"
-        case .loading: "counting runs"
+        case .loading: scanFailed ? "runs not counted" : "counting runs"
         case .missing: ""
         }
     }
 
     /// One sentence per CLI: the handler kind, the matcher and the runs (or the reason it has none) where the hook is, and why not
     /// where it is not.
-    static func lines(for row: LoadoutRow, context: HooksContext, home: String?) -> [String] {
+    static func lines(for row: LoadoutRow, context: HooksContext, home: String?, scanFailed: Bool = false) -> [String] {
         CoreCLI.allCases.compactMap { cli -> String? in
             guard context.detected.contains(cli) || row.members[cli] != nil else { return nil }
             if let hook = row.hookMembers[cli] {
@@ -110,7 +111,7 @@ enum HooksWording {
                     let path = hook.paths.first.map { LoadoutRows.shorten($0, home: home) }
                     return "\(cli.label): command handler, \(matcher), script \(path ?? "") is gone."
                 }
-                return "\(cli.label): command handler, \(matcher), \(runs(row.hookRun(in: cli)))."
+                return "\(cli.label): command handler, \(matcher), \(runs(row.hookRun(in: cli), scanFailed: scanFailed))."
             }
             if let block = context.block(row, to: cli) { return "\(cli.label): not there. \(long(block))" }
             return "\(cli.label): not there. Press A to copy it."

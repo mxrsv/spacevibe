@@ -7,15 +7,15 @@ import Foundation
 enum SubagentsWording {
     // MARK: The row
 
-    /// The text before the logos: "142 sessions", "unmeasurable", "counting" while the scan runs. Nil for a subagent that never
-    /// ran: the row's warning mark says that (D69).
-    static func sessionsText(_ row: LoadoutRow) -> String? {
+    /// The text before the logos: "142 sessions", "unmeasurable", "counting" while the scan runs and "not counted" once it
+    /// has failed. Nil for a subagent that never ran: the row's warning mark says that (D69).
+    static func sessionsText(_ row: LoadoutRow, scanFailed: Bool = false) -> String? {
         let usage = row.skillUsage
         switch usage.state {
         case .ran: return SkillsWording.sessions(usage.sessions ?? 0)
         case .neverRan: return nil
         case .unmeasurable: return "unmeasurable"
-        case .loading: return "counting"
+        case .loading: return scanFailed ? "not counted" : "counting"
         }
     }
 
@@ -39,8 +39,8 @@ enum SubagentsWording {
     }
 
     /// What VoiceOver reads for the row.
-    static func spoken(_ row: LoadoutRow) -> String {
-        [row.name, sessionsText(row), slot(for: row)?.mark.label].compactMap { $0 }.joined(separator: ", ")
+    static func spoken(_ row: LoadoutRow, scanFailed: Bool = false) -> String {
+        [row.name, sessionsText(row, scanFailed: scanFailed), slot(for: row)?.mark.label].compactMap { $0 }.joined(separator: ", ")
     }
 
     // MARK: The Answer
@@ -60,7 +60,7 @@ enum SubagentsWording {
 
     /// One sentence per CLI that has the subagent: its sessions and the day of the last one. The inventory carries no model or
     /// tools (G1), so the popover says nothing about them.
-    static func lines(for row: LoadoutRow, now: Date) -> [String] {
+    static func lines(for row: LoadoutRow, now: Date, scanFailed: Bool = false) -> [String] {
         row.presentCLIs.map { cli in
             let name = cli.label
             switch row.skillUsage.cells[cli] ?? .missing {
@@ -69,7 +69,7 @@ enum SubagentsWording {
                 return "\(name): \(SkillsWording.sessions(count))" + (last.map { ", last session \(SkillDays.phrase($0, now: now))" } ?? "") + "."
             case .added(let added): return "\(name): never ran. \(SkillsWording.addedPhrase(added))."
             case .noLogs: return "\(name): no logs to count sessions from."
-            case .loading: return "\(name): counting sessions."
+            case .loading: return scanFailed ? "\(name): sessions could not be counted." : "\(name): counting sessions."
             case .missing: return "\(name): not installed."
             }
         }
@@ -77,8 +77,8 @@ enum SubagentsWording {
 
     /// What the detail popover shows for a row: `lines`, then, when `Add to <CLI>` is offered, what that copy carries (G10), so the
     /// sentence is read before the click.
-    static func detailLines(for row: LoadoutRow, adding target: CoreCLI?, now: Date) -> [String] {
-        lines(for: row, now: now) + (target.map { [copyNote(to: $0)] } ?? [])
+    static func detailLines(for row: LoadoutRow, adding target: CoreCLI?, now: Date, scanFailed: Bool = false) -> [String] {
+        lines(for: row, now: now, scanFailed: scanFailed) + (target.map { [copyNote(to: $0)] } ?? [])
     }
 
     // MARK: Toasts (V5-R38)

@@ -170,15 +170,17 @@ struct SubagentsAnswer: Equatable, Sendable {
         let offersRemove: Bool
     }
 
-    /// Nil while the inventory or the usage scan has not finished: the card shows its skeleton.
+    /// Nil while the inventory or the usage scan has not finished: the card shows its skeleton. A scan that failed has
+    /// finished: the card says the counts are missing.
     let sentence: String?
     let verdict: Verdict?
     /// Never-ran subagents beyond the one named: "N more are marked in the list."
     let more: Int
 
-    static func of(_ rows: [LoadoutRow], isLoaded: Bool, detected: [CoreCLI], since: String? = nil) -> SubagentsAnswer {
+    static func of(_ rows: [LoadoutRow], isLoaded: Bool, detected: [CoreCLI], since: String? = nil, scanFailed: Bool = false) -> SubagentsAnswer {
         guard isLoaded, !rows.isEmpty, !rows.contains(where: { $0.skillUsage.state == .loading }) else {
-            return SubagentsAnswer(sentence: nil, verdict: nil, more: 0)
+            let uncounted = isLoaded && !rows.isEmpty && scanFailed
+            return SubagentsAnswer(sentence: uncounted ? "Usage could not be counted." : nil, verdict: nil, more: 0)
         }
         let unused = rows.filter(\.isUnused).sorted(by: SubagentsQuery.rank)
         guard let first = unused.first else {

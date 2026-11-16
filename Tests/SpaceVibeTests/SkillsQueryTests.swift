@@ -54,6 +54,13 @@ struct SkillsQueryTests {
         #expect(query.orderLine == "Ordered by last run")
         query.group = .owner
         #expect(query.orderLine == "Ordered by last run \u{00B7} Grouped by owner")
+        // After a failed scan no row has a count: the line says so instead of claiming the order.
+        #expect(query.orderLine(scanFailed: true) == "Ordered by last run \u{00B7} not counted \u{00B7} Grouped by owner")
+        query.group = .none
+        query.order = .sessions
+        #expect(query.orderLine(scanFailed: true) == "Ordered by sessions \u{00B7} not counted")
+        query.order = .name
+        #expect(query.orderLine(scanFailed: true) == "Ordered by name", "names need no count")
     }
 
     // MARK: Status, usage, ranks
@@ -240,6 +247,7 @@ struct SkillsQueryTests {
         let layout = query.layout(rows, now: F.now)
         #expect(layout.isGrouped)
         #expect(layout.groups.map(\.title) == ["Heavily used", "Ran", "Never ran", "Counting sessions"])
+        #expect(query.layout(rows, now: F.now, scanFailed: true).groups.map(\.title).last == "Not counted", "a failed scan is not still counting")
         #expect(layout.groups.map { $0.rows.map(\.name) } == [["ponytail", "impeccable"], ["explain", "ghost", "neon-postgres", "tdd"],
                                                               ["review-change", "skill-creator", "webapp-testing"], ["loading-skill"]])
         #expect(layout.groups.map(\.holdsProblem) == [false, false, true, false])

@@ -66,6 +66,9 @@ enum SkillStatus: String, CaseIterable, Sendable {
         }
     }
 
+    /// The band's title: after a failed usage scan the rows without a count are not being counted any more.
+    func title(scanFailed: Bool) -> String { self == .loading && scanFailed ? "Not counted" : title }
+
     var verdict: VerdictGlyph.Kind {
         switch self {
         case .heavy: .heavy
@@ -194,8 +197,13 @@ struct SkillsQuery: Equatable, Sendable {
     var order = SkillsOrder.sessions
 
     /// The order line above the list (V5-R30).
-    var orderLine: String {
-        "Ordered by \(order.phrase)" + (group == .none ? "" : " \u{00B7} Grouped by \(group.title.lowercased())")
+    var orderLine: String { orderLine(scanFailed: false) }
+
+    /// After a failed usage scan no row has a count, so an order by sessions or last run falls back to names: the line says
+    /// the counts are missing instead of claiming an order it cannot give.
+    func orderLine(scanFailed: Bool) -> String {
+        "Ordered by \(order.phrase)" + (scanFailed && order != .name ? " \u{00B7} not counted" : "")
+            + (group == .none ? "" : " \u{00B7} Grouped by \(group.title.lowercased())")
     }
 
     /// One band of the list, or the one headless group of a flat list.
@@ -215,7 +223,7 @@ struct SkillsQuery: Equatable, Sendable {
     }
 
     /// `rows` are the skills of the scope, unfiltered: the rank and the empty-category state read them all.
-    func layout(_ rows: [LoadoutRow], now: Date) -> Layout {
+    func layout(_ rows: [LoadoutRow], now: Date, scanFailed: Bool = false) -> Layout {
         let marks = SkillRank.marks(for: rows)
         let kept = rows.filter { matches($0, marks: marks[$0.key] ?? [], now: now) }
         let ordered = kept.sorted(by: comparator(marks: marks))
@@ -228,7 +236,8 @@ struct SkillsQuery: Equatable, Sendable {
             groups = [group("flat", "", ordered)].compactMap { $0 }
         case .status:
             groups = SkillStatus.allCases.compactMap { status in
-                group("status:\(status.rawValue)", status.title, status: status, ordered.filter { SkillStatus.of($0, marks: marks[$0.key] ?? []) == status })
+                group("status:\(status.rawValue)", status.title(scanFailed: scanFailed), status: status,
+                      ordered.filter { SkillStatus.of($0, marks: marks[$0.key] ?? []) == status })
             }
         case .cli:
             groups = [
@@ -242,7 +251,8 @@ struct SkillsQuery: Equatable, Sendable {
         case .tier:
             let tiers: [(SkillRankMark, String)] = [(.top20, "Top 20%"), (.middle, "Middle"), (.bottom20, "Bottom 20%")]
             groups = tiers.compactMap { tier in group("tier:\(tier.0.rawValue)", tier.1, ordered.filter { marks[$0.key]?.contains(tier.0) == true }) }
-                + [group("tier:unranked", SkillStatus.loading.title, status: .loading, ordered.filter { marks[$0.key] == nil })].compactMap { $0 }
+                + [group("tier:unranked", SkillStatus.loading.title(scanFailed: scanFailed), status: .loading, ordered.filter { marks[$0.key] == nil })]
+                .compactMap { $0 }
         }
         return Layout(groups: groups, isGrouped: self.group != .none)
     }
