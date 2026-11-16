@@ -67,7 +67,7 @@ enum SkillsShots {
             try snap("skills-short", size: CGSize(width: 1062, height: 685))
             try snap("skills-narrow", size: CGSize(width: 960, height: 600))
 
-            try snap("skills-filtered") { model.toggleFilter(.status, "neverRan") }
+            try snap("skills-filtered") { model.toggleFilter(.rank, "never") }
             try snap("skills-filtered-two") { model.toggleFilter(.cli, "one") }
             reset()
             try snap("skills-grouped") { model.query.group = .status }
@@ -94,7 +94,7 @@ enum SkillsShots {
             reset()
 
             try snap("skills-nothing-matches") {
-                model.toggleFilter(.status, "heavy")
+                model.toggleFilter(.rank, "top20")
                 model.toggleFilter(.owner, "plugin")
             }
             reset()

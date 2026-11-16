@@ -112,16 +112,15 @@ enum SkillDays {
     }
 }
 
-/// The Skills filter: five fields (V5-R29).
+/// The Skills filter: four fields (V5-R29; Status went in D70, Rank holds Never ran and the top tier).
 typealias SkillsFilter = PickFilter<SkillsFilterField>
 
-/// The five filter fields (V5-R29). AND across fields, OR within one.
+/// The four filter fields (V5-R29, D70). AND across fields, OR within one.
 enum SkillsFilterField: String, FilterFieldKind {
-    case status, cli, owner, rank, lastRan
+    case cli, owner, rank, lastRan
 
     var title: String {
         switch self {
-        case .status: "Status"
         case .cli: "CLI"
         case .owner: "Owner"
         case .rank: "Rank"
@@ -135,7 +134,6 @@ enum SkillsFilterField: String, FilterFieldKind {
     /// The values in menu order. Rank has two groups, headed in the menu by `rankGroups`.
     var values: [FilterValue] {
         switch self {
-        case .status: [FilterValue("neverRan", "Never ran"), FilterValue("heavy", "Heavily used")]
         case .cli:
             [FilterValue("claude", "In Claude Code", chip: "Claude Code"), FilterValue("codex", "In Codex", chip: "Codex"),
              FilterValue("both", "In both", chip: "Both"), FilterValue("one", "In one only", chip: "One only")]
@@ -145,8 +143,7 @@ enum SkillsFilterField: String, FilterFieldKind {
              FilterValue("least10", "Least used 10"), FilterValue("never", "Never ran"),
              FilterValue("top20", "Top 20%"), FilterValue("middle", "Middle"), FilterValue("bottom20", "Bottom 20%")]
         case .lastRan:
-            [FilterValue("today", "Today"), FilterValue("week", "This week"),
-             FilterValue("old", "Over 30 days ago"), FilterValue("never", "Never")]
+            [FilterValue("today", "Today"), FilterValue("week", "This week"), FilterValue("old", "Over 30 days ago")]
         }
     }
 
@@ -272,9 +269,6 @@ struct SkillsQuery: Equatable, Sendable {
 
     private static func test(_ field: SkillsFilterField, value: String, row: LoadoutRow, marks: Set<SkillRankMark>, now: Date) -> Bool {
         switch field {
-        case .status:
-            let status = SkillStatus.of(row, marks: marks)
-            return value == "neverRan" ? status == .neverRan : status == .heavy
         case .cli:
             let present = row.presentCLIs
             switch value {
@@ -288,7 +282,7 @@ struct SkillsQuery: Equatable, Sendable {
         case .rank:
             return SkillRankMark(rawValue: value).map { marks.contains($0) } ?? false
         case .lastRan:
-            guard let last = row.skillUsage.lastRan, let days = SkillDays.daysAgo(last, now: now) else { return value == "never" && row.skillUsage.state == .neverRan }
+            guard let last = row.skillUsage.lastRan, let days = SkillDays.daysAgo(last, now: now) else { return false }
             switch value {
             case "today": return days < 1
             case "week": return days < 7

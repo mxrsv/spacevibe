@@ -37,7 +37,6 @@ struct SubagentsHeadActions: View {
     private static func glyph(_ field: SubagentsFilterField) -> ContentGlyph {
         switch field {
         case .status: .check
-        case .cli: .stack
         case .owner: .lock
         }
     }

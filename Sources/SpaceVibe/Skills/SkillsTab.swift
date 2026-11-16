@@ -47,16 +47,14 @@ struct SkillsHeadActions: View {
                 if field == .rank, let group = SkillsFilterField.rankGroups.first(where: { $0.firstValue == value.id }) {
                     values.append(MenuEntry(id: "heading.\(group.heading)", title: group.heading, kind: .heading))
                 }
-                values.append(MenuEntry(id: value.id, title: value.title, kind: .check(isOn: model.query.filter.isPicked(field, value.id)),
-                                        lead: field == .status ? .verdict(value.id == "heavy" ? .heavy : .never) : nil))
+                values.append(MenuEntry(id: value.id, title: value.title, kind: .check(isOn: model.query.filter.isPicked(field, value.id))))
             }
-            return FilterMenuField(id: field.rawValue, title: field.title, lead: field == .status ? .verdict(.used) : .glyph(Self.glyph(field)), values: values)
+            return FilterMenuField(id: field.rawValue, title: field.title, lead: .glyph(Self.glyph(field)), values: values)
         }
     }
 
     private static func glyph(_ field: SkillsFilterField) -> ContentGlyph {
         switch field {
-        case .status: .check
         case .cli: .stack
         case .owner: .lock
         case .rank: .rank

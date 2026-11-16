@@ -1,27 +1,24 @@
 import Foundation
 
 /// The filter fields of the Subagents tab (V5-R64). `Can touch` is left out: the inventory carries no tools for a subagent (G1).
-/// `Unmeasurable` is offered because the engine reports it (a CLI with no logs to count from).
+/// `Unmeasurable` is offered because the engine reports it (a CLI with no logs to count from). No CLI field: the spine is already
+/// banded by CLI presence (D70).
 enum SubagentsFilterField: String, FilterFieldKind {
-    case status, cli, owner
+    case status, owner
 
     var title: String {
         switch self {
         case .status: "Status"
-        case .cli: "CLI"
         case .owner: "Owner"
         }
     }
 
-    /// The first words of a chip: `Status is`, `CLI is`.
+    /// The first words of a chip: `Status is`, `Owner is`.
     var chipTitle: String { "\(title) is" }
 
     var values: [FilterValue] {
         switch self {
         case .status: [FilterValue("neverRan", "Never ran"), FilterValue("unmeasurable", "Unmeasurable")]
-        case .cli:
-            [FilterValue("claude", "In Claude Code", chip: "Claude Code"), FilterValue("codex", "In Codex", chip: "Codex"),
-             FilterValue("both", "In both", chip: "Both")]
         case .owner: [FilterValue("mine", "Mine"), FilterValue("plugin", "Plugin")]
         }
     }
@@ -110,13 +107,6 @@ struct SubagentsQuery: Equatable, Sendable {
         case .status:
             let state = row.skillUsage.state
             return value == "neverRan" ? state == .neverRan : state == .unmeasurable
-        case .cli:
-            let present = row.presentCLIs
-            switch value {
-            case "claude": return present.contains(.claude)
-            case "codex": return present.contains(.codex)
-            default: return present.count == 2
-            }
         case .owner:
             return value == "plugin" ? row.plugin != nil : row.plugin == nil
         }

@@ -142,10 +142,10 @@ struct SkillsQueryTests {
 
     // MARK: Filters
 
-    @Test("Status filter: Never ran and Heavily used")
-    func statusFilter() {
-        #expect(filtered(.status, "neverRan") == ["review-change", "skill-creator", "webapp-testing"])
-        #expect(filtered(.status, "heavy") == ["ponytail", "impeccable"])
+    @Test("Rank holds what the dropped Status field held: Never ran, and Top 20% for Heavily used (D70)")
+    func rankCoversStatus() {
+        #expect(filtered(.rank, "never") == ["review-change", "skill-creator", "webapp-testing"])
+        #expect(filtered(.rank, "top20") == ["ponytail", "impeccable"])
     }
 
     @Test("CLI filter: In Claude Code, In Codex, In both, In one only")
@@ -173,17 +173,11 @@ struct SkillsQueryTests {
         #expect(filtered(.rank, "bottom20") == ["review-change", "skill-creator", "webapp-testing"])
     }
 
-    @Test("Last ran filter: Today, This week, Over 30 days ago, Never, by UTC day")
+    @Test("Last ran filter: Today, This week, Over 30 days ago, by UTC day (Never ran lives under Rank)")
     func lastRanFilter() {
         #expect(filtered(.lastRan, "today") == ["ponytail", "ghost"])
         #expect(filtered(.lastRan, "week") == ["ponytail", "impeccable", "ghost", "neon-postgres"])
         #expect(filtered(.lastRan, "old") == ["tdd"])
-        #expect(filtered(.lastRan, "never") == ["review-change", "skill-creator", "webapp-testing"])
-        // A row with no logs (Unmeasurable) or a scan still running (Loading) is not "Never".
-        let unknown = [F.row("no-logs", claude: F.noLogs), F.row("scanning", claude: F.scanning), F.row("zero", claude: F.counted(0))]
-        var query = SkillsQuery()
-        query.filter.toggle(.lastRan, "never")
-        #expect(names(query, unknown) == ["zero"])
     }
 
     @Test("a session meter says \"1 session\" for one and \"N sessions\" otherwise, and nothing without a count")
@@ -209,21 +203,21 @@ struct SkillsQueryTests {
 
     @Test("values within a field are ORed, fields are ANDed, and a toggle twice clears the pick")
     func andOr() {
-        #expect(filtered(.status, "neverRan", "heavy") == ["ponytail", "impeccable", "review-change", "skill-creator", "webapp-testing"])
+        #expect(filtered(.rank, "never", "top20") == ["ponytail", "impeccable", "review-change", "skill-creator", "webapp-testing"])
         var query = SkillsQuery()
-        query.filter.toggle(.status, "neverRan")
-        query.filter.toggle(.status, "heavy")
+        query.filter.toggle(.rank, "never")
+        query.filter.toggle(.rank, "top20")
         query.filter.toggle(.cli, "one")
         #expect(names(query) == ["ponytail", "review-change", "skill-creator"])
         query.filter.toggle(.owner, "plugin")
         #expect(names(query).isEmpty)
-        #expect(query.filter.isOn && query.filter.chips.map(\.value.id) == ["neverRan", "heavy", "one", "plugin"])
+        #expect(query.filter.isOn && query.filter.chips.map(\.value.id) == ["one", "plugin", "never", "top20"])
         query.filter.toggle(.owner, "plugin")
         query.filter.toggle(.cli, "one")
-        query.filter.toggle(.status, "heavy")
-        query.filter.toggle(.status, "neverRan")
+        query.filter.toggle(.rank, "top20")
+        query.filter.toggle(.rank, "never")
         #expect(!query.filter.isOn)
-        query.filter.toggle(.status, "heavy")
+        query.filter.toggle(.rank, "top20")
         query.filter.clear()
         #expect(!query.filter.isOn && names(query).count == 10)
     }
