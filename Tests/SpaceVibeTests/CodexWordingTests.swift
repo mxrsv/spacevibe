@@ -2,165 +2,27 @@ import Foundation
 import Testing
 @testable import SpaceVibe
 
-/// The Codex page of Rules: what it says about a config, and that no secret-looking string from `config.toml` reaches the
-/// screen (AGENTS.md S-R3).
-@Suite("Codex page wording")
+/// No secret-looking string from `config.toml` reaches the Rules page (AGENTS.md S-R3): a value shows only when it reads as a
+/// plain word.
+@Suite("Codex config wording")
 struct CodexWordingTests {
-    private static let canary = "http://user:CANARY-sk-live-0123456789@proxy.example.com:8080"
-
-    /// Reads a config.toml (and rules files) from a throwaway home through the core, the way the Rules screen does.
-    private func permissions(_ toml: String?, rules: String? = nil) async throws -> CoreCodexPermissions {
-        let base = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        let root = base.appendingPathComponent("spacevibe-codex-\(UUID().uuidString)", isDirectory: true).resolvingSymlinksInPath()
-        defer { try? FileManager.default.removeItem(at: root) }
-        let codex = root.appendingPathComponent(".codex", isDirectory: true)
-        try FileManager.default.createDirectory(at: codex.appendingPathComponent("rules"), withIntermediateDirectories: true)
-        if let toml { try toml.write(to: codex.appendingPathComponent("config.toml"), atomically: true, encoding: .utf8) }
-        if let rules { try rules.write(to: codex.appendingPathComponent("rules/default.rules"), atomically: true, encoding: .utf8) }
-        let env = ProcessInfo.processInfo.environment.merging([
-            "HOME": root.path,
-            "CLAUDE_CONFIG_DIR": root.appendingPathComponent(".claude").path,
-            "CODEX_HOME": codex.path,
-            "SPACEVIBE_HOME": root.appendingPathComponent(".spacevibe").path,
-            "SPACEVIBE_TEST": "1",
-        ]) { _, new in new }
-        let client = CoreClient(binary: try CoreFixtureHome.coreBinary(), environment: env)
-        defer { client.shutdown() }
-        return try await client.rulesSnapshot(scope: .global, dir: nil, refreshProjects: false).codex
-    }
-
-    /// Every string the page would draw for this config.
-    private func shown(_ codex: CoreCodexPermissions) -> String {
-        let status = CodexWording.status(codex)
-        let rows = CodexWording.rows(codex).map { row -> String in
-            switch row.value {
-            case .options(let options, let picked, _): return ([row.title, row.key, picked ?? ""] + options).joined(separator: "\n")
-            case .tag(let text, _): return [row.title, row.key, text].joined(separator: "\n")
-            }
+    @Test("a plain mode word shows as written; a URL, a token or other free text shows as hidden text")
+    func words() {
+        for word in ["on-request", "workspace-write", "danger-full-access", "dev", "never"] {
+            #expect(CodexWording.word(word) == word, "\(word)")
         }
-        return ([status.sentence, status.detail ?? ""] + rows).joined(separator: "\n")
-    }
-
-    @Test("a URL, a token or any other free text under the network table is not shown; flags and mode words are")
-    func networkFlagsHideText() async throws {
-        let codex = try await permissions("""
-        default_permissions = "dev"
-
-        [permissions.dev.network]
-        enabled = true
-        mode = "limited"
-        proxy = "\(Self.canary)"
-        token = "CANARY-sk-live-0123456789"
-        timeout = 30
-        """)
-        let text = shown(codex)
-        #expect(!text.contains("CANARY"))
-        let network = CodexWording.rows(codex).first { $0.title == "Network in the profile" }
-        guard case .tag(let flags, _)? = network?.value else { Issue.record("no profile network row"); return }
-        #expect(flags.contains("enabled = true"))
-        #expect(flags.contains("mode = limited"))
-        #expect(flags.contains("timeout = 30"))
-        #expect(flags.contains("proxy = \(CodexWording.hiddenText)"))
-        #expect(flags.contains("token = \(CodexWording.hiddenText)"))
-    }
-
-    @Test("a profile name, a reviewer or a mode that is not a plain word is not shown")
-    func freeTextValuesAreHidden() async throws {
-        let codex = try await permissions("""
-        default_permissions = "CANARY-sk-live-0123456789"
-        approvals_reviewer = "\(Self.canary)"
-        approval_policy = "CANARY-token-value-0123"
-        sandbox_mode = "CANARY sandbox value"
-        """)
-        #expect(!shown(codex).contains("CANARY"))
-    }
-
-    @Test("no sandbox and never asking reads as a warning, and every option of both keys is written out")
-    func unrestricted() async throws {
-        let codex = try await permissions("""
-        approval_policy = "never"
-        sandbox_mode = "danger-full-access"
-        """, rules: #"prefix_rule(pattern=["git", "push"], decision="allow")"#)
-        let status = CodexWording.status(codex)
-        #expect(status.tone == .warn)
-        #expect(status.sentence == "Has no sandbox and never asks")
-        let rows = CodexWording.rows(codex)
-        #expect(rows.first { $0.title == "Asks before acting" }?.value == .options(["Unless allowed", "When needed", "Never"], picked: "Never", warn: true))
-        #expect(rows.first { $0.title == "Sandbox" }?.value == .options(["Read only", "Workspace", "Full access"], picked: "Full access", warn: true))
-        #expect(rows.first { $0.title == "Network" }?.value == .tag("open", tone: .warn))
-        #expect(rows.first { $0.title == "Can write to" }?.value == .tag("anywhere", tone: .warn))
-    }
-
-    @Test("command rules that forbid or prompt are named in the warning, since they still hold Codex back")
-    func unrestrictedWithRules() async throws {
-        let codex = try await permissions("""
-        approval_policy = "never"
-        sandbox_mode = "danger-full-access"
-        """, rules: """
-        prefix_rule(pattern=["rm", "-rf"], decision="forbidden")
-        prefix_rule(pattern=["git", "push"], decision="prompt")
-        """)
-        #expect(CodexWording.status(codex).sentence == "Has no sandbox and never asks, except for 2 command rules")
-        let asking = try await permissions("approval_policy = \"on-request\"\nsandbox_mode = \"danger-full-access\"\n")
-        #expect(CodexWording.status(asking) == CodexStatus(tone: .warn, sentence: "Has no sandbox and asks when it needs more", detail: #"sandbox_mode = "danger-full-access" · approval_policy = "on-request""#))
-    }
-
-    @Test("the workspace sandbox that asks when needed reads as safe; network and folders come from its table")
-    func workspace() async throws {
-        let codex = try await permissions("""
-        approval_policy = "on-failure"
-        sandbox_mode = "workspace-write"
-
-        [sandbox_workspace_write]
-        network_access = false
-        writable_roots = ["/tmp/a"]
-        """)
-        let status = CodexWording.status(codex)
-        #expect(status.tone == .success)
-        #expect(status.sentence == "Writes only inside the workspace and asks when it needs more")
-        let rows = CodexWording.rows(codex)
-        // on-failure is an alias of on-request: the segment says so and the key keeps the written value.
-        #expect(rows.first { $0.title == "Asks before acting" }?.value == .options(["Unless allowed", "When needed", "Never"], picked: "When needed", warn: false))
-        #expect(rows.first { $0.title == "Asks before acting" }?.key == #"approval_policy = "on-failure""#)
-        #expect(rows.first { $0.title == "Network" }?.value == .options(["Off", "On"], picked: "Off", warn: false))
-        #expect(rows.first { $0.title == "Can write to" }?.value == .tag("the workspace and 1 more folder", tone: .neutral))
-    }
-
-    @Test("a missing config says Codex runs on its defaults and shows no setting rows")
-    func missing() async throws {
-        let codex = try await permissions(nil)
-        #expect(CodexWording.status(codex).tone == .neutral)
-        #expect(CodexWording.status(codex).sentence.contains("there is no ~/.codex/config.toml"))
-        #expect(CodexWording.rows(codex).isEmpty)
-    }
-
-    @Test("a config.toml that cannot be read is unknown, not the defaults: one sentence, no rows, whether or not the file is present")
-    func notReadable() {
-        for present in [false, true] {
-            // As the core sends it for an unreadable file: every setting empty, the flag set. `present: true` also carries stale-looking values.
-            let codex = CoreCodexPermissions(
-                present: present, model: .legacy, unrestricted: false, warnings: [], approvalPolicy: present ? .mode("never") : nil,
-                sandboxMode: present ? "danger-full-access" : nil, sandboxWorkspaceWrite: nil, defaultPermissions: nil, approvalsReviewer: nil,
-                profiles: [], projects: [],
-                rules: CoreCodexRulesSummary(files: 0, allow: 0, prompt: 0, forbidden: 0, other: 0, unreadable: 0, folderNotReadable: false),
-                notReadable: true, skippedLines: 0
-            )
-            #expect(CodexWording.status(codex) == CodexStatus(tone: .warn, sentence: "Cannot read ~/.codex/config.toml, so Codex's settings are not known.", detail: nil))
-            #expect(CodexWording.rows(codex).isEmpty)
-            #expect(!shown(codex).contains("defaults") && !shown(codex).contains("is not set") && !shown(codex).contains("there is no"))
+        let canary = "http://user:CANARY-sk-live-0123456789@proxy.example.com:8080"
+        for text in [canary, "My Token 1234", "sk-0123456789", "", String(repeating: "a", count: 25)] {
+            #expect(CodexWording.word(text) == CodexWording.hiddenText, "\(text)")
         }
     }
 
-    @Test("command rules are counted per decision, strictest first, with no pattern")
-    func ruleCounts() async throws {
-        let codex = try await permissions("approval_policy = \"on-request\"\n", rules: """
-        prefix_rule(pattern=["git", "push"], decision="allow")
-        prefix_rule(pattern=["curl", "-H", "Authorization: Bearer CANARY-sk-live-0123456789"], decision="prompt")
-        prefix_rule(pattern=["rm"], decision="forbidden")
-        """)
-        let counts = CodexWording.ruleCounts(codex)
-        #expect(counts.map(\.title) == ["Forbidden", "Prompt", "Allow"])
-        #expect(counts.map(\.count) == [1, 1, 1])
-        #expect(!counts.map { $0.title + $0.meaning }.joined().contains("CANARY"))
+    @Test("approval_policy reads as written, 'granular' for the table form, nil when unset")
+    func approval() {
+        #expect(CodexWording.approval(RulesSynthetic.codex(approval: "on-failure")) == "on-failure")
+        #expect(CodexWording.approval(RulesSynthetic.codex(approval: nil)) == nil)
+        var granular = RulesSynthetic.codex()
+        granular.approvalPolicy = .granular([])
+        #expect(CodexWording.approval(granular) == "granular")
     }
 }

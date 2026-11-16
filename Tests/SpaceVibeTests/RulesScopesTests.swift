@@ -81,14 +81,6 @@ struct RulesScopesTests {
         CoreCapabilityCell(capability: capability, label: capability.rawValue, state: state, editable: state != .mixed, rules: [])
     }
 
-    @Test("the Claude Code summary names what the file asks before and blocks, and falls back to a count")
-    func claudeSummary() {
-        let grid = [cell(.read, .allow), cell(.run, .mixed), cell(.network, .ask), cell(.push, .ask), cell(.secrets, .deny)]
-        #expect(RulesWording.summary(grid, ruleCount: 11) == "Asks before network access and push and deploy, blocks secrets (.env)")
-        #expect(RulesWording.summary([cell(.run, .mixed)], ruleCount: 2) == "2 rules here, none decides a whole row")
-        #expect(RulesWording.summary([cell(.run, .none)], ruleCount: 0) == "No rules in this file")
-    }
-
     // MARK: Snapshot and notices
 
     private func dto(scope: CoreRuleScope = .local, dir: String? = "/work/web", globalNotReadable: Bool = false) -> CoreRulesSnapshot {
@@ -123,13 +115,4 @@ struct RulesScopesTests {
         #expect(!RulesSnapshot(unreadable).isEditable(cell(.run, .ask)))
     }
 
-    @Test("the Codex banners are the core's warnings, minus the two-models one when that has its own banner")
-    func codexNotices() {
-        let both = "Both default_permissions and sandbox_mode are set. Codex expects only one of them."
-        let skipped = "3 lines of Codex config.toml could not be understood and were skipped, so some settings may be missing."
-        #expect(RulesWording.codexNotices(Self.codex(model: .both, warnings: [both, skipped])) == [skipped])
-        #expect(RulesWording.codexNotices(Self.codex(model: .both, warnings: [both])).isEmpty)
-        #expect(RulesWording.codexNotices(Self.codex(warnings: [skipped])) == [skipped])
-        #expect(RulesWording.codexNotices(Self.codex()).isEmpty)
-    }
 }

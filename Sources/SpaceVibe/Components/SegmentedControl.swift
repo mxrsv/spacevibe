@@ -86,38 +86,3 @@ struct SegmentedControl<Value: Hashable>: View {
         return .handled
     }
 }
-
-/// A one-of-N value that is shown, not set (Codex's `sandbox_mode` on the Rules page): the segmented control's frame with
-/// every option written out and the real one filled, so the alternatives read at a glance. Nothing is focusable or
-/// clickable. The filled segment is `track` (on `surfaceRaised`) with semibold text, or the warn tint and ink for a value
-/// that needs a look. `selected` nil fills nothing.
-struct SegmentReadout: View {
-    let label: String
-    let options: [String]
-    let selected: String?
-    var warn = false
-
-    @Environment(\.controlGround) private var ground
-
-    var body: some View {
-        let frame = RoundedRectangle(cornerRadius: Metrics.fieldRadius, style: .continuous)
-        HStack(spacing: 0) {
-            ForEach(options, id: \.self) { option in
-                let isOn = option == selected
-                Text(option)
-                    .spaceVibeText(.bodyStrong)
-                    .hidden()
-                    .overlay { Text(option).spaceVibeText(isOn ? .bodyStrong : .body, tone: isOn ? (warn ? .warn : .primary) : .tertiary) }
-                    .padding(.horizontal, Space.s8)
-                    .frame(height: Metrics.segmentHeight)
-                    .background(RoundedRectangle(cornerRadius: Metrics.segmentRadius, style: .continuous).fill(isOn ? (warn ? Palette.warnTint : Palette.track) : .clear))
-            }
-        }
-        .padding(Space.s2)
-        .frame(height: Metrics.controlHeight)
-        .background(frame.fill(ground.fill))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label)
-        .accessibilityValue(selected ?? "none")
-    }
-}

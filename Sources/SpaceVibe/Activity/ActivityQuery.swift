@@ -101,7 +101,7 @@ struct ActivityFailureItem: Identifiable, Equatable, Sendable {
     var stillFailing: Bool { failure.laterPass == nil }
 
     /// The core cuts a title at 120 characters and ends it with an ellipsis; a cut command is not copied as if it were whole.
-    var isCut: Bool { failure.title.hasSuffix("\u{2026}") && failure.title.utf16.count >= ActivityRows.failureTitleLimit }
+    var isCut: Bool { failure.title.hasSuffix("\u{2026}") && failure.title.utf16.count >= ActivityFailureTitle.limit }
 
     /// "once", "3 times".
     var timesText: String { failure.count == 1 ? "once" : "\(failure.count) times" }
@@ -163,9 +163,9 @@ struct ActivityFileBand: Identifiable, Equatable, Sendable {
     var items: [ActivityFileItem]
 }
 
-extension ActivityRows {
+enum ActivityFailureTitle {
     /// The length at which the core cuts a failure's title (`failureTitleMax` in core/internal/activity/groups.go).
-    static let failureTitleLimit = 120
+    static let limit = 120
 }
 
 /// What the three tabs list, from one report, the Filter and the dismissals. Pure: the clock, the calendar and the CLI readings

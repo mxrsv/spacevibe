@@ -211,11 +211,7 @@ struct RulesModelTests {
             let model = try await started(core)
             let codex = try #require(model.snapshot?.codex)
             #expect(codex.notReadable)
-            let status = CodexWording.status(codex)
-            #expect(status == CodexStatus(tone: .warn, sentence: CodexWording.notReadableSentence, detail: nil))
-            #expect(!status.sentence.contains("defaults") && !status.sentence.contains("there is no"))
-            #expect(CodexWording.rows(codex).isEmpty)
-            #expect(RulesWording.codexNotices(codex) == ["~/.codex/config.toml could not be read."])
+            #expect(CodexReading(codex: codex, installed: true) == .unknown(.notReadable), "an unreadable file is never read as the defaults")
         }
     }
 

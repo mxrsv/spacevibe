@@ -92,7 +92,7 @@ struct RulesModelEngineTests {
             #expect(!snapshot.rules.isEmpty && !snapshot.grid.isEmpty && snapshot.projects.count == 3)
             #expect(snapshot.title == (name.map { "\($0) (shared)" } ?? "Global"), "\(snapshot.title)")
             #expect(snapshot.globalRuleCount == model.badge)
-            #expect(CodexWording.status(snapshot.codex).sentence.isEmpty == false && !CodexWording.rows(snapshot.codex).isEmpty)
+            #expect(CodexReading(codex: snapshot.codex, installed: true).note != nil)
         }
     }
 

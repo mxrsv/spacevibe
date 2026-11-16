@@ -180,13 +180,10 @@ struct ActivityModelTests {
         let session = FakeActivityCore.session("x", cli: .codex, state: .unmeasurable, reason: "Codex has not shown its process.", code: "a-code-the-core-adds-later")
         let limit = CoreActivityLimit(cli: .codex, code: "another-new-code", text: "The core says this cannot be measured.")
         let report = FakeActivityCore.report([session], limits: [limit])
-        let wording = SessionWording(session, elapsedMs: 0)
-        #expect((wording.tagText, wording.tagTone, wording.tagIcon) == ("not measurable", .neutral, .warning))
-        #expect(wording.help == "Codex has not shown its process.")
-        #expect(wording.subtitle == "state not measurable")
-        #expect(ActivityRows.sessions(report, cli: .codex).map(\.id) == ["x"])
-        #expect(ActivityRows.limits(report, cli: .codex).map(\.text) == ["The core says this cannot be measured."])
-        #expect(ActivityRows.limits(report, cli: .claude).isEmpty)
+        let item = ActivitySessionItem(session: session, approvalLimit: nil)
+        #expect(item.isUnmeasurable && item.cannotSee == "Codex has not shown its process.")
+        #expect(ActivityWording.sessionLines(item, elapsedMs: 0).first == "Codex has not shown its process.")
+        #expect(report.unmeasurable.map(\.text) == ["The core says this cannot be measured."])
     }
 
     // MARK: Stop
@@ -312,13 +309,6 @@ struct ActivityModelCoreTests {
         #expect(Set(CoreCLI.allCases).isSubset(of: Set(report.sessions.map(\.cli))))
         #expect(report.sessions.contains { $0.cli == .codex && $0.state == .running })
         #expect(report.sessions.contains { $0.state == .unmeasurable })
-        let now = Date()
-        for cli in CoreCLI.allCases {
-            #expect(!ActivityRows.sessions(report, cli: cli).isEmpty)
-            #expect(ActivityRows.sessions(report, cli: cli).allSatisfy { !SessionWording($0, elapsedMs: 0).tagText.isEmpty })
-            #expect(ActivityRows.failures(report, cli: cli).allSatisfy { !FailureWording($0, now: now).how.isEmpty })
-        }
-        #expect(model.recentFailures == ActivityRows.recentFailureCount(report, now: Date()))
     }
 
     @Test("the live stream starts with the same snapshot a read gives, and the first report arrives promptly (H10)", .timeLimit(.minutes(1)))

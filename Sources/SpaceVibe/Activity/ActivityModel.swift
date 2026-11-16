@@ -65,8 +65,6 @@ final class ActivityModel {
 
     var isLoading: Bool { report == nil && failure == nil }
 
-    var recentFailures: Int { ActivityRows.recentFailureCount(report, now: Date()) }
-
     private var core: any CoreService { env.goCore }
 
     // MARK: Reading
@@ -226,7 +224,7 @@ final class ActivityModel {
     func copy(_ item: ActivityFailureItem) {
         detailID = nil
         guard !item.isCut else {
-            env.toasts.show("That command is longer than \(ActivityRows.failureTitleLimit) characters and SpaceVibe only has its start, so it was not copied.")
+            env.toasts.show("That command is longer than \(ActivityFailureTitle.limit) characters and SpaceVibe only has its start, so it was not copied.")
             return
         }
         copyToPasteboard(item.failure.title)
