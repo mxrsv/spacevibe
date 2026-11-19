@@ -13,7 +13,28 @@ final class SpaceVibeAppDelegate: NSObject, NSApplicationDelegate {
     /// Starts the glance widget once, in a normal launch only (`GlanceController.runs`). It belongs to the process, not to the
     /// main window, so it stays after the window closes.
     func applicationDidFinishLaunching(_ notification: Notification) {
-        GlanceController.shared.start(mode: LaunchMode.current()) { [weak self] in self?.openMainWindow?() }
+        GlanceController.shared.start(mode: LaunchMode.current()) { [weak self] in self?.showMainWindow() }
+    }
+
+    /// Opens or raises the main window: through `openMainWindow` once the window has drawn (the scene presents it at every
+    /// launch, `defaultLaunchBehavior(.presented)`), else by raising the scene's window if AppKit holds one. Returns false
+    /// when neither could, so a Dock click hands the reopen to AppKit.
+    @discardableResult
+    func showMainWindow() -> Bool {
+        if let openMainWindow {
+            openMainWindow()
+            return true
+        }
+        guard let window = Self.mainWindow(in: NSApp?.windows ?? []) else { return false }
+        window.makeKeyAndOrderFront(nil)
+        return true
+    }
+
+    /// The main `Window` scene's window: SwiftUI names it after the scene id. The glance widget's panel is never it.
+    static func mainWindow(in windows: [NSWindow]) -> NSWindow? {
+        windows.first { window in
+            !(window is NSPanel) && window.identifier?.rawValue.hasPrefix(SpaceVibeApp.mainWindowID) == true
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -22,10 +43,10 @@ final class SpaceVibeAppDelegate: NSObject, NSApplicationDelegate {
 
     /// The `hasVisibleWindows` flag is not used: the widget's panel is a visible window too, so it would stay true with the
     /// main window closed. Opening a `Window` scene that is already open only brings it forward, so the call is always safe.
+    /// When the window never drew (no `openMainWindow`) and AppKit holds none, returning true lets AppKit and SwiftUI run
+    /// their own reopen, which presents the scene.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        guard let openMainWindow else { return true }
-        openMainWindow()
-        return false
+        !showMainWindow()
     }
 }
 

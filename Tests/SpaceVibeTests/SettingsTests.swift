@@ -7,13 +7,17 @@ import Testing
 @MainActor
 @Suite("Settings")
 struct SettingsTests {
-    private func throwawayDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "spacevibe-tests-\(UUID().uuidString)")!
+    /// A fresh suite and its name; each test removes it with `defer`. The name is an absolute path, so the suite's plist
+    /// lives in the temporary folder: a plain name leaves a file in `~/Library/Preferences` even after the removal.
+    private func throwawayDefaults() -> (defaults: UserDefaults, suite: String) {
+        let suite = FileManager.default.temporaryDirectory.appendingPathComponent("spacevibe-tests-\(UUID().uuidString)").path
+        return (UserDefaults(suiteName: suite)!, suite)
     }
 
     @Test("Theme and Font size are remembered; Dark and Default when nothing is saved")
     func remembers() {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         let first = AppearanceStore(defaults: defaults)
         #expect(first.theme == .dark && first.fontSize == .standard)
         first.theme = .system
@@ -27,7 +31,8 @@ struct SettingsTests {
 
     @Test("a forced store (screenshots) saves nothing")
     func forcedSavesNothing() {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         let shot = AppearanceStore(defaults: defaults, forced: .light)
         shot.theme = .dark
         shot.fontSize = .large
@@ -37,7 +42,9 @@ struct SettingsTests {
 
     @Test("the toggle sets the other appearance, fixed, which leaves System")
     func toggleLeavesSystem() {
-        let store = AppearanceStore(defaults: throwawayDefaults())
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = AppearanceStore(defaults: defaults)
         store.theme = .system
         let showing = store.choice
         store.toggle()

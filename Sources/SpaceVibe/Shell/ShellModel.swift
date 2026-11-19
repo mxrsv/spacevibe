@@ -51,9 +51,12 @@ final class ShellModel {
     }
 
     /// The glance widget's countdown (LC-R7): the Limits page with that window current. `windowID` is a Limits entry id
-    /// (`cli:windowID`, the same as `GlanceCountdownWindow.id`); `limits` is the model the page reads.
-    func openLimits(windowID: String, in limits: LimitsModel) {
+    /// (`cli:windowID`, the same as `GlanceCountdownWindow.id`); `limits` is the model the page reads, and `openState` the
+    /// store it reads its cards and bands from. The Usage windows card and that CLI's band open, because the page makes
+    /// current only a row it lists, and it lists no row of a closed card or band.
+    func openLimits(windowID: String, in limits: LimitsModel, openState: OpenStateStore = .shared) {
         select(TabRegistry.limitsID)
+        LimitsCanvas.reveal(windowID: windowID, in: openState)
         limits.selectedID = windowID
     }
 

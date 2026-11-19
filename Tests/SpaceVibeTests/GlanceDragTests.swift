@@ -22,8 +22,11 @@ struct GlanceDragTests {
                           stripFrame: CGRect(x: 1308, y: 82, width: 120, height: 30))
     }
 
-    private func throwawayDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "spacevibe-tests-\(UUID().uuidString)")!
+    /// A fresh suite and its name; each test removes it with `defer`. The name is an absolute path, so the suite's plist
+    /// lives in the temporary folder: a plain name leaves a file in `~/Library/Preferences` even after the removal.
+    private func throwawayDefaults() -> (defaults: UserDefaults, suite: String) {
+        let suite = FileManager.default.temporaryDirectory.appendingPathComponent("spacevibe-tests-\(UUID().uuidString)").path
+        return (UserDefaults(suiteName: suite)!, suite)
     }
 
     @Test("a release before the threshold is a click, given the held press; a move past it is a drag the content never sees")
@@ -122,7 +125,8 @@ struct GlanceDragTests {
 
     @Test("the release saves the nearest slot on its screen, and the next launch reads it back")
     func releaseSaves() {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         let preferences = GlancePreferences(defaults: defaults)
         #expect(preferences.placement == nil)
 
@@ -138,7 +142,9 @@ struct GlanceDragTests {
 
     @Test("with no screen the release saves nothing")
     func releaseWithoutScreen() {
-        let preferences = GlancePreferences(defaults: throwawayDefaults())
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = GlancePreferences(defaults: defaults)
         let before = GlancePlacement(screen: main.id, slot: .topCenter)
         preferences.placement = before
         #expect(session(screens: []).drop(at: CGPoint(x: 10, y: 10), into: preferences) == nil)

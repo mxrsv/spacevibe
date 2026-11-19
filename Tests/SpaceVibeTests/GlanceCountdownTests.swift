@@ -64,7 +64,10 @@ struct GlanceCountdownTests {
 
     @Test("the weekly lead from Settings decides when a weekly window starts, and a change shows at once", arguments: WeeklyCountdownLead.allCases)
     func weeklyLead(lead: WeeklyCountdownLead) {
-        let defaults = UserDefaults(suiteName: "spacevibe-tests-\(UUID().uuidString)")!
+        // An absolute path keeps the suite's plist in the temporary folder, out of `~/Library/Preferences`.
+        let suite = FileManager.default.temporaryDirectory.appendingPathComponent("spacevibe-tests-\(UUID().uuidString)").path
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         let preferences = LimitsCountdownPreferences(defaults: defaults)
         #expect(preferences.weeklyLead == .hours1)
         let results = [entry(.codex, [window("secondary", 10080, resets: lead.seconds - Self.minute)])]
@@ -189,9 +192,26 @@ struct GlanceCountdownTests {
         let shell = ShellModel.forAppTests()
         let limits = LimitsModel(env: AppEnvironment(makeCoreClient: { UnservedCore() }))
         shell.openSettings()
-        shell.openLimits(windowID: "codex:secondary", in: limits)
+        shell.openLimits(windowID: "codex:secondary", in: limits, openState: OpenStateStore())
         #expect(shell.activeID == TabRegistry.limitsID)
         #expect(!shell.isSettingsOpen)
+        #expect(limits.selectedID == "codex:secondary")
+    }
+
+    @Test("a click opens the Usage windows card and that CLI's band when the user had closed them")
+    func clickOpensClosedBand() {
+        let shell = ShellModel.forAppTests()
+        let limits = LimitsModel(env: AppEnvironment(makeCoreClient: { UnservedCore() }))
+        let store = OpenStateStore()
+        let page = LimitsCanvas.page
+        store.setOpen(false, page: page, id: LimitsCanvas.windowsCardID)
+        store.setOpen(false, page: page, id: LimitsCanvas.bandOpenID(CoreLimitsCLI.codex.rawValue))
+        store.setOpen(false, page: page, id: LimitsCanvas.bandOpenID(CoreLimitsCLI.claude.rawValue))
+        shell.openLimits(windowID: "codex:secondary", in: limits, openState: store)
+        #expect(store.isOpen(page: page, id: LimitsCanvas.windowsCardID, byDefault: false))
+        #expect(store.isOpen(page: page, id: LimitsCanvas.bandOpenID(CoreLimitsCLI.codex.rawValue), byDefault: false))
+        // Another CLI's band keeps the user's choice.
+        #expect(!store.isOpen(page: page, id: LimitsCanvas.bandOpenID(CoreLimitsCLI.claude.rawValue), byDefault: true))
         #expect(limits.selectedID == "codex:secondary")
     }
 }

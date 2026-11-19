@@ -7,15 +7,19 @@ import Testing
 @MainActor
 @Suite("GlancePreferences")
 struct GlancePreferencesTests {
-    private func throwawayDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "spacevibe-tests-\(UUID().uuidString)")!
+    /// A fresh suite and its name; each test removes it with `defer`. The name is an absolute path, so the suite's plist
+    /// lives in the temporary folder: a plain name leaves a file in `~/Library/Preferences` even after the removal.
+    private func throwawayDefaults() -> (defaults: UserDefaults, suite: String) {
+        let suite = FileManager.default.temporaryDirectory.appendingPathComponent("spacevibe-tests-\(UUID().uuidString)").path
+        return (UserDefaults(suiteName: suite)!, suite)
     }
 
     private let placement = GlancePlacement(screen: GlanceScreenID(displayID: 2, name: "Studio Display"), slot: .topLeft)
 
     @Test("on with no placement when nothing is saved, and reading saves nothing")
     func defaults() {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         let preferences = GlancePreferences(defaults: defaults)
         #expect(preferences.isEnabled)
         #expect(preferences.placement == nil)
@@ -25,7 +29,8 @@ struct GlancePreferencesTests {
 
     @Test("the switch is remembered by the next instance, off and on again")
     func switchPersists() {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         GlancePreferences(defaults: defaults).isEnabled = false
         let second = GlancePreferences(defaults: defaults)
         #expect(!second.isEnabled)
@@ -35,7 +40,8 @@ struct GlancePreferencesTests {
 
     @Test("a placement round-trips, and clearing it removes the saved data")
     func placementRoundTrips() {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         GlancePreferences(defaults: defaults).placement = placement
         let second = GlancePreferences(defaults: defaults)
         #expect(second.placement == placement)
@@ -50,14 +56,16 @@ struct GlancePreferencesTests {
         Data(#"{"slot":"topLeft"}"#.utf8),
     ])
     func garbagePlacement(data: Data) {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         defaults.set(data, forKey: GlancePreferences.placementKey)
         #expect(GlancePreferences(defaults: defaults).placement == nil)
     }
 
     @Test("a placement saved as another type reads as no placement, and a non-Bool switch reads as on")
     func wrongTypes() {
-        let defaults = throwawayDefaults()
+        let (defaults, suite) = throwawayDefaults()
+        defer { defaults.removePersistentDomain(forName: suite) }
         defaults.set("topLeft", forKey: GlancePreferences.placementKey)
         defaults.set("off", forKey: GlancePreferences.enabledKey)
         let preferences = GlancePreferences(defaults: defaults)

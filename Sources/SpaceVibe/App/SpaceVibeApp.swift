@@ -32,6 +32,9 @@ struct SpaceVibeApp: App {
             .linksMainWindow(to: appDelegate)
             .frame(minWidth: 960, minHeight: 600)
         }
+        // Present the main window at every launch, also when it was closed at the last quit and nothing is restored: its
+        // content sets the app delegate's `openMainWindow`, which the Dock click and the widget's fallback use (GW17).
+        .defaultLaunchBehavior(.presented)
         .windowStyle(.hiddenTitleBar)
         .windowBackgroundDragBehavior(.enabled)
         .defaultSize(width: 1180, height: 760)

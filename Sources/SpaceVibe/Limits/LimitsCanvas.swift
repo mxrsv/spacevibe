@@ -54,6 +54,19 @@ typealias LimitsCurrentRow = CurrentRow
 struct LimitsCanvas: View {
     static let page = "limits"
     static let refreshCap = "\u{2318}R"
+    /// The open-state id of the Usage windows card.
+    static let windowsCardID = "windows"
+
+    /// The open-state id of a CLI's band (`LimitsAnswer.Band.id`, the CLI's raw value).
+    static func bandOpenID(_ bandID: String) -> String { "band:\(bandID)" }
+
+    /// Opens the Usage windows card and the band that lists `windowID` (`cli:windowID`), so a row picked from outside the
+    /// page (the glance widget, LC-R7) is one the page can make current: `listedRows` skips rows in a closed card or band.
+    static func reveal(windowID: String, in store: OpenStateStore) {
+        store.setOpen(true, page: page, id: windowsCardID)
+        guard let colon = windowID.firstIndex(of: ":"), colon != windowID.startIndex else { return }
+        store.setOpen(true, page: page, id: bandOpenID(String(windowID[..<colon])))
+    }
 
     @Environment(LimitsModel.self) private var model
     @Environment(ShellModel.self) private var shell
@@ -165,10 +178,10 @@ struct LimitsCanvas: View {
     }
 
     private func windowsCard(_ facts: LimitsAnswer, current: String?) -> some View {
-        Tile("Usage windows", maxHeight: Metrics.Tile.spineMaxHeight, stretches: true, isOpen: open("windows")) {
+        Tile("Usage windows", maxHeight: Metrics.Tile.spineMaxHeight, stretches: true, isOpen: open(Self.windowsCardID)) {
             BandStack {
                 ForEach(facts.bands) { band in
-                    Band(LimitsWording.cliName(band.cli), count: band.count, state: band.mark.map(stateMark), isOpen: open("band:\(band.id)")) {
+                    Band(LimitsWording.cliName(band.cli), count: band.count, state: band.mark.map(stateMark), isOpen: open(Self.bandOpenID(band.id))) {
                         bandBody(band, current: current)
                     } lead: {
                         CLIMark(band.cli, size: .control)
@@ -243,9 +256,9 @@ struct LimitsCanvas: View {
 
     /// Window rows the user can see: in an open band of the open Usage windows card, in page order.
     private func listedRows(_ facts: LimitsAnswer) -> [String] {
-        guard store.isOpen(page: Self.page, id: "windows", byDefault: true) else { return [] }
+        guard store.isOpen(page: Self.page, id: Self.windowsCardID, byDefault: true) else { return [] }
         return facts.bands.flatMap { band -> [String] in
-            guard store.isOpen(page: Self.page, id: "band:\(band.id)", byDefault: true), case .windows(let rows) = band.body else { return [] }
+            guard store.isOpen(page: Self.page, id: Self.bandOpenID(band.id), byDefault: true), case .windows(let rows) = band.body else { return [] }
             return rows.map(\.id)
         }
     }
