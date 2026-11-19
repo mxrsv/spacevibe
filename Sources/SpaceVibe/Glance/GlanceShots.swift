@@ -11,7 +11,7 @@ import SwiftUI
 /// - `glance-strip-vertical`: the right edge middle's column, every state.
 /// - `glance-strip-empty`: no session, the faint mark.
 /// - `glance-list`, `glance-list-long` (long Greek and CJK titles, very long tool text), `glance-list-many` (twelve rows at the
-///   list's 296 cap, scrolled to the top), `glance-list-empty` ("No session running").
+///   list's height cap, scrolled to the top), `glance-list-empty` ("No session running").
 @MainActor
 enum GlanceShots {
     static func run(into directory: URL) throws {
@@ -51,22 +51,11 @@ enum GlanceShots {
                        isOnScreen: true, hint: { _ in GlanceWording.activity }, open: { _ in })
     }
 
-    /// A list taller than the 296 cap, scrolled to the top. `GlanceListView` scrolls its rows in a `ScrollView`, which
-    /// `ImageRenderer` draws empty, so this stand-in composes the same surface and rows and cuts the rows at the room
-    /// `GlanceController` gives them; only the scroll indicator, which shows while scrolling, is missing.
+    /// A list taller than the cap, scrolled to the top, sized as `GlanceController` sizes it.
     private static func scrolledList(_ entries: GlanceEntries) -> some View {
-        GlanceListSurface {
-            VStack(spacing: 0) {
-                ForEach(entries.all) { entry in
-                    GlanceSessionRow(cli: entry.cli, title: entry.title, detail: GlanceWording.detail(entry), state: entry.state,
-                                     stateLabel: GlanceWording.label(entry.state), isAnimating: true,
-                                     hint: { GlanceWording.activity }, action: {})
-                }
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(height: Metrics.Glance.listMaxHeight - 2 * Metrics.Glance.listPadding, alignment: .top)
-            .clipped()
-        }
+        GlanceListView(entries: entries.all, note: GlanceWording.noSession, width: Metrics.Glance.listWidth,
+                       rowsHeight: Metrics.Glance.listMaxHeight - 2 * Metrics.Glance.listPadding,
+                       isOnScreen: true, hint: { _ in GlanceWording.activity }, open: { _ in })
     }
 }
 

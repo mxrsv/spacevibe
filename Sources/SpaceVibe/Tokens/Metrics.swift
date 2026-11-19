@@ -582,10 +582,11 @@ extension Metrics {
         /// The working ring: one turn a second, redrawn at most 30 times a second.
         static let spinPeriod: TimeInterval = 1
         static let spinFrame: TimeInterval = 1.0 / 30
-        /// The hover list: 300 wide, 5 inside its edge, scrolling past 296 high.
+        /// The hover list: 300 wide, 5 inside its edge, scrolling past 320 high: about six and a half two-line rows, so with
+        /// more sessions the seventh row shows its top half and says the list scrolls.
         static let listWidth: CGFloat = 300
         static let listPadding: CGFloat = 5
-        static let listMaxHeight: CGFloat = 296
+        static let listMaxHeight: CGFloat = 320
         /// A list row: 7 above and below, 8 at the sides; its columns 9 apart, its two lines 1 apart.
         static let rowPadding = EdgeInsets(top: 7, leading: 8, bottom: 7, trailing: 8)
         static let rowColumnSpacing: CGFloat = 9

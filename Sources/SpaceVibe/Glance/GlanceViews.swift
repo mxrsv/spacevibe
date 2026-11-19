@@ -50,9 +50,9 @@ struct GlanceListView: View {
         } else {
             GlanceListSurface {
                 if let rowsHeight {
-                    ScrollView(.vertical) { rows }
-                        .scrollIndicators(.automatic)
-                        .frame(height: rowsHeight)
+                    SpaceVibeScrollView { rows }
+                        .frame(height: rowsHeight, alignment: .top)
+                        .clipped()
                 } else {
                     rows
                 }
