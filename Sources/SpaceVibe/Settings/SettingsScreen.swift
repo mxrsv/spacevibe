@@ -15,6 +15,7 @@ struct SettingsScreen: View {
                 Group {
                     switch shell.settingsSection {
                     case .appearance: AppearanceSettings()
+                    case .limits: LimitsSettings()
                     case .update: UpdateSettings()
                     }
                 }

@@ -112,6 +112,10 @@ enum LimitsShots {
             LimitsModel(env: env, results: results, failure: failure)
         }
         return [
+            // LC-R3 at the default 1 h weekly lead: out, low and normal clocks beside rows that do not count.
+            ("countdown", model([claude([window("five_hour", 300, used: 97, resets: 3 * 60 + 12), window("seven_day", 10080, used: 85, resets: 50 * 60)]),
+                                 codex([window("primary", 300, used: 30, resets: 42 * 60 + 17), window("secondary", 10080, used: 7, resets: 3 * day)]),
+                                 gemini])),
             ("healthy", model([claude(claudeSample(used: [12, 29, 36])), codex(codexSample(used: [8, 3])), gemini])),
             ("low", model([claude(claudeSample(used: [86, 91, 94])), codex(codexSample(used: [82, 97])), gemini])),
             ("many", model([claude(claudeSample(used: [22, 59, 88]) + many), codex(codexSample(used: [36, 7]) + many), gemini])),

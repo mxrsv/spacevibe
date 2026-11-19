@@ -90,6 +90,10 @@ struct LimitsAnswer: Equatable {
         let time: String
         /// "Codex Weekly".
         let title: String
+        let resetsAt: Date
+        let tone: LimitsWording.Tone
+        /// How long before the reset this row counts down; nil for a window that never does (LC-R1).
+        let countdownLead: TimeInterval?
     }
 
     struct SourceLine: Equatable, Identifiable {
@@ -110,7 +114,7 @@ struct LimitsAnswer: Equatable {
     let sources: [SourceLine]
     let bands: [Band]
 
-    init(_ read: Read, showUnused: Bool, now: Date, calendar: Calendar = .current) {
+    init(_ read: Read, showUnused: Bool, now: Date, calendar: Calendar = .current, weeklyLead: WeeklyCountdownLead = .standard) {
         switch read {
         case .loading:
             sentence = nil
@@ -129,7 +133,7 @@ struct LimitsAnswer: Equatable {
             }
         case .read(let entries):
             (sentence, verdict) = Self.answer(entries, now: now, calendar: calendar)
-            resets = Self.resets(entries, showUnused: showUnused, now: now, calendar: calendar)
+            resets = Self.resets(entries, showUnused: showUnused, now: now, calendar: calendar, weeklyLead: weeklyLead)
             // A CLI that keeps no limit (Gemini CLI) has no source to name; its band says "Not measurable" once (D69).
             sources = entries.filter { $0.state != .notMeasurable }.map { Self.source($0, now: now) }
             bands = entries.map { Self.band($0, showUnused: showUnused, now: now, calendar: calendar) }
@@ -208,7 +212,8 @@ struct LimitsAnswer: Equatable {
 
     // MARK: Next resets
 
-    private static func resets(_ entries: [CoreLimitsEntry], showUnused: Bool, now: Date, calendar: Calendar) -> [Reset] {
+    private static func resets(_ entries: [CoreLimitsEntry], showUnused: Bool, now: Date, calendar: Calendar,
+                               weeklyLead: WeeklyCountdownLead) -> [Reset] {
         let rows = entries.flatMap { entry -> [(CoreLimitsEntry, CoreLimitWindow)] in
             guard let windows = entry.reading?.windows else { return [] }
             return LimitsWording.visible(windows, showInactive: showUnused).filter { $0.isCurrent(at: now) }.map { (entry, $0) }
@@ -221,7 +226,9 @@ struct LimitsAnswer: Equatable {
                 let (entry, window) = row
                 return Reset(id: "\(entry.cli.rawValue):\(window.id)", cli: entry.cli,
                              time: LimitsWording.resetsAt(window, now: now, calendar: calendar),
-                             title: "\(LimitsWording.cliName(entry.cli)) \(LimitsWording.name(window))")
+                             title: "\(LimitsWording.cliName(entry.cli)) \(LimitsWording.name(window))",
+                             resetsAt: window.resetsAtDate, tone: LimitsWording.tone(window),
+                             countdownLead: LimitsCountdown.lead(window, cli: entry.cli, weekly: weeklyLead))
             }
     }
 

@@ -10,7 +10,7 @@ The shipped interface is described in the [design language](docs/DESIGN-LANGUAGE
 
 - **Agents**: Skills, Subagents, Hooks and Rules for both CLIs in one inventory, each row with its usage. Adding or removing is one step with Undo.
 - **Activity**: the Claude Code and Codex sessions running now, and `Stop` for one of them.
-- **Limits**: how much of each subscription usage limit window is left, from local data only.
+- **Limits**: how much of each subscription usage limit window is left, from local data only, with a countdown before a 5-hour or weekly reset (lead for the weekly one in Settings > Limits).
 
 ## What it does not do
 

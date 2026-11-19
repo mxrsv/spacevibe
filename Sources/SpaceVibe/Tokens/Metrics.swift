@@ -339,6 +339,9 @@ extension Metrics {
         static let barMinWidth: CGFloat = 96
         /// A Next resets row: the time before the logo.
         static let resetTime: CGFloat = 72
+        /// A Next resets row: the countdown slot before the time, held empty when nothing counts so no column moves (LC-R3).
+        /// Fits "23:12:05".
+        static let resetCountdown: CGFloat = 64
         /// The Source card: between its lines.
         static let sourceLineSpacing: CGFloat = 8
     }

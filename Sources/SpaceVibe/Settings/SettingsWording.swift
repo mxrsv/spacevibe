@@ -2,13 +2,14 @@ import Foundation
 
 /// The sections on the Settings rail, in rail order.
 enum SettingsSection: String, CaseIterable, Identifiable {
-    case appearance, update
+    case appearance, limits, update
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .appearance: "Appearance"
+        case .limits: "Limits"
         case .update: "Update"
         }
     }
@@ -16,6 +17,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     var icon: ContentGlyph {
         switch self {
         case .appearance: .palette
+        case .limits: .gauge
         case .update: .refresh
         }
     }
@@ -35,6 +37,8 @@ extension ThemeSetting {
 enum SettingsWording {
     static let automaticChecks = "Check for updates automatically"
     static let automaticChecksDetail = "Once a day. Installing always takes a click."
+    static let weeklyCountdown = "Weekly countdown"
+    static let weeklyCountdownDetail = "When the countdown to a weekly reset starts. The 5-hour countdown always starts 1 h before."
     static let glanceWidget = "Session widget"
     static let glanceWidgetDetail = "Shows live sessions in a corner of the screen over every app."
 

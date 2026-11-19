@@ -35,6 +35,9 @@ enum SettingsShots {
 
             try atLarge(shell) { try write(shell, toasts, env, "settings-appearance-large", choice, to: directory) }
 
+            shell.settingsSection = .limits
+            try write(shell, toasts, env, "settings-limits", choice, to: directory)
+
             shell.settingsSection = .update
             for (name, status) in states {
                 let running: Bool

@@ -75,6 +75,24 @@ struct ShareCell: View {
     }
 }
 
+/// A countdown in a row ("42:17", "23:12:05") in the tone the page gives, in a slot of fixed width that stays empty when
+/// nothing counts, so the columns after it never move (Limits, LC-R3).
+struct CountdownCell: View {
+    let text: String?
+    var tone: TextTone = .primary
+    var spoken: String?
+    let width: CGFloat
+
+    var body: some View {
+        Text(text ?? "")
+            .spaceVibeText(.metaLabel, tone: tone)
+            .lineLimit(1)
+            .frame(width: width, alignment: .leading)
+            .accessibilityLabel(spoken ?? text ?? "")
+            .accessibilityHidden(text == nil)
+    }
+}
+
 /// A count in a row (13, `fg2`), right-aligned in the width the page gives: "12 sessions", "3 times", "41 edits".
 struct CountCell: View {
     let text: String

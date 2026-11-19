@@ -60,11 +60,13 @@ struct LimitsCanvas: View {
     @Environment(ToastCenter.self) private var toasts
     @Environment(\.openStateStore) private var store
     @State private var picked: String?
+    /// The weekly countdown lead from Settings > Limits; a change shows at the next draw.
+    private let countdown = LimitsCountdownPreferences.shared
 
     var body: some View {
         // Every minute from the moment the page draws (not from the start of the minute), so an age reads as the files say.
         TimelineView(.periodic(from: .now, by: 60)) { context in
-            let facts = LimitsAnswer(model.read, showUnused: model.showInactive, now: context.date)
+            let facts = LimitsAnswer(model.read, showUnused: model.showInactive, now: context.date, weeklyLead: countdown.weeklyLead)
             let rows = listedRows(facts)
             ZStack(alignment: .topLeading) {
                 // Plain keys, not while the palette's field takes them (V5-R36).
@@ -76,7 +78,7 @@ struct LimitsCanvas: View {
                     }
                     SplitCanvas {
                         answerCard(facts)
-                        resetsCard(facts)
+                        resetsCard(facts, now: context.date)
                         sourceCard(facts)
                     } spine: {
                         windowsCard(facts, current: LimitsCurrentRow.resolve(picked, in: rows))
@@ -101,7 +103,7 @@ struct LimitsCanvas: View {
         }
     }
 
-    private func resetsCard(_ facts: LimitsAnswer) -> some View {
+    private func resetsCard(_ facts: LimitsAnswer, now: Date) -> some View {
         let resets = facts.resets
         let count = resets.flatMap { $0.isEmpty ? nil : "\($0.count) \($0.count == 1 ? "window" : "windows")" }
         return Tile("Next resets", count: count, layout: resets?.isEmpty == false ? .rows : .bare,
@@ -113,6 +115,7 @@ struct LimitsCanvas: View {
                     ListRows {
                         ForEach(resets) { reset in
                             ListRow(reset.title) {
+                                countdownSlot(reset, now: now)
                                 MetaCell(text: reset.time, width: Metrics.Limits.resetTime, alignment: .leading)
                                 CLIMark(reset.cli, size: .control)
                             } trailing: {
@@ -124,6 +127,21 @@ struct LimitsCanvas: View {
             } else {
                 LoadingSkeleton()
             }
+        }
+    }
+
+    /// The row's countdown (LC-R3): it ticks every second from a minute before its lead, so it starts on time although the
+    /// page redraws once a minute; otherwise the slot holds its width, empty.
+    @ViewBuilder
+    private func countdownSlot(_ reset: LimitsAnswer.Reset, now: Date) -> some View {
+        if let lead = reset.countdownLead, reset.resetsAt.timeIntervalSince(now) <= lead + LimitsCountdown.wakeAhead {
+            TimelineView(.periodic(from: .now, by: LimitsCountdown.tick)) { context in
+                let left = LimitsCountdown.remaining(until: reset.resetsAt, lead: lead, now: context.date)
+                CountdownCell(text: left.map(LimitsCountdown.clock), tone: textTone(reset.tone), spoken: left.map(LimitsCountdown.spoken),
+                              width: Metrics.Limits.resetCountdown)
+            }
+        } else {
+            CountdownCell(text: nil, width: Metrics.Limits.resetCountdown)
         }
     }
 
@@ -282,6 +300,14 @@ struct LimitsCanvas: View {
         case .warn: StateMark(.warn, label: mark.label)
         case .danger: StateMark(.danger, label: mark.label)
         case .clock: StateMark(.clock, label: mark.label)
+        }
+    }
+
+    private func textTone(_ tone: LimitsWording.Tone) -> TextTone {
+        switch tone {
+        case .normal: .primary
+        case .low: .warn
+        case .out: .danger
         }
     }
 
