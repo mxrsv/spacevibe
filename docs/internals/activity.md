@@ -61,6 +61,15 @@ Which Claude Code and Codex sessions are running now, what each one is doing, ho
 - **A session with no title** falls back as described above; it is never empty.
 - **Not darwin.** The adapter reports not measurable: no Codex rows, every Claude process reads as not alive, and Stop answers 500 before looking anything up.
 
+## Glance widget
+
+The shell's floating widget ([spec](../specs/2026-11-19-session-glance-widget.md)) is a second reader of the same report, not a new source. [GlanceController](../../Sources/SpaceVibe/Glance/GlanceController.swift) owns it, and it starts only in a normal launch without `SPACEVIBE_TEST=1`.
+
+- **A second subscriber, not a second poll.** [GlanceFeed](../../Sources/SpaceVibe/Glance/GlanceFeed.swift) opens its own `activity.subscribe` stream on the shell's one core connection. [CoreConnection](../../Sources/SpaceVibe/Core/CoreConnection.swift) sends `activity.unsubscribe` only after the last subscriber has left, plus its 1 s delay. So the core keeps polling while the widget is on, even with the Activity tab hidden or the main window closed, and turning the widget off in Settings ends the widget's subscription. A second subscribe resets the core's baseline and starts with a fresh snapshot (see [core-protocol.md](core-protocol.md#activity-subscription)).
+- **The panels never become key.** The strip, the hover list and the drag overlays are non-activating panels that refuse key and main. The widget therefore never takes typing focus from the front app. The cost is that a key press cannot reach it: Esc does not close the list (that needs a global key monitor and the Input Monitoring permission). A closed list is ordered out, so it never eats clicks.
+- **Finding the host app starts no process (S-R4).** [HostAppResolver](../../Sources/SpaceVibe/Glance/HostAppResolver.swift) walks parent pids with `sysctl(KERN_PROC_PID)` in process and stops at the first pid that `NSRunningApplication` reports as a regular app. With no such ancestor (tmux, screen, ssh, a dead parent), the click opens Activity at that session through `ShellModel.openActivity(sessionItemID:)`. Do not replace the walk with `ps` or `Process`: S-R4 lists every process the app may start.
+- **A done session is a shell-side reading.** The core has no done state. [GlanceEntries](../../Sources/SpaceVibe/Glance/GlanceEntries.swift) shows `idle` with a log write in the last 10 minutes as done, and drops `ended` rows at once (the Activity page keeps them for 15 minutes).
+
 ## Verification
 
 `cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/activity/... ./internal/proc/... ./internal/textjs/... ./internal/redact/...`. Every test builds its own home and fake process list; none reads the real `~/.claude` or `~/.codex` or signals a real process, except [stop_test.go](../../core/internal/activity/stop_test.go) `TestStopRealAdapter` and [system-darwin_test.go](../../core/internal/proc/system-darwin_test.go), which spawn and end their own child.

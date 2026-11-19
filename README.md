@@ -6,11 +6,12 @@ A native macOS app that shows and edits what Claude Code and Codex CLI are equip
 
 ## What is in the app
 
-The shipped interface is described in the [design language](docs/DESIGN-LANGUAGE.md): three areas, the same in development and distribution builds.
+The shipped interface is described in the [design language](docs/DESIGN-LANGUAGE.md): three areas plus the session widget, the same in development and distribution builds.
 
 - **Agents**: Skills, Subagents, Hooks and Rules for both CLIs in one inventory, each row with its usage. Adding or removing is one step with Undo.
 - **Activity**: the Claude Code and Codex sessions running now, and `Stop` for one of them.
 - **Limits**: how much of each subscription usage limit window is left, from local data only, with a countdown before a 5-hour or weekly reset (lead for the weekly one in Settings > Limits).
+- **Session widget**: a small strip over every app, in a corner or edge slot you drag it to, with one state icon and CLI logo per live session; hover lists them, a click brings forward the app that runs the session. On by default, switched in Settings > Appearance.
 
 ## What it does not do
 
