@@ -67,6 +67,15 @@ The audit covered 16 living files, 9 specs and 16 plans.
   - `review-fixes` is complete but not marked historical.
   - The launch plan contradicts the `v0.1.0` tag.
   - Relative dates appear in 7 plans (D13).
+- **Global rules the repo cites no longer exist.** On 2026-11-19 the owner replaced the global UI rules with the FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`). `~/.claude/rules/quality/ux.md` and `ui-process.md` are gone, and W16, W17, W18, W21, W22 and W23 left `workflow.md`. W20 and W24 stay where they were.
+  - **Dangling citations in living docs:** `PRODUCT.md:28` (`ux.md`, UX1-UX4) and `limits.md:43` (W23).
+  - **Dangling citations in active specs:** v5 cites UX1, UP1, UP5, UP6, W17, W21, W22 and W23 (for example l.42, 68, 129, 199, 394-406, 526). The landing spec cites W20, which still exists.
+  - **Ledgers:** D42 and D55 quote the old files as the place where the owner's principles live.
+  - **Mapping used for the rewrite:** W16 → FE-P8, W17 → FE-P9, W18 → FE-P5, W21 → FE-SP3, W22 → FE-P4, W23 and UP6 → FE-D3, UP1 → FE-K1, UP5 → FE-P4, UP8 → FE-P1, UX3 → FE-C2/FE-C4, UX4 → FE-I1/FE-I4. UX1 and UX2 have no FE counterpart; SpaceVibe keeps them as its own lines in `PRODUCT.md` (the jobs brief) and `GLOSSARY.md` (one word, one meaning).
+  - **FE-rules checked against the repo:**
+    - FE-K5 (no focus ring) already holds: the system ring is disabled and `FocusFill` shows focus as a fill.
+    - FE-S3 names a repo `DESIGN.md`; this repo's equivalent is `docs/DESIGN-LANGUAGE.md`, and nothing says so yet.
+    - FE-K3 (one icon library) conflicts with the two sets in use (DN-Q2).
 - **Missing living docs:**
   - `docs/README.md`, which D1 lists as a living doc.
   - `docs/operations/` for the release runbook.
@@ -79,7 +88,7 @@ Each row carries a recommendation. The owner can accept all of them in one answe
 | ID | Question | Recommendation | Why |
 | --- | --- | --- | --- |
 | DN-Q1 | `PRODUCT.md:17,22` says "rows compared by eye on bars beat hero tiles" and "no card grids". D56/D61 approved bento tiles. Which one stands? | Align `PRODUCT.md` with D56/D61: one lead datum per card, bars where the question is a comparison. | The later owner decision wins. The layout redesign may revisit it with its own ledger line. |
-| DN-Q2 | `DESIGN-LANGUAGE.md:25` says MingCute plus Phosphor. Ledger D9 says "one thin-stroke set", and an older pick says Tabler. | Record the code as the rule: MingCute for categories, Phosphor for sidebar and content, plus the custom verdict glyphs (D19/D58). Mark D9 and the Tabler pick superseded. | The code and `IconPolicyTests` already enforce this, and Tabler was never built. |
+| DN-Q2 | `DESIGN-LANGUAGE.md:25` says MingCute plus Phosphor. Ledger D9 says "one thin-stroke set", an older pick says Tabler, and FE-K3 (2026-11-19) says one icon library. | Record the code as a SpaceVibe exception to FE-K3: MingCute for categories, Phosphor for sidebar and content, plus the custom verdict glyphs (D19/D58). Cite the owner's 2026-11-05 ask that sidebar icons are not reused inside pages. Mark D9 and the Tabler pick superseded. Moving to one library would be a separate code task. | The code and `IconPolicyTests` already enforce two sets, the owner asked for the split, and Tabler was never built. |
 | DN-Q3 | SV5 "byte for byte" was narrowed under "tiếp tục hết tất các phase". `docs/specs/2026-11-02-reins.md:317` says the narrowing needs an explicit yes. | Record an explicit yes to the narrowing. | The goldens have been frozen on it since 2026-11-07, and three documents disagree today. |
 | DN-Q4 | Some eye gates judged screens that no longer exist: Electron 3.3/4.4/5.3/6.4, SwiftUI S3.3-S6, design-language v2 T11, v3 V7, Limits L5. | Waive them all and record the waiver. The live gate is ui-v5 U14. | Approving a screen that is gone has no meaning. |
 | DN-Q5 | Should `docs/specs/2026-11-03-reins-design-language.md` be frozen as superseded by v5? | Yes, with DL1 (Inter only) and DL11 (contrast) noted as carried by V5-R4 and V5-A2. | Token values, icons, rows and sidebar all changed in v5, and agents still read this file. |
@@ -171,6 +180,15 @@ Settled without asking (reversible; listed so the owner can correct a line):
   - go-core: add a status line and start date, move the traps to overview, drop the protocol duplicate.
   - `AGENTS.md:19` points to the go-core plan.
   - Relative dates fixed (D13).
+- [ ] **DN-T9 FE-rules citations.**
+  - Rewrite every citation of the retired global rules using the mapping under Audit:
+    - living docs: `PRODUCT.md:28`, `limits.md:43`;
+    - active specs: v5 and the landing spec.
+  - `PRODUCT.md`'s "UX principles" section points to `~/.claude/rules/frontend.md` and keeps its SpaceVibe lines.
+  - `AGENTS.md` and `docs/README.md` say that `docs/DESIGN-LANGUAGE.md` is this repo's `DESIGN.md` under the FE-rules, so where it differs from them, the repo wins.
+  - D42 and D55 keep their quoted text. Each gets a note: "the global files were replaced by the FE-rules on 2026-11-19".
+  - Historical plans are left as they are.
+  - The Clean spec and the session-glance-widget spec and plan belong to other sessions, so their citations (UP6, W23) are raised there instead of edited here.
 - [ ] **DN-T8 Verify and close.**
   - The checks below pass.
   - Raised items reported once.
@@ -183,6 +201,7 @@ bash ~/.claude/scripts/docs-compliance.sh
 bash ~/.claude/scripts/docs-anchors.sh
 # every relative markdown link in living docs, active specs and active plans resolves (scratch link checker, not committed)
 grep -rn "Sources/Reins/\|ReinsCore\|Solar\|⌘L" AGENTS.md PRODUCT.md GLOSSARY.md README.md docs/DESIGN-LANGUAGE.md docs/README.md docs/internals docs/operations   # expect no hits
+grep -rnE "ux\.md|ui-process\.md|\b(UX[1-4]|UP[1-8]|W1[678]|W2[123])\b" AGENTS.md PRODUCT.md GLOSSARY.md README.md docs/DESIGN-LANGUAGE.md docs/README.md docs/internals docs/operations docs/specs/2026-11-06-reins-design-language-v5.md   # expect hits only in quoted ledger text with the 2026-11-19 note
 ```
 
 Plus a per-topic check: for each topic in `docs/README.md`, exactly one document is marked current.
@@ -199,5 +218,6 @@ Plus a per-topic check: for each topic in `docs/README.md`, exactly one document
 ## Handoff
 
 2026-11-19: three read-only audits returned. This plan was written, and batch 1 waits for the owner. No doc has been edited.
+2026-11-19, later: the owner ran `/kyant-ui-rules`. The FE-rules rewrite was checked against the repo, DN-T9 was added and DN-Q2 now names the FE-K3 conflict.
 
 /goal Normalize SpaceVibe repo docs per docs/plans/2026-11-19-docs-normalization.md: apply owner batch 1, finish DN-T1 to DN-T8, docs-compliance and docs-anchors pass, every link in living docs and active specs/plans resolves, one current document per topic in docs/README.md.
