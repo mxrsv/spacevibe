@@ -22,16 +22,13 @@ type Identity struct {
 	Name  string
 }
 
-// Adapter is the process view Activity uses: the generic process calls plus each CLI's process match. Tests pass a
-// fake with the same shape. A CLI whose sessions are found from its own files (Claude Code's status files) needs no
-// match here; a CLI found from the process table adds its matcher interface below, in its own file.
+// Adapter is the process view Activity uses: the calls that do not depend on the CLI. Tests pass a fake with the
+// same shape. A CLI whose sessions are found from its own files (Claude Code's status files) needs nothing more. A
+// CLI found from the process table defines its own matcher interface in its own file (CodexMatcher, codex.go),
+// implements it on System and Fixture, and its activity adapter asserts it from the Adapter it is handed, so adding
+// a CLI never changes this interface or the fakes that do not use the match. A wrapper that embeds Adapter hides
+// every matcher; embed the concrete adapter instead.
 type Adapter interface {
-	Processes
-	CodexMatcher
-}
-
-// Processes are the calls that do not depend on the CLI.
-type Processes interface {
 	// Measurable reports whether this adapter can see processes at all.
 	Measurable() bool
 	// IsAlive is true when a signal 0 to pid is delivered or refused for permission.

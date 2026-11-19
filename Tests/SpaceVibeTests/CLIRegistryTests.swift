@@ -84,6 +84,38 @@ struct CLIRegistryTests {
         }
     }
 
+    /// One CLI's facts that the core keeps too, as the core writes them to `core/testdata/cli-registry.json` from its own registry
+    /// and adapters (`TestRegistryParityFile` in `core/internal/clis`).
+    struct ParityEntry: Decodable, Equatable {
+        let id: String
+        let label: String
+        let concepts: Set<String>
+        let logsHookRuns: Bool
+        let limitsReading: String
+    }
+
+    /// The same facts derived from `CLIRegistry`: the inventory wire enum carries the CLIs the inventory, its writes and the usage
+    /// scan know; `readsSessionLog` is the activity concept; every CLI the app shows has a Limits reading.
+    static func parityEntry(_ cli: CoreLimitsCLI) -> ParityEntry {
+        let identity = cli.identity
+        var concepts: Set<String> = ["limits"]
+        if CoreCLI(cli) != nil { concepts.formUnion(["inventory", "mutate", "usage"]) }
+        if identity.readsSessionLog { concepts.insert("activity") }
+        return ParityEntry(id: identity.id, label: identity.label, concepts: concepts, logsHookRuns: identity.logsHookRuns,
+                           limitsReading: identity.limitsReading.rawValue)
+    }
+
+    @Test("the facts the core keeps too match the core's registry, CLI by CLI and in its order")
+    func matchesTheCoreRegistry() throws {
+        let file = CoreTestData.directory.appendingPathComponent("cli-registry.json")
+        let core = try JSONDecoder().decode([ParityEntry].self, from: Data(contentsOf: file))
+        let app = CLIRegistry.limitsCLIs.map(Self.parityEntry)
+        #expect(core.map(\.id) == app.map(\.id), "CLIs or their order differ from \(file.path)")
+        for (expected, actual) in zip(core, app) {
+            #expect(actual == expected, "\(actual.id): CLIRegistry says \(actual), the core says \(expected)")
+        }
+    }
+
     /// An id the wire does not know never reaches the registry: decoding refuses it, so no CLI silently takes another's look.
     @Test("an unknown CLI id fails to decode instead of falling back to another CLI")
     func unknownIDFailsLoudly() {

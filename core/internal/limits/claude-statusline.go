@@ -204,15 +204,17 @@ type reading struct {
 	windows []Window
 }
 
-// readClaude is the Claude Code entry: the usage cache, superseded by the newest status line snapshots of this
-// account when they are newer than the cache's fetch.
 // claudeReader is Claude Code: its usage cache and the status line snapshots the collector writes.
 type claudeReader struct{}
+
+func (claudeReader) kind() ReadingKind { return UsageCache }
 
 func (claudeReader) read(ctx context.Context, in readInput) (Entry, error) {
 	return readClaude(ctx, in.cfg, in.roots, in.cli, in.now)
 }
 
+// readClaude is the Claude Code entry: the usage cache, superseded by the newest status line snapshots of this
+// account when they are newer than the cache's fetch.
 func readClaude(ctx context.Context, cfg config.Config, r roots.Roots, cli roots.CLIRoots, now float64) (Entry, error) {
 	cached := readClaudeCache(cli)
 	account, ok := AccountKey(r)

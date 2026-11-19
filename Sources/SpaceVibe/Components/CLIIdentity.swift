@@ -15,6 +15,9 @@ struct CLIIdentity: Sendable {
     let readsSessionLog: Bool
     /// Whether it logs hook runs, so a hook only it has can be counted.
     let logsHookRuns: Bool
+    /// The code of the Activity limit (`CoreActivityLimit.code`) that says why a waiting session of this CLI cannot be told
+    /// apart from a busy one; nil when it has none. A session row shows that limit's text.
+    let approvalLimitCode: String?
     /// Whether a subagent with no `tools` line inherits every tool (Claude Code's subagent docs), so a copy made into it, which
     /// carries no `tools` line, can use every tool.
     let subagentWithoutToolsGetsEveryTool: Bool
@@ -50,7 +53,8 @@ struct CLITone: Sendable {
 }
 
 /// Where a CLI's usage limits are read from.
-enum CLILimitsReading: Sendable {
+/// The raw values are the core's `limits.ReadingKind`, which `core/testdata/cli-registry.json` holds this enum to.
+enum CLILimitsReading: String, Sendable {
     /// A cache the CLI writes only after it has fetched usage once (`/usage`); the status line can also feed it.
     case usageCache
     /// The limits the CLI logs after each turn.

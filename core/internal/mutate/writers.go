@@ -65,7 +65,8 @@ func labels(targets []usage.CLI) string {
 }
 
 // copyTarget is the CLI CopyToOther writes to: the one other CLI SpaceVibe writes. With more than one candidate the
-// target is ambiguous, because the request names none, and the copy is refused.
+// target is ambiguous, because the request names none, and the copy is refused. TestCopyTargetAssumesTwoWrittenCLIs
+// fails once a third CLI gets the mutate concept, until this is redesigned by shared format (MC-R8, W-T4).
 func copyTarget(source usage.CLI) (usage.CLI, error) {
 	var others []usage.CLI
 	for _, w := range writers.InOrder() {

@@ -2,8 +2,9 @@ import Foundation
 import Testing
 
 /// Per-CLI facts live in `CLIRegistry` only (MC-R1): code outside it asks `cli.identity`, `cli.label` or the registry's lists,
-/// and never names a CLI (`.claude`, `CoreCLI.codex`, `CoreLimitsCLI.allCases`). A `switch` over a CLI or a `== .codex` is
-/// caught by the same patterns, since each names a case.
+/// and never names a CLI (`.claude`, `CoreCLI.codex`, `CoreLimitsCLI.allCases`, `"codex-tool-silent"`). A `switch` over a CLI
+/// or a `== .codex` is caught by the same patterns, since each names a case; a string that starts with a CLI's id (the id
+/// itself or a reason code the core prefixes with it) is caught by the string pattern.
 ///
 /// Reads source text, like `StyleBoundaryTests`. Exempt: the registry, `Core/` (the wire DTOs, whose cases and fixed
 /// `claude`/`codex` fields step 0b opens), `Gallery/` and the `*Shots.swift` / `*Synthetic.swift` files, which draw fixed
@@ -23,6 +24,9 @@ struct CLIBranchPolicyTests {
         ("CLI case", #"(?<![\w)\]?!/"])\.(claude|codex|gemini)\b"#),
         // A qualified case, the registry's own entries, or a loop over the wire enum instead of the registry's list.
         ("qualified CLI", #"\b(CoreCLI|CoreLimitsCLI|InventoryCLI|CLIRegistry)\.(claude|codex|gemini|allCases)\b"#),
+        // A string that starts with a CLI's id: the id itself or a code the core prefixes with it (`"claude-prompt-vs-busy"`).
+        // Not a path (`"~/.claude"`).
+        ("CLI string", #""(claude|codex|gemini)\b"#),
     ]
 
     /// Files that still name a CLI, with how many times and why. Lower an entry when a site moves to the registry; never raise
@@ -34,6 +38,8 @@ struct CLIBranchPolicyTests {
         "Hooks/HooksModel.swift": 3,
         "Hooks/HooksQuery.swift": 6,
         "Hooks/HooksTab.swift": 1,
+        // The status line capture is Claude Code's, so its palette actions answer to the keyword "claude".
+        "Limits/LimitsCanvas.swift": 1,
         // The Rules page edits Claude Code's permission rules and reads one fact from Codex's `config.toml` beside them.
         "Rules/RulesCanvas.swift": 7,
         "Rules/RulesModel.swift": 1,
@@ -98,6 +104,9 @@ struct CLIBranchPolicyTests {
         #expect(Self.violations(in: "row.cells.claude = cell") == 0)
         #expect(Self.violations(in: "let old = reading?.codex") == 0)
         #expect(Self.violations(in: #"static let file = "~/.claude/settings.json""#) == 0)
+        #expect(Self.violations(in: #"filter { $0.code == "claude-prompt-vs-busy" || $0.code == "codex-tool-silent" }"#) == 2)
+        #expect(Self.violations(in: #"keywords: ["claude", "limits"]"#) == 1)
+        #expect(Self.violations(in: #"let page = "limits", tab = "claudeless""#) == 0)
         #expect(Self.violations(in: "// a comment about .claude") == 0)
         #expect(Self.violations(in: "x = y // falls back to .codex") == 0)
     }

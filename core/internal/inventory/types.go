@@ -42,8 +42,6 @@ const (
 const (
 	// MaxProjects: at most this many project folders are discovered, newest first.
 	MaxProjects = 300
-	// CodexHooksReason is why a Codex hook cell is unmeasurable.
-	CodexHooksReason = "Codex does not log hook runs"
 	// ScanNotFinished is the pending reason before the first scan has finished.
 	ScanNotFinished = "Usage scan has not finished"
 	// NotScannedReason is the unmeasurable reason of a CLI whose logs the usage scan does not read (no usage

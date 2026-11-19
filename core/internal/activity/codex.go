@@ -3,6 +3,7 @@ package activity
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -14,7 +15,7 @@ import (
 )
 
 // codexActivity is Codex's side of Activity: rollouts under sessions/, the live codex processes and the thread lock
-// each holds (proc.CodexMatcher), and that lock again for Stop.
+// each holds (proc.CodexMatcher, asserted from the process adapter), and that lock again for Stop.
 type codexActivity struct{}
 
 func (codexActivity) fold(st *logState, line []byte) { foldCodex(st, line) }
@@ -75,8 +76,27 @@ func (codexActivity) listLogs(cli roots.CLIRoots) cliRead {
 
 func (c *codexRead) files() []logFile { return c.all }
 
+// codexMatcher is the Codex match of the process adapter, or an error wrapping clis.ErrConceptAbsent when the adapter
+// has none. Every real adapter has one; a missing match reads as an unknown process list, never as no sessions.
+func codexMatcher(adapter proc.Adapter) (proc.CodexMatcher, error) {
+	m, ok := adapter.(proc.CodexMatcher)
+	if !ok {
+		return nil, fmt.Errorf("%w: the process adapter has no %s process match", clis.ErrConceptAbsent, clis.Codex)
+	}
+	return m, nil
+}
+
+// codexThreads lists the live codex processes through the adapter's Codex match.
+func codexThreads(ctx context.Context, adapter proc.Adapter) ([]proc.Thread, error) {
+	m, err := codexMatcher(adapter)
+	if err != nil {
+		return nil, err
+	}
+	return m.CodexThreads(ctx)
+}
+
 func (c *codexRead) findLive(ctx context.Context, adapter proc.Adapter) {
-	threads, err := adapter.CodexThreads(ctx)
+	threads, err := codexThreads(ctx, adapter)
 	c.threads, c.unknown = threads, err != nil
 }
 
@@ -107,7 +127,7 @@ func (c *codexRead) extraLimits() []Limit {
 // livePid finds the codex process that holds the session's thread lock, or, for a thread-less row, the process its
 // `pid:<n>:<start>` id names.
 func (codexActivity) livePid(ctx context.Context, _ roots.CLIRoots, id string, adapter proc.Adapter) lookup {
-	threads, err := adapter.CodexThreads(ctx)
+	threads, err := codexThreads(ctx, adapter)
 	if err != nil {
 		return lookup{unverified: true}
 	}

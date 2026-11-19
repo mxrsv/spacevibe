@@ -144,7 +144,7 @@ struct ActivityQuery: Equatable, Sendable {
         elapsedMs = readAt.map { max(0, now.timeIntervalSince($0) * 1000) } ?? 0
 
         let approval = Dictionary(
-            (report?.unmeasurable ?? []).filter { $0.code == "claude-prompt-vs-busy" || $0.code == "codex-tool-silent" }.map { ($0.cli, $0.text) },
+            (report?.unmeasurable ?? []).filter { $0.code == $0.cli.identity.approvalLimitCode }.map { ($0.cli, $0.text) },
             uniquingKeysWith: { first, _ in first })
         let live = (report?.sessions ?? []).filter { $0.state != .ended }
             .map { ActivitySessionItem(session: $0, approvalLimit: approval[$0.cli]) }

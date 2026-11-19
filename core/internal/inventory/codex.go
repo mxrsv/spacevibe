@@ -13,6 +13,9 @@ import (
 // configuration folder and logs no hook runs; its config.toml names projects.
 type codexInventory struct{}
 
+// CodexHooksReason is why a Codex hook cell is unmeasurable.
+const CodexHooksReason = "Codex does not log hook runs"
+
 // codexEvents come from observation only.
 func (codexInventory) events() []string {
 	return []string{"SessionStart", "UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "SubagentStart", "SubagentStop", "Interrupt", "Stop", "SessionEnd"}

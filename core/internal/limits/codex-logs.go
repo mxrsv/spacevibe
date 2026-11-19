@@ -26,6 +26,8 @@ const (
 // codexReader is Codex: the newest token_count event of its rollouts.
 type codexReader struct{}
 
+func (codexReader) kind() ReadingKind { return LastTurn }
+
 func (codexReader) read(ctx context.Context, in readInput) (Entry, error) {
 	return readCodex(ctx, in.cli)
 }

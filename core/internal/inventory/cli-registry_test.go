@@ -1,11 +1,14 @@
 package inventory
 
 import (
+	"context"
 	"errors"
+	"reflect"
 	"slices"
 	"testing"
 
 	"spacevibe.dev/core/internal/clis"
+	"spacevibe.dev/core/internal/roots"
 )
 
 func TestInventoryAdaptersMatchRegistry(t *testing.T) {
@@ -48,4 +51,60 @@ func TestAnotherCLIIsNotReadAsCodex(t *testing.T) {
 	if _, has := Events()[string(clis.Gemini)]; has {
 		t.Error("Events lists gemini, which has no inventory")
 	}
+}
+
+// otherProjectsCLI is a second CLI with a project folder (.other) that names the given candidates.
+type otherProjectsCLI struct {
+	codexInventory
+	candidates []string
+}
+
+func (o otherProjectsCLI) projectCandidates(context.Context, roots.CLIRoots) []string {
+	return o.candidates
+}
+func (otherProjectsCLI) projectFolder() (projectFolder, bool) {
+	return projectFolder{Name: ".other"}, true
+}
+
+// ProjectFolders is Undo's write containment inside projects, so it lists only the folders discovery found in each
+// project. With a second CLI that has project folders, a project with only .claude must not also allow writes under
+// <project>/.other, and the other way round.
+func TestProjectFoldersListOnlyFoldersThatExist(t *testing.T) {
+	h := newTempHome(t)
+	claudeOnly, otherOnly, both := h.path("work/claude-only"), h.path("work/other-only"), h.path("work/both")
+	h.write("work/claude-only/.claude/settings.json", "{}")
+	h.write("work/other-only/.other/settings.json", "{}")
+	h.write("work/both/.claude/settings.json", "{}")
+	h.write("work/both/.other/settings.json", "{}")
+	h.write(".codex/config.toml", "[projects.\""+claudeOnly+"\"]\n[projects.\""+otherOnly+"\"]\n[projects.\""+both+"\"]\n")
+	r := h.roots()
+	bound, err := bind(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, err := r.CLI(clis.Codex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bound = append(bound, boundAdapter{"other", otherProjectsCLI{candidates: []string{claudeOnly, otherOnly, both}}, other})
+	got := discoverBound(context.Background(), bound)
+	want := []discoveredProject{
+		{claudeOnly, []string{claudeOnly + "/.claude"}},
+		{otherOnly, []string{otherOnly + "/.other"}},
+		{both, []string{both + "/.claude", both + "/.other"}},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("discovered = %+v\nwant %+v", got, want)
+	}
+	// Today, with Claude Code the only CLI with project folders, ProjectFolders is <project>/.claude per project.
+	if got, want := ProjectFolders(r), []string{both + "/.claude", claudeOnly + "/.claude"}; !slicesEqualSorted(got, want) {
+		t.Errorf("ProjectFolders = %q, want %q", got, want)
+	}
+}
+
+func slicesEqualSorted(a, b []string) bool {
+	a, b = slices.Clone(a), slices.Clone(b)
+	slices.Sort(a)
+	slices.Sort(b)
+	return slices.Equal(a, b)
 }

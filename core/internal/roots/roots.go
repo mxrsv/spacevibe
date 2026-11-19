@@ -7,6 +7,7 @@ package roots
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"spacevibe.dev/core/internal/clis"
@@ -78,27 +79,40 @@ const (
 // Resolve derives every root from cfg and the registry. An empty value counts as unset; HOME falls back to
 // realHome. realHome is the account's real home folder from RealHome; tests pass a stand-in.
 // With cfg.Test set it returns *UnderRealHomeError when a root, or the real path behind it, is
-// under realHome. The roots are checked in this order: each CLI's root, the data folder, each CLI's state file.
+// under realHome. The first root found under it names the error, so the order is part of the contract. The roots are
+// checked in this order, each group in registry order: the root of each CLI whose layout names files inside it,
+// the data folder, each CLI's state file, then the root of each CLI whose layout is its folder only (Gemini CLI,
+// whose folder Limits only checks for existence).
 func Resolve(cfg config.Config, realHome string) (Roots, error) {
 	home := orDefault(cfg.UserHome, realHome)
 	dataRoot := orDefault(cfg.Home, filepath.Join(home, identity.DataDir))
 	resolved := make(map[clis.ID]CLIRoots, len(clis.All()))
-	var rootsFirst, statesLast []labelled
+	var readRoots, states, folderOnly []labelled
 	for _, d := range clis.All() {
 		c := resolveCLI(d.Layout, home, cfg.RootOverrides[d.ID])
 		resolved[d.ID] = c
-		rootsFirst = append(rootsFirst, labelled{string(d.ID), c.Root})
+		root := labelled{string(d.ID), c.Root}
+		if folderOnlyLayout(d.Layout) {
+			folderOnly = append(folderOnly, root)
+		} else {
+			readRoots = append(readRoots, root)
+		}
 		if c.State != "" {
-			statesLast = append(statesLast, labelled{string(d.ID) + " state", c.State})
+			states = append(states, labelled{string(d.ID) + " state", c.State})
 		}
 	}
 	if cfg.Test {
-		checked := append(append(rootsFirst, labelled{"spacevibe", dataRoot}), statesLast...)
+		checked := slices.Concat(readRoots, []labelled{{"spacevibe", dataRoot}}, states, folderOnly)
 		if err := assertNotUnderRealHome(realHome, checked); err != nil {
 			return Roots{}, err
 		}
 	}
 	return Roots{CLIs: resolved, Data: dataRoot}, nil
+}
+
+// folderOnlyLayout is a layout that names no file inside or beside its root folder.
+func folderOnlyLayout(l clis.Layout) bool {
+	return l.Skills == "" && l.Agents == "" && l.HookFile == "" && l.Logs == "" && l.StateFile == ""
 }
 
 // resolveCLI places a layout under its root: override when set, otherwise the layout's folder under home.

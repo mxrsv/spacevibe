@@ -20,13 +20,20 @@ type Thread struct {
 	LockUnknown bool
 }
 
-// CodexMatcher is Codex's process match.
+// CodexMatcher is Codex's process match. It is not part of Adapter: Codex's activity adapter asserts it from the
+// Adapter it is handed (activity.codexMatcher), and an adapter without it reads as the concept absent.
 type CodexMatcher interface {
 	// CodexThreads lists the live codex processes with the thread each one holds a lock on. The error is
 	// ErrUnknown when the process list itself could not be read (the list is then not "empty": it is
 	// unknown). When only the lock listing failed, the processes are returned with LockUnknown set.
 	CodexThreads(ctx context.Context) ([]Thread, error)
 }
+
+// Every real adapter carries the Codex match.
+var (
+	_ CodexMatcher = System{}
+	_ CodexMatcher = (*Fixture)(nil)
+)
 
 var (
 	// Swift: ^\s*(\d+)\s+(?:\S*/)?codex(?:\s+(.*))?$  (\d is ASCII here: a non-ASCII digit makes Int() fail and the line is skipped)

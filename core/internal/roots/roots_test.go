@@ -163,6 +163,27 @@ func TestErrorDetails(t *testing.T) {
 	}
 }
 
+// The first root under the real home names the error, so the check order is pinned: with HOME at the real home,
+// both CLI roots moved away and SPACEVIBE_HOME unset, the data folder is named before Gemini CLI's folder (the order
+// from before the registry: claude, codex, spacevibe, claude state, gemini).
+func TestErrorDetailsCheckOrder(t *testing.T) {
+	fakeReal, scratch := newTempHome(t), newTempHome(t)
+	cfg := scratch.cfg()
+	cfg.UserHome = fakeReal.root
+	cfg.Home = ""
+	_, err := Resolve(cfg, fakeReal.root)
+	if e := underRealHome(t, err); e.Label != "spacevibe" || e.Path != fakeReal.data() {
+		t.Fatalf("got %+v, want the spacevibe root %s", e, fakeReal.data())
+	}
+	// With the data folder moved too, Claude Code's state file is still beside the moved root, so Gemini CLI's
+	// folder in HOME is the one left.
+	cfg.Home = scratch.data()
+	_, err = Resolve(cfg, fakeReal.root)
+	if e := underRealHome(t, err); e.Label != "gemini" {
+		t.Fatalf("got %+v, want gemini", e)
+	}
+}
+
 // Swift: RootsTests.swift "a symlink that leads into the real home is refused, even for a root that does not exist yet"
 func TestRefusesThroughSymlinks(t *testing.T) {
 	fakeReal, scratch := newTempHome(t), newTempHome(t)

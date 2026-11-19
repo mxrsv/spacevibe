@@ -21,6 +21,33 @@ type readInput struct {
 type reader interface {
 	// read is the CLI's entry. The only error is the context's.
 	read(ctx context.Context, in readInput) (Entry, error)
+	// kind is where the reading comes from.
+	kind() ReadingKind
+}
+
+// ReadingKind is where a CLI's limits reading comes from. It is not on the wire: the app keeps the same fact per CLI
+// (CLILimitsReading, which decides the Limits wording), and core/testdata/cli-registry.json holds the two to each
+// other. The values are the app's case names.
+type ReadingKind string
+
+const (
+	// UsageCache: a cache the CLI writes once it has fetched usage, which status line snapshots can supersede
+	// (Claude Code).
+	UsageCache ReadingKind = "usageCache"
+	// LastTurn: the limits the CLI logs after each turn (Codex).
+	LastTurn ReadingKind = "lastTurn"
+	// NotKept: the CLI keeps no limit on disk; only its folder is checked (Gemini CLI).
+	NotKept ReadingKind = "notKept"
+)
+
+// KindOf is where the limits reading of cli comes from, or an error wrapping clis.ErrUnknownCLI or
+// clis.ErrConceptAbsent.
+func KindOf(cli clis.ID) (ReadingKind, error) {
+	r, err := readers.For(cli)
+	if err != nil {
+		return "", err
+	}
+	return r.kind(), nil
 }
 
 // readers is the limits adapter of every CLI with the limits concept. A CLI without one is left out of the result,

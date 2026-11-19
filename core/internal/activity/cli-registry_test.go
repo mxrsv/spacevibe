@@ -1,10 +1,13 @@
 package activity
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	"spacevibe.dev/core/internal/clis"
+	"spacevibe.dev/core/internal/proc"
+	"spacevibe.dev/core/internal/roots"
 )
 
 func TestActivityAdaptersMatchRegistry(t *testing.T) {
@@ -78,5 +81,31 @@ func TestFixedLimitsInWireOrder(t *testing.T) {
 		if got[i].CLI != want[i].CLI || got[i].Code != want[i].Code || got[i].Text != want[i].Code.Text() {
 			t.Errorf("limit %d = %+v, want %+v", i, got[i], want[i])
 		}
+	}
+}
+
+// processesOnly embeds the Adapter interface, so it hides every CLI's process match: the shape of an adapter that
+// lacks Codex's match.
+type processesOnly struct{ proc.Adapter }
+
+// The Codex match is not part of proc.Adapter; an adapter without it is the concept absent, read as an unknown
+// process list (the Codex rows cannot be listed, Stop cannot verify), never as "no Codex sessions".
+func TestCodexWithoutProcessMatchIsAbsentNotEmpty(t *testing.T) {
+	ctx := context.Background()
+	fake := newFakeProc([]int{26}, map[int]string{26: stopStart}, []proc.Thread{{Pid: 26, ThreadID: activityUUID(26)}})
+	if _, err := codexMatcher(fake); err != nil {
+		t.Fatalf("codexMatcher(fake) = %v", err)
+	}
+	bare := processesOnly{fake}
+	if _, err := codexMatcher(bare); !errors.Is(err, clis.ErrConceptAbsent) {
+		t.Fatalf("codexMatcher(bare) = %v, want ErrConceptAbsent", err)
+	}
+	read := &codexRead{byID: map[string]logFile{}}
+	read.findLive(ctx, bare)
+	if limits := read.extraLimits(); !read.unknown || len(limits) != 1 || limits[0].Code != ReasonCodexProcessUnknown {
+		t.Errorf("findLive without a match: unknown = %v, limits = %+v", read.unknown, limits)
+	}
+	if got := (codexActivity{}).livePid(ctx, roots.CLIRoots{}, activityUUID(26), bare); got.found || !got.unverified {
+		t.Errorf("livePid without a match = %+v, want unverified", got)
 	}
 }

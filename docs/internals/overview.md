@@ -33,7 +33,7 @@ Every per-CLI fact of the core lives in one of two places ([spec MC-R1](../specs
 | mutate | `cliWriter` | [mutate/writers.go](../../core/internal/mutate/writers.go) |
 | activity | `activityAdapter` (`logFolder`, `sessionSource`, `stopper`) | [activity/adapters.go](../../core/internal/activity/adapters.go) |
 | limits | `reader` | [limits/adapters.go](../../core/internal/limits/adapters.go) |
-| process match | `proc.CodexMatcher`, embedded in `proc.Adapter` | [proc/adapter.go](../../core/internal/proc/adapter.go) |
+| process match | `proc.CodexMatcher`, asserted from the CLI-neutral `proc.Adapter` by the Codex activity adapter | [proc/codex.go](../../core/internal/proc/codex.go), [activity/codex.go](../../core/internal/activity/codex.go) |
 
 Shared code loops over `InOrder()`, which follows the registry order, and never compares a CLI id. The exceptions are the fixed `claude`/`codex` members of the usage and inventory wire objects, which only [usage/wire-slots.go](../../core/internal/usage/wire-slots.go) and [inventory/wire-slots.go](../../core/internal/inventory/wire-slots.go) map. Rules and the status line belong to one CLI by nature, so they look up their CLI's folders with `Roots.CLI` and have no adapter table.
 
@@ -44,12 +44,15 @@ Shared code loops over `InOrder()`, which follows the registry order, and never 
 - **The registry order is the wire order.** Reports, the limits list and the inventory read follow it, so reordering entries changes the goldens.
 - **Gemini CLI is an entry with only the limits concept.** `Roots.CLIs` holds its folder, with every other path empty. Code that ranges over `Roots.CLIs` must not assume a CLI has skills or logs. Range over a concept's adapters instead.
 - **A table and the registry can drift.** Each package's `Test…MatchRegistry` runs `Check`, which fails when a CLI lists a concept with no adapter, or when an adapter exists for a CLI without the concept.
+- **The core and the app each keep some per-CLI facts.** The id, label, concepts, whether hook runs are logged, and the kind of limits reading (`limits.KindOf`) live in the core's registry and adapters and again in the app's `CLIRegistry`. [`TestRegistryParityFile`](../../core/internal/clis/parity_test.go) writes them to [`core/testdata/cli-registry.json`](../../core/testdata/cli-registry.json) and fails when the core drifts from it; [`CLIRegistryTests`](../../Tests/SpaceVibeTests/CLIRegistryTests.swift) fails when `CLIRegistry` does. The file sits outside `testdata/fixtures`, so the frozen checksums do not cover it.
+- **The real-home guard names the first root it finds**, so its check order is part of the error text: the roots of CLIs whose layout names files, the data folder, the state files, then folder-only roots such as Gemini CLI's ([`roots.Resolve`](../../core/internal/roots/roots.go); `TestErrorDetailsCheckOrder`).
+- **Copying assumes two written CLIs.** `copyTarget` copies to "the one other CLI SpaceVibe writes". A third CLI with the mutate concept fails `TestCopyTargetAssumesTwoWrittenCLIs` until the copy target is chosen by shared format (MC-R8, plan task W-T4).
 
 **Adding a CLI:**
 
 1. Add an entry to [registry.go](../../core/internal/clis/registry.go). Its position is its wire position. Set `RootEnv` only when the CLI documents such a variable. List only the concepts it really has.
-2. For each listed concept, add `<cli>.go` in that package with the adapter, plus one line in the package's table. A CLI whose sessions come from the process table also gets a matcher interface in `proc/<cli>.go`. Embed it in `proc.Adapter` and implement it on `System` and `Fixture`.
-3. Run `cd core && SPACEVIBE_TEST=1 go test ./...`. The `MatchRegistry` tests check the wiring. `TestEveryUsageCLIHasAWireSlot` and `TestEveryInventoryCLIHasAWireSlot` fail for any new usage or inventory CLI until those wire objects become maps keyed by CLI id.
+2. For each listed concept, add `<cli>.go` in that package with the adapter, plus one line in the package's table. A CLI whose sessions come from the process table also gets a matcher interface in `proc/<cli>.go`, implemented on `System` and `Fixture`. Its activity adapter asserts that interface from the `proc.Adapter` it is handed and answers `clis.ErrConceptAbsent` without it; `proc.Adapter` itself never changes.
+3. Run `cd core && SPACEVIBE_TEST=1 go test ./...`. The `MatchRegistry` tests check the wiring. `TestEveryUsageCLIHasAWireSlot` and `TestEveryInventoryCLIHasAWireSlot` fail for any new usage or inventory CLI until those wire objects become maps keyed by CLI id. `TestRegistryParityFile` fails until you rewrite the parity file with `cd core && SPACEVIBE_TEST=1 go test ./internal/clis -run TestRegistryParityFile -update`; then give the app's `CLIRegistry` the same facts, and `scripts/test.sh` checks them.
 4. Give the CLI its synthetic fixture under the fixture home, and update the goldens on purpose ([Where the fixtures and goldens live](#where-the-fixtures-and-goldens-live)).
 
 ## Where the fixtures and goldens live

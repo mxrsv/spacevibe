@@ -51,7 +51,7 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 		}
 	}
 
-	projects := discoverBound(ctx, bound)
+	projects := projectPaths(discoverBound(ctx, bound))
 	for _, path := range projects {
 		if err := ctx.Err(); err != nil {
 			return Snapshot{}, nil, err

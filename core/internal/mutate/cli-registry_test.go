@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -63,6 +64,24 @@ func TestRemoveDeadHooksAcceptsOnlyWrittenCLIs(t *testing.T) {
 		_, err := s.RemoveDeadHooks(context.Background(), CLIParams{CLI: id})
 		if e, ok := coreerr.As(err); !ok || strings.HasPrefix(e.Message, "cli must be") {
 			t.Errorf("%s was refused as a CLI: %v", id, err)
+		}
+	}
+}
+
+// copyTarget picks "the one other CLI SpaceVibe writes", because a copy request names no target. With a third CLI in
+// the mutate concept every copy would be refused as ambiguous, without a word at build time. This test stops that:
+// before adding a third CLI that SpaceVibe writes, redesign the copy target by shared format (spec MC-R8, plan task
+// W-T4), then change this test.
+func TestCopyTargetAssumesTwoWrittenCLIs(t *testing.T) {
+	written := clis.IDsWith(clis.Mutate)
+	if len(written) > 2 {
+		t.Fatalf("%d CLIs have the mutate concept (%v), but copyTarget only works with 2: redesign copy targets by "+
+			"shared format first (spec MC-R8, plan task W-T4)", len(written), written)
+	}
+	for _, source := range written {
+		target, err := copyTarget(source)
+		if err != nil || target == source || !slices.Contains(written, target) {
+			t.Errorf("copyTarget(%s) = %q, %v", source, target, err)
 		}
 	}
 }
