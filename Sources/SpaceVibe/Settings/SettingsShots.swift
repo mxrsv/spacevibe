@@ -3,10 +3,20 @@ import SwiftUI
 
 /// `SPACEVIBE_SHOT_SCREEN=settings`: Settings over the demo shell in both appearances, every Update state, the Large font
 /// size, and the demo tabs at Large, where the fixed text columns would truncate first. Synthetic data only; nothing is
-/// read or saved, and the updater never starts.
+/// read or saved, and the updater never starts. The Session widget switch reads a throwaway defaults suite (on, its first-run
+/// value), never the machine's own, so the shots are the same on every machine.
 @MainActor
 enum SettingsShots {
+    private static let glanceSuite = "dev.spacevibe.shots.glance.\(UUID().uuidString)"
+
     static func run(into directory: URL) throws {
+        guard let glanceDefaults = UserDefaults(suiteName: glanceSuite) else {
+            throw ShotHarness.Failure("could not open the throwaway defaults suite \(glanceSuite)")
+        }
+        defer { glanceDefaults.removePersistentDomain(forName: glanceSuite) }
+        glance = GlancePreferences(defaults: glanceDefaults)
+        try ShotHarness.check(glance?.isEnabled == true, "the Session widget switch starts on, from a throwaway defaults suite")
+
         let env = AppEnvironment.shared
         let updates = env.updates
         updates.version = "0.1.0"
@@ -73,10 +83,14 @@ enum SettingsShots {
         try shot()
     }
 
+    /// What the Session widget switch shows in these shots; set at the start of `run`.
+    private static var glance: GlancePreferences?
+
     private static func write(_ shell: ShellModel, _ toasts: ToastCenter, _ env: AppEnvironment, _ name: String,
                               _ choice: AppearanceChoice, to directory: URL) throws {
         let view = AppShell()
             .spaceVibeRoot(shell: shell, toasts: toasts, env: env)
+            .environment(\.glancePreferences, glance)
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: name, choice: choice, to: directory)
     }

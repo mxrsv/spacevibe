@@ -5,6 +5,7 @@ import SwiftUI
 struct AppearanceSettings: View {
     @Environment(AppearanceStore.self) private var appearance
     @Environment(\.openStateStore) private var store
+    @Environment(\.glancePreferences) private var glancePreferences
 
     var body: some View {
         @Bindable var appearance = appearance
@@ -28,7 +29,7 @@ struct AppearanceSettings: View {
                                  selection: $appearance.fontSize)
             }
 
-            GlanceSettings(preferences: .shared, isOpen: open("glanceWidget"))
+            GlanceSettings(preferences: glancePreferences ?? .shared, isOpen: open("glanceWidget"))
         }
     }
 

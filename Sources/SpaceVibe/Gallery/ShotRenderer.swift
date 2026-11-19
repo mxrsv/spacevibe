@@ -4,8 +4,9 @@ import SwiftUI
 /// Headless screenshots (`SPACEVIBE_SHOT_DIR=<dir>`). Renders views with `ImageRenderer`: no window is created, no
 /// focus is taken and no Screen Recording permission is needed. Then the process exits.
 ///
-/// `SPACEVIBE_SHOT_SCREEN` selects shell, skills, subagents, hooks, rules, activity, limits or settings.
-/// Real-screen runs require SPACEVIBE_TEST=1 and a synthetic home. Settings uses demo data.
+/// `SPACEVIBE_SHOT_SCREEN` selects shell, skills, subagents, hooks, rules, activity, limits, settings or glance.
+/// Real-screen runs require SPACEVIBE_TEST=1 and a synthetic home. Settings uses demo data. Glance draws in-memory reports
+/// only, and still runs under the test guard: in the app the widget is fed by the core.
 @MainActor
 enum ShotRenderer {
     static let size = CGSize(width: 1440, height: 900)
@@ -29,7 +30,8 @@ enum ShotRenderer {
             case "activity": try requireSyntheticHome(environment); try ActivityTabShots.run(into: directory)
             case "limits": try requireSyntheticHome(environment); try LimitsShots.run(into: directory)
             case "settings": try SettingsShots.run(into: directory)
-            default: throw ShotHarness.Failure("unknown SPACEVIBE_SHOT_SCREEN \(screen) (shell, skills, subagents, hooks, rules, activity, limits or settings)")
+            case "glance": try requireSyntheticHome(environment); try GlanceShots.run(into: directory)
+            default: throw ShotHarness.Failure("unknown SPACEVIBE_SHOT_SCREEN \(screen) (shell, skills, subagents, hooks, rules, activity, limits, settings or glance)")
             }
 
         } catch {
@@ -91,6 +93,12 @@ enum ShotRenderer {
         let url = directory.appendingPathComponent("\(name)-\(choice.rawValue).png")
         try png.write(to: url)
         print(url.path)
+    }
+
+    /// A view that floats over other apps (the glance widget) at its own size, on the app's ground with room around it, so its
+    /// edge reads in both appearances.
+    static func writeFloating<V: View>(_ view: V, name: String, choice: AppearanceChoice, to directory: URL) throws {
+        try write(view.padding(Space.s24).background(Palette.bgApp), name: name, choice: choice, to: directory)
     }
 
     private static let maxImageHeight = 16384

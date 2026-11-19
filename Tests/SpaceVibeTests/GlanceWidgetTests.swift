@@ -161,4 +161,43 @@ struct GlanceWidgetTests {
         #expect(!GlanceController.runs(in: .gallery, environment: [:]))
         #expect(!GlanceController.runs(in: .shots(directory: URL(fileURLWithPath: "/tmp")), environment: [:]))
     }
+
+    /// S-R1, GL-T10: each launch is decided from its environment the way the app decides it (`LaunchMode.current`), so a
+    /// gallery, a fixture shot run (what `scripts/dev-fixture.sh --shots` exports) and a test run never show the widget, even
+    /// in a development build; only a plain launch does.
+    @Test("gallery, fixture shot and test launches never show the widget")
+    func launchesFromEnvironment() {
+        let test = [CoreEnvironment.testFlag: "1"]
+        let gallery = [CoreEnvironment.variable("GALLERY"): "1"]
+        let shots = [CoreEnvironment.variable("SHOT_DIR"): "/tmp/shots", CoreEnvironment.variable("SHOT_SCREEN"): "glance"]
+        let gated: [[String: String]] = [test, gallery, shots, shots.merging(test) { $1 }, gallery.merging(test) { $1 }]
+        for environment in gated {
+            let mode = LaunchMode.current(environment: environment, isDevelopmentBuild: true)
+            #expect(!GlanceController.runs(in: mode, environment: environment), "\(environment)")
+        }
+        // A distribution build ignores the gallery and shot variables and launches normally, with the widget; the test flag
+        // still keeps it off.
+        #expect(GlanceController.runs(in: LaunchMode.current(environment: shots, isDevelopmentBuild: false), environment: shots))
+        #expect(!GlanceController.runs(in: LaunchMode.current(environment: test, isDevelopmentBuild: false), environment: test))
+        #expect(GlanceController.runs(in: LaunchMode.current(environment: [:], isDevelopmentBuild: true), environment: [:]))
+        // This test process runs under `scripts/test.sh`, which sets the flag.
+        let own = ProcessInfo.processInfo.environment
+        #expect(!GlanceController.runs(in: LaunchMode.current(environment: own), environment: own))
+    }
+
+    @Test("a gated launch never asks for a core, so no subscription opens")
+    func gatedStartOpensNothing() {
+        let suite = "dev.spacevibe.tests.glance-gate.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var asked = 0
+        let controller = GlanceController(preferences: GlancePreferences(defaults: defaults)) {
+            asked += 1
+            return UnservedCore()
+        }
+        controller.start(mode: .gallery, environment: [:], openMainWindow: {})
+        controller.start(mode: .shots(directory: URL(fileURLWithPath: "/tmp")), environment: [:], openMainWindow: {})
+        controller.start(mode: .normal, environment: [CoreEnvironment.testFlag: "1"], openMainWindow: {})
+        #expect(asked == 0)
+    }
 }

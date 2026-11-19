@@ -6,7 +6,7 @@
 #   scripts/dev-fixture.sh --prepare          build and print the environment, do not start the app
 #
 # SPACEVIBE_BUILD_PATH overrides the build scratch path. SPACEVIBE_SHOT_SCREEN selects
-# shell (default), skills, subagents, hooks, rules, activity, limits or settings.
+# shell (default), skills, subagents, hooks, rules, activity, limits, settings or glance.
 # All screens render the current UI without a feature switch. The shell run also renders the gallery.
 # SPACEVIBE_FIXTURE_ACTIVITY=empty|loading and SPACEVIBE_FIXTURE_LIMITS=typical|edge select synthetic states.
 # Screenshot runs verify the displayed data and guarded writes against the synthetic home.

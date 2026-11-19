@@ -21,14 +21,21 @@ struct SpaceVibeMark: View {
     }
 }
 
-private enum MarkPart: CaseIterable {
+/// The mark's three parts. Internal so the glance widget's empty strip can draw the glyph alone (`GlanceEmptyMark`).
+enum MarkPart: CaseIterable {
     case leftBar, rightBar, ring
 }
 
 /// One part of the mark in the SVG's 256 box, with its `translate(128 128) scale(0.9) rotate(45) translate(-128 -128)`.
 /// Each part is filled on its own, so where the bars cross the ring no winding rule can cut a hole.
-private struct MarkShape: Shape {
+struct MarkShape: Shape {
+    /// The app icon's scale: the glyph sits inside the dark square.
+    static let iconScale: CGFloat = 0.9
+    /// The glyph alone, with no square around it, fills more of its box (the widget mock's `scale(1.05)`).
+    static let glyphScale: CGFloat = 1.05
+
     let part: MarkPart
+    var scale: CGFloat = MarkShape.iconScale
 
     private static let box: CGFloat = 256
     private static let centre = CGPoint(x: 128, y: 128)
@@ -48,7 +55,7 @@ private struct MarkShape: Shape {
             path.closeSubpath()
         }
         let mark = CGAffineTransform(translationX: Self.centre.x, y: Self.centre.y)
-            .scaledBy(x: 0.9, y: 0.9)
+            .scaledBy(x: scale, y: scale)
             .rotated(by: .pi / 4)
             .translatedBy(x: -Self.centre.x, y: -Self.centre.y)
         let fit = CGAffineTransform(translationX: rect.minX, y: rect.minY).scaledBy(x: rect.width / Self.box, y: rect.height / Self.box)

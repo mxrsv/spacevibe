@@ -14,3 +14,18 @@ struct GlanceSettings: View {
         }
     }
 }
+
+// Written out: the `@Entry` macro needs SwiftUI's macro plugin, which the Command Line Tools do not ship.
+private struct GlancePreferencesKey: EnvironmentKey {
+    /// Nil means the app's own `GlancePreferences.shared`; a key's default is read off the main actor, so it cannot name it.
+    static let defaultValue: GlancePreferences? = nil
+}
+
+extension EnvironmentValues {
+    /// The preferences the Session widget switch edits: nil for the app's own; a screenshot passes a throwaway store so the
+    /// shot never reads or writes the machine's defaults.
+    var glancePreferences: GlancePreferences? {
+        get { self[GlancePreferencesKey.self] }
+        set { self[GlancePreferencesKey.self] = newValue }
+    }
+}

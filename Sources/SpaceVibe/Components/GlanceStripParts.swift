@@ -73,15 +73,23 @@ struct GlanceOverflowCount: View {
     }
 }
 
-/// The strip with no live session (GW11, GW-R4): the SpaceVibe mark of `Resources/AppIcon.svg`, faint.
+/// The strip with no live session (GW11, GW-R4): the glyph of the SpaceVibe mark (`Resources/AppIcon.svg`) without its dark
+/// square, in the text ink and faint, as the mock draws it. The parts are flattened before the fade, so where the bars
+/// cross the ring the glyph is not darker.
 struct GlanceEmptyMark: View {
     let accessibilityName: String
 
     var body: some View {
-        SpaceVibeMark(size: Metrics.Glance.markSize)
-            .opacity(Metrics.Glance.markOpacity)
-            .padding(Metrics.Glance.markPadding)
-            .accessibilityElement()
-            .accessibilityLabel(accessibilityName)
+        ZStack {
+            ForEach(MarkPart.allCases, id: \.self) { part in
+                MarkShape(part: part, scale: MarkShape.glyphScale).fill(Palette.fg)
+            }
+        }
+        .frame(width: Metrics.Glance.markSize, height: Metrics.Glance.markSize)
+        .compositingGroup()
+        .opacity(Metrics.Glance.markOpacity)
+        .padding(Metrics.Glance.markPadding)
+        .accessibilityElement()
+        .accessibilityLabel(accessibilityName)
     }
 }
