@@ -4,9 +4,9 @@ import Testing
 @testable import SpaceVibe
 
 /// Every icon comes from a generated set or from SpaceVibe's own verdict glyphs (V5-A4; the v3 rule DL7 it extends): category
-/// glyphs from MingCute Line, sidebar, content and Settings glyphs from Phosphor Duotone, the CLI marks from `CLIMark`; no
-/// SF Symbol outside `Gallery/`, no size under 12, and a credit for every set in use. Solar went with the old Settings blocks
-/// (2026-11-16). The checks read `allCases`, so a glyph added to a set needs no edit here.
+/// glyphs from MingCute Line, sidebar, content and Settings glyphs from Phosphor Duotone, the glance widget's session state
+/// glyphs from Phosphor Bold, the CLI marks from `CLIMark`; no SF Symbol outside `Gallery/`, no size under 12, and a credit
+/// for every set in use. Solar went with the old Settings blocks (2026-11-16). The checks read `allCases`, so a glyph added to a set needs no edit here.
 @Suite("Icon policy: generated sets")
 struct IconPolicyTests {
     static var appSources: URL { StyleBoundaryTests.appSources }
@@ -27,6 +27,8 @@ struct IconPolicyTests {
         GlyphSet(glyphs: CategoryGlyph.allCases, file: "CategoryIconData.swift", package: "@iconify-json/mingcute", suffix: "-line", layers: 1,
                  credit: "MingCute by MingCute Design", licence: "Apache-2.0"),
         GlyphSet(glyphs: ContentGlyph.allCases, file: "ContentIconData.swift", package: "@iconify-json/ph", suffix: "-duotone", layers: 2,
+                 credit: "Phosphor Icons", licence: "MIT"),
+        GlyphSet(glyphs: StateGlyph.allCases, file: "StateIconData.swift", package: "@iconify-json/ph", suffix: "-bold", layers: 1,
                  credit: "Phosphor Icons", licence: "MIT"),
     ]
 
@@ -106,6 +108,7 @@ struct IconPolicyTests {
         // The light layer's opacity: the mock's 25% for Phosphor's (its set gives 20%).
         #expect(ContentGlyph.allCases.allSatisfy { $0.layerOpacity == 0.25 && $0.outlineWidth == 0.75 })
         #expect(CategoryGlyph.allCases.allSatisfy { $0.outlineWidth == 0 })
+        #expect(StateGlyph.allCases.allSatisfy { $0.outlineWidth == 0 })
     }
 
     @Test("category glyphs are the three MingCute Line icons of V5-R10; the rest come from Phosphor")
@@ -121,6 +124,13 @@ struct IconPolicyTests {
         }
         // A name belongs to one family, so a category glyph is never picked from the content set by mistake.
         #expect(Set(content.values).isDisjoint(with: Set(category.values)))
+    }
+
+    @Test("state glyphs are the four Phosphor Bold icons of GW-R2")
+    func stateGlyphs() {
+        let state = Dictionary(uniqueKeysWithValues: StateGlyph.allCases.map { (String(describing: $0), $0.iconName) })
+        #expect(state == ["circleNotch": "circle-notch-bold", "chatCircleDots": "chat-circle-dots-bold",
+                          "checkCircle": "check-circle-bold", "circleDashed": "circle-dashed-bold"])
     }
 
     @Test("verdict glyphs are SpaceVibe's own: five shapes in fg2, in no generated set")
@@ -155,6 +165,7 @@ struct IconPolicyTests {
         // Section 4(b) of Apache-2.0 and the notices of the others: each header says the paths were changed.
         #expect(try Self.source("Components/CategoryIconData.swift").contains("Changed from the original"))
         #expect(try Self.source("Components/ContentIconData.swift").contains("Changed from the original"))
+        #expect(try Self.source("Components/StateIconData.swift").contains("Changed from the original"))
     }
 
     @Test("each licence a set asks for is shown: MIT's notice and the Apache-2.0 text in the bundle")

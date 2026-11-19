@@ -10,7 +10,7 @@ enum GlyphBox {
     static let side: CGFloat = 24
 }
 
-/// One glyph of a generated icon set (`CategoryIconData.swift`, `ContentIconData.swift`): its shapes in
+/// One glyph of a generated icon set (`CategoryIconData.swift`, `ContentIconData.swift`, `StateIconData.swift`): its shapes in
 /// the 24 x 24 box and how the set is drawn. `SpaceVibeIcon` draws any of them.
 protocol GlyphSource: Sendable {
     /// The icon of the set this glyph is drawn from, for example `flash-line`.
@@ -90,7 +90,7 @@ enum IconSize: CaseIterable {
 /// banner). Hidden from VoiceOver unless it has a `label`, for an icon that carries meaning on its own.
 ///
 /// Each set has its own label, so a name that exists in two sets never reads two ways: `SpaceVibeIcon(category: .skill)`
-/// (MingCute) and `SpaceVibeIcon(content: .stack)` (Phosphor).
+/// (MingCute), `SpaceVibeIcon(content: .stack)` (Phosphor Duotone) and `SpaceVibeIcon(state: .checkCircle)` (Phosphor Bold).
 struct SpaceVibeIcon: View {
     let source: any GlyphSource
     var size: IconSize = .control
@@ -109,6 +109,10 @@ struct SpaceVibeIcon: View {
     }
 
     init(content glyph: ContentGlyph, size: IconSize = .control, ink: Color? = nil, label: String? = nil) {
+        self.init(source: glyph, size: size, ink: ink, label: label)
+    }
+
+    init(state glyph: StateGlyph, size: IconSize = .control, ink: Color? = nil, label: String? = nil) {
         self.init(source: glyph, size: size, ink: ink, label: label)
     }
 

@@ -1,21 +1,23 @@
 #!/usr/bin/env node
-// Writes the app's icons as SwiftUI path code into Sources/SpaceVibe/Components, from two icon sets in their Iconify JSON form.
+// Writes the app's icons as SwiftUI path code into Sources/SpaceVibe/Components, from two icon packages in their Iconify JSON form.
 // No SVG is shipped or parsed at run time (spec docs/specs/2026-11-03-reins-design-language.md, v3 "Icons"; v5 spec V5-R9,
 // V5-R10, V5-R12).
 //
 //   CategoryIconData.swift  MingCute Line (MingCute Design, Apache-2.0): the category glyphs
 //   ContentIconData.swift   Phosphor Duotone (Phosphor Icons, MIT): the sidebar, content and Settings glyphs
+//   StateIconData.swift     Phosphor Bold (Phosphor Icons, MIT): the session state glyphs of the glance widget
 //
 //   cd <scratch folder outside the repo; never commit it>
 //   npm pack @iconify-json/mingcute@1.2.10 @iconify-json/ph@1.2.2
 //   for f in *.tgz; do mkdir "${f%.tgz}" && tar xzf "$f" -C "${f%.tgz}"; done
 //   node scripts/generate-icons.mjs <mingcute>/package/icons.json <ph>/package/icons.json
 //
-// Each glyph becomes one or two layers in its 24 x 24 box (Phosphor is scaled down from its 256 grid): the solid layer and,
-// for the duotone sets, the lighter one. Both take one colour in the app. Every path is reduced to absolute move, line, cubic
-// and close: H and V become lines, Q, T and S become cubics, and arcs are split into cubics of at most 90 degrees. Numbers
-// are rounded to 3 decimals, glyphs are sorted by name, so a rerun on the same input writes the same files. Each file's header
-// names the package version it was made from, and the licence notices live in Credits.swift (V5-R15).
+// Two arguments, one per package: the two Phosphor sets read the same icons.json. Each glyph becomes one or two layers in its
+// 24 x 24 box (Phosphor is scaled down from its 256 grid): the solid layer and, for the duotone sets, the lighter one. Both
+// take one colour in the app. Every path is reduced to absolute move, line, cubic and close: H and V become lines, Q, T and
+// S become cubics, and arcs are split into cubics of at most 90 degrees. Numbers are rounded to 3 decimals, glyphs are sorted
+// by name, so a rerun on the same input writes the same files. Each file's header names the package version it was made
+// from, and the licence notices live in Credits.swift (V5-R15).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -282,6 +284,15 @@ const CONTENT_GLYPHS = [
   ['warning', 'warning', 'a warning (never ran, can\'t run)'],
 ];
 
+/** [Swift case, Phosphor icon without the "-bold" suffix, what it stands for]. The session state glyphs of the glance widget
+ *  (spec docs/specs/2026-11-19-session-glance-widget.md GW-R2, GW19, GW20): Orca's shapes from another library. */
+const STATE_GLYPHS = [
+  ['chatCircleDots', 'chat-circle-dots', 'a session waiting for the user; Phosphor has no bubble with a question mark, this is the mock\'s pick'],
+  ['checkCircle', 'check-circle', 'a session that finished its turn (done)'],
+  ['circleDashed', 'circle-dashed', 'a session whose state cannot be measured'],
+  ['circleNotch', 'circle-notch', 'a working session (the ring the widget rotates)'],
+];
+
 /**
  * One icon set and the Swift enum it becomes. `sourceOpacity` is the opacity the set gives its light layer, `layerOpacity`
  * the one the app draws it at; `outline` is the stroke the mock adds to a glyph (system/shared.css `.ico`, in the set's own
@@ -301,7 +312,17 @@ const SOURCES = [
     doc: ['The sidebar and content glyphs, from Phosphor Duotone, scaled from its 256 grid to a 24 x 24 box. Each has a solid layer and a lighter',
       'one (`SpaceVibeIcon` draws them in one colour, the lighter at `layerOpacity`, both with the kit\'s thin outline `outlineWidth`).'],
   },
+  {
+    key: 'phosphor-bold', label: 'Phosphor', prefix: 'ph', pkg: '@iconify-json/ph', license: 'MIT', box: 256, suffix: '-bold',
+    glyphs: STATE_GLYPHS, out: 'StateIconData.swift', type: 'StateGlyph', light: false, sourceOpacity: 1, layerOpacity: 1, outline: 0,
+    credit: 'Phosphor Icons, Copyright (c) 2023 Phosphor Icons, MIT (https://github.com/phosphor-icons/core/blob/main/LICENSE).\n// Changed from the original: the SVG path data is rewritten as absolute move, line and cubic commands and scaled from the 256 grid to 24.',
+    doc: ['The session state glyphs of the glance widget (spec GW-R2), from Phosphor Bold, scaled from its 256 grid to a 24 x 24 box:',
+      'one layer, drawn in one colour (the state\'s), with no outline; the Bold weight is already the mock\'s.'],
+  },
 ];
+
+/** The packages the generator reads, in argument order. A set names its package; two sets may share one. */
+const PACKAGES = [...new Set(SOURCES.map((source) => source.pkg))];
 
 // MARK: Glyphs
 
@@ -402,11 +423,12 @@ export function swiftSource(source, set, version) {
 
 function main() {
   const paths = process.argv.slice(2);
-  if (paths.length !== SOURCES.length) {
+  if (paths.length !== PACKAGES.length) {
     console.error('usage: node scripts/generate-icons.mjs <mingcute icons.json> <phosphor (ph) icons.json>');
     process.exit(2);
   }
-  const outputs = SOURCES.map((source, i) => {
+  const outputs = SOURCES.map((source) => {
+    const i = PACKAGES.indexOf(source.pkg);
     const set = JSON.parse(readFileSync(paths[i], 'utf8'));
     const pkg = JSON.parse(readFileSync(join(dirname(paths[i]), 'package.json'), 'utf8'));
     if (set.prefix !== source.prefix || pkg.name !== source.pkg) throw new Error(`argument ${i + 1} is not ${source.pkg}`);
