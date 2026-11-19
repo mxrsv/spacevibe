@@ -1,6 +1,6 @@
 # SpaceVibe: session glance widget, build plan
 
-Started 2026-11-19. Status: building. The owner approved the plan on 2026-11-19 ("ok duyệt plan, làm luôn đi") and asked for parallel Opus subagents. Baseline `ab61a3f`.
+Started 2026-11-19. Status: built; waiting for the owner's runtime checks and eye approval. The owner approved the plan on 2026-11-19 ("ok duyệt plan, làm luôn đi") and asked for parallel Opus subagents. Baseline `ab61a3f`.
 Spec: [2026-11-19-session-glance-widget](../specs/2026-11-19-session-glance-widget.md) (GW1 to GW21, GW-R1 to GW-R11). This plan does not repeat the requirements; each task names the IDs it serves.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. Commit with `git commit -- <paths>` only; never `git stash` (build baselines from `git archive`).
 Mock: `~/scratch/spacevibe-reins/session-glance-widget.html`, pruned to the GW20 pick.
@@ -52,6 +52,25 @@ Order: GL-T1, GL-T2 and GL-T3 to GL-T5 are independent. GL-T6 needs GL-T3. GL-T7
 - GL-T3 to GL-T5 are in `8e5db09`. They add `GlanceEntries`, `GlanceSlots` (margin `Space.s12`, list gap `Space.s6`) and `HostAppResolver` (`sysctl` walk, cooperative activation).
 - `scripts/test.sh` passed with 532 tests in 56 suites.
 
-Wave 2 is running: GL-T6 (`GlanceFeed`) and GL-T9 (app delegate, `GlancePreferences`, Settings switch). GL-T13 (countdown pill, LC10) was added by another session; it waits for the LC8 page work.
+Waves 2 to 4 and the fixes, 2026-11-19 (Opus agents, one main-session fix):
+- **Commits:**
+  - GL-T6 `8f5e6c5`, GL-T9 `f25d1bb`, GL-T7 `c85548a`, GL-T10 `8d64dc2`, GL-T8 `fa4053b`, GL-T11 `8c2e82d`, GL-T13 `104468e`.
+  - List polish (`SpaceVibeScrollView`, cap 320 so a seventh row peeks) `0359bd1`.
+- **Reviews:**
+  - `code-reviewer` on `ab61a3f..104468e`: WARNING (1 HIGH, 1 MEDIUM, 2 LOW).
+  - `build-review` (W24): 3 confirmed defects, plus hypotheses and the runtime checks below.
+  - The fixes are `0cc9028` (one snapshot for every subscriber; subscribe and unsubscribe sent in turn; the stale strip fades while the core fails), `0a4c8c4` (a press holds renders; the order freezes on hover; hover after a drag; the lost mouse-up watchdog; no tick while occluded; a controller switch test) and `f8eea0d` (the host app found by bundle id for Orca's `LSUIElement` terminal host; a session pid that is itself an app is refused; the main window is always presented at launch; a pill click opens a collapsed Limits band; test defaults kept out of `~/Library/Preferences`).
+- **Verification:**
+  - `scripts/test.sh`: `Test run with 604 tests in 65 suites passed`.
+  - `scripts/build-app.sh`: `minos 15.0` for the app, `12.0` for the core.
+  - `SPACEVIBE_SHOT_SCREEN=glance` shots were read for every preset; the mock comparison is described per task in the agent reports.
+  - A real walk on the owner's machine maps the Orca sessions to `com.stablyai.orca` and the iTerm sessions to iTerm2.
+  - `scripts/dev.sh` on this checkout launched pid 3008. `CGWindowList` shows the strip at layer 3, on screen, bottom-right, 272×30, next to the main window.
+  - `screencapture` was refused (no Screen Recording permission), so there is no runtime screenshot.
+- **Open:**
+  - The owner's runtime checks: click-to-host from another front app, tmux, a second screen, a full-screen Space, Reduce Motion, light/dark, close then quit then relaunch, switch toggling, sleep/wake, pill click.
+  - The owner's yes on the Esc departure.
+  - Eye approval.
+  - Out-of-scope test files (`ShellModelTests`, `LimitsCountdownTests`, `GlanceWidgetTests`) still leave defaults plists behind.
 
 /goal Build the SpaceVibe session glance widget per docs/plans/2026-11-19-session-glance-widget.md: GL-T1 to GL-T12 done, scripts/test.sh passes with N > 0, every acceptance row in docs/specs/2026-11-19-session-glance-widget.md checked in the owner's runtime with real sessions, build-review passed, owner eye approval recorded.
