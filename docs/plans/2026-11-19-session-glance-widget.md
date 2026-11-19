@@ -1,6 +1,6 @@
 # SpaceVibe: session glance widget, build plan
 
-Started 2026-11-19. Status: approach written, waiting for the owner's go before code (D10).
+Started 2026-11-19. Status: building. The owner approved the plan on 2026-11-19 ("ok duyệt plan, làm luôn đi") and asked for parallel Opus subagents. Baseline `ab61a3f`.
 Spec: [2026-11-19-session-glance-widget](../specs/2026-11-19-session-glance-widget.md) (GW1 to GW21, GW-R1 to GW-R11). This plan does not repeat the requirements; each task names the IDs it serves.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. Commit with `git commit -- <paths>` only; never `git stash` (build baselines from `git archive`).
 Mock: `~/scratch/spacevibe-reins/session-glance-widget.html`, pruned to the GW20 pick.
@@ -44,6 +44,14 @@ Order: GL-T1, GL-T2 and GL-T3 to GL-T5 are independent. GL-T6 needs GL-T3. GL-T7
 
 ## Handoff
 
-2026-11-19: spec decided (GW1 to GW20), mock pruned to the pick, plan written. No code yet. Waiting for the owner's go on the approach.
+2026-11-19: spec decided (GW1 to GW20), mock pruned to the pick, plan written..
+
+2026-11-19, wave 1 (5 Opus agents, run in parallel):
+- GL-T1 is in `c5d0316`. The `StateGlyph` cases are `circleNotch`, `chatCircleDots`, `checkCircle` and `circleDashed`. They are drawn with `SpaceVibeIcon(state:)`.
+- GL-T2 is in `9812659`. It adds `sessionWorking`, `sessionWaiting` and `sessionDone`. Waiting moved off the mock's value because it failed the 20° hue gap from Claude's clay. The spec's GW-R2 now holds the built values.
+- GL-T3 to GL-T5 are in `8e5db09`. They add `GlanceEntries`, `GlanceSlots` (margin `Space.s12`, list gap `Space.s6`) and `HostAppResolver` (`sysctl` walk, cooperative activation).
+- `scripts/test.sh` passed with 532 tests in 56 suites.
+
+Wave 2 is running: GL-T6 (`GlanceFeed`) and GL-T9 (app delegate, `GlancePreferences`, Settings switch). GL-T13 (countdown chip) was added by another session; it waits for the LC8 page work.
 
 /goal Build the SpaceVibe session glance widget per docs/plans/2026-11-19-session-glance-widget.md: GL-T1 to GL-T12 done, scripts/test.sh passes with N > 0, every acceptance row in docs/specs/2026-11-19-session-glance-widget.md checked in the owner's runtime with real sessions, build-review passed, owner eye approval recorded.
