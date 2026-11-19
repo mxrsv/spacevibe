@@ -1,7 +1,7 @@
 # SpaceVibe: session glance widget, build plan
 
 Started 2026-11-19. Status: approach written, waiting for the owner's go before code (D10).
-Spec: [2026-11-19-session-glance-widget](../specs/2026-11-19-session-glance-widget.md) (GW1 to GW20, GW-R1 to GW-R11). This plan does not repeat the requirements; each task names the IDs it serves.
+Spec: [2026-11-19-session-glance-widget](../specs/2026-11-19-session-glance-widget.md) (GW1 to GW21, GW-R1 to GW-R11). This plan does not repeat the requirements; each task names the IDs it serves.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. Commit with `git commit -- <paths>` only; never `git stash` (build baselines from `git archive`).
 Mock: `~/scratch/spacevibe-reins/session-glance-widget.html`, pruned to the GW20 pick.
 
@@ -27,10 +27,11 @@ Mock: `~/scratch/spacevibe-reins/session-glance-widget.html`, pruned to the GW20
 | GL-T8 | Drag: while dragging, an overlay window per screen shows its 8 slots. On release the widget snaps to the nearest slot, and the slot is saved. | GW-R7, GW13 | Manual check on two screens. Placement logic is covered by GL-T4 |
 | GL-T9 | App lifecycle and Settings. An `NSApplicationDelegateAdaptor` keeps the app alive when the main `Window` closes (a lone `Window` scene quits by default), and a Dock click reopens the window. Settings gets one `SpaceVibeSwitch`, on by default, stored under a `UserDefaults` key in the `dev.spacevibe.app` domain. | GW-R9, GW-R10, GW17, GW18 | `SettingsTests` covers the default and the toggle. Manual check: close the window and the widget stays |
 | GL-T10 | Launch modes: `SPACEVIBE_TEST=1` and fixture shot runs never show the live panel. `SPACEVIBE_SHOT_SCREEN=glance` renders the view headless from synthetic reports. | S-R1, S-R2 | `LaunchModeTests` covers it, and the shots come from the fixture only |
+| GL-T13 | Countdown chip and the hover list's Limits group, after the [limit-reset-countdown](../specs/2026-11-19-limit-reset-countdown.md) page work lands (LC8). Draw it into the widget mock first. Reuse that work's window selection and clock text; add a 60 s `limits.read` to `GlanceFeed`, stopped by the switch. | GW21, LC-R5 to LC-R8 | Widget shots of each LC-R5/LC-R6 case beside the mock, and no read with the switch off |
 | GL-T11 | Docs: a "Glance widget" section in [activity.md](../internals/activity.md) covering the second sink, the panel that is never key, and the in-process host walk (S-R4). Add the `glance` shot screen to `DESIGN-LANGUAGE.md`. Update `README.md` where it lists features (D12; the repo has no `CHANGELOG.md`). | D9, D12 | `docs-anchors.sh` passes |
 | GL-T12 | Verify and hand over (see Verification). `build-review` runs before the owner looks (W24, GW5). The owner's eye approval is the last step, in one batch. | all | Every acceptance row in the spec is checked and reported |
 
-Order: GL-T1, GL-T2 and GL-T3 to GL-T5 are independent. GL-T6 needs GL-T3. GL-T7 needs GL-T1 to GL-T4 and GL-T6. GL-T8 needs GL-T7. GL-T9 and GL-T10 can run beside GL-T7. GL-T11 and GL-T12 come last.
+Order: GL-T1, GL-T2 and GL-T3 to GL-T5 are independent. GL-T6 needs GL-T3. GL-T7 needs GL-T1 to GL-T4 and GL-T6. GL-T8 needs GL-T7. GL-T9 and GL-T10 can run beside GL-T7. GL-T13 needs GL-T7 and the countdown page work (LC8). GL-T11 and GL-T12 come last.
 
 ## Verification
 

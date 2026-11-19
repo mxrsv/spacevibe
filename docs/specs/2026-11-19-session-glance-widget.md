@@ -9,7 +9,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) job 4 (Watch: sessions running). Reads th
 - **Outcome:** a tiny widget that floats over every app and shows, per live Claude Code and Codex session, what state it is in, so the owner can glance at it without opening SpaceVibe.
 - **User:** the owner, running several sessions in parallel while working in a browser or editor.
 - **Success:** with 2-3 real sessions running and another app in front, the widget changes a session's icon within one poll (3 s) of the state change, and a click brings forward the app that hosts the session. The owner checks it by eye against the mock.
-- **Constraint:** the widget reads only the existing `ActivityReport` (`activity.subscribe`). It adds no request (S-R5) and starts no process (S-R4). It never takes focus, and outside its own frame it never blocks clicks.
+- **Constraint:** the widget reads only the existing `ActivityReport` (`activity.subscribe`), plus `limits.read` for the countdown (GW21). It adds no request (S-R5) and starts no process (S-R4). It never takes focus, and outside its own frame it never blocks clicks.
 
 ## Decisions
 
@@ -35,6 +35,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) job 4 (Watch: sessions running). Reads th
 | GW18 | Settings holds only the widget on/off switch. The position is chosen by dragging. | "đặt sẵn các vị trí để có thể drag vào" |
 | GW19 | GW7 keeps Orca's shapes, not its look: the glyphs come from another icon library with the same shapes, and the state colours are more muted or brighter than Orca's, so the widget does not read as a copy. | "sử dụng một số thư viện icon khác nhưng vẫn dùng icon same same như vậy, với màu sắc cho màu hơi trầm hoặc sáng đi để không bị trông giống hoàn toàn orca" |
 | GW20 | Picked on the mock: collapsed form A (state glyph beside the CLI logo), Phosphor Bold glyphs, the muted tone ("Trầm"). | "ok theo đề xuất chọn thư viện Phosphor" |
+| GW21 | The widget also shows the limit reset countdown of the [limit-reset-countdown spec](2026-11-19-limit-reset-countdown.md) (LC1). This widens GW18 (Settings also holds the weekly countdown lead, LC3), GW-R1, GW-R3 and GW-R11 as marked below. | "thêm vào đếm ngược trong widget và cả app main" (2026-11-19) |
 
 ## Orca reference
 
@@ -52,7 +53,7 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
 
 ## Requirements
 
-- **GW-R1. Source (GW1).** The widget's only input is the `ActivityReport` the shell already receives. The shell keeps one `activity.subscribe` open while the widget is on, whether or not the main window is open.
+- **GW-R1. Source (GW1, GW21).** The widget's inputs are the `ActivityReport` the shell already receives and, for the countdown only, `limits.read` every 60 s (LC-R8). The shell keeps one `activity.subscribe` open while the widget is on, whether or not the main window is open.
 - **GW-R2. One entry per live session (GW3, GW7, GW8, GW9, GW10).**
   - Each entry shows the state glyph from the [Orca reference](#orca-reference) and the CLI logo (`Resources/Brand`).
   - Mapping: `running` → working, `waiting` → waiting, `idle` with `lastWriteAgoMs` ≤ 10 min → done, other `idle` → idle, `unmeasurable` → dashed circle in faint grey.
@@ -60,7 +61,7 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
   - Layout (GW20): each entry is the state glyph, then the CLI logo.
   - Glyphs (GW19, GW20): Phosphor Bold. Working `circle-notch-bold` (rotating), waiting `chat-circle-dots-bold`, done `check-circle-bold`, unmeasurable `circle-dashed-bold`, idle a small filled dot. The app's other Phosphor glyphs are Duotone, so these form their own generated set with its `IconPolicyTests` entry.
   - Colours (GW19, GW20): the muted tone, added to `Palette` as three state tokens. Mock values: working `#C4A867` dark / `#8F7638` light, waiting `#C98260` / `#A65C3A`, done `#7BA98F` / `#4A7D62`. `HuePolicyTests` and `ContrastTests` check them; a failing value is adjusted with the owner told.
-- **GW-R3. Count and order (GW12).** Up to 6 entries are shown, ordered waiting, running, done, unmeasurable, idle, then by newest write. Any more show as one `+N`. The widget never grows past the size of 6 entries plus `+N`.
+- **GW-R3. Count and order (GW12).** Up to 6 entries are shown, ordered waiting, running, done, unmeasurable, idle, then by newest write. Any more show as one `+N`. The widget never grows past the size of 6 entries plus `+N`, plus the countdown chip of LC-R5 while a window counts (GW21).
 - **GW-R4. Empty (GW11).** With no live session the widget shows the SpaceVibe mark in a faint tone. Hover says there is no session.
 - **GW-R5. Hover list (GW4, GW14).** Hover opens the list in place, toward the screen centre. Each row shows the CLI logo, the title, the state glyph and label, and the running tool (`currentTool`) when there is one. The list lists every live session, scrolls past a fixed height, and closes when the pointer leaves or Esc is pressed.
 - **GW-R6. Click (GW5, GW6).** Clicking an entry or a row activates the GUI app that is the nearest ancestor of the session's pid. With no such app, the click brings SpaceVibe forward on Activity with that session selected. A click never sends a signal and never starts a process.
@@ -71,8 +72,8 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
   - The first launch places it bottom-right on the main screen.
 - **GW-R8. Never in the way (GW1).** The widget panel never becomes key or main, never takes focus, and never covers the menu bar or the Dock. Clicks outside its frame reach the app below.
 - **GW-R9. Lifecycle (GW17).** Closing the main window does not quit the app. Quitting the app removes the widget.
-- **GW-R10. Settings (GW18).** One switch, on by default, shows or hides the widget. Turning it off also ends the subscription that GW-R1 opened for the widget.
-- **GW-R11. Motion.** The working ring is the only animation. It stops under Reduce Motion and whenever the widget is hidden.
+- **GW-R10. Settings (GW18, GW21).** One switch, on by default, shows or hides the widget. The weekly countdown lead (LC-R4) sits in its own Settings group. Turning the switch off also ends the subscription that GW-R1 opened for the widget.
+- **GW-R11. Motion.** The working ring is the only animation; the countdown's digits changing each second is not one (LC7). The ring stops under Reduce Motion and whenever the widget is hidden.
 
 ## Acceptance
 
