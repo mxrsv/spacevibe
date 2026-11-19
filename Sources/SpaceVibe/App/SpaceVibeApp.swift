@@ -1,6 +1,11 @@
 import SwiftUI
 
 struct SpaceVibeApp: App {
+    /// The id of the main `Window` scene, which the app delegate reopens from the Dock.
+    static let mainWindowID = "main"
+
+    /// Keeps the app running after the main window closes and reopens it from the Dock (GW17).
+    @NSApplicationDelegateAdaptor(SpaceVibeAppDelegate.self) private var appDelegate
     @State private var shell: ShellModel
     @State private var env = AppEnvironment.shared
     private let mode = LaunchMode.current()
@@ -12,7 +17,7 @@ struct SpaceVibeApp: App {
     }
 
     var body: some Scene {
-        Window(SpaceVibeMark.productName, id: "main") {
+        Window(SpaceVibeMark.productName, id: Self.mainWindowID) {
             Group {
                 if case .gallery = mode {
                     ComponentGalleryWindow()
@@ -21,6 +26,7 @@ struct SpaceVibeApp: App {
                 }
             }
             .spaceVibeRoot(shell: shell, toasts: env.toasts, env: env)
+            .linksMainWindow(to: appDelegate)
             .frame(minWidth: 960, minHeight: 600)
         }
         .windowStyle(.hiddenTitleBar)

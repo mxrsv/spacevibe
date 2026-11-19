@@ -27,6 +27,8 @@ struct AppearanceSettings: View {
                 SegmentedControl(label: "Font size", options: FontSizeChoice.allCases.map { SegmentOption($0.title, value: $0) },
                                  selection: $appearance.fontSize)
             }
+
+            GlanceSettings(preferences: .shared, isOpen: open("glanceWidget"))
         }
     }
 

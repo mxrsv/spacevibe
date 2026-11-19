@@ -35,6 +35,8 @@ extension ThemeSetting {
 enum SettingsWording {
     static let automaticChecks = "Check for updates automatically"
     static let automaticChecksDetail = "Once a day. Installing always takes a click."
+    static let glanceWidget = "Session widget"
+    static let glanceWidgetDetail = "Shows live sessions in a corner of the screen over every app."
 
     /// The status of the Update card: its glyph, or the warn mark when the check failed; nil when there is nothing to say
     /// beyond the time.
