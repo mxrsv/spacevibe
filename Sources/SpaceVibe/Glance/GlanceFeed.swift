@@ -20,7 +20,8 @@ final class GlanceFeed {
     private(set) var entries: GlanceEntries = .empty
     /// The latest report as the core sent it; the click fallback needs its session ids.
     private(set) var report: CoreActivityReport?
-    /// The core's sentence, or `unreadable`. Cleared by the next report.
+    /// The core's sentence, or `unreadable`. Cleared by the next report. While it is set, `entries` are the last read, and
+    /// the views say so (`GlanceStripView.failure`, `GlanceListView.failure`).
     private(set) var failure: String?
     private(set) var isRunning = false
 

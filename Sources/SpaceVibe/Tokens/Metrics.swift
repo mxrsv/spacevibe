@@ -579,6 +579,8 @@ extension Metrics {
         static let idleDot: CGFloat = 6
         static let idleOpacity: Double = 0.45
         static let unmeasurableOpacity: Double = 0.55
+        /// The strip's entries while the feed has failed: the last read, faded so it does not pass for the live state.
+        static let staleOpacity: Double = 0.4
         /// The working ring: one turn a second, redrawn at most 30 times a second.
         static let spinPeriod: TimeInterval = 1
         static let spinFrame: TimeInterval = 1.0 / 30

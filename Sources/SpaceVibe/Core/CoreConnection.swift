@@ -44,6 +44,10 @@ final class CoreConnection: @unchecked Sendable {
     private var closed = false
     private var nextID = 1
     private var sinks: [UUID: CoreActivitySink] = [:]
+    /// The sinks whose `subscribe` has not returned yet: each gets its own, later snapshot, so another's is not shared to it.
+    private var subscribing: Set<ObjectIdentifier> = []
+    /// One `activity.subscribe` or `activity.unsubscribe` on the pipe at a time (see "Activity").
+    private let activityTurn = ActivityTurn()
     private var sent: [String: Int] = [:]
     private var identity: CoreInitializeResult?
 
@@ -121,6 +125,14 @@ final class CoreConnection: @unchecked Sendable {
     }
 
     // MARK: Activity
+    //
+    // The core keeps one subscription per connection, and its poll pushes only when the report differs from the last one it
+    // sent, the baseline (docs/internals/core-protocol.md, "Activity subscription"). Every sink must therefore see every report
+    // that becomes the baseline, or a sink can keep a report the core will never correct:
+    // - A subscribe's snapshot goes to the sink that asked and to every other sink that is not subscribing itself. The core's
+    //   first push comes one poll interval after the reply, so the shared snapshot reaches the other sinks before it.
+    // - Subscribes and unsubscribes take turns (`activityTurn`), so the last reply on the pipe is the core's baseline, and an
+    //   unsubscribe decided on can never reach the core after a newer subscribe and end it.
 
     func addSink(_ sink: CoreActivitySink) -> UUID {
         let token = UUID()
@@ -129,8 +141,11 @@ final class CoreConnection: @unchecked Sendable {
     }
 
     /// How long the last subscriber's removal waits before `activity.unsubscribe` is sent. A tab or window that comes back inside
-    /// it keeps the running subscription instead of racing a late unsubscribe against its new `activity.subscribe`.
+    /// it keeps the running subscription instead of having to subscribe again.
     static let unsubscribeDelay: Duration = .seconds(1)
+
+    /// A test runs something after an unsubscribe has been decided on and before its line is written.
+    nonisolated(unsafe) var beforeUnsubscribe: (@Sendable () async -> Void)?
 
     /// Removes a subscriber; the core stops polling only when the last one is gone and still is after `unsubscribeDelay`.
     func removeSink(_ token: UUID) {
@@ -141,8 +156,12 @@ final class CoreConnection: @unchecked Sendable {
         guard last else { return }
         Task { [self] in
             try? await Task.sleep(for: Self.unsubscribeDelay)
+            // Decided and sent inside the turn: a subscribe that starts meanwhile waits for this answer, so it comes after.
+            await activityTurn.take()
+            defer { activityTurn.pass() }
             let current: CoreSession? = lock.withLock { sinks.isEmpty ? session : nil }
             guard let current, current.isAlive else { return }
+            await beforeUnsubscribe?()
             let id = lock.withLock { () -> Int in defer { nextID += 1 }; return nextID }
             if let line = try? CoreWire.line(id: id, method: "activity.unsubscribe", params: CoreWire.NoParams()) {
                 _ = try? await current.request(id: id, method: "activity.unsubscribe", line: line, isRead: true)
@@ -150,9 +169,16 @@ final class CoreConnection: @unchecked Sendable {
         }
     }
 
-    /// `activity.subscribe` on the current core, delivering the snapshot (and any push that follows it) to `sink`. Returns
-    /// the session that holds the subscription, so the caller can wait for its death and subscribe again.
+    /// `activity.subscribe` on the current core, delivering the snapshot (and any push that follows it) to `sink`, and the
+    /// snapshot to every other sink too, since it is now the core's baseline. Returns the session that holds the
+    /// subscription, so the caller can wait for its death and subscribe again.
     func subscribe(_ sink: CoreActivitySink) async throws -> CoreSession {
+        let key = ObjectIdentifier(sink)
+        lock.withLock { _ = subscribing.insert(key) }
+        await activityTurn.take()
+        defer { activityTurn.pass() }
+        // Runs before the turn passes: a subscribe that follows must share its snapshot with this sink.
+        defer { lock.withLock { _ = subscribing.remove(key) } }
         var attempts = 0
         while true {
             try Task.checkCancellation()
@@ -167,8 +193,12 @@ final class CoreConnection: @unchecked Sendable {
                 guard let report = try? CoreWire.reply(CoreActivityReport.self, from: line) else {
                     throw CoreError(CoreWire.undecodableMessage, status: 500)
                 }
-                lock.withLock { failures = 0 }
+                let others = lock.withLock { () -> [CoreActivitySink] in
+                    failures = 0
+                    return sinks.values.filter { ObjectIdentifier($0) != key && !subscribing.contains(ObjectIdentifier($0)) }
+                }
                 sink.deliver(report)
+                for other in others { other.push(report) }
                 return session
             } catch is CoreSession.Lost {
                 if attempts < 3 { continue }
@@ -282,5 +312,39 @@ final class CoreConnection: @unchecked Sendable {
             session = nil
             failures += 1
         }
+    }
+}
+
+/// A turn that one task holds at a time, handed to the waiters in the order they came. Not cancellable: a waiter whose task is
+/// cancelled takes its turn, sees the cancellation and passes it on.
+private final class ActivityTurn: @unchecked Sendable {
+    private let lock = NSLock()
+    private var held = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func take() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let now: Bool = lock.withLock {
+                guard held else {
+                    held = true
+                    return true
+                }
+                waiters.append(continuation)
+                return false
+            }
+            if now { continuation.resume() }
+        }
+    }
+
+    /// Hands the turn to the next waiter, or frees it.
+    func pass() {
+        let next: CheckedContinuation<Void, Never>? = lock.withLock {
+            guard !waiters.isEmpty else {
+                held = false
+                return nil
+            }
+            return waiters.removeFirst()
+        }
+        next?.resume()
     }
 }

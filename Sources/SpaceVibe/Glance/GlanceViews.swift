@@ -6,17 +6,20 @@ struct GlanceStripView: View {
     let strip: GlanceStrip
     /// False while the widget is not on screen: the working ring stops (GW-R11).
     let isOnScreen: Bool
+    /// Why the sessions could not be read (`GlanceFeed.failure`). The entries are then the last read: they fade, their rings
+    /// stop, and VoiceOver reads the sentence.
+    var failure: String?
     let open: (GlanceEntry) -> Void
 
     var body: some View {
-        GlanceCapsule(axis: strip.axis) {
+        GlanceCapsule(axis: strip.axis, isStale: failure != nil && !strip.isEmpty) {
             if strip.isEmpty {
                 GlanceEmptyMark(accessibilityName: GlanceWording.noSession)
             }
             ForEach(strip.items) { item in
                 switch item {
                 case .entry(let entry):
-                    GlanceEntryButton(state: entry.state, cli: entry.cli, axis: strip.axis, isAnimating: isOnScreen,
+                    GlanceEntryButton(state: entry.state, cli: entry.cli, axis: strip.axis, isAnimating: isOnScreen && failure == nil,
                                       accessibilityName: GlanceWording.spoken(entry)) { open(entry) }
                 case .overflow(let count):
                     GlanceOverflowCount(text: GlanceWording.overflow(count), axis: strip.axis,
@@ -26,6 +29,7 @@ struct GlanceStripView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(GlanceWording.widgetName)
+        .accessibilityValue(failure ?? "")
     }
 }
 
@@ -37,6 +41,10 @@ struct GlanceListView: View {
     let entries: [GlanceEntry]
     /// Shown when `entries` is empty: "No session running", or why the sessions could not be read.
     let note: String
+    /// Why the sessions could not be read (`GlanceFeed.failure`, S-R3: the core's sentence or the fixed one). The rows are
+    /// then the last read: the sentence sits above them, inside the scrolling part so the controller's sizing holds, and
+    /// their rings stop.
+    var failure: String?
     var width: CGFloat?
     var rowsHeight: CGFloat?
     /// False while the widget is not on screen: the working ring stops (GW-R11).
@@ -52,11 +60,11 @@ struct GlanceListView: View {
 
     var body: some View {
         if entries.isEmpty, limits.isEmpty {
-            GlanceListSurface(width: width) { GlanceListNote(text: note) }
+            GlanceListSurface(width: width) { GlanceListNote(text: failure ?? note) }
         } else {
             GlanceListSurface {
                 if entries.isEmpty {
-                    GlanceListNote(text: note)
+                    GlanceListNote(text: failure ?? note)
                 } else if let rowsHeight {
                     SpaceVibeScrollView { rows }
                         .frame(height: rowsHeight, alignment: .top)
@@ -80,10 +88,11 @@ struct GlanceListView: View {
     }
 
     private var rows: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            if let failure { GlanceListNote(text: failure) }
             ForEach(entries) { entry in
                 GlanceSessionRow(cli: entry.cli, title: entry.title, detail: GlanceWording.detail(entry), state: entry.state,
-                                 stateLabel: GlanceWording.label(entry.state), isAnimating: isOnScreen,
+                                 stateLabel: GlanceWording.label(entry.state), isAnimating: isOnScreen && failure == nil,
                                  hint: { hint(entry) }, action: { open(entry) })
             }
         }

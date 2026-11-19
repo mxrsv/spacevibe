@@ -87,7 +87,8 @@ struct GlanceSessionRow: View {
     }
 }
 
-/// The list's one sentence when there is no row: "No session running" (GW-R4), or why the sessions could not be read.
+/// The list's one sentence when there is no row: "No session running" (GW-R4), or why the sessions could not be read. A
+/// failure with rows still shown (the last read) puts it above them.
 struct GlanceListNote: View {
     let text: String
 

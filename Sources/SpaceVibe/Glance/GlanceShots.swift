@@ -11,6 +11,8 @@ import SwiftUI
 /// - `glance-strip-many`: twelve sessions, six shown and `+6`.
 /// - `glance-strip-vertical`: the right edge middle's column, every state.
 /// - `glance-strip-empty`: no session, the faint mark.
+/// - `glance-strip-failed`, `glance-list-failed`: the feed has failed after a read: the strip's entries fade and the list
+///   puts the fixed sentence above the last rows; no ring turns.
 /// - `glance-list`, `glance-list-long` (long Greek and CJK titles, very long tool text), `glance-list-many` (twelve rows at the
 ///   list's height cap, scrolled to the top), `glance-list-empty` ("No session running").
 ///
@@ -56,6 +58,8 @@ enum GlanceShots {
             try write(list(entries(GlanceShotData.long)), "glance-list-long")
             try write(scrolledList(many), "glance-list-many")
             try write(list(.empty), "glance-list-empty")
+            try write(strip(all, slot: .bottomRight, failure: GlanceFeed.unreadable), "glance-strip-failed")
+            try write(list(entries(GlanceShotData.normal), failure: GlanceFeed.unreadable), "glance-list-failed")
 
             try write(group(all, slot: .bottomRight, pill: fiveHour.first), "glance-pill-sessions")
             try write(group(.empty, slot: .bottomRight, pill: fiveHour.first), "glance-pill-empty")
@@ -88,13 +92,13 @@ enum GlanceShots {
                                                  stats: CoreActivityStats(logs: sessions.count, truncated: 0)))
     }
 
-    private static func strip(_ entries: GlanceEntries, slot: GlanceSlot) -> GlanceStripView {
-        GlanceStripView(strip: GlanceStrip(entries: entries, slot: slot), isOnScreen: true, open: { _ in })
+    private static func strip(_ entries: GlanceEntries, slot: GlanceSlot, failure: String? = nil) -> GlanceStripView {
+        GlanceStripView(strip: GlanceStrip(entries: entries, slot: slot), isOnScreen: true, failure: failure, open: { _ in })
     }
 
     /// The list as the controller sizes it when it fits: rows at the list's width, a bare sentence at its own.
-    private static func list(_ entries: GlanceEntries, limits: [GlanceCountdownWindow] = []) -> GlanceListView {
-        GlanceListView(entries: entries.all, note: GlanceWording.noSession,
+    private static func list(_ entries: GlanceEntries, limits: [GlanceCountdownWindow] = [], failure: String? = nil) -> GlanceListView {
+        GlanceListView(entries: entries.all, note: GlanceWording.noSession, failure: failure,
                        width: entries.isEmpty && limits.isEmpty ? nil : Metrics.Glance.listWidth,
                        isOnScreen: true, hint: { _ in GlanceWording.activity }, open: { _ in },
                        limits: limits, now: GlanceLimitsShotData.now)

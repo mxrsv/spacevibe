@@ -2,9 +2,11 @@ import SwiftUI
 
 /// The collapsed glance widget's ground (spec `docs/specs/2026-11-19-session-glance-widget.md`, GW14, GW20): a capsule on
 /// `bgPop` with the `hair2` edge, holding its parts in a row or, on a left or right edge middle, in a column. The window
-/// around it draws the drop shadow, so the capsule adds none and the window stays exactly its size.
+/// around it draws the drop shadow, so the capsule adds none and the window stays exactly its size. `isStale` fades the
+/// parts (not the ground) while they show the last read of a feed that has failed.
 struct GlanceCapsule<Content: View>: View {
     let axis: GlanceAxis
+    var isStale = false
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -12,6 +14,7 @@ struct GlanceCapsule<Content: View>: View {
             ? AnyLayout(HStackLayout(spacing: Metrics.Glance.entrySpacing))
             : AnyLayout(VStackLayout(spacing: Metrics.Glance.entrySpacing))
         layout { content }
+            .opacity(isStale ? Metrics.Glance.staleOpacity : 1)
             .padding(Metrics.Glance.stripPadding)
             .blockSurface(Palette.bgPop, edge: Palette.hair2, radius: Metrics.Glance.stripRadius)
             .fixedSize()
