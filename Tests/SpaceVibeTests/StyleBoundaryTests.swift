@@ -12,7 +12,7 @@ struct StyleBoundaryTests {
     /// appears.
     static let screenFolders = [
         "Rules", "Activity", "Shell", "Limits", "Settings",
-        "Agents", "Skills", "Subagents", "Hooks",
+        "Agents", "Skills", "Subagents", "Hooks", "Glance",
     ]
 
     /// Folders under `Sources/SpaceVibe` that are not screens: tokens and components own the look, `Gallery/` lays out specimens,
@@ -20,7 +20,7 @@ struct StyleBoundaryTests {
     static let exemptFolders = ["Tokens", "Components", "Gallery", "App", "Core"]
 
     /// New v5 screen folders (V5-A3): none of them may ever sit in `allowed`.
-    static let v5Folders = ["Agents", "Skills", "Subagents", "Hooks"]
+    static let v5Folders = ["Agents", "Skills", "Subagents", "Hooks", "Glance"]
 
     /// What only `Tokens/` and `Components/` may contain.
     static let forbidden: [(name: String, pattern: String)] = [
