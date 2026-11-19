@@ -18,8 +18,8 @@ struct ColorValue: Sendable {
 ///
 /// Rules the names encode:
 /// - Surfaces, lines and text greys are neutral (R, G and B within 4 of each other in dark, 8 in light).
-/// - `ok`, `warn` and `bad` mark state only. The categories, the CLI colours (Claude clay, Codex in the text colour) and
-///   the accent sit outside their hue families (`HuePolicyTests`).
+/// - `ok`, `warn`, `bad` and the session states mark state only. The categories, the CLI colours (Claude clay, Codex in
+///   the text colour) and the accent sit outside their hue families (`HuePolicyTests`).
 /// - Translucent tokens are composited over their real ground before a contrast check.
 enum PaletteValue {
     // Surfaces, darkest to lightest in dark
@@ -118,6 +118,17 @@ enum PaletteValue {
     static let mute = ColorValue(light: 0x7A7F88, dark: 0x8A8F98)
     /// The cut-out inside a verdict glyph.
     static let onVerdict = ColorValue(light: 0xFFFFFF, dark: 0x0F1011)
+
+    // Activity's session states, drawn by the glance widget (GW-R2): the muted tone the owner picked on the mock (GW20).
+    // State only, like `ok`, `warn` and `bad`. Unmeasurable and idle sessions use `mute`.
+    /// A session that is running.
+    static let sessionWorking = ColorValue(light: 0x8F7638, dark: 0xC4A867)
+    /// A session waiting for the user. Departure, both, hue only (OKLCH lightness and chroma kept): the mock's `#C98260`
+    /// (dark) and `#A65C3A` (light) sit 7° and 6° of hue from Claude's clay, inside the ±20° state family
+    /// (`HuePolicyTests`), and the glyph sits beside the Claude logo. Moved towards amber to hue 59, 20° from clay.
+    static let sessionWaiting = ColorValue(light: 0xA16129, dark: 0xC48654)
+    /// A session idle and written to within the last 10 minutes (GW8).
+    static let sessionDone = ColorValue(light: 0x4A7D62, dark: 0x7BA98F)
 
     // The two CLIs (identity only)
     static let claude = ColorValue(light: 0xC65F3E, dark: 0xD97757)
@@ -230,6 +241,9 @@ enum Palette {
     static let badText = PaletteValue.badText.color
     static let mute = PaletteValue.mute.color
     static let onVerdict = PaletteValue.onVerdict.color
+    static let sessionWorking = PaletteValue.sessionWorking.color
+    static let sessionWaiting = PaletteValue.sessionWaiting.color
+    static let sessionDone = PaletteValue.sessionDone.color
     static let claude = PaletteValue.claude.color
     static let codex = PaletteValue.codex.color
     static let catSkill = PaletteValue.catSkill.color

@@ -10,7 +10,7 @@ Visual decisions belong in [Tokens](../Sources/SpaceVibe/Tokens) and [Components
 
 Inter is the only bundled font. Each [text role](../Sources/SpaceVibe/Tokens/SpaceVibeType.swift) owns its size, weight, line box, tracking and font features; [TypeScale](../Sources/SpaceVibe/Tokens/TypeScale.swift) applies the Settings font-size choice. Screen code chooses a semantic role rather than supplying a size.
 
-[Palette](../Sources/SpaceVibe/Tokens/Palette.swift) owns dark and light colours. Green, amber and red communicate state; category identity and CLI identity remain distinct from state. [ContrastTests](../Tests/SpaceVibeTests/ContrastTests.swift) checks composite surfaces and visible focus; [HuePolicyTests](../Tests/SpaceVibeTests/HuePolicyTests.swift) checks category and state separation.
+[Palette](../Sources/SpaceVibe/Tokens/Palette.swift) owns dark and light colours. Green, amber and red communicate state; category identity and CLI identity remain distinct from state. `sessionWorking`, `sessionWaiting` and `sessionDone` in [Palette](../Sources/SpaceVibe/Tokens/Palette.swift) are state colours too: they belong to Activity's session states as the glance widget draws them, and unmeasurable or idle sessions use `mute`. [ContrastTests](../Tests/SpaceVibeTests/ContrastTests.swift) checks composite surfaces and visible focus; [HuePolicyTests](../Tests/SpaceVibeTests/HuePolicyTests.swift) checks category and state separation.
 
 ## Layout and interaction
 

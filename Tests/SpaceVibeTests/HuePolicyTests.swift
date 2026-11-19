@@ -4,7 +4,8 @@ import Testing
 /// V5-A16 and V5-R46: green, amber and red mean state only. Measured as OKLCH hue in both appearances: a state family is
 /// its hue ±20° (the working threshold, which the owner's eye at the final eye task may move); every category, the Claude
 /// identity colour and the accent sit outside every state family, and no two of them share a hue (also within 20°).
-/// Codex's identity is the text colour, so it and the other neutrals carry no hue to collide.
+/// Activity's session states (the glance widget, GW-R2) are states too, and stay apart from each other. Codex's identity
+/// is the text colour, so it and the other neutrals carry no hue to collide.
 @Suite("Hue policy: one colour, one meaning (V5-A16)")
 struct HuePolicyTests {
     static let familyHalfWidth = 20.0
@@ -13,7 +14,11 @@ struct HuePolicyTests {
 
     private typealias P = PaletteValue
 
-    static let states: [(String, ColorValue)] = [("ok", P.ok), ("warn", P.warn), ("bad", P.bad)]
+    /// Activity's session states: working, waiting and done. Unmeasurable and idle use `mute`, which has no hue.
+    static let sessionStates: [(String, ColorValue)] = [
+        ("sessionWorking", P.sessionWorking), ("sessionWaiting", P.sessionWaiting), ("sessionDone", P.sessionDone),
+    ]
+    static let states: [(String, ColorValue)] = [("ok", P.ok), ("warn", P.warn), ("bad", P.bad)] + sessionStates
     /// Hues that must stay apart from the states and from each other.
     static let meanings: [(String, ColorValue)] = [
         ("catSkill", P.catSkill), ("catSubagent", P.catSubagent), ("catHook", P.catHook), ("catRule", P.catRule),
@@ -43,6 +48,18 @@ struct HuePolicyTests {
         for appearance in Appearance.allCases {
             for (i, (a, aValue)) in Self.meanings.enumerated() {
                 for (b, bValue) in Self.meanings.dropFirst(i + 1) {
+                    let distance = ColorMath.hueDistance(Self.lch(aValue, appearance).h, Self.lch(bValue, appearance).h)
+                    #expect(distance > Self.familyHalfWidth, "\(appearance): \(a) and \(b) are \(String(format: "%.1f", distance))° apart")
+                }
+            }
+        }
+    }
+
+    @Test("working, waiting and done do not share a hue")
+    func sessionStatesApart() {
+        for appearance in Appearance.allCases {
+            for (i, (a, aValue)) in Self.sessionStates.enumerated() {
+                for (b, bValue) in Self.sessionStates.dropFirst(i + 1) {
                     let distance = ColorMath.hueDistance(Self.lch(aValue, appearance).h, Self.lch(bValue, appearance).h)
                     #expect(distance > Self.familyHalfWidth, "\(appearance): \(a) and \(b) are \(String(format: "%.1f", distance))° apart")
                 }

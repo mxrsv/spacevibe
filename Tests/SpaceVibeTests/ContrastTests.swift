@@ -156,6 +156,15 @@ struct ContrastTests {
                 ground("track on sel on bgRaise", P.bgRaise, Layer(P.sel), Layer(P.track)),
             ])
         }
+        // The glance widget's session glyphs (GW-R2) on its popover surface, and in a hover-list row at rest, hovered and
+        // current. Unmeasurable and idle sessions draw in `mute`.
+        for (name, value) in [("sessionWorking", P.sessionWorking), ("sessionWaiting", P.sessionWaiting),
+                              ("sessionDone", P.sessionDone), ("mute", P.mute)] {
+            all += marks("\(name) glyph", value, on: [
+                ground("bgPop", P.bgPop), ground("hover on bgPop", P.bgPop, Layer(P.hover)),
+                ground("sel on bgPop", P.bgPop, Layer(P.sel)),
+            ])
+        }
         // The cut-out inside a verdict glyph (`fg2`).
         all.append(Pair(ink: "onVerdict", value: P.onVerdict, ground: ground("a verdict glyph (fg2)", P.fg2), minimum: 3))
         return all + controlPairs + oldScreenPairs
@@ -311,6 +320,7 @@ struct ContrastTests {
             "fg2 key on a key cap on bgPop", "onAccent key on a key cap on accentSolid brightened for hover",
             "badText on sel on bgRaise", "accentCountText on a field count on sel on bgPop", "accent tick on sel on bgPop",
             "warn slot on a hovered slot in a current row on bgRaise", "fg on a hovered tab's count circle",
+            "sessionWorking glyph on bgPop", "sessionWaiting glyph on sel on bgPop", "sessionDone glyph on hover on bgPop",
         ] {
             #expect(names.contains(required), "missing \(required)")
         }
