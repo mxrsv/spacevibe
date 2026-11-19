@@ -87,7 +87,7 @@ enum SubagentsWording {
     /// Claude Code it adds what follows from the missing `tools` line (see `addNote`).
     static func copyNote(to cli: CoreCLI) -> String {
         let base = "A copy added to \(cli.label) carries its name, description and instructions, not its model or tools"
-        return cli == .claude ? base + ", so it can use every tool." : base + "."
+        return cli.identity.subagentWithoutToolsGetsEveryTool ? base + ", so it can use every tool." : base + "."
     }
 
     static func addLabel(_ row: LoadoutRow, to cli: CoreCLI) -> String { "Added \(row.name) to \(cli.label)" }
@@ -96,7 +96,7 @@ enum SubagentsWording {
     /// Code subagent with no `tools` line "inherits every tool available to subagents" (Claude Code's subagent docs), so the toast
     /// says that of a copy made into Claude Code. Codex's reading of a file with no model is not verified, so it is not said.
     static func addNote(to cli: CoreCLI) -> String {
-        cli == .claude ? "Its model and tools are not copied, so it can use every tool." : "Its model and tools are not copied."
+        cli.identity.subagentWithoutToolsGetsEveryTool ? "Its model and tools are not copied, so it can use every tool." : "Its model and tools are not copied."
     }
 
     /// `cli` nil: every copy.

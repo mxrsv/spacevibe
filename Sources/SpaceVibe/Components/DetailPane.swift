@@ -121,7 +121,7 @@ private struct MeterColumn: View {
         VStack(alignment: .leading, spacing: Metrics.DetailPane.meterSpacing) {
             head
             figure
-            BarCell(share: meter.share, tone: meter.cli == .claude ? .claude : .codex)
+            BarCell(share: meter.share, tone: .cli(meter.cli))
                 .frame(height: Metrics.DetailPane.meterBarHeight)
                 .padding(.vertical, meter.share == nil ? Metrics.DetailPane.meterDashInset : 0)
             caption

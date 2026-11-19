@@ -43,19 +43,20 @@ struct AppearanceSettings: View {
 private struct FontSizeSample: View {
     var body: some View {
         ListRows {
-            sampleRow("ponytail", in: [.claude, .codex])
-            sampleRow("impeccable", in: [.claude])
+            // One sample in every CLI, one in the first only.
+            sampleRow("ponytail", in: Set(CLIRegistry.inventoryCLIs))
+            sampleRow("impeccable", in: Set(CLIRegistry.inventoryCLIs.prefix(1)))
         }
         .allowsHitTesting(false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Sample rows at this font size")
     }
 
-    private func sampleRow(_ name: String, in clis: Set<CoreLimitsCLI>) -> some View {
+    private func sampleRow(_ name: String, in clis: Set<CoreCLI>) -> some View {
         ListRow(name, lead: CategoryGlyph.skill) {
             LogoStrip {
-                ForEach([CoreLimitsCLI.claude, .codex], id: \.self) { cli in
-                    LogoToggle(cli: cli, isLit: clis.contains(cli), mode: .readOnly) {}
+                ForEach(CLIRegistry.inventoryCLIs, id: \.self) { cli in
+                    LogoToggle(cli: CoreLimitsCLI(cli), isLit: clis.contains(cli), mode: .readOnly) {}
                 }
             }
             WarningSlot()

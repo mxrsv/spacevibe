@@ -72,7 +72,7 @@ struct PaneSpecimens: View {
                 SessionMeters(meters: detected.map { SkillsWording.meter(for: row, cli: $0, maxSessions: 142, now: now) })
             }
             PaneSection(title: "Lives in") {
-                FileList(files: CoreCLI.allCases.compactMap { cli in row.members[cli].map { _ in FileList.Entry(cli: cli, path: "~/.\(cli.rawValue)/skills/specimen/SKILL.md") } })
+                FileList(files: CLIRegistry.inventoryCLIs.compactMap { cli in row.members[cli].map { _ in FileList.Entry(cli: cli, path: "~/.\(cli.rawValue)/skills/specimen/SKILL.md") } })
             }
             VStack(alignment: .leading, spacing: Metrics.DetailPane.noteAbove) {
                 HStack(spacing: Metrics.DetailPane.actionSpacing) {

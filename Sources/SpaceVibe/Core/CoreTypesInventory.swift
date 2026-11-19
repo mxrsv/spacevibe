@@ -7,7 +7,12 @@ import Foundation
 enum CoreCLI: String, Codable, CaseIterable, Hashable, Sendable {
     case claude, codex
 
-    var other: CoreCLI { self == .claude ? .codex : .claude }
+    var other: CoreCLI {
+        switch self {
+        case .claude: .codex
+        case .codex: .claude
+        }
+    }
 }
 
 enum CoreKind: String, Codable, Hashable, Sendable {
@@ -66,7 +71,19 @@ struct CoreCells: Codable, Equatable, Sendable {
     var claude: CoreUsageCell
     var codex: CoreUsageCell
 
-    subscript(cli: CoreCLI) -> CoreUsageCell { cli == .claude ? claude : codex }
+    subscript(cli: CoreCLI) -> CoreUsageCell {
+        switch cli {
+        case .claude: claude
+        case .codex: codex
+        }
+    }
+}
+
+extension CoreCells {
+    /// One cell per CLI, from `cell`.
+    init(_ cell: (CoreCLI) -> CoreUsageCell) {
+        self.init(claude: cell(.claude), codex: cell(.codex))
+    }
 }
 
 /// A skill or a subagent.

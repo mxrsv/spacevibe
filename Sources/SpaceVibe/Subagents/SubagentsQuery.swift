@@ -75,11 +75,10 @@ struct SubagentsQuery: Equatable, Sendable {
         case .none:
             return Layout(groups: [band("flat", "", ordered)].compactMap { $0 }, isGrouped: false)
         case .presence:
-            let bands = [
-                band("presence:both", "In both", ordered.filter { $0.presentCLIs.count == 2 }),
-                band("presence:claude", "Claude Code only", ordered.filter { $0.presentCLIs == [.claude] }),
-                band("presence:codex", "Codex only", ordered.filter { $0.presentCLIs == [.codex] }),
-            ].compactMap { $0 }
+            let bands = ([band("presence:both", "In both", ordered.filter { $0.presentCLIs.count == 2 })]
+                + CLIRegistry.inventoryCLIs.map { cli in
+                    band("presence:\(cli.rawValue)", "\(cli.label) only", ordered.filter { $0.presentCLIs == [cli] })
+                }).compactMap { $0 }
             // Bands that hold a problem come first, in their usual order.
             return Layout(groups: bands.filter(\.holdsProblem) + bands.filter { !$0.holdsProblem }, isGrouped: true)
         }

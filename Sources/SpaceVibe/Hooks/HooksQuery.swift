@@ -39,7 +39,7 @@ extension LoadoutRow {
     }
 
     /// The row's hook, Claude Code's first: its event, matcher and command are the row's (the key is event plus command).
-    var firstHook: CoreInventoryHook? { CoreCLI.allCases.lazy.compactMap { hookMembers[$0] }.first }
+    var firstHook: CoreInventoryHook? { CLIRegistry.inventoryCLIs.lazy.compactMap { hookMembers[$0] }.first }
 
     var hookEvent: String { firstHook?.event ?? "" }
 
@@ -96,8 +96,8 @@ enum HooksFilterField: String, FilterFieldKind {
     var values: [FilterValue] {
         switch self {
         case .cli:
-            [FilterValue("both", "Both CLIs", chip: "Both CLIs"), FilterValue("claude", "Claude Code only", chip: "Claude Code only"),
-             FilterValue("codex", "Codex only", chip: "Codex only")]
+            [FilterValue("both", "Both CLIs", chip: "Both CLIs")]
+                + CLIRegistry.inventoryCLIs.map { FilterValue($0.rawValue, "\($0.label) only", chip: "\($0.label) only") }
         case .status:
             [FilterValue("cantRun", "Can't run")]
                 + (LoadoutRows.codexTakesHooks ? [FilterValue("missing", "Missing in Codex")] : [])
@@ -162,14 +162,14 @@ struct HooksQuery: Equatable, Sendable {
     /// a hook names (alphabetical, so a hook on an event missing from both lists still gets its band, never dropped).
     static func lifecycle(events: [String: [String]], rows: [LoadoutRow]) -> [String] {
         var order: [String] = []
-        for event in (events[CoreCLI.claude.rawValue] ?? []) + (events[CoreCLI.codex.rawValue] ?? []) where !order.contains(event) { order.append(event) }
+        for event in CLIRegistry.inventoryCLIs.flatMap({ events[$0.rawValue] ?? [] }) where !order.contains(event) { order.append(event) }
         let extra = Set(rows.map(\.hookEvent)).subtracting(order).filter { !$0.isEmpty }.sorted()
         return order + extra
     }
 
     /// The CLIs that have `event`: those whose list names it and those that have a hook on it.
     static func clis(of event: String, events: [String: [String]], rows: [LoadoutRow]) -> Set<CoreCLI> {
-        var out = Set(CoreCLI.allCases.filter { events[$0.rawValue]?.contains(event) == true })
+        var out = Set(CLIRegistry.inventoryCLIs.filter { events[$0.rawValue]?.contains(event) == true })
         for row in rows where row.hookEvent == event { out.formUnion(row.presentCLIs) }
         return out
     }
@@ -185,7 +185,7 @@ struct HooksQuery: Equatable, Sendable {
         let shown = rows.filter { matches($0, context: context) }
         func clis(_ event: String) -> Set<CoreCLI> { Self.clis(of: event, events: context.events, rows: rows) }
         // Shared events in lifecycle order, then Claude Code's own, then Codex's own (V5-R65).
-        let ordered = all.filter { clis($0).count == 2 } + all.filter { clis($0) == [.claude] } + all.filter { clis($0) == [.codex] }
+        let ordered = all.filter { clis($0).count == 2 } + CLIRegistry.inventoryCLIs.flatMap { cli in all.filter { clis($0) == [cli] } }
         let bands = ordered.compactMap { event -> Band? in
             let inBand = shown.filter { $0.hookEvent == event }.sorted(by: Self.rank)
             guard !inBand.isEmpty else { return nil }
@@ -214,11 +214,7 @@ struct HooksQuery: Equatable, Sendable {
     private static func test(_ field: HooksFilterField, value: String, row: LoadoutRow, context: HooksContext) -> Bool {
         switch field {
         case .cli:
-            switch value {
-            case "both": row.presentCLIs.count == 2
-            case "claude": row.presentCLIs == [.claude]
-            default: row.presentCLIs == [.codex]
-            }
+            value == "both" ? row.presentCLIs.count == 2 : CoreCLI(rawValue: value).map { row.presentCLIs == [$0] } ?? false
         case .status:
             switch value {
             case "cantRun": row.isDeadHook

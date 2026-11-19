@@ -27,10 +27,11 @@ enum HooksWording {
                         offersRemove: false)
         }
         if row.isUnmeasurable {
-            let codexOnly = row.presentCLIs == [.codex]
+            // A hook only one CLI has, and that CLI logs no hook runs: say which.
+            let silent = row.presentCLIs.count == 1 ? row.presentCLIs.first.flatMap { $0.identity.logsHookRuns ? nil : $0 } : nil
             return Slot(mark: StateMark(.clock, label: "Unmeasurable"),
-                        sentence: codexOnly ? "Codex logs no hook runs, so SpaceVibe cannot count this hook's runs."
-                            : "There is no log to count this hook's runs from.", offersRemove: false)
+                        sentence: silent.map { "\($0.label) logs no hook runs, so SpaceVibe cannot count this hook's runs." }
+                            ?? "There is no log to count this hook's runs from.", offersRemove: false)
         }
         return nil
     }
@@ -103,7 +104,7 @@ enum HooksWording {
     /// One sentence per CLI: the handler kind, the matcher and the runs (or the reason it has none) where the hook is, and why not
     /// where it is not.
     static func lines(for row: LoadoutRow, context: HooksContext, home: String?, scanFailed: Bool = false) -> [String] {
-        CoreCLI.allCases.compactMap { cli -> String? in
+        CLIRegistry.inventoryCLIs.compactMap { cli -> String? in
             guard context.detected.contains(cli) || row.members[cli] != nil else { return nil }
             if let hook = row.hookMembers[cli] {
                 let matcher = hook.matcher.flatMap { $0.isEmpty ? nil : "matcher \($0)" } ?? "no matcher"

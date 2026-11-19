@@ -82,14 +82,14 @@ enum LoadoutRows {
 
         let rows = entries.compactMap { entry -> LoadoutRow? in
             let (coreKey, key, group, split) = entry
-            guard let first = group[.claude] ?? group[.codex] else { return nil }
-            let present = CoreCLI.allCases.compactMap { group[$0] }
+            guard let first = CLIRegistry.inventoryCLIs.lazy.compactMap({ group[$0] }).first else { return nil }
+            let present = CLIRegistry.inventoryCLIs.compactMap { group[$0] }
             // The core builds `cells` per key group, so a split row reads `.missing` for a CLI it has no member in.
             func cell(_ cli: CoreCLI) -> CoreUsageCell {
                 guard let member = group[cli] else { return .missing }
                 return member.cells?[cli] ?? .pending(reason: "Usage scan has not finished")
             }
-            let cells = split ? CoreCells(claude: cell(.claude), codex: cell(.codex)) : first.cells ?? CoreCells(claude: cell(.claude), codex: cell(.codex))
+            let cells = split ? CoreCells(cell) : first.cells ?? CoreCells(cell)
             var name = ""
             var detail = ""
             var kind = LoadoutKind.skill
@@ -113,7 +113,7 @@ enum LoadoutRows {
             let plugin = owners.allSatisfy { $0 != "user" && $0 != "link" } ? owners.first : nil
             var errors = 0
             var runs = 0
-            for cli in CoreCLI.allCases {
+            for cli in CLIRegistry.inventoryCLIs {
                 if case .counted(let counted, _, let failed) = cells[cli] {
                     runs += counted
                     errors += failed ?? 0
@@ -140,7 +140,7 @@ enum LoadoutRows {
         var used: Set<String> = []
         // Reserve surviving keys before assigning new rows: a new first slot must not steal an old sibling's key.
         for (index, row) in rows.enumerated() {
-            let candidates = CoreCLI.allCases.compactMap { row.members[$0].flatMap { byMember[$0.id] } }
+            let candidates = CLIRegistry.inventoryCLIs.compactMap { row.members[$0].flatMap { byMember[$0.id] } }
             if let key = candidates.first(where: { !used.contains($0) }) {
                 keys[index] = key
                 used.insert(key)
@@ -161,7 +161,7 @@ enum LoadoutRows {
 
     /// A short tag when a cell says the item is new, so a zero is not read as "never ran".
     static func addedNote(_ cells: CoreCells) -> String? {
-        for cli in CoreCLI.allCases {
+        for cli in CLIRegistry.inventoryCLIs {
             guard case .pending(let reason) = cells[cli] else { continue }
             if reason.hasPrefix("Added in") { return "added recently" }
             if reason.hasPrefix("Added after") { return "added after the last log" }
@@ -181,7 +181,7 @@ enum LoadoutRows {
     static func maxRuns(_ rows: [LoadoutRow]) -> [LoadoutKind: Int] {
         var out: [LoadoutKind: Int] = [:]
         for row in rows {
-            for cli in CoreCLI.allCases {
+            for cli in CLIRegistry.inventoryCLIs {
                 if case .counted(let runs, _, _) = row.cells[cli] { out[row.kind] = max(out[row.kind] ?? 0, runs) }
             }
         }
@@ -302,7 +302,7 @@ struct SkillUsage: Equatable, Sendable {
     let cells: [CoreCLI: SkillCell]
 
     /// The CLIs that have the skill, Claude Code first.
-    var present: [CoreCLI] { CoreCLI.allCases.filter { cells[$0].map { $0 != .missing } ?? false } }
+    var present: [CoreCLI] { CLIRegistry.inventoryCLIs.filter { cells[$0].map { $0 != .missing } ?? false } }
 
     var state: State {
         let kinds = present.compactMap { cells[$0] }
@@ -367,18 +367,18 @@ struct SkillUsage: Equatable, Sendable {
 
 extension LoadoutRow {
     var skillUsage: SkillUsage {
-        SkillUsage(cells: Dictionary(uniqueKeysWithValues: CoreCLI.allCases.map { ($0, SkillCell(cells[$0])) }))
+        SkillUsage(cells: Dictionary(uniqueKeysWithValues: CLIRegistry.inventoryCLIs.map { ($0, SkillCell(cells[$0])) }))
     }
 
     /// The CLIs that have this row, from its members (a row with no member at all has none).
-    var presentCLIs: [CoreCLI] { CoreCLI.allCases.filter { members[$0] != nil } }
+    var presentCLIs: [CoreCLI] { CLIRegistry.inventoryCLIs.filter { members[$0] != nil } }
 }
 
 extension LoadoutRows {
     /// The CLIs the logo strip lists (V5-R24): the ones `limits.read` does not call `notInstalled`; before a reading exists, the
     /// ones that hold at least one skill, agent or hook. Claude Code first.
     static func detectedCLIs(limits: [CoreLimitsEntry], rows: [LoadoutRow]) -> [CoreCLI] {
-        CoreCLI.allCases.filter { cli in
+        CLIRegistry.inventoryCLIs.filter { cli in
             if let entry = limits.first(where: { $0.cli == CoreLimitsCLI(cli) }) { return entry.state != .notInstalled }
             return rows.contains { $0.members[cli] != nil }
         }

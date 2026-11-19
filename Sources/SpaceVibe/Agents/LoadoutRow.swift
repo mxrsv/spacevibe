@@ -125,7 +125,7 @@ struct LoadoutRow: Identifiable, Equatable, Sendable {
     var addedNote: String?
 
     var removableMembers: [LoadoutMember] {
-        CoreCLI.allCases.compactMap { members[$0] }.filter(\.removable)
+        CLIRegistry.inventoryCLIs.compactMap { members[$0] }.filter(\.removable)
     }
 }
 

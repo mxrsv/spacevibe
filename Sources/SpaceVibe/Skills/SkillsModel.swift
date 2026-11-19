@@ -62,7 +62,7 @@ final class SkillsModel {
 
     /// The busiest skill's session count in any one CLI: the meters' scale.
     var maxSessions: Int {
-        rows.flatMap { row in CoreCLI.allCases.compactMap { row.skillUsage.sessions(in: $0) } }.max() ?? 0
+        rows.flatMap { row in CLIRegistry.inventoryCLIs.compactMap { row.skillUsage.sessions(in: $0) } }.max() ?? 0
     }
 
     // MARK: Current row and picks
@@ -201,7 +201,7 @@ final class SkillsModel {
     /// so a `SKILL.md` linked to a `.command` would run in Terminal: only a resolved regular `.md` file opens; anything
     /// else is shown in Finder.
     func openFile(of row: LoadoutRow) {
-        guard let member = CoreCLI.allCases.compactMap({ row.members[$0] }).first, let url = Self.fileURL(member) else { return }
+        guard let member = CLIRegistry.inventoryCLIs.compactMap({ row.members[$0] }).first, let url = Self.fileURL(member) else { return }
         let resolved = url.resolvingSymlinksInPath()
         let isRegular = (try? resolved.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true
         if isRegular, resolved.pathExtension.lowercased() == "md" {
@@ -221,7 +221,7 @@ final class SkillsModel {
     /// The files a skill lives in, one per CLI, with the home folder shortened.
     func files(of row: LoadoutRow) -> [(cli: CoreCLI, path: String)] {
         let home = loadout.data?.home
-        return CoreCLI.allCases.compactMap { cli in
+        return CLIRegistry.inventoryCLIs.compactMap { cli in
             guard case .item(let item)? = row.members[cli] else { return nil }
             return (cli, LoadoutRows.shorten(item.file, home: home))
         }

@@ -130,11 +130,11 @@ struct RulesCanvas: View {
             AnswerCard(sentence: answer.sentence, isOpen: open("answer")) {
                 VStack(alignment: .leading, spacing: Metrics.Tile.contentSpacing) {
                     ListRows {
-                        ListRow("Claude Code", leading: { CLIMark(CoreCLI.claude, size: .control) }, trailing: {
+                        ListRow(CoreCLI.claude.label, leading: { CLIMark(CoreCLI.claude, size: .control) }, trailing: {
                             VerdictMenuButton(model: model, target: .family(band.family), heading: "\(band.family.title) in Claude Code",
                                               current: band.allStance.single, label: band.allStance.single.map(RulesWording.title) ?? "Mixed", size: .regular)
                         })
-                        ListRow("Codex", leading: { CLIMark(CoreCLI.codex, size: .control) }, trailing: {
+                        ListRow(CoreCLI.codex.label, leading: { CLIMark(CoreCLI.codex, size: .control) }, trailing: {
                             HStack(spacing: Metrics.Rules.headSpacing) {
                                 Text(fact.text).spaceVibeText(.meta, tone: .tertiary).lineLimit(1)
                                 SpaceVibeIcon(content: .lock, ink: TextTone.tertiary.color, label: "read only")
@@ -304,7 +304,7 @@ private struct ColumnHead: View {
     var body: some View {
         HStack(spacing: Metrics.ListRow.spacing) {
             Spacer(minLength: 0)
-            cell { CLIMark(CoreCLI.claude, size: .glyph); Text("Claude Code") }
+            cell { CLIMark(CoreCLI.claude, size: .glyph); Text(CoreCLI.claude.label) }
         }
         .spaceVibeText(.meta, tone: .tertiary)
         .padding(.horizontal, Metrics.ListRow.leading)
