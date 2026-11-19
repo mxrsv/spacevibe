@@ -10,6 +10,9 @@ import SwiftUI
 /// sits above the main menu). With `fullScreenAuxiliary` a floating panel also shows beside a full-screen app on that app's
 /// Space; `canJoinAllSpaces` puts it on every Space, `stationary` keeps it in place in Mission Control, and `ignoresCycle`
 /// keeps it out of Cmd-` window cycling.
+///
+/// The strip's panel also tells a click from a drag (`drag`, GW13): the window server keeps sending a held button's events
+/// to the window that took the press, so the drag needs no key window and no event monitor.
 final class GlancePanel: NSPanel {
     init() {
         super.init(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
@@ -26,8 +29,62 @@ final class GlancePanel: NSPanel {
         animationBehavior = .none
     }
 
+    /// The drop-slot layer of one screen while the widget is dragged (GW13, GW-R7): the same never-key floating panel, but
+    /// every click goes through it and it draws no shadow. The controller orders it out when the drag ends.
+    static func dropOverlay() -> GlancePanel {
+        let panel = GlancePanel()
+        panel.ignoresMouseEvents = true
+        panel.hasShadow = false
+        return panel
+    }
+
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+
+    /// Set on the strip only: a press that moves past the threshold drags the widget instead of reaching its content.
+    var drag: GlanceDragHandlers?
+    private var tracker = GlancePointerTracker()
+    private var heldPress: NSEvent?
+
+    /// The left button goes through `GlancePointerTracker` first; every other event reaches the content as before. The
+    /// pointer is read as `NSEvent.mouseLocation`, global and unaffected by this panel moving under it.
+    override func sendEvent(_ event: NSEvent) {
+        guard let drag else { return super.sendEvent(event) }
+        let pointer = NSEvent.mouseLocation
+        let step: GlancePointerTracker.Step
+        switch event.type {
+        case .leftMouseDown: step = tracker.down(at: pointer)
+        case .leftMouseDragged: step = tracker.dragged(to: pointer)
+        case .leftMouseUp: step = tracker.up(at: pointer)
+        default: return super.sendEvent(event)
+        }
+        switch step {
+        case .pass:
+            super.sendEvent(event)
+        case .hold:
+            if event.type == .leftMouseDown { heldPress = event }
+        case .beginDrag(let start, let now):
+            heldPress = nil
+            drag.began(start)
+            drag.moved(now)
+        case .drag(let now):
+            drag.moved(now)
+        case .drop(let end):
+            drag.ended(end)
+        case .click:
+            if let held = heldPress { super.sendEvent(held) }
+            heldPress = nil
+            super.sendEvent(event)
+        }
+    }
+}
+
+/// What the strip panel reports while it is dragged, each with the pointer in global screen coordinates (origin bottom
+/// left): where the button went down, each move, and the release.
+struct GlanceDragHandlers {
+    var began: (CGPoint) -> Void
+    var moved: (CGPoint) -> Void
+    var ended: (CGPoint) -> Void
 }
 
 /// The SwiftUI content of a `GlancePanel`. It takes the first click (the panel is never key, so without it a click would

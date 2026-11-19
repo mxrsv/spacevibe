@@ -596,5 +596,15 @@ extension Metrics {
         static let hintMaxWidth: CGFloat = 96
         /// "No session running" in the list.
         static let noteInsets = EdgeInsets(top: 12, leading: 10, bottom: 12, trailing: 10)
+        /// A press on the strip becomes a drag once the pointer is 4 away; a shorter move is still a click (GW-R6, GW-R7).
+        static let dragThreshold: CGFloat = 4
+        /// A drop slot while dragging (the mock's `.slot`): a capsule edged 1.5, dashed 4 on 3, in `fg` at 55%; the slot a
+        /// release picks is solid `fg`.
+        static let slotStroke: CGFloat = 1.5
+        static let slotDash: [CGFloat] = [4, 3]
+        static let slotEdgeOpacity: Double = 0.55
+        /// The widget's move into its slot on release: 0.18 s, stepped at most 60 times a second.
+        static let snapDuration: TimeInterval = 0.18
+        static let snapFrame: TimeInterval = 1.0 / 60
     }
 }

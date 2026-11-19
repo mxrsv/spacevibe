@@ -14,6 +14,10 @@ import SwiftUI
 ///   (GW-R8). Esc cannot close it: a key press reaches a window only when it is key, the panels never are (GW-R8), and a
 ///   global key monitor needs the Input Monitoring permission.
 /// - Motion (GW-R11): the working ring turns only while the strip is visible on screen.
+/// - Drag (GW13, GW-R7): a press on the strip that moves past `Metrics.Glance.dragThreshold` drags it (`GlancePanel.drag`,
+///   `GlancePointerTracker`). The list closes and stays closed, the strip follows the pointer, and each connected screen
+///   gets a click-through overlay with its 8 slots, the one `GlanceSlot.nearest` picks highlighted. The release saves that
+///   slot, removes the overlays and moves the strip into it (`snapDuration`, none under Reduce Motion).
 @MainActor
 final class GlanceController {
     static let shared = GlanceController()
@@ -29,6 +33,10 @@ final class GlanceController {
     private var presence = PopoverPresence()
     private var settle: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
+    /// Set from the moment a press passes the threshold until the release.
+    private var drag: Drag?
+    /// The strip's move into its slot after a release; a render that wants the same frame leaves it running.
+    private var snapMove: (target: CGRect, task: Task<Void, Never>)?
 
     /// `makeCore` is asked once, at `start`; the app's Go core when nil.
     init(preferences: GlancePreferences? = nil, makeCore: (@MainActor () -> any CoreService)? = nil) {
@@ -101,7 +109,8 @@ final class GlanceController {
 
     // MARK: Panels
 
-    private func render() {
+    /// `snap`: the strip moves into its slot instead of jumping there (a release).
+    private func render(snap: Bool = false) {
         guard preferences.isEnabled, let feed,
               let placed = GlancePlacement.resolve(preferences.placement, screens: GlanceScreen.connected())
         else {
@@ -114,8 +123,22 @@ final class GlanceController {
 
         surfaces.stripHost.rootView = GlanceStripView(strip: GlanceStrip(entries: feed.entries, slot: placed.slot), isOnScreen: onScreen,
                                                       open: { route.open($0) })
-        let stripFrame = placed.slot.frame(for: Self.whole(surfaces.stripHost.fittingSize), in: placed.screen.visibleFrame)
-        Self.show(surfaces.strip, at: stripFrame)
+        let stripSize = Self.whole(surfaces.stripHost.fittingSize)
+        if let drag {
+            // The strip is under the pointer: new entries change its content and size, never its origin.
+            Self.show(surfaces.strip, at: CGRect(origin: surfaces.strip.frame.origin, size: stripSize))
+            surfaces.list.orderOut(nil)
+            refresh(drag)
+            return
+        }
+        let stripFrame = placed.slot.frame(for: stripSize, in: placed.screen.visibleFrame)
+        if snap {
+            move(surfaces.strip, to: stripFrame)
+        } else if snapMove?.target != stripFrame {
+            // No move, or one toward a frame this render no longer wants: the strip goes straight to its frame.
+            stopSnap()
+            Self.show(surfaces.strip, at: stripFrame)
+        }
 
         guard presence.isOpen else {
             surfaces.list.orderOut(nil)
@@ -147,6 +170,8 @@ final class GlanceController {
     }
 
     private func hide() {
+        endDrag()
+        stopSnap()
         settle?.cancel()
         presence = PopoverPresence()
         surfaces?.strip.orderOut(nil)
@@ -155,6 +180,8 @@ final class GlanceController {
 
     /// The pointer entered or left the strip (`anchor`) or the list (`surface`).
     private func pointer(_ event: PopoverPresence.Event) {
+        // The pointer rides on the strip during a drag: the list stays closed (GW-R7).
+        guard drag == nil else { return }
         switch presence.handle(event) {
         case .none: break
         case .changed: render()
@@ -174,12 +201,133 @@ final class GlanceController {
         let made = Surfaces()
         made.stripHost.onPointer = { [weak self] inside in self?.pointer(.anchorHover(inside)) }
         made.listHost.onPointer = { [weak self] inside in self?.pointer(.surfaceHover(inside)) }
+        made.strip.drag = GlanceDragHandlers(began: { [weak self] in self?.beginDrag(at: $0) },
+                                             moved: { [weak self] in self?.dragMoved(to: $0) },
+                                             ended: { [weak self] in self?.dragEnded(at: $0) })
         observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: made.strip,
                                                                 queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.render() }
         })
         surfaces = made
         return made
+    }
+
+    // MARK: Drag
+
+    private func beginDrag(at start: CGPoint) {
+        endDrag()
+        guard preferences.isEnabled, let surfaces, surfaces.strip.isVisible else { return }
+        settle?.cancel()
+        presence = PopoverPresence()
+        surfaces.list.orderOut(nil)
+        stopSnap()
+        let startFrame = surfaces.strip.frame
+        let session = GlanceDragSession(screens: GlanceScreen.connected(), sizes: stripSizes(), pointer: start, stripFrame: startFrame)
+        let made = Drag(start: start, startFrame: startFrame, session: session)
+        drag = made
+        draw(made)
+    }
+
+    private func dragMoved(to pointer: CGPoint) {
+        guard let drag, let surfaces else { return }
+        surfaces.strip.setFrameOrigin(drag.session.stripOrigin(at: pointer))
+        let target = drag.session.target(at: pointer)
+        guard target != drag.target else { return }
+        drag.target = target
+        draw(drag)
+    }
+
+    /// Saves the nearest slot (GW-R7) and moves the strip into it. A release on the slot it came from saves the same
+    /// placement, which changes nothing observable, so the move is started here and not left to `follow()`.
+    private func dragEnded(at pointer: CGPoint) {
+        guard let drag else { return }
+        endDrag()
+        drag.session.drop(at: pointer, into: preferences)
+        render(snap: true)
+    }
+
+    /// The overlays leave the screen; nothing is saved.
+    private func endDrag() {
+        guard let drag else { return }
+        self.drag = nil
+        for overlay in drag.overlays.values { overlay.panel.orderOut(nil) }
+    }
+
+    /// A render during a drag: the screens or the entries changed, so the slots are measured and drawn again.
+    private func refresh(_ drag: Drag) {
+        let screens = GlanceScreen.connected(), sizes = stripSizes()
+        guard screens != drag.session.screens || sizes != drag.session.sizes else { return }
+        drag.session = GlanceDragSession(screens: screens, sizes: sizes, pointer: drag.start, stripFrame: drag.startFrame)
+        drag.target = drag.session.target(at: NSEvent.mouseLocation)
+        draw(drag)
+    }
+
+    /// One overlay per screen of the session, over its visible frame; overlays of screens that left are removed. The strip
+    /// is ordered back above them.
+    private func draw(_ drag: Drag) {
+        var added = false
+        for screen in drag.session.screens {
+            let overlay = drag.overlays[screen.id] ?? {
+                added = true
+                return Drag.Overlay()
+            }()
+            drag.overlays[screen.id] = overlay
+            overlay.host.rootView = GlanceDropSlots(outlines: drag.session.outlines(on: screen, target: drag.target),
+                                                    canvas: screen.visibleFrame.size)
+            if overlay.panel.frame != screen.visibleFrame { overlay.panel.setFrame(screen.visibleFrame, display: true) }
+            if !overlay.panel.isVisible { overlay.panel.orderFrontRegardless() }
+        }
+        let current = Set(drag.session.screens.map(\.id))
+        for (id, overlay) in drag.overlays where !current.contains(id) {
+            overlay.panel.orderOut(nil)
+            drag.overlays[id] = nil
+        }
+        if added { surfaces?.strip.orderFrontRegardless() }
+    }
+
+    /// The widget's size in each axis with the current entries, for the slots' outlines.
+    private func stripSizes() -> GlanceStripSizes {
+        guard let feed, let surfaces else { return GlanceStripSizes(horizontal: .zero, vertical: .zero) }
+        func size(_ axis: GlanceAxis) -> CGSize {
+            let slot = GlanceSlot.allCases.first { $0.axis == axis } ?? GlanceSlot.defaultSlot
+            surfaces.measureStrip.rootView = GlanceStripView(strip: GlanceStrip(entries: feed.entries, slot: slot), isOnScreen: false,
+                                                             open: { _ in })
+            return Self.whole(surfaces.measureStrip.fittingSize)
+        }
+        return GlanceStripSizes(horizontal: size(.horizontal), vertical: size(.vertical))
+    }
+
+    /// The release: the strip takes its slot's size at once (its content already has the slot's axis), then moves into the
+    /// slot along `GlanceSnap`, eased out, without overshoot (FE-M1). Under Reduce Motion it is placed at once. The move is
+    /// stepped here rather than by the window animator, so it is the same task a test can wait on.
+    private func move(_ panel: GlancePanel, to frame: CGRect) {
+        stopSnap()
+        let from = CGRect(origin: panel.frame.origin, size: frame.size)
+        Self.show(panel, at: from)
+        guard from != frame, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+            Self.show(panel, at: frame)
+            return
+        }
+        let task = Task { [weak self] in
+            let clock = ContinuousClock()
+            let begin = clock.now
+            let duration = Duration.seconds(Metrics.Glance.snapDuration)
+            while !Task.isCancelled {
+                let progress = min(1, (clock.now - begin) / duration)
+                panel.setFrameOrigin(GlanceSnap.origin(from: from.origin, to: frame.origin, progress: progress))
+                if progress >= 1 { break }
+                try? await Task.sleep(for: .seconds(Metrics.Glance.snapFrame))
+            }
+            guard !Task.isCancelled, let self else { return }
+            snapMove = nil
+            Self.show(panel, at: frame)
+        }
+        snapMove = (frame, task)
+    }
+
+    private func stopSnap() {
+        snapMove?.task.cancel()
+        snapMove = nil
     }
 
     private static func show(_ panel: GlancePanel, at frame: CGRect) {
@@ -202,6 +350,8 @@ final class GlanceController {
                                                                     open: { _ in }))
         let listHost = GlanceHostingView(rootView: Surfaces.blankList)
         let measureHost = NSHostingView(rootView: Surfaces.blankList)
+        let measureStrip = NSHostingView(rootView: GlanceStripView(strip: GlanceStrip(entries: .empty, slot: .defaultSlot), isOnScreen: false,
+                                                                   open: { _ in }))
 
         private static var blankList: GlanceListView {
             GlanceListView(entries: [], note: "", isOnScreen: false, hint: { _ in "" }, open: { _ in })
@@ -210,6 +360,36 @@ final class GlanceController {
         init() {
             strip.contentView = stripHost
             list.contentView = listHost
+        }
+    }
+
+    /// A drag in progress: where it started, the geometry, the highlighted slot and one overlay per screen.
+    @MainActor
+    private final class Drag {
+        let start: CGPoint
+        let startFrame: CGRect
+        var session: GlanceDragSession
+        var target: GlancePlacement.Resolved?
+        var overlays: [GlanceScreenID: Overlay] = [:]
+
+        init(start: CGPoint, startFrame: CGRect, session: GlanceDragSession) {
+            self.start = start
+            self.startFrame = startFrame
+            self.session = session
+            target = session.target(at: start)
+        }
+
+        /// A screen's click-through layer and its slots.
+        @MainActor
+        final class Overlay {
+            let panel = GlancePanel.dropOverlay()
+            let host = NSHostingView(rootView: GlanceDropSlots(outlines: [], canvas: .zero))
+
+            init() {
+                // The panel is the screen's visible frame; the content never sizes it.
+                host.sizingOptions = []
+                panel.contentView = host
+            }
         }
     }
 }
