@@ -94,6 +94,8 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
 
 ## Inferred, not decided
 
+- **Esc cannot close the hover list (build, 2026-11-19).** A key press reaches only a key window. GW-R8 forbids the panels from becoming key, and a global key monitor needs the Input Monitoring permission. The list therefore closes on pointer leave only. This narrows GW-R5 and waits for the owner's yes (W20). Source: GL-T7 build.
+- **Small size departures from the mock (build).** The CLI logo is 14 pt, not 12, because `CLIMark` owns image drawing and its smallest size is 14. State glyphs are 12 pt, the app's smallest icon size. The host hint uses the Phosphor `open` glyph instead of a plain arrow (FE-K3). Source: GL-T7 build.
 - **Waiting glyph.** Phosphor has no speech bubble with a question mark, so waiting uses the bubble with dots, as shown on the mock. Source: agent's choice under GW20.
 - **The muted working colour sits near amber `warn`.** The state tokens may need a small hue shift to pass `HuePolicyTests`. Source: agent's concern under GW19.
 - **Dashed-circle shape for `unmeasurable`**, from Orca, in the grey of GW9. Source: agent's reconciliation of GW7 and GW9.
