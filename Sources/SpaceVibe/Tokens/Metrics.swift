@@ -555,3 +555,46 @@ enum Space {
     static let s24: CGFloat = 24
     static let s32: CGFloat = 32
 }
+
+/// The session glance widget (spec `docs/specs/2026-11-19-session-glance-widget.md`), read from the mock the owner picked
+/// (`session-glance-widget.html`, GW20). Its placement lives in `GlanceLayout`.
+extension Metrics {
+    enum Glance {
+        /// The strip: a capsule 4 inside its edge, entries 3 apart.
+        static let stripPadding: CGFloat = 4
+        static let entrySpacing: CGFloat = 3
+        /// One entry: 22 high (22 wide in a column), 4 at its ends, the state glyph 3 before the CLI logo.
+        static let entrySide: CGFloat = 22
+        static let entryPadding: CGFloat = 4
+        static let entryInnerSpacing: CGFloat = 3
+        /// The strip's corner: half its height, so a row or a column reads as a capsule.
+        static let stripRadius: CGFloat = entrySide / 2 + stripPadding
+        /// `+N` after the sixth entry: 5 at its sides.
+        static let overflowPadding: CGFloat = 5
+        /// The faint SpaceVibe mark of an empty strip, 4 inside the entry's 22.
+        static let markSize: CGFloat = 14
+        static let markPadding: CGFloat = 4
+        static let markOpacity: Double = 0.35
+        /// Idle: a small dot in `mute`. Unmeasurable: the dashed circle in `mute`, faded (GW9).
+        static let idleDot: CGFloat = 6
+        static let idleOpacity: Double = 0.45
+        static let unmeasurableOpacity: Double = 0.55
+        /// The working ring: one turn a second, redrawn at most 30 times a second.
+        static let spinPeriod: TimeInterval = 1
+        static let spinFrame: TimeInterval = 1.0 / 30
+        /// The hover list: 300 wide, 5 inside its edge, scrolling past 296 high.
+        static let listWidth: CGFloat = 300
+        static let listPadding: CGFloat = 5
+        static let listMaxHeight: CGFloat = 296
+        /// A list row: 7 above and below, 8 at the sides; its columns 9 apart, its two lines 1 apart.
+        static let rowPadding = EdgeInsets(top: 7, leading: 8, bottom: 7, trailing: 8)
+        static let rowColumnSpacing: CGFloat = 9
+        static let rowLineSpacing: CGFloat = 1
+        /// The state glyph 5 before its label; the host hint's glyph 4 before the app name, the name at most 96 wide.
+        static let stateSpacing: CGFloat = 5
+        static let hintSpacing: CGFloat = 4
+        static let hintMaxWidth: CGFloat = 96
+        /// "No session running" in the list.
+        static let noteInsets = EdgeInsets(top: 12, leading: 10, bottom: 12, trailing: 10)
+    }
+}

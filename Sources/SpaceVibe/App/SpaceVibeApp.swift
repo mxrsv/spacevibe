@@ -12,8 +12,11 @@ struct SpaceVibeApp: App {
 
     init() {
         // The app's own store applies the theme to `NSApp.appearance` and the font size to every text role.
-        _shell = State(initialValue: ShellModel(tabs: TabRegistry.makeTabs(), appearance: AppearanceStore(live: true)))
+        let shell = ShellModel(tabs: TabRegistry.makeTabs(), appearance: AppearanceStore(live: true))
+        _shell = State(initialValue: shell)
         AppEnvironment.shared.updates.start(mode: mode)
+        // A click on the glance widget with no host app opens Activity in this shell (GW6); the app delegate starts the widget.
+        GlanceController.shared.shell = shell
     }
 
     var body: some Scene {

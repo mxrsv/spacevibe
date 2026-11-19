@@ -41,6 +41,15 @@ final class ShellModel {
 
     func openLimits() { select(TabRegistry.limitsID) }
 
+    /// The glance widget's fallback (GW6): Activity's Running tab with that session current and its detail open. `itemID` is
+    /// an `ActivitySessionItem.id` (`cli:sessionID`, the same as `GlanceEntry.id`).
+    func openActivity(sessionItemID itemID: String) {
+        select(TabRegistry.activityID)
+        guard let activity = tabs.first(where: { $0.id == TabRegistry.activityID }) as? ActivityTab else { return }
+        activity.model.select(.running)
+        activity.model.open(itemID)
+    }
+
     func openSettings() {
         isSettingsOpen = true
         isPaletteOpen = false

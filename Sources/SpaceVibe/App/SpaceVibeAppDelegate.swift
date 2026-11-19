@@ -10,6 +10,12 @@ final class SpaceVibeAppDelegate: NSObject, NSApplicationDelegate {
     /// `openWindow` (`linksMainWindow(to:)`); the action stays valid after that window closes.
     var openMainWindow: (() -> Void)?
 
+    /// Starts the glance widget once, in a normal launch only (`GlanceController.runs`). It belongs to the process, not to the
+    /// main window, so it stays after the window closes.
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        GlanceController.shared.start(mode: LaunchMode.current()) { [weak self] in self?.openMainWindow?() }
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }
