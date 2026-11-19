@@ -47,17 +47,23 @@ final class GlancePanel: NSPanel {
     private var heldPress: NSEvent?
 
     /// The left button goes through `GlancePointerTracker` first; every other event reaches the content as before. The
-    /// pointer is read as `NSEvent.mouseLocation`, global and unaffected by this panel moving under it.
+    /// pointer is read as `NSEvent.mouseLocation`, global and unaffected by this panel moving under it. `drag.holding` hears
+    /// when a press starts and when it is over, after the click or the drop has been handed on.
     override func sendEvent(_ event: NSEvent) {
         guard let drag else { return super.sendEvent(event) }
+        let wasActive = tracker.isActive
         let pointer = NSEvent.mouseLocation
         let step: GlancePointerTracker.Step
         switch event.type {
-        case .leftMouseDown: step = tracker.down(at: pointer)
+        case .leftMouseDown:
+            // A drag whose release never came ends before the new press starts.
+            if tracker.isDragging { drag.cancelled() }
+            step = tracker.down(at: pointer)
         case .leftMouseDragged: step = tracker.dragged(to: pointer)
         case .leftMouseUp: step = tracker.up(at: pointer)
         default: return super.sendEvent(event)
         }
+        if !wasActive, tracker.isActive { drag.holding(true) }
         switch step {
         case .pass:
             super.sendEvent(event)
@@ -76,15 +82,31 @@ final class GlancePanel: NSPanel {
             heldPress = nil
             super.sendEvent(event)
         }
+        if wasActive, !tracker.isActive { drag.holding(false) }
+    }
+
+    /// Ends a press without a click or a drop (its release was lost, or the widget is leaving the screen): a drag in
+    /// progress is reported as cancelled, then the press as over. Does nothing with no press.
+    func cancelPointer() {
+        guard tracker.isActive else { return }
+        heldPress = nil
+        if tracker.cancel() { drag?.cancelled() }
+        drag?.holding(false)
     }
 }
 
-/// What the strip panel reports while it is dragged, each with the pointer in global screen coordinates (origin bottom
-/// left): where the button went down, each move, and the release.
+/// What the strip panel reports about a press on it, each pointer in global screen coordinates (origin bottom left).
 struct GlanceDragHandlers {
+    /// True when the button goes down on the strip; false once the press is over (a click handed to the content, a drop, or
+    /// `cancelled`).
+    var holding: (Bool) -> Void
+    /// The press passed the threshold: the drag starts where the button went down.
     var began: (CGPoint) -> Void
     var moved: (CGPoint) -> Void
+    /// The release after a drag.
     var ended: (CGPoint) -> Void
+    /// A drag that ends with no release: nothing is saved.
+    var cancelled: () -> Void
 }
 
 /// The SwiftUI content of a `GlancePanel`. It takes the first click (the panel is never key, so without it a click would

@@ -33,6 +33,8 @@ struct GlancePointerTracker: Equatable {
     private var phase = Phase.idle
 
     var isDragging: Bool { phase == .dragging }
+    /// True from the press until its release (or `cancel()`): a held press or a drag.
+    var isActive: Bool { phase != .idle }
 
     /// True once `point` is `Metrics.Glance.dragThreshold` or more from `start`.
     static func passesThreshold(from start: CGPoint, to point: CGPoint) -> Bool {
@@ -65,6 +67,59 @@ struct GlancePointerTracker: Equatable {
         case .pressed: return .click
         case .dragging: return .drop(at: point)
         }
+    }
+
+    /// Forgets the press without a click or a drop: its release never came (`GlanceLostRelease`), or the widget left the
+    /// screen. Returns true when a drag was in progress, so the caller can end it.
+    @discardableResult
+    mutating func cancel() -> Bool {
+        defer { phase = .idle }
+        return phase == .dragging
+    }
+}
+
+/// Holds the strip's renders back while a press on it is undecided or dragging (GW-R6). The panel replays a held press and
+/// its release to the content once they make a click, so the content must still be the one the press went down on: a
+/// report that redrew the strip in between would hand the click to whatever entry sits there now. Pure; the controller asks
+/// `admit` before each render and runs the one it returns from `release`.
+struct GlanceRenderGate: Equatable {
+    private(set) var isHeld = false
+    /// The render asked for while held, with its snap flag (a release asks for the snap); nil when none was asked.
+    private(set) var deferred: Bool?
+
+    mutating func hold() {
+        isHeld = true
+    }
+
+    /// True when the render may run now. While held it is noted instead, and a snap asked for once stays asked for.
+    mutating func admit(snap: Bool) -> Bool {
+        guard isHeld else { return true }
+        deferred = (deferred ?? false) || snap
+        return false
+    }
+
+    /// The press is over: returns the render to run now (its snap flag), nil when none was asked for while held. The render
+    /// reads the state at that moment, so the latest report is the one drawn.
+    mutating func release() -> Bool? {
+        defer { self = GlanceRenderGate() }
+        return deferred
+    }
+}
+
+/// A press whose release the strip never received: the window server lost it, the screen locked, or another app took the
+/// button. While a press is held the controller reads `NSEvent.pressedMouseButtons` every `checkInterval`; the press ends
+/// after `upReadings` readings in a row with the left button up. One reading is not enough: the button can already be up
+/// while its release still waits in the event queue, and ending the press then would turn that click into nothing.
+struct GlanceLostRelease: Equatable {
+    static let checkInterval: Duration = .milliseconds(250)
+    static let upReadings = 2
+
+    private var ups = 0
+
+    /// One reading; true when the press should end now.
+    mutating func observe(leftButtonDown: Bool) -> Bool {
+        ups = leftButtonDown ? 0 : ups + 1
+        return ups >= Self.upReadings
     }
 }
 

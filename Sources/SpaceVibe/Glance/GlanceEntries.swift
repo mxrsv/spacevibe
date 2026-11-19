@@ -87,6 +87,29 @@ struct GlanceEntries: Equatable, Sendable {
         self.all = all
     }
 
+    /// These entries in `previous`'s order, for while the pointer is on the widget: a report every few seconds brings new
+    /// write ages, and re-sorting by them would move rows under the pointer. The GW-R3 groups keep their order. Within a
+    /// group, the entries that were already in that group keep their relative order from `previous`; the others (new
+    /// sessions, and sessions whose state changed) follow at the group's end in GW-R3 order. Sessions gone from this report
+    /// drop out. Each entry carries this report's values.
+    func keepingOrder(of previous: GlanceEntries) -> GlanceEntries {
+        var rank: [String: (index: Int, state: GlanceState)] = [:]
+        for (index, entry) in previous.all.enumerated() where rank[entry.id] == nil {
+            rank[entry.id] = (index, entry.state)
+        }
+        var merged: [GlanceEntry] = []
+        merged.reserveCapacity(all.count)
+        for state in GlanceState.allCases {
+            let group = all.filter { $0.state == state }
+            let kept = group.compactMap { entry in rank[entry.id].flatMap { $0.state == state ? (entry, $0.index) : nil } }
+                .sorted { $0.1 < $1.1 }
+                .map(\.0)
+            let keptIDs = Set(kept.map(\.id))
+            merged += kept + group.filter { !keptIDs.contains($0.id) }
+        }
+        return GlanceEntries(all: merged)
+    }
+
     var shown: [GlanceEntry] { Array(all.prefix(Self.shownLimit)) }
     /// The `N` of `+N`; 0 means no overflow mark.
     var overflow: Int { max(0, all.count - Self.shownLimit) }

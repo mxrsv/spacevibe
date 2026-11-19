@@ -142,4 +142,57 @@ struct GlanceEntriesTests {
         let ranks = result.all.map(\.state.rawValue)
         #expect(ranks == ranks.sorted())
     }
+
+    // MARK: Order while the pointer is on the widget
+
+    @Test("kept order: new write ages do not reorder the rows already shown, and each entry carries the new values")
+    func keepingOrderHoldsRows() throws {
+        let before = entries([session("a", lastWrite: 1_000), session("b", lastWrite: 2_000), session("c", lastWrite: 3_000)])
+        #expect(before.all.map(\.sessionID) == ["a", "b", "c"])
+        let fresh = entries([session("a", lastWrite: 9_000, tool: CoreActivityTool(name: "Bash", target: "")),
+                             session("b", lastWrite: 500), session("c", lastWrite: 100)])
+        #expect(fresh.all.map(\.sessionID) == ["c", "b", "a"])
+        let kept = fresh.keepingOrder(of: before)
+        #expect(kept.all.map(\.sessionID) == ["a", "b", "c"])
+        #expect(try #require(kept.all.first).lastWriteAgoMs == 9_000)
+        #expect(kept.all.first?.toolText == "Bash")
+        #expect(Set(kept.all.map(\.id)) == Set(fresh.all.map(\.id)))
+    }
+
+    @Test("kept order: a new session goes to the end of its group, an ended one drops, groups keep the GW-R3 order")
+    func keepingOrderAppendsAndDrops() {
+        let before = entries([session("w1", state: .waiting, lastWrite: 1_000),
+                              session("r1", lastWrite: 1_000), session("r2", lastWrite: 2_000), session("r3", lastWrite: 3_000),
+                              session("i1", state: .idle, lastWrite: 40 * Self.minute)])
+        let fresh = entries([session("w1", state: .waiting, lastWrite: 2_000),
+                             session("r1", lastWrite: 9_000), session("r3", lastWrite: 100), session("r4", lastWrite: 1),
+                             session("w2", state: .waiting, lastWrite: 1),
+                             session("r2", state: .ended),
+                             session("i1", state: .idle, lastWrite: 41 * Self.minute)])
+        let kept = fresh.keepingOrder(of: before)
+        #expect(kept.all.map(\.sessionID) == ["w1", "w2", "r1", "r3", "r4", "i1"])
+        let ranks = kept.all.map(\.state.rawValue)
+        #expect(ranks == ranks.sorted())
+    }
+
+    @Test("kept order: a session whose state changed joins the end of its new group")
+    func keepingOrderStateChange() {
+        let before = entries([session("w1", state: .waiting, lastWrite: 1_000),
+                              session("r1", lastWrite: 1_000), session("r2", lastWrite: 2_000)])
+        let fresh = entries([session("w1", state: .waiting, lastWrite: 1_000),
+                             session("r1", state: .waiting, lastWrite: 1), session("r2", lastWrite: 2_000)])
+        #expect(fresh.keepingOrder(of: before).all.map(\.sessionID) == ["w1", "r1", "r2"])
+        let fresher = entries([session("w1", lastWrite: 1), session("r1", state: .waiting, lastWrite: 1), session("r2", lastWrite: 2_000)])
+        #expect(fresher.keepingOrder(of: fresh).all.map(\.sessionID) == ["r1", "r2", "w1"])
+    }
+
+    @Test("kept order: from nothing it is the report's own order; a frozen strip still shows 6 plus +N")
+    func keepingOrderEdges() {
+        let fresh = entries((1...8).map { session("s\($0)", lastWrite: Double(9 - $0)) })
+        #expect(fresh.keepingOrder(of: .empty) == fresh)
+        #expect(GlanceEntries.empty.keepingOrder(of: fresh) == .empty)
+        let reordered = entries((1...8).map { session("s\($0)", lastWrite: Double($0)) }).keepingOrder(of: fresh)
+        #expect(reordered.all.map(\.sessionID) == fresh.all.map(\.sessionID))
+        #expect(reordered.shown.count == 6 && reordered.overflow == 2)
+    }
 }
