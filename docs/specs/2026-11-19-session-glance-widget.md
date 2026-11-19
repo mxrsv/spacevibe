@@ -1,7 +1,7 @@
 # SpaceVibe: Session glance widget
 
 Date: 2026-11-19
-Status: draft. Decisions are settled (intent interview and grilling, 2026-11-19). The look waits for the owner to pick a direction on the [mock](#mock); requirements that depend on the look are rewritten from the pick.
+Status: decided. Decisions settled in the intent interview and grilling, 2026-11-19; the owner picked the direction on the [mock](#mock) the same day (GW20). Plan: [2026-11-19-session-glance-widget](../plans/2026-11-19-session-glance-widget.md).
 Parent: [PRODUCT.md](../../PRODUCT.md) job 4 (Watch: sessions running). Reads the report described in [activity.md](../internals/activity.md).
 
 ## Intent
@@ -33,7 +33,8 @@ Parent: [PRODUCT.md](../../PRODUCT.md) job 4 (Watch: sessions running). Reads th
 | GW16 | On by default, in the bottom-right slot. | "Bật sẵn, góc dưới phải" |
 | GW17 | Closing the main window keeps the app running with its Dock icon, so the widget stays. | "App vẫn chạy, giữ Dock" |
 | GW18 | Settings holds only the widget on/off switch. The position is chosen by dragging. | "đặt sẵn các vị trí để có thể drag vào" |
-| GW19 | GW7 keeps Orca's shapes, not its look: the glyphs come from another icon library with the same shapes, and the state colours are more muted or brighter than Orca's, so the widget does not read as a copy. Library and tone are picked on the mock. | "sử dụng một số thư viện icon khác nhưng vẫn dùng icon same same như vậy, với màu sắc cho màu hơi trầm hoặc sáng đi để không bị trông giống hoàn toàn orca" |
+| GW19 | GW7 keeps Orca's shapes, not its look: the glyphs come from another icon library with the same shapes, and the state colours are more muted or brighter than Orca's, so the widget does not read as a copy. | "sử dụng một số thư viện icon khác nhưng vẫn dùng icon same same như vậy, với màu sắc cho màu hơi trầm hoặc sáng đi để không bị trông giống hoàn toàn orca" |
+| GW20 | Picked on the mock: collapsed form A (state glyph beside the CLI logo), Phosphor Bold glyphs, the muted tone ("Trầm"). | "ok theo đề xuất chọn thư viện Phosphor" |
 
 ## Orca reference
 
@@ -56,8 +57,9 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
   - Each entry shows the state glyph from the [Orca reference](#orca-reference) and the CLI logo (`Resources/Brand`).
   - Mapping: `running` → working, `waiting` → waiting, `idle` with `lastWriteAgoMs` ≤ 10 min → done, other `idle` → idle, `unmeasurable` → dashed circle in faint grey.
   - An `ended` session has no entry.
-  - Glyphs come from the library picked on the mock (GW19), never lucide. MingCute and Phosphor are already allowed by `IconPolicyTests`; another library needs that policy and `Credits` changed in the same PR.
-  - The working, waiting and done colours are the tone picked on the mock (GW19), added to `Palette` as state tokens and checked by `HuePolicyTests` and `ContrastTests`.
+  - Layout (GW20): each entry is the state glyph, then the CLI logo.
+  - Glyphs (GW19, GW20): Phosphor Bold. Working `circle-notch-bold` (rotating), waiting `chat-circle-dots-bold`, done `check-circle-bold`, unmeasurable `circle-dashed-bold`, idle a small filled dot. The app's other Phosphor glyphs are Duotone, so these form their own generated set with its `IconPolicyTests` entry.
+  - Colours (GW19, GW20): the muted tone, added to `Palette` as three state tokens. Mock values: working `#C4A867` dark / `#8F7638` light, waiting `#C98260` / `#A65C3A`, done `#7BA98F` / `#4A7D62`. `HuePolicyTests` and `ContrastTests` check them; a failing value is adjusted with the owner told.
 - **GW-R3. Count and order (GW12).** Up to 6 entries are shown, ordered waiting, running, done, unmeasurable, idle, then by newest write. Any more show as one `+N`. The widget never grows past the size of 6 entries plus `+N`.
 - **GW-R4. Empty (GW11).** With no live session the widget shows the SpaceVibe mark in a faint tone. Hover says there is no session.
 - **GW-R5. Hover list (GW4, GW14).** Hover opens the list in place, toward the screen centre. Each row shows the CLI logo, the title, the state glyph and label, and the running tool (`currentTool`) when there is one. The list lists every live session, scrolls past a fixed height, and closes when the pointer leaves or Esc is pressed.
@@ -91,7 +93,8 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
 
 ## Inferred, not decided
 
-- **Running colour.** A yellow working colour sits close to SpaceVibe's amber `warn`. Each tone on the mock keeps the working and waiting hues apart. Source: agent's concern under GW7 and GW19.
+- **Waiting glyph.** Phosphor has no speech bubble with a question mark, so waiting uses the bubble with dots, as shown on the mock. Source: agent's choice under GW20.
+- **The muted working colour sits near amber `warn`.** The state tokens may need a small hue shift to pass `HuePolicyTests`. Source: agent's concern under GW19.
 - **Dashed-circle shape for `unmeasurable`**, from Orca, in the grey of GW9. Source: agent's reconciliation of GW7 and GW9.
 - **A disconnected screen** sends the widget to the same slot on the main screen. Source: agent's choice.
 - **Host app lookup.** The shell walks parent pids in process with `sysctl(KERN_PROC_PID)` and stops at the first pid that `NSRunningApplication` knows as a regular app. This starts no process (S-R4). Source: agent's choice.
@@ -99,7 +102,7 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
 
 ## Mock
 
-`~/scratch/spacevibe-reins/session-glance-widget.html` (outside the repo, F4). It shows every state of GW-R2 to GW-R5, all 8 slots, the drag overlay and worst-case data. The owner picks the collapsed form there.
+`~/scratch/spacevibe-reins/session-glance-widget.html` (outside the repo, F4). After the GW20 pick it draws only the picked form, glyphs and tone: every state of GW-R2 to GW-R5, all 8 slots, the drag overlay and worst-case data.
 
 ## Out of scope
 
