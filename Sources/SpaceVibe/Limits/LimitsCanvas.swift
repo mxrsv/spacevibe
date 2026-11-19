@@ -59,7 +59,12 @@ struct LimitsCanvas: View {
     @Environment(ShellModel.self) private var shell
     @Environment(ToastCenter.self) private var toasts
     @Environment(\.openStateStore) private var store
-    @State private var picked: String?
+    /// The current window row, kept on the model so the glance widget's countdown can select one (LC-R7,
+    /// `ShellModel.openLimits(windowID:in:)`).
+    private var picked: String? {
+        get { model.selectedID }
+        nonmutating set { model.selectedID = newValue }
+    }
     /// The weekly countdown lead from Settings > Limits; a change shows at the next draw.
     private let countdown = LimitsCountdownPreferences.shared
 

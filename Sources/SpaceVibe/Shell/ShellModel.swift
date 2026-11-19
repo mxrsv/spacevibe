@@ -50,6 +50,13 @@ final class ShellModel {
         activity.model.open(itemID)
     }
 
+    /// The glance widget's countdown (LC-R7): the Limits page with that window current. `windowID` is a Limits entry id
+    /// (`cli:windowID`, the same as `GlanceCountdownWindow.id`); `limits` is the model the page reads.
+    func openLimits(windowID: String, in limits: LimitsModel) {
+        select(TabRegistry.limitsID)
+        limits.selectedID = windowID
+    }
+
     func openSettings() {
         isSettingsOpen = true
         isPaletteOpen = false

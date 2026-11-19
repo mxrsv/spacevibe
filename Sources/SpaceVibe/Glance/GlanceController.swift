@@ -18,6 +18,11 @@ import SwiftUI
 ///   `GlancePointerTracker`). The list closes and stays closed, the strip follows the pointer, and each connected screen
 ///   gets a click-through overlay with its 8 slots, the one `GlanceSlot.nearest` picks highlighted. The release saves that
 ///   slot, removes the overlays and moves the strip into it (`snapDuration`, none under Reduce Motion).
+/// - Countdown (spec `docs/specs/2026-11-19-limit-reset-countdown.md`, LC-R5 to LC-R8): with the switch on, the limits are
+///   read every `GlanceLimitsFeed.readInterval`. While a window counts, a third panel, the pill, sits beside the strip
+///   (`GlanceSlot.pillFrame`) and moves with it on a drag and a snap; hovering it opens the same list, which then ends with
+///   the Limits group. The controller draws again on each change of the first clock and when the next window starts to count
+///   (`GlanceCountdown.nextWake`), never more often than once a second, and not at all with nothing counting soon.
 @MainActor
 final class GlanceController {
     static let shared = GlanceController()
@@ -26,8 +31,11 @@ final class GlanceController {
     var shell: ShellModel?
 
     private let preferences: GlancePreferences
+    private let countdown: LimitsCountdownPreferences
     private let makeCore: @MainActor () -> any CoreService
+    private let makeLimits: @MainActor () -> LimitsModel
     private var feed: GlanceFeed?
+    private var limitsFeed: GlanceLimitsFeed?
     private var openMainWindow: () -> Void = {}
     private var surfaces: Surfaces?
     private var presence = PopoverPresence()
@@ -37,11 +45,21 @@ final class GlanceController {
     private var drag: Drag?
     /// The strip's move into its slot after a release; a render that wants the same frame leaves it running.
     private var snapMove: (target: CGRect, task: Task<Void, Never>)?
+    /// The pill's frame with the strip's origin at zero, while a window counts; nil hides the pill.
+    private var pillOffset: CGRect?
+    /// The next draw the countdown asked for.
+    private var tick: (wake: Date, task: Task<Void, Never>)?
+    /// The pointer on the strip or on the pill: either one is the list's anchor (LC-R6).
+    private var overStrip = false
+    private var overPill = false
 
-    /// `makeCore` is asked once, at `start`; the app's Go core when nil.
-    init(preferences: GlancePreferences? = nil, makeCore: (@MainActor () -> any CoreService)? = nil) {
+    /// `makeCore` and `makeLimits` are asked once, at `start`; the app's Go core and its one `LimitsModel` when nil.
+    init(preferences: GlancePreferences? = nil, countdown: LimitsCountdownPreferences? = nil,
+         makeCore: (@MainActor () -> any CoreService)? = nil, makeLimits: (@MainActor () -> LimitsModel)? = nil) {
         self.preferences = preferences ?? .shared
+        self.countdown = countdown ?? .shared
         self.makeCore = makeCore ?? { AppEnvironment.shared.goCore }
+        self.makeLimits = makeLimits ?? { AppEnvironment.shared.limits }
     }
 
     /// True in a normal launch without `SPACEVIBE_TEST=1`: the gallery, headless shots and every test never show the live
@@ -57,6 +75,7 @@ final class GlanceController {
                openMainWindow: @escaping () -> Void) {
         guard feed == nil, Self.runs(in: mode, environment: environment) else { return }
         feed = GlanceFeed(core: makeCore())
+        limitsFeed = GlanceLimitsFeed(limits: makeLimits())
         self.openMainWindow = openMainWindow
         let center = NotificationCenter.default
         observers.append(center.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
@@ -76,6 +95,8 @@ final class GlanceController {
             _ = preferences.placement
             _ = feed.entries
             _ = feed.failure
+            _ = limitsFeed?.results
+            _ = countdown.weeklyLead
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 self?.sync()
@@ -88,16 +109,26 @@ final class GlanceController {
         guard let feed else { return }
         if preferences.isEnabled {
             if !feed.isRunning { feed.start() }
+            if limitsFeed?.isRunning == false { limitsFeed?.start() }
             render()
         } else {
             // `stop()` clears the feed, which is a change: call it only once, or it would wake this method again.
             if feed.isRunning { feed.stop() }
+            if limitsFeed?.isRunning == true { limitsFeed?.stop() }
             hide()
         }
     }
 
     private var route: GlanceClickRoute {
         .live { [weak self] itemID in self?.showActivity(itemID) }
+    }
+
+    /// LC-R7: SpaceVibe forward, its main window open, Limits with that window current.
+    private func showLimits(_ window: GlanceCountdownWindow) {
+        NSApp.activate()
+        openMainWindow()
+        guard let limits = limitsFeed?.limits else { return }
+        shell?.openLimits(windowID: window.id, in: limits)
     }
 
     /// GW6: SpaceVibe forward, its main window open, Activity at that session.
@@ -120,13 +151,18 @@ final class GlanceController {
         let surfaces = self.surfaces ?? makeSurfaces()
         let onScreen = surfaces.strip.isVisible && surfaces.strip.occlusionState.contains(.visible)
         let route = route
+        let now = Date()
+        let counting = GlanceCountdown.counting(limitsFeed?.results ?? [], now: now, weeklyLead: countdown.weeklyLead)
 
         surfaces.stripHost.rootView = GlanceStripView(strip: GlanceStrip(entries: feed.entries, slot: placed.slot), isOnScreen: onScreen,
                                                       open: { route.open($0) })
         let stripSize = Self.whole(surfaces.stripHost.fittingSize)
+        layoutPill(counting.first, now: now, slot: placed.slot, stripSize: stripSize)
+        defer { armTick() }
         if let drag {
             // The strip is under the pointer: new entries change its content and size, never its origin.
             Self.show(surfaces.strip, at: CGRect(origin: surfaces.strip.frame.origin, size: stripSize))
+            placePill()
             surfaces.list.orderOut(nil)
             refresh(drag)
             return
@@ -139,6 +175,7 @@ final class GlanceController {
             stopSnap()
             Self.show(surfaces.strip, at: stripFrame)
         }
+        placePill()
 
         guard presence.isOpen else {
             surfaces.list.orderOut(nil)
@@ -146,39 +183,119 @@ final class GlanceController {
         }
         let entries = feed.entries.all
         let note = feed.failure ?? GlanceWording.noSession
-        func list(width: CGFloat?, rowsHeight: CGFloat?) -> GlanceListView {
+        func list(width: CGFloat?, rowsHeight: CGFloat?, limits: [GlanceCountdownWindow] = counting) -> GlanceListView {
             GlanceListView(entries: entries, note: note, width: width, rowsHeight: rowsHeight, isOnScreen: onScreen,
-                           hint: { route.destination(of: $0) }, open: { route.open($0) })
+                           hint: { route.destination(of: $0) }, open: { route.open($0) },
+                           limits: limits, now: now, openLimit: { [weak self] in self?.showLimits($0) })
         }
-        // The list's own size first, unscrolled; a sentence wider than a list wraps at the list's width.
+        // The list's own size first, unscrolled; a bare sentence wider than a list wraps at the list's width.
         surfaces.measureHost.rootView = list(width: nil, rowsHeight: nil)
         var natural = Self.whole(surfaces.measureHost.fittingSize)
         var width: CGFloat?
-        if entries.isEmpty, natural.width > Metrics.Glance.listWidth {
+        let bare = entries.isEmpty && counting.isEmpty
+        if bare, natural.width > Metrics.Glance.listWidth {
             width = Metrics.Glance.listWidth
             surfaces.measureHost.rootView = list(width: width, rowsHeight: nil)
             natural = Self.whole(surfaces.measureHost.fittingSize)
-        } else if entries.isEmpty {
+        } else if bare {
             width = natural.width
         }
         let wanted = CGSize(width: natural.width, height: min(natural.height, Metrics.Glance.listMaxHeight))
-        let listFrame = placed.slot.listFrame(for: wanted, widgetFrame: stripFrame, in: placed.screen.visibleFrame)
+        // The list opens from the strip and the pill together, so it never covers the pill.
+        let anchor = pillOffset.map { stripFrame.union($0.offsetBy(dx: stripFrame.minX, dy: stripFrame.minY)) } ?? stripFrame
+        let listFrame = placed.slot.listFrame(for: wanted, widgetFrame: anchor, in: placed.screen.visibleFrame)
         let scrolls = !entries.isEmpty && listFrame.height < natural.height
-        surfaces.listHost.rootView = list(width: width,
-                                          rowsHeight: scrolls ? max(0, listFrame.height - 2 * Metrics.Glance.listPadding) : nil)
+        var rowsHeight: CGFloat?
+        if scrolls {
+            // The pinned Limits group keeps its height; the session rows get the rest.
+            var group: CGFloat = 0
+            if !counting.isEmpty {
+                surfaces.measureHost.rootView = list(width: width, rowsHeight: nil, limits: [])
+                group = natural.height - Self.whole(surfaces.measureHost.fittingSize).height
+            }
+            rowsHeight = max(0, listFrame.height - 2 * Metrics.Glance.listPadding - group)
+        }
+        surfaces.listHost.rootView = list(width: width, rowsHeight: rowsHeight)
         Self.show(surfaces.list, at: listFrame)
     }
 
     private func hide() {
         endDrag()
         stopSnap()
+        stopTick()
         settle?.cancel()
         presence = PopoverPresence()
+        overStrip = false
+        overPill = false
+        pillOffset = nil
         surfaces?.strip.orderOut(nil)
+        surfaces?.pill.orderOut(nil)
         surfaces?.list.orderOut(nil)
     }
 
-    /// The pointer entered or left the strip (`anchor`) or the list (`surface`).
+    // MARK: Countdown
+
+    /// Draws the pill for the window that resets first and keeps its frame beside a strip of `stripSize` in `slot`; with no
+    /// window counting, the pill leaves (LC-R5).
+    private func layoutPill(_ window: GlanceCountdownWindow?, now: Date, slot: GlanceSlot, stripSize: CGSize) {
+        guard let surfaces else { return }
+        guard let window else {
+            pillOffset = nil
+            surfaces.pill.orderOut(nil)
+            // A panel ordered out under the pointer reports no exit: the pointer has left the pill all the same.
+            if overPill { anchorHover(pill: false) }
+            return
+        }
+        surfaces.pillHost.rootView = GlanceCountdownPillView(window: window, now: now, axis: slot.axis,
+                                                             open: { [weak self] in self?.showLimits($0) })
+        let size = Self.whole(surfaces.pillHost.fittingSize)
+        pillOffset = slot.pillFrame(for: size, beside: CGRect(origin: .zero, size: stripSize))
+    }
+
+    /// The pill beside the strip where the strip is now: after a render, on each step of a drag and of a snap.
+    private func placePill() {
+        guard let surfaces else { return }
+        guard let pillOffset, surfaces.strip.isVisible else {
+            surfaces.pill.orderOut(nil)
+            return
+        }
+        Self.show(surfaces.pill, at: pillOffset.offsetBy(dx: surfaces.strip.frame.minX, dy: surfaces.strip.frame.minY))
+    }
+
+    /// Schedules the next draw the countdown needs (`GlanceCountdown.nextWake`): the next clock change while a window counts,
+    /// the start of the next countdown otherwise, nothing with no window ahead. A wake already set for that moment stays.
+    private func armTick() {
+        guard preferences.isEnabled, let limitsFeed,
+              let wake = GlanceCountdown.nextWake(limitsFeed.results, now: Date(), weeklyLead: countdown.weeklyLead) else {
+            stopTick()
+            return
+        }
+        if let tick, abs(tick.wake.timeIntervalSince(wake)) < GlanceCountdown.wakeSlack { return }
+        stopTick()
+        let task = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(0, wake.timeIntervalSinceNow)))
+            guard !Task.isCancelled, let self else { return }
+            tick = nil
+            render()
+        }
+        tick = (wake, task)
+    }
+
+    private func stopTick() {
+        tick?.task.cancel()
+        tick = nil
+    }
+
+    /// The pointer entered or left the strip or the pill; the list's anchor is both together.
+    private func anchorHover(strip: Bool? = nil, pill: Bool? = nil) {
+        let before = overStrip || overPill
+        if let strip { overStrip = strip }
+        if let pill { overPill = pill }
+        let inside = overStrip || overPill
+        if inside != before { pointer(.anchorHover(inside)) }
+    }
+
+    /// The pointer entered or left the anchor (the strip or the pill) or the list (`surface`).
     private func pointer(_ event: PopoverPresence.Event) {
         // The pointer rides on the strip during a drag: the list stays closed (GW-R7).
         guard drag == nil else { return }
@@ -199,7 +316,8 @@ final class GlanceController {
 
     private func makeSurfaces() -> Surfaces {
         let made = Surfaces()
-        made.stripHost.onPointer = { [weak self] inside in self?.pointer(.anchorHover(inside)) }
+        made.stripHost.onPointer = { [weak self] inside in self?.anchorHover(strip: inside) }
+        made.pillHost.onPointer = { [weak self] inside in self?.anchorHover(pill: inside) }
         made.listHost.onPointer = { [weak self] inside in self?.pointer(.surfaceHover(inside)) }
         made.strip.drag = GlanceDragHandlers(began: { [weak self] in self?.beginDrag(at: $0) },
                                              moved: { [weak self] in self?.dragMoved(to: $0) },
@@ -231,6 +349,7 @@ final class GlanceController {
     private func dragMoved(to pointer: CGPoint) {
         guard let drag, let surfaces else { return }
         surfaces.strip.setFrameOrigin(drag.session.stripOrigin(at: pointer))
+        placePill()
         let target = drag.session.target(at: pointer)
         guard target != drag.target else { return }
         drag.target = target
@@ -263,7 +382,7 @@ final class GlanceController {
     }
 
     /// One overlay per screen of the session, over its visible frame; overlays of screens that left are removed. The strip
-    /// is ordered back above them.
+    /// and the pill are ordered back above them.
     private func draw(_ drag: Drag) {
         var added = false
         for screen in drag.session.screens {
@@ -282,7 +401,10 @@ final class GlanceController {
             overlay.panel.orderOut(nil)
             drag.overlays[id] = nil
         }
-        if added { surfaces?.strip.orderFrontRegardless() }
+        if added {
+            if surfaces?.pill.isVisible == true { surfaces?.pill.orderFrontRegardless() }
+            surfaces?.strip.orderFrontRegardless()
+        }
     }
 
     /// The widget's size in each axis with the current entries, for the slots' outlines.
@@ -315,12 +437,14 @@ final class GlanceController {
             while !Task.isCancelled {
                 let progress = min(1, (clock.now - begin) / duration)
                 panel.setFrameOrigin(GlanceSnap.origin(from: from.origin, to: frame.origin, progress: progress))
+                self?.placePill()
                 if progress >= 1 { break }
                 try? await Task.sleep(for: .seconds(Metrics.Glance.snapFrame))
             }
             guard !Task.isCancelled, let self else { return }
             snapMove = nil
             Self.show(panel, at: frame)
+            placePill()
         }
         snapMove = (frame, task)
     }
@@ -345,10 +469,13 @@ final class GlanceController {
     @MainActor
     private final class Surfaces {
         let strip = GlancePanel()
+        let pill = GlancePanel()
         let list = GlancePanel()
         let stripHost = GlanceHostingView(rootView: GlanceStripView(strip: GlanceStrip(entries: .empty, slot: .defaultSlot), isOnScreen: false,
                                                                     open: { _ in }))
         let listHost = GlanceHostingView(rootView: Surfaces.blankList)
+        /// Nil until a window counts.
+        let pillHost = GlanceHostingView<GlanceCountdownPillView?>(rootView: nil)
         let measureHost = NSHostingView(rootView: Surfaces.blankList)
         let measureStrip = NSHostingView(rootView: GlanceStripView(strip: GlanceStrip(entries: .empty, slot: .defaultSlot), isOnScreen: false,
                                                                    open: { _ in }))
@@ -359,6 +486,7 @@ final class GlanceController {
 
         init() {
             strip.contentView = stripHost
+            pill.contentView = pillHost
             list.contentView = listHost
         }
     }

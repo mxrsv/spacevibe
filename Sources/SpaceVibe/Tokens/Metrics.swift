@@ -607,5 +607,20 @@ extension Metrics {
         /// The widget's move into its slot on release: 0.18 s, stepped at most 60 times a second.
         static let snapDuration: TimeInterval = 0.18
         static let snapFrame: TimeInterval = 1.0 / 60
+        /// The reset countdown's ring around the CLI logo (LC10): 22 across, its stroke 2, the logo 12 inside it (the mock's
+        /// 20 and 10, raised so the logo is not drawn under the smallest icon size).
+        static let ringSide: CGFloat = 22
+        static let ringStroke: CGFloat = 2
+        /// The countdown pill: as high as the strip (the ring 4 inside its edge), 10 after the label; its parts 6 apart. In a
+        /// column, as wide as the strip, 7 under the stacked clock, its parts 4 apart.
+        static let pillPadding = EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 10)
+        static let pillSpacing: CGFloat = 6
+        static let pillColumnPadding = EdgeInsets(top: 4, leading: 4, bottom: 7, trailing: 4)
+        static let pillColumnSpacing: CGFloat = 4
+        /// The hover list's pinned Limits group: 9 under the last session row, on a background step 2 inside its rows; a row
+        /// 6 above and below, 8 at the sides.
+        static let limitsGroupGap: CGFloat = 9
+        static let limitsWellPadding: CGFloat = 2
+        static let limitRowPadding = EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)
     }
 }

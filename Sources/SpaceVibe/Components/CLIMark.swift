@@ -39,8 +39,9 @@ extension CoreLimitsCLI {
 /// The transparent layout slot keeps existing row alignment and glyph sizes. Decorative: the name is beside it.
 struct CLIMark: View {
     /// `glyph` is the bare mark at 14 beside 12 pt text; `control` the bare mark at 16 beside 13 pt text (a band header's
-    /// lead, a row's logo in v5); `logo` the bare mark at 20 (a logo toggle, a popover's head).
-    enum Size { case large, medium, small, glyph, control, logo }
+    /// lead, a row's logo in v5); `logo` the bare mark at 20 (a logo toggle, a popover's head); `ring` the bare mark at 12
+    /// inside the reset countdown's ring (the glance widget).
+    enum Size { case large, medium, small, glyph, control, logo, ring }
 
     let cli: CoreLimitsCLI
     var size: Size = .large
@@ -61,7 +62,7 @@ struct CLIMark: View {
             let side = switch size {
             case .large: Metrics.cliMarkSize
             case .medium: Metrics.cliMarkMediumSize
-            case .small, .glyph, .control, .logo: Metrics.cliMarkSmallSize
+            case .small, .glyph, .control, .logo, .ring: Metrics.cliMarkSmallSize
             }
             glyph(side: side * Metrics.cliMarkGlyphFraction)
                 .frame(width: side, height: side)
@@ -75,6 +76,7 @@ struct CLIMark: View {
         case .glyph: Metrics.iconInline
         case .control: Metrics.iconControl
         case .logo: Metrics.LogoToggle.logo
+        case .ring: Metrics.iconSmall
         case .large, .medium, .small: nil
         }
     }
