@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/config"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/hashes"
@@ -329,7 +330,7 @@ func TestOneScanAtATime(t *testing.T) {
 func TestNeverTouchesRealHome(t *testing.T) {
 	h := newTempHome(t)
 	r := h.roots()
-	for _, p := range []string{r.Claude.Logs, r.Codex.Logs, CachePath(r.Data)} {
+	for _, p := range []string{r.CLIs[clis.Claude].Logs, r.CLIs[clis.Codex].Logs, CachePath(r.Data)} {
 		if !strings.HasPrefix(p, h.root) {
 			t.Errorf("%q is outside the temp home", p)
 		}

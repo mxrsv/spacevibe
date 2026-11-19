@@ -5,28 +5,14 @@
 //
 // Ported from Sources/ReinsCore/UsageScanner.swift, UsageScanTypes.swift, UsageScanLines.swift,
 // UsageScanAggregate.swift and UsageScanCache.swift. The package sits below internal/inventory (which
-// attaches the result to its rows), so it names the two CLIs itself.
+// attaches the result to its rows). Which CLIs are scanned comes from the registry (clis.Usage); each one's log
+// lines are read by its parser (adapters.go).
 package usage
 
-// CLI is one of the two CLIs whose logs are read. The wire value is "claude" or "codex".
-type CLI string
+import "spacevibe.dev/core/internal/clis"
 
-// The CLIs.
-const (
-	Claude CLI = "claude"
-	Codex  CLI = "codex"
-)
-
-// CLIs lists both CLIs in wire order.
-var CLIs = [...]CLI{Claude, Codex}
-
-// Other is the other CLI.
-func (c CLI) Other() CLI {
-	if c == Claude {
-		return Codex
-	}
-	return Claude
-}
+// CLI is a CLI id; its wire value is the registry id ("claude", "codex").
+type CLI = clis.ID
 
 // NameUsage is what the logs say about one skill or agent name: in how many sessions it was used, and on
 // which days (YYYY-MM-DD, sorted).
@@ -58,18 +44,11 @@ func emptyTotals() CLITotals {
 	return CLITotals{Skill: map[string]NameUsage{}, Agent: map[string]NameUsage{}, Hook: map[string]HookTotals{}}
 }
 
-// Totals holds the totals of both CLIs.
+// Totals holds the totals of both CLIs. The fixed members are the wire shape; read and write them through For and
+// set (wire-slots.go).
 type Totals struct {
 	Claude CLITotals `json:"claude"`
 	Codex  CLITotals `json:"codex"`
-}
-
-// For returns the totals of one CLI.
-func (t Totals) For(cli CLI) CLITotals {
-	if cli == Claude {
-		return t.Claude
-	}
-	return t.Codex
 }
 
 // LogWindow is the span of logs scanned for one CLI. Oldest is the first timestamp's day; Newest is the
@@ -80,21 +59,13 @@ type LogWindow struct {
 	Newest *int64  `json:"newest"`
 }
 
-// Windows holds the log window of both CLIs.
+// Windows holds the log window of both CLIs, one fixed member each (wire-slots.go).
 type Windows struct {
 	Claude LogWindow `json:"claude"`
 	Codex  LogWindow `json:"codex"`
 }
 
-// For returns the window of one CLI.
-func (w Windows) For(cli CLI) LogWindow {
-	if cli == Claude {
-		return w.Claude
-	}
-	return w.Codex
-}
-
-// Sessions counts the distinct sessions per CLI.
+// Sessions counts the distinct sessions per CLI, one fixed member each (wire-slots.go).
 type Sessions struct {
 	Claude int `json:"claude"`
 	Codex  int `json:"codex"`

@@ -32,32 +32,6 @@ const (
 	msgRefreshList = "This item no longer exists. Refresh the list."
 )
 
-var cliLabels = map[usage.CLI]string{inventory.Claude: "Claude Code", inventory.Codex: "Codex"}
-
-func label(cli usage.CLI) string {
-	if l, ok := cliLabels[cli]; ok {
-		return l
-	}
-	return string(cli)
-}
-
-func labels(clis []usage.CLI) string {
-	parts := make([]string, len(clis))
-	for i, cli := range clis {
-		parts[i] = label(cli)
-	}
-	return strings.Join(parts, " and ")
-}
-
-func events(cli usage.CLI) []string { return inventory.Events()[string(cli)] }
-
-func (tx *Tx) cliRoots(cli usage.CLI) roots.CLIRoots {
-	if cli == inventory.Claude {
-		return tx.r.Claude
-	}
-	return tx.r.Codex
-}
-
 func itoa(n int) string { return strconv.Itoa(n) }
 
 // dedupe drops a repeated CLI, keeping the first of each: a list like [claude, claude] would otherwise create the same
@@ -143,9 +117,9 @@ func removeItem(ctx context.Context, r roots.Roots, id string) (Entry, error) {
 	})
 }
 
-// CopyToOther copies a skill, an agent or a hook to the other CLI. A plugin or project item may be copied; only
-// removal is refused. A hook is copied into Claude Code when it knows the event, never into Codex: Codex loading a hook
-// SpaceVibe wrote is unverified (spec, "To verify"), and the approved Loadout mock offers no such copy. The Node core throws
+// CopyToOther copies a skill, an agent or a hook to the other CLI SpaceVibe writes (copyTarget). A plugin or project item may be copied; only
+// removal is refused. A hook is copied only into a CLI whose writer takes copied hooks (Claude Code) and only when it
+// knows the event, never into Codex: Codex loading a hook SpaceVibe wrote is unverified (spec, "To verify"), and the approved Loadout mock offers no such copy. The Node core throws
 // a TypeError for every hook copy, so there is nothing to mirror.
 func CopyToOther(r roots.Roots, id string) (Entry, error) {
 	return copyToOther(context.Background(), r, id)
@@ -158,11 +132,22 @@ func copyToOther(ctx context.Context, r roots.Roots, id string) (Entry, error) {
 			return Entry{}, err
 		}
 		if f.hook != nil {
-			target := f.hook.CLI.Other()
-			if err := need(target == inventory.Claude, "SpaceVibe does not copy hooks into Codex."); err != nil {
+			target, err := copyTarget(f.hook.CLI)
+			if err != nil {
 				return Entry{}, err
 			}
-			if err := need(slices.Contains(events(target), f.hook.Event), label(target)+" has no "+f.hook.Event+" event."); err != nil {
+			writer, err := writers.For(target)
+			if err != nil {
+				return Entry{}, err
+			}
+			if err := need(writer.takesCopiedHooks(), "SpaceVibe does not copy hooks into "+label(target)+"."); err != nil {
+				return Entry{}, err
+			}
+			events, err := inventory.EventsOf(target)
+			if err != nil {
+				return Entry{}, err
+			}
+			if err := need(slices.Contains(events, f.hook.Event), label(target)+" has no "+f.hook.Event+" event."); err != nil {
 				return Entry{}, err
 			}
 			return tx.addHook([]usage.CLI{target}, f.hook.Event, f.hook.Matcher, f.hook.Command, f.hook.Timeout)
@@ -193,7 +178,11 @@ func (tx *Tx) addSkill(clis []usage.CLI, name, description, body string) (Entry,
 	clis = dedupe(clis)
 	text := skillText(name, description, body)
 	ops, err := tx.createAll(clis, func(cli usage.CLI) (createPlan, error) {
-		dir := filepath.Join(tx.cliRoots(cli).Skills, name)
+		folders, err := tx.cliRoots(cli)
+		if err != nil {
+			return createPlan{}, err
+		}
+		dir := filepath.Join(folders.Skills, name)
 		if err := need(!pathExists(dir), label(cli)+" already has a skill named "+name+".", coreerr.StatusConflict); err != nil {
 			return createPlan{}, err
 		}
@@ -237,7 +226,10 @@ func (tx *Tx) removeFile(item inventory.Item) (Entry, error) {
 	if err := tx.PrepareMutation(); err != nil {
 		return Entry{}, err
 	}
-	cli := tx.cliRoots(item.CLI)
+	cli, err := tx.cliRoots(item.CLI)
+	if err != nil {
+		return Entry{}, err
+	}
 	base := cli.Agents
 	if item.Kind == inventory.KindSkill {
 		base = cli.Skills
@@ -260,12 +252,19 @@ func (tx *Tx) removeFile(item inventory.Item) (Entry, error) {
 }
 
 func (tx *Tx) copyItem(item inventory.Item) (Entry, error) {
-	target := item.CLI.Other()
+	target, err := copyTarget(item.CLI)
+	if err != nil {
+		return Entry{}, err
+	}
 	if err := tx.PrepareMutation(); err != nil {
 		return Entry{}, err
 	}
+	folders, err := tx.cliRoots(target)
+	if err != nil {
+		return Entry{}, err
+	}
 	// The target CLI's own folder must exist: a copy never makes the folder of a CLI that is not installed.
-	if info, err := os.Stat(tx.cliRoots(target).Root); err != nil || !info.IsDir() {
+	if info, err := os.Stat(folders.Root); err != nil || !info.IsDir() {
 		return Entry{}, fail(label(target)+" is not installed on this Mac, so nothing was copied.", coreerr.StatusConflict)
 	}
 	name := hashes.Bare(item.Name)
@@ -280,7 +279,7 @@ func (tx *Tx) copyItem(item inventory.Item) (Entry, error) {
 		return Entry{}, fail("The "+string(item.Kind)+" \""+item.Name+"\" has a name SpaceVibe cannot use as a file name, so nothing was copied. Rename it in "+label(item.CLI)+" first.", coreerr.StatusConflict)
 	}
 	if item.Kind == inventory.KindSkill {
-		dir := filepath.Join(tx.cliRoots(target).Skills, name)
+		dir := filepath.Join(folders.Skills, name)
 		if err := need(!pathExists(dir), label(target)+" already has a skill named "+name+".", coreerr.StatusConflict); err != nil {
 			return Entry{}, err
 		}
@@ -325,11 +324,12 @@ type createPlan struct {
 // agentPlan says where a new agent goes and how it is written. It is a 409 when the file exists. copying refuses an
 // agent with no instructions: an empty developer_instructions is a Codex file Codex rejects (G-fix.17).
 func (tx *Tx) agentPlan(cli usage.CLI, name, description, instructions string, copying bool) (createPlan, error) {
-	ext := "toml"
-	if cli == inventory.Claude {
-		ext = "md"
+	writer, folders, err := tx.writerOf(cli)
+	if err != nil {
+		return createPlan{}, err
 	}
-	file := filepath.Join(tx.cliRoots(cli).Agents, name+"."+ext)
+	ext, text := writer.agentFile(name, description, instructions)
+	file := filepath.Join(folders.Agents, name+"."+ext)
 	if err := need(!pathExists(file), label(cli)+" already has an agent named "+name+".", coreerr.StatusConflict); err != nil {
 		return createPlan{}, err
 	}
@@ -338,7 +338,6 @@ func (tx *Tx) agentPlan(cli usage.CLI, name, description, instructions string, c
 			return createPlan{}, err
 		}
 	}
-	text := agentText(cli, name, description, instructions)
 	return createPlan{path: file, write: func() (bool, error) { return writeNewFile(file, text) }}, nil
 }
 

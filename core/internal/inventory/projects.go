@@ -3,7 +3,6 @@ package inventory
 import (
 	"cmp"
 	"context"
-	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -11,7 +10,6 @@ import (
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
 	"spacevibe.dev/core/internal/textjs"
-	"spacevibe.dev/core/internal/toml"
 )
 
 // Project discovery. Claude Code keeps no list of projects, so SpaceVibe looks where a path is already recorded:
@@ -34,27 +32,71 @@ const lineBreak = `\n\x0B\x0C\r\x{85}\x{2028}\x{2029}`
 
 var cwdPattern = regexp.MustCompile(`"cwd":"((?:[^"\\]|\\[^` + lineBreak + `])*)"`)
 
-// DiscoverProjects lists the absolute paths of the projects that have their own .claude folder.
-func DiscoverProjects(r roots.Roots) []string { return discoverProjects(context.Background(), r) }
+// DiscoverProjects lists the absolute paths of the projects that have a project folder of some CLI (.claude). A
+// Roots that lacks a registry CLI (one not built by roots.Resolve) finds none.
+func DiscoverProjects(r roots.Roots) []string {
+	found, _ := discoverProjects(context.Background(), r)
+	return found
+}
 
-// discoverProjects is DiscoverProjects that stops early when the context ends; the caller checks the
-// context afterwards, so a partial list is never used.
-func discoverProjects(ctx context.Context, r roots.Roots) []string {
-	globalClaude := realPath(r.Claude.Root)
+// discoverProjects is DiscoverProjects with the context and the binding error.
+func discoverProjects(ctx context.Context, r roots.Roots) ([]string, error) {
+	bound, err := bind(r)
+	if err != nil {
+		return nil, err
+	}
+	return discoverBound(ctx, bound), nil
+}
+
+// ProjectFolders are the CLI configuration folders (<project>/.claude) of the discovered projects: the folders a
+// write inside a project may touch.
+func ProjectFolders(r roots.Roots) []string {
+	bound, err := bind(r)
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, project := range discoverBound(context.Background(), bound) {
+		for _, b := range bound {
+			if folder, ok := b.adapter.projectFolder(); ok {
+				out = append(out, join(project, folder.Name))
+			}
+		}
+	}
+	return out
+}
+
+// discoverBound is DiscoverProjects that stops early when the context ends; the caller checks the context
+// afterwards, so a partial list is never used. Candidates come from every CLI in wire order.
+func discoverBound(ctx context.Context, bound []boundAdapter) []string {
+	type kept struct {
+		folder projectFolder
+		global string // the real path of the CLI's own root, which a project folder must not be
+	}
+	var folders []kept
+	var candidates []string
+	for _, b := range bound {
+		if folder, ok := b.adapter.projectFolder(); ok {
+			folders = append(folders, kept{folder, realPath(b.roots.Root)})
+		}
+		candidates = append(candidates, b.adapter.projectCandidates(ctx, b.roots)...)
+	}
 	seen := []string{}
 	known := map[string]struct{}{}
-	candidates := append(logCwds(ctx, r.Claude.Logs), codexProjectKeys(filepath.Join(r.Codex.Root, "config.toml"))...)
 	for _, path := range candidates {
 		if ctx.Err() != nil {
 			return seen
 		}
-		if !strings.HasPrefix(path, "/") || strings.Contains(path, "/.claude/worktrees/") {
+		if !strings.HasPrefix(path, "/") || slices.ContainsFunc(folders, func(k kept) bool { return k.folder.Worktrees != "" && strings.Contains(path, k.folder.Worktrees) }) {
 			continue
 		}
-		dir := join(path, ".claude")
-		// A .claude that cannot be looked up (a denied parent) is kept: Read reports the project as not readable.
-		there := isDirectory(dir) || pathPresence(dir) == unknown
-		if !there || realPath(dir) == globalClaude {
+		hasFolder := slices.ContainsFunc(folders, func(k kept) bool {
+			dir := join(path, k.folder.Name)
+			// A folder that cannot be looked up (a denied parent) is kept: Read reports the project as not readable.
+			there := isDirectory(dir) || pathPresence(dir) == unknown
+			return there && realPath(dir) != k.global
+		})
+		if !hasFolder {
 			continue
 		}
 		resolved := normalize(path)
@@ -143,19 +185,4 @@ func cwdInHead(path string) (cwd string, matched, valid bool) {
 	}
 	s, ok := doc.Root().StringValue()
 	return s, true, ok
-}
-
-func codexProjectKeys(configFile string) []string {
-	data, ok := readData(configFile, maxTextBytes)
-	if !ok {
-		return nil
-	}
-	doc := toml.Read(textjs.Repair(string(data)))
-	var out []string
-	for _, p := range doc.TablePaths([]string{"projects"}) {
-		if len(p) >= 2 {
-			out = append(out, p[1])
-		}
-	}
-	return out
 }

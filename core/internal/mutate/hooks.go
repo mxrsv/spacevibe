@@ -37,10 +37,20 @@ func (tx *Tx) addHook(clis []usage.CLI, event string, matcher *string, command s
 		return Entry{}, err
 	}
 	clis = dedupe(clis)
-	for _, cli := range clis {
-		if err := need(slices.Contains(events(cli), event), label(cli)+" has no "+event+" event."); err != nil {
+	files := make([]string, len(clis))
+	for i, cli := range clis {
+		folders, err := tx.cliRoots(cli)
+		if err != nil {
 			return Entry{}, err
 		}
+		events, err := inventory.EventsOf(cli)
+		if err != nil {
+			return Entry{}, err
+		}
+		if err := need(slices.Contains(events, event), label(cli)+" has no "+event+" event."); err != nil {
+			return Entry{}, err
+		}
+		files[i] = folders.HookFile
 	}
 	if matcher != nil {
 		trimmed := textjs.Trim(*matcher)
@@ -55,8 +65,7 @@ func (tx *Tx) addHook(clis []usage.CLI, event string, matcher *string, command s
 	}
 
 	var ops []Op
-	for _, cli := range clis {
-		file := tx.cliRoots(cli).HookFile
+	for _, file := range files {
 		edit, err := tx.ApplyJSON(file, nil, func(doc *ojson.Document) (*ojson.Document, error) {
 			return hookAdding(doc, file, event, matcher, hook)
 		})
@@ -76,7 +85,11 @@ func (tx *Tx) removeHook(hook inventory.Hook) (Entry, error) {
 	if err := tx.PrepareMutation(); err != nil {
 		return Entry{}, err
 	}
-	file := tx.cliRoots(hook.CLI).HookFile
+	folders, err := tx.cliRoots(hook.CLI)
+	if err != nil {
+		return Entry{}, err
+	}
+	file := folders.HookFile
 	var removed ojson.Value
 	var found bool
 	edit, err := tx.ApplyJSON(file, nil, func(doc *ojson.Document) (*ojson.Document, error) {
@@ -122,7 +135,11 @@ func (tx *Tx) removeDeadHooks(cli usage.CLI) (Entry, error) {
 	if err := need(len(dead) > 0, "No dead hooks to remove.", coreerr.StatusConflict); err != nil {
 		return Entry{}, err
 	}
-	file := tx.cliRoots(cli).HookFile
+	folders, err := tx.cliRoots(cli)
+	if err != nil {
+		return Entry{}, err
+	}
+	file := folders.HookFile
 	type removal struct {
 		hook  inventory.Hook
 		value ojson.Value

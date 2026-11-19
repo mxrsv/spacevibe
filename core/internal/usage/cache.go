@@ -77,7 +77,7 @@ func (r rawEntry) valid() (cachedFile, bool) {
 		return cachedFile{}, false
 	}
 	cli := CLI(*r.CLI)
-	if cli != Claude && cli != Codex {
+	if _, err := parsers.For(cli); err != nil { // an entry of a CLI that is not scanned is dropped
 		return cachedFile{}, false
 	}
 	rec := fileRecord{Skill: *r.Rec.Skill, Agent: *r.Rec.Agent, Hook: make(map[string]HookTotals, len(*r.Rec.Hook))}

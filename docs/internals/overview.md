@@ -19,6 +19,39 @@ Requirements: [spec](../specs/2026-11-02-reins.md) and [decision ledger](../spec
 5. A write (`loadout.*`, `rules.*`) takes the write lock, edits through the atomic-write path, records one journal entry and returns its reference. Undo is `journal.undo` on that id. The same write ends old history: the journal keeps at most 200 entries no older than 30 days, and each entry it drops takes its trash copy with it. Every journal write also sweeps `<data>/trash` under the lock: a folder older than 30 days that no remaining entry names, in any op of any kind, is deleted for good. A delete is only ever a folder directly inside `<data>/trash`, checked by the containment rule Undo uses; one that fails is retried by the next write. Stopping a session is not a journal write and cannot be undone.
 6. On stdin EOF the core cancels every in-flight request, waits at most 5 s (a write inside the lock finishes regardless) and exits 0.
 
+## CLI registry and adapters
+
+Every per-CLI fact of the core lives in one of two places ([spec MC-R1](../specs/2026-11-19-multi-cli.md)):
+
+- **The registry**, [`internal/clis`](../../core/internal/clis/registry.go): one `Descriptor` per CLI, pure data. It holds the id, the label, the `Layout` (root folder under `HOME`, the root variable such as `CLAUDE_CONFIG_DIR`, the skills, agents, hook, log and state file names) and the `Concepts` the CLI takes part in. [`config`](../../core/internal/config/config.go) reads each root variable the registry names, and [`roots.Resolve`](../../core/internal/roots/roots.go) places every layout. The registry imports no subsystem.
+- **One adapter per concept**, in the package that uses it, in files named for the CLI (`claude.go`, `codex.go`, `gemini.go`). Each package defines its own small interface and builds its table once with [`clis.NewAdapters`](../../core/internal/clis/adapters.go). There is no `init()` registration.
+
+| Concept | Interface | Table |
+| --- | --- | --- |
+| usage | `lineParser` | [usage/adapters.go](../../core/internal/usage/adapters.go) |
+| inventory | `inventoryAdapter` (`cliInventory`, `cliProjects`) | [inventory/adapters.go](../../core/internal/inventory/adapters.go) |
+| mutate | `cliWriter` | [mutate/writers.go](../../core/internal/mutate/writers.go) |
+| activity | `activityAdapter` (`logFolder`, `sessionSource`, `stopper`) | [activity/adapters.go](../../core/internal/activity/adapters.go) |
+| limits | `reader` | [limits/adapters.go](../../core/internal/limits/adapters.go) |
+| process match | `proc.CodexMatcher`, embedded in `proc.Adapter` | [proc/adapter.go](../../core/internal/proc/adapter.go) |
+
+Shared code loops over `InOrder()`, which follows the registry order, and never compares a CLI id. The exceptions are the fixed `claude`/`codex` members of the usage and inventory wire objects, which only [usage/wire-slots.go](../../core/internal/usage/wire-slots.go) and [inventory/wire-slots.go](../../core/internal/inventory/wire-slots.go) map. Rules and the status line belong to one CLI by nature, so they look up their CLI's folders with `Roots.CLI` and have no adapter table.
+
+**A missing adapter means the concept is absent, never a fallback.** `Adapters.For` and `Roots.CLI` return an error that wraps `clis.ErrUnknownCLI` for an id with no entry, or `clis.ErrConceptAbsent` for a CLI that lacks the concept. Code that once read an unknown id as Codex now returns that error: the fold, the file grouping, the mutate folders, and the Totals, Windows and Cells lookups. `activity.stop` and `loadout.removeDeadHooks` refuse such an id with the same sentence as before (`cli must be claude or codex.`), built from the registry. Do not add a `default:` branch that picks a CLI, and do not skip an id silently.
+
+**Traps.**
+
+- **The registry order is the wire order.** Reports, the limits list and the inventory read follow it, so reordering entries changes the goldens.
+- **Gemini CLI is an entry with only the limits concept.** `Roots.CLIs` holds its folder, with every other path empty. Code that ranges over `Roots.CLIs` must not assume a CLI has skills or logs. Range over a concept's adapters instead.
+- **A table and the registry can drift.** Each package's `Test…MatchRegistry` runs `Check`, which fails when a CLI lists a concept with no adapter, or when an adapter exists for a CLI without the concept.
+
+**Adding a CLI:**
+
+1. Add an entry to [registry.go](../../core/internal/clis/registry.go). Its position is its wire position. Set `RootEnv` only when the CLI documents such a variable. List only the concepts it really has.
+2. For each listed concept, add `<cli>.go` in that package with the adapter, plus one line in the package's table. A CLI whose sessions come from the process table also gets a matcher interface in `proc/<cli>.go`. Embed it in `proc.Adapter` and implement it on `System` and `Fixture`.
+3. Run `cd core && SPACEVIBE_TEST=1 go test ./...`. The `MatchRegistry` tests check the wiring. `TestEveryUsageCLIHasAWireSlot` and `TestEveryInventoryCLIHasAWireSlot` fail for any new usage or inventory CLI until those wire objects become maps keyed by CLI id.
+4. Give the CLI its synthetic fixture under the fixture home, and update the goldens on purpose ([Where the fixtures and goldens live](#where-the-fixtures-and-goldens-live)).
+
 ## Where the fixtures and goldens live
 
 | What | Where |

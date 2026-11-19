@@ -3,11 +3,9 @@ package inventory
 import (
 	"slices"
 	"strconv"
-	"strings"
 
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/ojson"
-	"spacevibe.dev/core/internal/roots"
 )
 
 // Hooks.
@@ -127,65 +125,4 @@ func timeoutOf(hook ojson.Value) *float64 {
 		return nil
 	}
 	return &f
-}
-
-// Plugins.
-
-type plugin struct{ name, path string }
-
-// plugins are the enabled Claude plugins whose install folder still exists. Read-only: SpaceVibe never changes a
-// plugin.
-func plugins(r roots.Roots, settings ojson.Value, haveSettings bool, problems *[]string) []plugin {
-	file := join(r.Claude.Root, "plugins", "installed_plugins.json")
-	installed, status := readJSON(file)
-	if status != jsonValue {
-		if reason := unusableReason(status); reason != "" {
-			*problems = append(*problems, file+" "+reason+", so plugin skills, agents and hooks are not shown.")
-		}
-		return nil
-	}
-	pluginsValue, ok := installed.Member("plugins")
-	if !ok {
-		return nil
-	}
-	entries, ok := pluginsValue.ObjectValue()
-	if !ok {
-		return nil
-	}
-	var enabled ojson.Value
-	haveEnabled := false
-	if haveSettings {
-		enabled, haveEnabled = settings.Member("enabledPlugins")
-	}
-	var out []plugin
-	seen := map[string]struct{}{}
-	for _, entry := range entries {
-		if _, dup := seen[entry.Key]; dup {
-			continue
-		}
-		seen[entry.Key] = struct{}{}
-		value, _ := pluginsValue.Member(entry.Key)
-		if !haveEnabled {
-			continue
-		}
-		flag, ok := enabled.Member(entry.Key)
-		if on, isBool := flag.BoolValue(); !ok || !isBool || !on {
-			continue
-		}
-		first, ok := value.Element(0)
-		if !ok {
-			continue
-		}
-		pv, ok := first.Member("installPath")
-		if !ok {
-			continue
-		}
-		path, ok := pv.StringValue()
-		if !ok || path == "" || !exists(path) {
-			continue
-		}
-		name, _, _ := strings.Cut(entry.Key, "@")
-		out = append(out, plugin{name, path})
-	}
-	return out
 }

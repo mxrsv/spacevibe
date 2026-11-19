@@ -14,17 +14,12 @@ package activity
 import (
 	"math"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/pricing"
 )
 
-// CLI is one of the two command line tools whose logs are read.
-type CLI string
-
-// The CLIs, ordered as their raw values sort ("claude" before "codex").
-const (
-	CLIClaude CLI = "claude"
-	CLICodex  CLI = "codex"
-)
+// CLI is a CLI id from the registry (clis.ID). Sessions sort by its raw value ("claude" before "codex").
+type CLI = clis.ID
 
 // SessionState is what a session is doing now.
 type SessionState string
@@ -209,14 +204,6 @@ func DefaultOptions() Options {
 		ToolQuietMs:      30_000,
 		EndedKeepMs:      15 * 60_000,
 	}
-}
-
-// limitCodes are the unmeasurable limits listed in every report, in this order.
-var limitCodes = []struct {
-	cli  CLI
-	code Reason
-}{
-	{CLIClaude, ReasonClaudePromptVsBusy}, {CLICodex, ReasonCodexToolSilent}, {CLICodex, ReasonCodexNoRollout}, {CLICodex, ReasonCodexHookRuns},
 }
 
 // usage is the token counts of one model, as the log folding sums them.

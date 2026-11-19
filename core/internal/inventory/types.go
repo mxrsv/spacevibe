@@ -1,5 +1,6 @@
-// Package inventory reads what is installed for Claude Code and Codex (skills, subagents and hooks, plugin
-// owned items, the .claude folders of discovered projects), attaches the usage cells the Matrix shows, and
+// Package inventory reads what is installed for each CLI with the inventory concept (skills, subagents and hooks,
+// plugin owned items, the .claude folders of discovered projects; per-CLI facts in claude.go and codex.go behind
+// adapters.go), attaches the usage cells the Matrix shows, and
 // builds the loadout.rows result. It never executes anything. Settings are read only for hooks, plugin flags
 // and skill overrides: no other value, in particular env, is kept or returned (S-R3).
 //
@@ -16,14 +17,8 @@ import (
 	"spacevibe.dev/core/internal/usage"
 )
 
-// CLI is claude or codex.
+// CLI is a CLI id from the registry (clis.ID).
 type CLI = usage.CLI
-
-// The CLIs.
-const (
-	Claude = usage.Claude
-	Codex  = usage.Codex
-)
 
 // Kind is the wire value of kind: skill, agent or hook.
 type Kind string
@@ -51,16 +46,10 @@ const (
 	CodexHooksReason = "Codex does not log hook runs"
 	// ScanNotFinished is the pending reason before the first scan has finished.
 	ScanNotFinished = "Usage scan has not finished"
+	// NotScannedReason is the unmeasurable reason of a CLI whose logs the usage scan does not read (no usage
+	// concept). No CLI on the wire today is in that state.
+	NotScannedReason = "SpaceVibe does not read this CLI's logs"
 )
-
-// Events are the hook events each CLI documents. Claude's list comes from its docs; Codex's from
-// observation only.
-func Events() map[string][]string {
-	return map[string][]string{
-		"claude": {"SessionStart", "UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "PostToolUseFailure", "Notification", "SubagentStart", "SubagentStop", "Elicitation", "ElicitationResult", "TeammateIdle", "PreCompact", "PostCompact", "Stop", "StopFailure", "SessionEnd"},
-		"codex":  {"SessionStart", "UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "SubagentStart", "SubagentStop", "Interrupt", "Stop", "SessionEnd"},
-	}
-}
 
 // Cell states.
 const (
@@ -156,18 +145,11 @@ func Unmeasurable(reason string) Cell { return Cell{State: StateUnmeasurable, Re
 // Missing is a missing cell.
 func Missing() Cell { return Cell{State: StateMissing} }
 
-// Cells holds one cell per CLI.
+// Cells holds one cell per CLI. The fixed members are the wire shape; read and write them through For and cellsOf
+// (wire-slots.go).
 type Cells struct {
 	Claude Cell `json:"claude"`
 	Codex  Cell `json:"codex"`
-}
-
-// For returns the cell of one CLI.
-func (c Cells) For(cli CLI) Cell {
-	if cli == Claude {
-		return c.Claude
-	}
-	return c.Codex
 }
 
 // Item is a skill or a subagent. The JSON names are the Node output's.
@@ -264,7 +246,7 @@ type FilterCounts struct {
 	Dead     int `json:"dead"`
 }
 
-// OnlyCLIs counts the rows present in one CLI only.
+// OnlyCLIs counts the rows present in one CLI only, one fixed member per CLI (wire-slots.go).
 type OnlyCLIs struct {
 	Claude int `json:"claude"`
 	Codex  int `json:"codex"`

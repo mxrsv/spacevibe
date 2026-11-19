@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"spacevibe.dev/core/internal/coreerr"
-	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/roots"
 	"spacevibe.dev/core/internal/usage"
 )
@@ -71,8 +70,8 @@ func (s *Service) RemoveDeadHooks(ctx context.Context, p CLIParams) (EntryResult
 	if err := ctx.Err(); err != nil {
 		return EntryResult{}, err
 	}
-	if p.CLI != inventory.Claude && p.CLI != inventory.Codex {
-		return EntryResult{}, coreerr.New("cli must be claude or codex.")
+	if _, err := writers.For(p.CLI); err != nil {
+		return EntryResult{}, coreerr.New("cli must be " + writableIDs() + ".")
 	}
 	entry, err := removeDeadHooks(ctx, s.roots, p.CLI)
 	return EntryResult{Entry: entry.Ref()}, err

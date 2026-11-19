@@ -5,9 +5,9 @@ import (
 	"sort"
 )
 
-// aggregate folds the per-file records into totals, session counts and the log window of each CLI. Files
+// aggregate folds the per-file records into totals, session counts and the log window of each CLI with a parser. Files
 // are visited in path order, so the float sum of hook durations does not depend on map order.
-func aggregate(files map[string]cachedFile, fileCount int) Result {
+func aggregate(files map[string]cachedFile, fileCount int) (Result, error) {
 	type names struct{ sessions, days map[string]struct{} }
 	type bucket struct {
 		skill, agent map[string]*names
@@ -16,9 +16,13 @@ func aggregate(files map[string]cachedFile, fileCount int) Result {
 	newBucket := func() *bucket {
 		return &bucket{skill: map[string]*names{}, agent: map[string]*names{}, hook: map[string]HookTotals{}}
 	}
-	buckets := map[CLI]*bucket{Claude: newBucket(), Codex: newBucket()}
-	sessions := map[CLI]map[string]struct{}{Claude: {}, Codex: {}}
-	windows := map[CLI]*LogWindow{Claude: {}, Codex: {}}
+	scanned := parsers.InOrder()
+	buckets := make(map[CLI]*bucket, len(scanned))
+	sessions := make(map[CLI]map[string]struct{}, len(scanned))
+	windows := make(map[CLI]*LogWindow, len(scanned))
+	for _, p := range scanned {
+		buckets[p.ID], sessions[p.ID], windows[p.ID] = newBucket(), map[string]struct{}{}, &LogWindow{}
+	}
 
 	paths := make([]string, 0, len(files))
 	for path := range files {
@@ -96,10 +100,21 @@ func aggregate(files map[string]cachedFile, fileCount int) Result {
 		}
 		return out
 	}
-	return Result{
-		Totals:   Totals{Claude: totals(Claude), Codex: totals(Codex)},
-		Sessions: Sessions{Claude: len(sessions[Claude]), Codex: len(sessions[Codex])},
-		Windows:  Windows{Claude: *windows[Claude], Codex: *windows[Codex]},
-		Files:    fileCount,
+	result := Result{Files: fileCount}
+	for _, p := range scanned {
+		t, err := result.Totals.slot(p.ID)
+		if err != nil {
+			return Result{}, err
+		}
+		n, err := result.Sessions.slot(p.ID)
+		if err != nil {
+			return Result{}, err
+		}
+		w, err := result.Windows.slot(p.ID)
+		if err != nil {
+			return Result{}, err
+		}
+		*t, *n, *w = totals(p.ID), len(sessions[p.ID]), *windows[p.ID]
 	}
+	return result, nil
 }

@@ -50,9 +50,9 @@ func FilterCountsOfRows(rows []FilterRow) FilterCounts {
 			groups[row.Key] = g
 			order = append(order, row.Key)
 		}
-		for _, cli := range [...]CLI{Claude, Codex} {
+		for _, cli := range wireCLIs {
 			if row.Cells != nil {
-				cell := row.Cells.For(cli)
+				cell, _ := row.Cells.For(cli) // every wire CLI has a member
 				if !cell.IsMissing() {
 					g.clis[cli] = true
 					if _, have := g.counted[cli]; !have {
@@ -66,13 +66,12 @@ func FilterCountsOfRows(rows []FilterRow) FilterCounts {
 		g.dead = g.dead || row.Dead
 	}
 	out := FilterCounts{All: len(order)}
+	only := map[CLI]int{}
 	for _, key := range order {
 		g := groups[key]
 		if len(g.clis) == 1 {
-			if g.clis[Claude] {
-				out.Only.Claude++
-			} else {
-				out.Only.Codex++
+			for cli := range g.clis {
+				only[cli]++
 			}
 		}
 		counted, allZero := 0, true
@@ -89,5 +88,6 @@ func FilterCountsOfRows(rows []FilterRow) FilterCounts {
 			out.Dead++
 		}
 	}
+	out.Only = onlyOf(only)
 	return out
 }

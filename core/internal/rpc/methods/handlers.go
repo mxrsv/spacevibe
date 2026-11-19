@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"spacevibe.dev/core/internal/activity"
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/limits"
 	"spacevibe.dev/core/internal/mutate"
@@ -79,11 +81,20 @@ type StopParams struct {
 }
 
 func (s *Services) activityStop(ctx context.Context, p StopParams) (activity.StopResult, error) {
-	if p.CLI != activity.CLIClaude && p.CLI != activity.CLICodex {
-		return activity.StopResult{}, coreerr.New("cli must be claude or codex.")
+	if _, err := clis.Require(p.CLI, clis.Activity); err != nil {
+		return activity.StopResult{}, coreerr.New("cli must be " + strings.Join(activityIDs(), " or ") + ".")
 	}
 	if p.ID == "" {
 		return activity.StopResult{}, coreerr.New("A session id is required.")
 	}
 	return s.activity.Stop(ctx, p.CLI, p.ID)
+}
+
+// activityIDs are the CLIs whose sessions can be stopped, from the registry.
+func activityIDs() []string {
+	var out []string
+	for _, id := range clis.IDsWith(clis.Activity) {
+		out = append(out, string(id))
+	}
+	return out
 }

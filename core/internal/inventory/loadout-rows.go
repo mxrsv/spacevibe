@@ -89,7 +89,7 @@ func buildLoadoutRows(raw Snapshot, in usage.Input, now time.Time, firstSeen map
 	flags := make(map[string]RowFlags, len(byKey))
 	for key, rows := range byKey {
 		c := FilterCountsOfRows(rows)
-		flags[key] = RowFlags{One: c.Only.Claude+c.Only.Codex > 0, NeverRan: c.NeverRan > 0, Dead: c.Dead > 0}
+		flags[key] = RowFlags{One: c.Only.total() > 0, NeverRan: c.NeverRan > 0, Dead: c.Dead > 0}
 	}
 
 	return LoadoutRows{

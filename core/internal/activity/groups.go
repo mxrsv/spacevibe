@@ -203,13 +203,18 @@ type fileGroup struct {
 	lastAt   float64
 }
 
-// groupFiles is the file history across logs; Label is the shortest suffix that still tells two files apart.
-func groupFiles(logs []logEntry, limit int) []FileRow {
+// groupFiles is the file history across logs; Label is the shortest suffix that still tells two files apart. Each
+// log's edits are read by its CLI's folder, so a log of a CLI with no Activity adapter is an error, never dropped.
+func groupFiles(logs []logEntry, limit int) ([]FileRow, error) {
 	var order []string
 	files := map[string]*fileGroup{}
 	seen := map[string]bool{}
 	for _, entry := range logs {
-		for _, e := range editsOf(entry.state) {
+		edits, err := editsOf(entry.state)
+		if err != nil {
+			return nil, err
+		}
+		for _, e := range edits {
 			if seen[e.id] {
 				continue
 			}
@@ -246,13 +251,11 @@ func groupFiles(logs []logEntry, limit int) []FileRow {
 	for i, f := range ordered {
 		clis := []CLI{}
 		for _, name := range textjs.SortedStrings(keysOf(f.clis)) {
-			if name == string(CLIClaude) || name == string(CLICodex) {
-				clis = append(clis, CLI(name))
-			}
+			clis = append(clis, CLI(name)) // every CLI here has an Activity adapter: editsOf checked it
 		}
 		rows[i] = FileRow{Path: f.path, Label: labels[i], Edits: f.edits, Sessions: len(f.sessions), Last: isoOrNil(f.lastAt), CLIs: clis, Projects: sortedKeys(f.projects)}
 	}
-	return rows
+	return rows, nil
 }
 
 func keysOf(set map[string]bool) []string {

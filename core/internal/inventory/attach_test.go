@@ -57,7 +57,8 @@ func (f cellsFixture) ready() Snapshot {
 }
 
 func cellOf(inv Snapshot, name string, cli CLI, itemCLI CLI) Cell {
-	return item(inv, name, itemCLI).Cells.For(cli)
+	cell, _ := item(inv, name, itemCLI).Cells.For(cli)
+	return cell
 }
 
 // Swift: InventoryTests.swift "usage cells" / "counted, with zero runs meaning never ran"

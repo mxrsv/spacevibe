@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/textjs"
@@ -76,7 +77,7 @@ func TestRemoveLinkedSkill(t *testing.T) {
 	h := newCopy(t)
 	h.write("shared/linked/SKILL.md", "---\nname: linked\ndescription: shared\n---\n")
 	h.symlink(h.path("shared/linked"), ".claude/skills/linked")
-	entry := must(RemoveItem(h.r, h.item("linked", inventory.KindSkill, inventory.Claude).ID))
+	entry := must(RemoveItem(h.r, h.item("linked", inventory.KindSkill, clis.Claude).ID))
 	if len(entry.Ops) != 1 || entry.Ops[0].Type() != "link-removed" || !exists(h.path("shared/linked/SKILL.md")) {
 		t.Errorf("ops %v", entry.Ops)
 	}
@@ -90,7 +91,7 @@ func TestRemoveLinkedSkill(t *testing.T) {
 func TestRemovedGoesToTrash(t *testing.T) {
 	h := newCopy(t)
 	original := h.read(".claude/skills/tdd/SKILL.md")
-	entry := must(RemoveItem(h.r, h.item("tdd", inventory.KindSkill, inventory.Claude).ID))
+	entry := must(RemoveItem(h.r, h.item("tdd", inventory.KindSkill, clis.Claude).ID))
 	moved, _ := entry.Ops[0].str("to")
 	if !strings.HasPrefix(moved, filepath.Join(h.r.Data, "trash")) {
 		t.Errorf("moved to %q", moved)
@@ -144,16 +145,16 @@ func TestReadOnlyItems(t *testing.T) {
 func TestNameRules(t *testing.T) {
 	h := newCopy(t)
 	for _, name := range []string{"../evil", "a/b", ".hidden", "UP", "", "-lead", "has space", strings.Repeat("a", 65)} {
-		_, err := AddSkill(h.r, []usage.CLI{inventory.Claude}, name, "x", "")
+		_, err := AddSkill(h.r, []usage.CLI{clis.Claude}, name, "x", "")
 		if m := wantErr(t, err, 400); m != "Use lowercase letters, numbers and dashes for the name." {
 			t.Errorf("%q: %q", name, m)
 		}
-		if _, err := AddAgent(h.r, []usage.CLI{inventory.Codex}, name, "x", ""); err == nil {
+		if _, err := AddAgent(h.r, []usage.CLI{clis.Codex}, name, "x", ""); err == nil {
 			t.Errorf("addAgent accepted %q", name)
 		}
 	}
-	must(AddSkill(h.r, []usage.CLI{inventory.Claude}, "9"+strings.Repeat("a", 63), "x", ""))
-	must(AddSkill(h.r, []usage.CLI{inventory.Claude}, "a-b-9", "x", ""))
+	must(AddSkill(h.r, []usage.CLI{clis.Claude}, "9"+strings.Repeat("a", 63), "x", ""))
+	must(AddSkill(h.r, []usage.CLI{clis.Claude}, "a-b-9", "x", ""))
 }
 
 // Swift: MutateTests.swift "a name that exists in the second CLI leaves nothing behind in the first"
@@ -162,11 +163,11 @@ func TestExistingNameInSecondCLI(t *testing.T) {
 	h.write(".codex/skills/codex-only/SKILL.md", "---\nname: codex-only\ndescription: c\n---\n")
 	h.write(".claude/agents/dup.md", "---\nname: dup\ndescription: d\n---\n")
 	before := h.tree()
-	_, err := AddSkill(h.r, []usage.CLI{inventory.Claude, inventory.Codex}, "codex-only", "x", "")
+	_, err := AddSkill(h.r, []usage.CLI{clis.Claude, clis.Codex}, "codex-only", "x", "")
 	if m := wantErr(t, err, 409); m != "Codex already has a skill named codex-only." {
 		t.Errorf("message %q", m)
 	}
-	_, err = AddAgent(h.r, []usage.CLI{inventory.Codex, inventory.Claude}, "dup", "x", "")
+	_, err = AddAgent(h.r, []usage.CLI{clis.Codex, clis.Claude}, "dup", "x", "")
 	wantErr(t, err, 409)
 	if !maps_equal(h.tree(), before) || len(historyOf(t, h.r)) != 0 {
 		t.Error("something was left behind")
@@ -178,7 +179,7 @@ func TestHookRollback(t *testing.T) {
 	h := newCopy(t)
 	h.write(".codex/hooks.json", "{broken")
 	before := h.tree()
-	_, err := AddHook(h.r, []usage.CLI{inventory.Claude, inventory.Codex}, "Stop", nil, "echo x", nil)
+	_, err := AddHook(h.r, []usage.CLI{clis.Claude, clis.Codex}, "Stop", nil, "echo x", nil)
 	wantErr(t, err, 409)
 	if !maps_equal(h.tree(), before) || len(historyOf(t, h.r)) != 0 {
 		t.Error("the first file was not put back, or an entry was recorded")
@@ -193,10 +194,10 @@ func TestHookValidation(t *testing.T) {
 		event, command string
 		message        string
 	}{
-		{[]usage.CLI{inventory.Claude}, "Stop", "   ", "Enter the command this hook runs."},
+		{[]usage.CLI{clis.Claude}, "Stop", "   ", "Enter the command this hook runs."},
 		{nil, "Stop", "echo", "Pick at least one CLI."},
-		{[]usage.CLI{inventory.Codex}, "TeammateIdle", "echo", "Codex has no TeammateIdle event."},
-		{[]usage.CLI{inventory.Claude, inventory.Codex}, "PostToolUseFailure", "echo", "Codex has no PostToolUseFailure event."},
+		{[]usage.CLI{clis.Codex}, "TeammateIdle", "echo", "Codex has no TeammateIdle event."},
+		{[]usage.CLI{clis.Claude, clis.Codex}, "PostToolUseFailure", "echo", "Codex has no PostToolUseFailure event."},
 	} {
 		_, err := AddHook(h.r, c.clis, c.event, nil, c.command, nil)
 		if m := wantErr(t, err, 400); m != c.message {
@@ -214,7 +215,7 @@ func TestCopyHook(t *testing.T) {
 	h.write(".codex/hooks.json", `{"hooks":{"Interrupt":[{"hooks":[{"type":"command","command":"echo bye"}]}],"Stop":[{"hooks":[{"type":"command","command":"echo stop-from-codex"}]}]}}`)
 	interrupt := h.hook(func(hk inventory.Hook) bool { return hk.Command == "echo bye" })
 	stop := h.hook(func(hk inventory.Hook) bool { return hk.Command == "echo stop-from-codex" })
-	claudeHook := h.hook(func(hk inventory.Hook) bool { return hk.CLI == inventory.Claude && hk.Event == "SessionStart" })
+	claudeHook := h.hook(func(hk inventory.Hook) bool { return hk.CLI == clis.Claude && hk.Event == "SessionStart" })
 
 	_, err := CopyToOther(h.r, interrupt.ID)
 	if m := wantErr(t, err, 400); m != "Claude Code has no Interrupt event." {
@@ -237,7 +238,7 @@ func TestCopiedSkillIsFresh(t *testing.T) {
 	h := newCopy(t)
 	var source inventory.Item
 	for _, it := range inventory.Read(h.r).Items {
-		if it.CLI == inventory.Claude && it.Kind == inventory.KindSkill && it.Removable {
+		if it.CLI == clis.Claude && it.Kind == inventory.KindSkill && it.Removable {
 			source = it
 			break
 		}
@@ -247,7 +248,7 @@ func TestCopiedSkillIsFresh(t *testing.T) {
 		t.Fatal(err)
 	}
 	must(CopyToOther(h.r, source.ID))
-	target := h.item(source.Name, inventory.KindSkill, inventory.Codex)
+	target := h.item(source.Name, inventory.KindSkill, clis.Codex)
 	info, err := os.Stat(filepath.Join(target.Path, "SKILL.md"))
 	if err != nil {
 		t.Fatal(err)
@@ -262,8 +263,8 @@ func TestAgentRoundTrip(t *testing.T) {
 	h := newCopy(t)
 	instructions := "Say \"hi\" \\ always.\nSecond line."
 	description := "Reads \"quotes\" and \\ slashes"
-	must(AddAgent(h.r, []usage.CLI{inventory.Claude}, "round", description, instructions))
-	toCodex := must(CopyToOther(h.r, h.item("round", inventory.KindAgent, inventory.Claude).ID))
+	must(AddAgent(h.r, []usage.CLI{clis.Claude}, "round", description, instructions))
+	toCodex := must(CopyToOther(h.r, h.item("round", inventory.KindAgent, clis.Claude).ID))
 	if toCodex.Label != "Copied agent round to Codex" {
 		t.Errorf("label %q", toCodex.Label)
 	}
@@ -275,7 +276,7 @@ func TestAgentRoundTrip(t *testing.T) {
 	if err := os.Remove(h.path(".claude/agents/round.md")); err != nil {
 		t.Fatal(err)
 	}
-	must(CopyToOther(h.r, h.item("round", inventory.KindAgent, inventory.Codex).ID))
+	must(CopyToOther(h.r, h.item("round", inventory.KindAgent, clis.Codex).ID))
 	markdown := h.read(".claude/agents/round.md")
 	if inventory.ParseFrontmatter(markdown)["description"] != description {
 		t.Errorf("markdown description in %q", markdown)
@@ -302,7 +303,7 @@ func TestJSText(t *testing.T) {
 func TestUndoAfterHandEdit(t *testing.T) {
 	h := newCopy(t)
 	deadBefore := h.deadClaudeHooks()
-	entry := must(RemoveDeadHooks(h.r, inventory.Claude))
+	entry := must(RemoveDeadHooks(h.r, clis.Claude))
 	if len(entry.Ops) != 2 || h.deadClaudeHooks() != 0 {
 		t.Fatalf("ops %d, dead %d", len(entry.Ops), h.deadClaudeHooks())
 	}
@@ -328,7 +329,7 @@ func valueIs(v ojson.Value, want string) bool {
 // Swift: MutateTests.swift "undo of one hook while a later hook stays"
 func TestUndoOlderHook(t *testing.T) {
 	h := newCopy(t)
-	one := []usage.CLI{inventory.Claude}
+	one := []usage.CLI{clis.Claude}
 	first := must(AddHook(h.r, one, "Stop", nil, "echo first", nil))
 	three := 3.0
 	second := must(AddHook(h.r, one, "Stop", nil, "echo second", &three))
@@ -384,7 +385,7 @@ func TestUndoNodeHookOps(t *testing.T) {
 // Swift: MutateTests.swift "no error or label quotes a secret from settings, even when the file is broken"
 func TestCanaryNeverLeaks(t *testing.T) {
 	h := newCopy(t)
-	claude := []usage.CLI{inventory.Claude}
+	claude := []usage.CLI{clis.Claude}
 	h.write(".claude/settings.json", `{"env": {"T": "`+canary+`"}, "hooks": `)
 	_, err := AddHook(h.r, claude, "Stop", nil, "echo x", nil)
 	if m := wantErr(t, err, 409); strings.Contains(m, canary) {

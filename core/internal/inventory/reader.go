@@ -7,144 +7,69 @@ import (
 	"strings"
 
 	"spacevibe.dev/core/internal/hashes"
-	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
 	"spacevibe.dev/core/internal/toml"
 )
 
-// Read lists the skills, agents and hooks of both CLIs, plugin-owned items, and the .claude folders of the
-// discovered projects. Every file that cannot be used becomes a plain sentence in Problems; nothing here
-// fails. It reads the disk synchronously. Ported from Inventory.read.
+// Read lists the skills, agents and hooks of every CLI with the inventory concept, what each keeps outside its root
+// folders (plugin-owned items), and the project folders of the discovered projects. Every file that cannot be used
+// becomes a plain sentence in Problems; nothing here fails. It reads the disk synchronously. Ported from
+// Inventory.read.
 func Read(r roots.Roots) Snapshot {
 	snapshot, _, _ := read(context.Background(), r)
 	return snapshot
 }
 
+// readAcc collects one read. otherHooks counts hooks of a type other than command (http, mcp_tool, prompt, agent),
+// which are not listed.
+type readAcc struct {
+	items      []Item
+	hooks      []Hook
+	problems   []string
+	otherHooks int
+}
+
 // read is Read plus the project folders it discovered, for the process-wide list (see Service). It looks at
-// the context between the CLIs, plugins and projects and returns its error when it ended.
+// the context between the CLIs, their extras and projects and returns its error when it ended. Order: every CLI's
+// root folders in wire order, then every CLI's extras, then the projects.
 func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
-	var (
-		items    []Item
-		hooks    []Hook
-		problems []string
-		// otherHooks counts hooks of a type other than command (http, mcp_tool, prompt, agent), which are not listed.
-		otherHooks int
-	)
-	clis := []struct {
-		cli CLI
-		r   roots.CLIRoots
-	}{{Claude, r.Claude}, {Codex, r.Codex}}
-	for _, c := range clis {
+	bound, err := bind(r)
+	if err != nil {
+		return Snapshot{}, nil, err
+	}
+	var acc readAcc
+	for _, b := range bound {
 		if err := ctx.Err(); err != nil {
 			return Snapshot{}, nil, err
 		}
-		switch pathPresence(c.r.Root) {
-		case missing:
-			continue
-		case unknown:
-			problems = append(problems, c.r.Root+" cannot be read, so its skills, agents and hooks cannot be shown.")
-			continue
-		}
-		items = append(items, readSkills(c.r.Skills, c.cli, nil, nil, &problems)...)
-		items = append(items, readAgents(c.r.Agents, c.cli, nil, nil, &problems)...)
-		config, status := readJSON(c.r.HookFile)
-		switch status {
-		case jsonValue:
-			hooks = append(hooks, parseHooks(config, c.cli, nil, c.r.HookFile, nil, &problems, &otherHooks)...)
-		case jsonInvalid:
-			problems = append(problems, c.r.HookFile+" is not valid JSON, so its hooks cannot be shown or changed.")
-		case jsonTooLarge:
-			problems = append(problems, c.r.HookFile+" is too large to read, so its hooks cannot be shown.")
-		case jsonUnreadable:
-			problems = append(problems, c.r.HookFile+" cannot be read, so its hooks cannot be shown.")
-		}
+		readRootFolders(b.id, b.roots, &acc)
 	}
-
-	claudeSettings, settingsStatus := readJSON(r.Claude.HookFile)
-	haveSettings := settingsStatus == jsonValue
-	if reason := unusableReason(settingsStatus); reason != "" {
-		// The hooks loop above already says the file cannot be used for hooks; this is what else depends on it.
-		problems = append(problems, r.Claude.HookFile+" "+reason+", so enabled plugins and skill overrides are not known.")
-	}
-	for _, plugin := range plugins(r, claudeSettings, haveSettings, &problems) {
+	for _, b := range bound {
+		b.adapter.readExtras(ctx, b.roots, &acc)
 		if err := ctx.Err(); err != nil {
 			return Snapshot{}, nil, err
 		}
-		owner := plugin.name
-		base := absolute(plugin.path)
-		items = append(items, readSkills(join(base, "skills"), Claude, &owner, nil, &problems)...)
-		items = append(items, readAgents(join(base, "agents"), Claude, &owner, nil, &problems)...)
-		hookFile := join(base, "hooks", "hooks.json")
-		config, status := readJSON(hookFile)
-		if status == jsonValue {
-			hooks = append(hooks, parseHooks(config, Claude, &owner, hookFile, nil, &problems, &otherHooks)...)
-		} else if reason := unusableReason(status); reason != "" {
-			problems = append(problems, hookFile+" "+reason+", so the hooks of the plugin "+owner+" are not shown.")
-		}
 	}
 
-	projects := discoverProjects(ctx, r)
+	projects := discoverBound(ctx, bound)
 	for _, path := range projects {
 		if err := ctx.Err(); err != nil {
 			return Snapshot{}, nil, err
 		}
-		project := path
-		dir := join(path, ".claude")
-		if pathPresence(dir) == unknown {
-			problems = append(problems, path+" cannot be read, so its skills, agents and hooks cannot be shown.")
-			continue
-		}
-		items = append(items, readSkills(join(dir, "skills"), Claude, nil, &project, &problems)...)
-		items = append(items, readAgents(join(dir, "agents"), Claude, nil, &project, &problems)...)
-		for _, name := range []string{"settings.json", "settings.local.json"} {
-			file := join(dir, name)
-			config, status := readJSON(file)
-			switch status {
-			case jsonValue:
-				hooks = append(hooks, parseHooks(config, Claude, nil, file, &project, &problems, &otherHooks)...)
-			case jsonInvalid:
-				problems = append(problems, file+" is not valid JSON, so its hooks cannot be shown.")
-			case jsonTooLarge:
-				problems = append(problems, file+" is too large to read, so its hooks cannot be shown.")
-			case jsonUnreadable:
-				problems = append(problems, file+" cannot be read, so its hooks cannot be shown.")
+		for _, b := range bound {
+			if folder, ok := b.adapter.projectFolder(); ok {
+				readProjectFolder(b.id, folder, path, &acc)
 			}
 		}
 	}
 
-	// Claude global skills carry the skillOverrides value of settings.json (nil when there is none).
-	var overrides ojson.Value
-	haveOverrides := false
-	if haveSettings {
-		overrides, haveOverrides = claudeSettings.Member("skillOverrides")
-	}
-	for i := range items {
-		item := &items[i]
-		if item.CLI == Claude && item.Kind == KindSkill && item.Scope == ScopeGlobal {
-			item.HasSkillOverride = true
-			item.SkillOverride = nil
-			if haveOverrides {
-				if v, ok := overrides.Member(item.Name); ok {
-					if s, ok := v.StringValue(); ok {
-						item.SkillOverride = &s
-					}
-				}
-			}
-		}
-	}
+	items, hooks, problems := acc.items, acc.hooks, acc.problems
+	markInOther(items)
 
-	names := map[string]struct{}{}
-	for _, item := range items {
-		names[string(item.CLI)+":"+item.Key()] = struct{}{}
-	}
-	for i := range items {
-		_, items[i].InOther = names[string(items[i].CLI.Other())+":"+items[i].Key()]
-	}
-
-	if otherHooks == 1 {
+	if acc.otherHooks == 1 {
 		problems = append(problems, "1 hook of another type is not shown.")
-	} else if otherHooks > 1 {
-		problems = append(problems, strconv.Itoa(otherHooks)+" hooks of other types are not shown.")
+	} else if acc.otherHooks > 1 {
+		problems = append(problems, strconv.Itoa(acc.otherHooks)+" hooks of other types are not shown.")
 	}
 
 	if items == nil {
@@ -159,10 +84,80 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 	if err := ctx.Err(); err != nil {
 		return Snapshot{}, nil, err
 	}
-	return Snapshot{
-		Items: items, Hooks: hooks, Problems: problems, Events: Events(),
-		Roots: map[string]string{string(Claude): r.Claude.Root, string(Codex): r.Codex.Root},
-	}, projects, nil
+	rootsByCLI := make(map[string]string, len(bound))
+	for _, b := range bound {
+		rootsByCLI[string(b.id)] = b.roots.Root
+	}
+	return Snapshot{Items: items, Hooks: hooks, Problems: problems, Events: Events(), Roots: rootsByCLI}, projects, nil
+}
+
+// readRootFolders reads one CLI's skills, agents and hook file from the folders its registry layout names.
+func readRootFolders(cli CLI, r roots.CLIRoots, acc *readAcc) {
+	switch pathPresence(r.Root) {
+	case missing:
+		return
+	case unknown:
+		acc.problems = append(acc.problems, r.Root+" cannot be read, so its skills, agents and hooks cannot be shown.")
+		return
+	}
+	acc.items = append(acc.items, readSkills(r.Skills, cli, nil, nil, &acc.problems)...)
+	acc.items = append(acc.items, readAgents(r.Agents, cli, nil, nil, &acc.problems)...)
+	config, status := readJSON(r.HookFile)
+	switch status {
+	case jsonValue:
+		acc.hooks = append(acc.hooks, parseHooks(config, cli, nil, r.HookFile, nil, &acc.problems, &acc.otherHooks)...)
+	case jsonInvalid:
+		acc.problems = append(acc.problems, r.HookFile+" is not valid JSON, so its hooks cannot be shown or changed.")
+	case jsonTooLarge:
+		acc.problems = append(acc.problems, r.HookFile+" is too large to read, so its hooks cannot be shown.")
+	case jsonUnreadable:
+		acc.problems = append(acc.problems, r.HookFile+" cannot be read, so its hooks cannot be shown.")
+	}
+}
+
+// readProjectFolder reads one CLI's configuration folder inside a project.
+func readProjectFolder(cli CLI, folder projectFolder, path string, acc *readAcc) {
+	project := path
+	dir := join(path, folder.Name)
+	if pathPresence(dir) == unknown {
+		acc.problems = append(acc.problems, path+" cannot be read, so its skills, agents and hooks cannot be shown.")
+		return
+	}
+	acc.items = append(acc.items, readSkills(join(dir, "skills"), cli, nil, &project, &acc.problems)...)
+	acc.items = append(acc.items, readAgents(join(dir, "agents"), cli, nil, &project, &acc.problems)...)
+	for _, name := range folder.HookFiles {
+		file := join(dir, name)
+		config, status := readJSON(file)
+		switch status {
+		case jsonValue:
+			acc.hooks = append(acc.hooks, parseHooks(config, cli, nil, file, &project, &acc.problems, &acc.otherHooks)...)
+		case jsonInvalid:
+			acc.problems = append(acc.problems, file+" is not valid JSON, so its hooks cannot be shown.")
+		case jsonTooLarge:
+			acc.problems = append(acc.problems, file+" is too large to read, so its hooks cannot be shown.")
+		case jsonUnreadable:
+			acc.problems = append(acc.problems, file+" cannot be read, so its hooks cannot be shown.")
+		}
+	}
+}
+
+// markInOther sets InOther on every item whose row also exists in another CLI.
+func markInOther(items []Item) {
+	holders := map[string]map[CLI]bool{}
+	for _, item := range items {
+		if holders[item.Key()] == nil {
+			holders[item.Key()] = map[CLI]bool{}
+		}
+		holders[item.Key()][item.CLI] = true
+	}
+	for i := range items {
+		for cli := range holders[items[i].Key()] {
+			if cli != items[i].CLI {
+				items[i].InOther = true
+				break
+			}
+		}
+	}
 }
 
 // ItemFile is the text of a skill or agent file for the detail view, capped.
