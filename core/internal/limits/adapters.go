@@ -25,9 +25,8 @@ type reader interface {
 	kind() ReadingKind
 }
 
-// ReadingKind is where a CLI's limits reading comes from. It is not on the wire: the app keeps the same fact per CLI
-// (CLILimitsReading, which decides the Limits wording), and core/testdata/cli-registry.json holds the two to each
-// other. The values are the app's case names.
+// ReadingKind is where a CLI's limits reading comes from. It reaches the shell as `limitsReading` in `clis.list`,
+// which decides the Limits wording. The values are the shell's case names.
 type ReadingKind string
 
 const (

@@ -16,12 +16,16 @@ type codexInventory struct{}
 // CodexHooksReason is why a Codex hook cell is unmeasurable.
 const CodexHooksReason = "Codex does not log hook runs"
 
-// codexEvents come from observation only.
-func (codexInventory) events() []string {
-	return []string{"SessionStart", "UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "SubagentStart", "SubagentStop", "Interrupt", "Stop", "SessionEnd"}
+// kinds: Codex logs skill and subagent runs but no hook runs; its events come from observation only.
+func (codexInventory) kinds() Kinds {
+	return Kinds{
+		KindSkill: {Support: SupportFull, Runs: RunsCounted, CopyFormat: CopySkillFolder},
+		KindAgent: {Support: SupportFull, Runs: RunsCounted, CopyFormat: CopyAgentFields},
+		KindHook: {Support: SupportFull, Runs: RunsNotLogged, NotLoggedReason: CodexHooksReason, CopyFormat: CopyCommandHook, Events: []string{
+			"SessionStart", "UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "SubagentStart", "SubagentStop", "Interrupt",
+			"Stop", "SessionEnd"}},
+	}
 }
-
-func (codexInventory) unloggedHooks() string { return CodexHooksReason }
 
 func (codexInventory) readExtras(context.Context, roots.CLIRoots, *readAcc) {}
 

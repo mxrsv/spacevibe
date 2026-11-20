@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/roots"
 	"spacevibe.dev/core/internal/toml"
@@ -64,7 +65,6 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 	}
 
 	items, hooks, problems := acc.items, acc.hooks, acc.problems
-	markInOther(items)
 
 	if acc.otherHooks == 1 {
 		problems = append(problems, "1 hook of another type is not shown.")
@@ -84,15 +84,15 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 	if err := ctx.Err(); err != nil {
 		return Snapshot{}, nil, err
 	}
-	rootsByCLI := make(map[string]string, len(bound))
+	rootList := make([]CLIRoot, 0, len(bound))
 	for _, b := range bound {
-		rootsByCLI[string(b.id)] = b.roots.Root
+		rootList = append(rootList, CLIRoot{CLI: b.id, Root: b.roots.Root})
 	}
-	return Snapshot{Items: items, Hooks: hooks, Problems: problems, Events: Events(), Roots: rootsByCLI}, projects, nil
+	return Snapshot{Items: items, Hooks: hooks, Problems: problems, Events: Events(), Roots: rootList}, projects, nil
 }
 
 // readRootFolders reads one CLI's skills, agents and hook file from the folders its registry layout names.
-func readRootFolders(cli CLI, r roots.CLIRoots, acc *readAcc) {
+func readRootFolders(cli clis.ID, r roots.CLIRoots, acc *readAcc) {
 	switch pathPresence(r.Root) {
 	case missing:
 		return
@@ -116,7 +116,7 @@ func readRootFolders(cli CLI, r roots.CLIRoots, acc *readAcc) {
 }
 
 // readProjectFolder reads one CLI's configuration folder inside a project.
-func readProjectFolder(cli CLI, folder projectFolder, path string, acc *readAcc) {
+func readProjectFolder(cli clis.ID, folder projectFolder, path string, acc *readAcc) {
 	project := path
 	dir := join(path, folder.Name)
 	if pathPresence(dir) == unknown {
@@ -137,25 +137,6 @@ func readProjectFolder(cli CLI, folder projectFolder, path string, acc *readAcc)
 			acc.problems = append(acc.problems, file+" is too large to read, so its hooks cannot be shown.")
 		case jsonUnreadable:
 			acc.problems = append(acc.problems, file+" cannot be read, so its hooks cannot be shown.")
-		}
-	}
-}
-
-// markInOther sets InOther on every item whose row also exists in another CLI.
-func markInOther(items []Item) {
-	holders := map[string]map[CLI]bool{}
-	for _, item := range items {
-		if holders[item.Key()] == nil {
-			holders[item.Key()] = map[CLI]bool{}
-		}
-		holders[item.Key()][item.CLI] = true
-	}
-	for i := range items {
-		for cli := range holders[items[i].Key()] {
-			if cli != items[i].CLI {
-				items[i].InOther = true
-				break
-			}
 		}
 	}
 }
@@ -193,7 +174,7 @@ func absolute(path string) string {
 
 // Skills and agents.
 
-func readSkills(dir string, cli CLI, owner, project *string, problems *[]string) []Item {
+func readSkills(dir string, cli clis.ID, owner, project *string, problems *[]string) []Item {
 	if isUnreadableFolder(dir) {
 		*problems = append(*problems, dir+" cannot be read, so its skills cannot be shown.")
 	}
@@ -213,7 +194,7 @@ func readSkills(dir string, cli CLI, owner, project *string, problems *[]string)
 		}
 		fm := ParseFrontmatter(text)
 		out = append(out, Item{
-			ID: string(cli) + ":skill:" + idTag(owner, project) + ":" + entry, CLI: cli, Kind: KindSkill,
+			ID: string(cli) + ":skill:" + idTag(owner, project) + ":" + entry, CLI: cli, ReadBy: readBy(cli), Kind: KindSkill,
 			Name: nonEmpty(fm["name"], entry), Entry: entry, Description: fm["description"],
 			Owner: ownerOf(owner, path), Path: path, File: file, Removable: isUserLevel(owner, project),
 			Scope: scopeOf(project), Project: project,
@@ -222,7 +203,7 @@ func readSkills(dir string, cli CLI, owner, project *string, problems *[]string)
 	return out
 }
 
-func readAgents(dir string, cli CLI, owner, project *string, problems *[]string) []Item {
+func readAgents(dir string, cli clis.ID, owner, project *string, problems *[]string) []Item {
 	if isUnreadableFolder(dir) {
 		*problems = append(*problems, dir+" cannot be read, so its agents cannot be shown.")
 	}
@@ -250,7 +231,7 @@ func readAgents(dir string, cli CLI, owner, project *string, problems *[]string)
 			fields = tomlFields(text)
 		}
 		out = append(out, Item{
-			ID: string(cli) + ":agent:" + idTag(owner, project) + ":" + entry, CLI: cli, Kind: KindAgent,
+			ID: string(cli) + ":agent:" + idTag(owner, project) + ":" + entry, CLI: cli, ReadBy: readBy(cli), Kind: KindAgent,
 			Name: nonEmpty(fields["name"], fallback), Entry: entry, Description: fields["description"],
 			Owner: ownerOf(owner, path), Path: path, File: path, Removable: isUserLevel(owner, project),
 			Scope: scopeOf(project), Project: project,
@@ -276,6 +257,10 @@ func tomlFields(text string) map[string]string {
 	}
 	return out
 }
+
+// readBy is the CLIs that read a file in cli's own folders: cli alone, until a folder that several CLIs read is listed
+// by more than one adapter (spec MC-R7).
+func readBy(cli clis.ID) []clis.ID { return []clis.ID{cli} }
 
 func isSystemName(name string) bool {
 	return strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_")

@@ -29,7 +29,7 @@ func TestStopRefusesWhenIdentityChangesBeforeKill(t *testing.T) {
 	codexID, _ := codexProcessID(23, stopStart, true)
 	threads := []proc.Thread{{Pid: 23}, {Pid: 24, ThreadID: activityUUID(24)}}
 	for name, c := range map[string]struct {
-		cli CLI
+		cli clis.ID
 		id  string
 		p   *fakeProc
 	}{
@@ -77,7 +77,7 @@ func TestStopCannotVerifyIsNotNoLongerRunning(t *testing.T) {
 	starts := map[int]string{16: stopStart}
 	codexID, _ := codexProcessID(25, stopStart, true)
 	for name, c := range map[string]struct {
-		cli CLI
+		cli clis.ID
 		id  string
 		p   *fakeProc
 	}{
@@ -188,7 +188,7 @@ func TestStopMessagesNeverQuoteTheId(t *testing.T) {
 	id := "SECRET-session-id"
 	p := newFakeProc(nil, nil, nil)
 	p.threadsError = proc.ErrUnknown
-	for _, cli := range []CLI{clis.Claude, clis.Codex} {
+	for _, cli := range []clis.ID{clis.Claude, clis.Codex} {
 		_, err := stopSession(t, sb, cli, id, p, fastStop)
 		if err == nil || strings.Contains(err.Error(), id) {
 			t.Errorf("%s: %v", cli, err)

@@ -10,11 +10,8 @@ import (
 // cliInventory is one CLI's side of an inventory read, beyond what its registry layout already says (the skills
 // and agents folders and the hook file, which Read handles the same way for every CLI).
 type cliInventory interface {
-	// events are the hook events the CLI documents, in its own order.
-	events() []string
-	// unloggedHooks is why the CLI's hook runs cannot be counted (the cell is unmeasurable), or "" when its logs
-	// record them.
-	unloggedHooks() string
+	// kinds is the CLI's declaration per item kind (kinds.go): support, run logging, copy format, hook events.
+	kinds() Kinds
 	// readExtras adds what the CLI keeps outside its root folders (Claude Code: plugins and skill overrides). Read
 	// calls it after every CLI's root folders were read.
 	readExtras(ctx context.Context, cli roots.CLIRoots, acc *readAcc)
@@ -51,7 +48,7 @@ var adapters = clis.NewAdapters(clis.Inventory, map[clis.ID]inventoryAdapter{
 
 // boundAdapter is an adapter with its CLI's id and folders.
 type boundAdapter struct {
-	id      CLI
+	id      clis.ID
 	adapter inventoryAdapter
 	roots   roots.CLIRoots
 }
@@ -70,29 +67,11 @@ func bind(r roots.Roots) ([]boundAdapter, error) {
 	return out, nil
 }
 
-// Events are the hook events each CLI with the inventory concept documents, keyed by CLI id.
-func Events() map[string][]string {
-	out := map[string][]string{}
+// Events are the hook events of each CLI with the inventory concept, in wire order.
+func Events() []CLIEvents {
+	out := []CLIEvents{}
 	for _, a := range adapters.InOrder() {
-		out[string(a.ID)] = a.Adapter.events()
+		out = append(out, CLIEvents{CLI: a.ID, Events: a.Adapter.kinds().Of(KindHook).Events})
 	}
 	return out
-}
-
-// EventsOf is the hook events of one CLI, or an error wrapping clis.ErrUnknownCLI or clis.ErrConceptAbsent.
-func EventsOf(cli CLI) ([]string, error) {
-	a, err := adapters.For(cli)
-	if err != nil {
-		return nil, err
-	}
-	return a.events(), nil
-}
-
-// UnloggedHooks is why the hook runs of cli cannot be counted, "" when its logs record them.
-func UnloggedHooks(cli CLI) (string, error) {
-	a, err := adapters.For(cli)
-	if err != nil {
-		return "", err
-	}
-	return a.unloggedHooks(), nil
 }

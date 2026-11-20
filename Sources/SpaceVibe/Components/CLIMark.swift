@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// A bare CLI brand mark (`CLIRegistry`'s `mark`), independent of data/semantic colours: a mark keeps the asset's colour, and
+/// A bare CLI brand mark (`CLIRegistry`'s `mark`; a CLI with none, or a file that is missing, draws its tone's dot), independent of data/semantic colours: a mark keeps the asset's colour, and
 /// a monochrome one (Codex) is white in dark mode and black in light mode. No background or border.
 /// The transparent layout slot keeps existing row alignment and glyph sizes. Decorative: the name is beside it.
 struct CLIMark: View {
@@ -10,16 +10,12 @@ struct CLIMark: View {
     /// inside the reset countdown's ring (the glance widget).
     enum Size { case large, medium, small, glyph, control, logo, ring }
 
-    let cli: CoreLimitsCLI
+    let cli: CLIID
     var size: Size = .large
 
-    init(_ cli: CoreLimitsCLI, size: Size = .large) {
+    init(_ cli: CLIID, size: Size = .large) {
         self.cli = cli
         self.size = size
-    }
-
-    init(_ cli: CoreCLI, size: Size = .large) {
-        self.init(CoreLimitsCLI(cli), size: size)
     }
 
     var body: some View {
@@ -51,10 +47,10 @@ struct CLIMark: View {
     @ViewBuilder
     private func glyph(side: CGFloat) -> some View {
         let identity = cli.identity
-        if let image = BrandMark.image(identity.mark) {
+        if let mark = identity.mark, let image = BrandMark.image(mark) {
             Image(nsImage: image)
                 .resizable()
-                .renderingMode(identity.mark.isMonochrome ? .template : .original)
+                .renderingMode(mark.isMonochrome ? .template : .original)
                 .scaledToFit()
                 .foregroundStyle(Palette.brandMonochrome)
                 .frame(width: side, height: side)

@@ -34,19 +34,19 @@ func stopStatusOf(err error) int {
 	return 0
 }
 
-func stopSession(t *testing.T, sb *sandbox, cli CLI, id string, p *fakeProc, opts StopOptions) (StopResult, error) {
+func stopSession(t *testing.T, sb *sandbox, cli clis.ID, id string, p *fakeProc, opts StopOptions) (StopResult, error) {
 	t.Helper()
 	return Stop(context.Background(), sb.roots, cli, id, p, opts)
 }
 
-func expectRefusal(t *testing.T, sb *sandbox, cli CLI, id string, p *fakeProc, opts StopOptions) {
+func expectRefusal(t *testing.T, sb *sandbox, cli clis.ID, id string, p *fakeProc, opts StopOptions) {
 	t.Helper()
 	expectRefusalStatus(t, sb, cli, id, p, opts, 404)
 }
 
 // expectRefusalStatus: 404 is "no longer running" (the process read fine and is not the session); 409 is "cannot
 // verify" (G-fix.10: ps, lsof or the sessions folder could not be read, or the start time is unknown).
-func expectRefusalStatus(t *testing.T, sb *sandbox, cli CLI, id string, p *fakeProc, opts StopOptions, want int) {
+func expectRefusalStatus(t *testing.T, sb *sandbox, cli clis.ID, id string, p *fakeProc, opts StopOptions, want int) {
 	t.Helper()
 	_, err := stopSession(t, sb, cli, id, p, opts)
 	if err == nil {
@@ -77,7 +77,7 @@ func TestStopRefuses(t *testing.T) { // Swift: ActivityStopTests "refuses a reus
 	sb.status(12, obj{"procStart": stopStart})
 	sb.status(13, obj{"procStart": stopStart})
 	for i, c := range []struct {
-		cli CLI
+		cli clis.ID
 		id  string
 		p   *fakeProc
 	}{

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/logs"
 	"spacevibe.dev/core/internal/roots"
@@ -78,7 +79,7 @@ func (s *Scanner) Scan(ctx context.Context, progress func(Progress)) (Result, er
 
 type target struct {
 	path   string
-	cli    CLI
+	cli    clis.ID
 	parser lineParser
 }
 

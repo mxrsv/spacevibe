@@ -13,7 +13,8 @@ What is installed for Claude Code and Codex: skills, subagents and hooks, read f
 | Hook identity and dead hooks | Hook hash, script paths named by a command | [hashes.go](../../core/internal/hashes/hashes.go), [script-paths.go](../../core/internal/inventory/script-paths.go) |
 | Usage join | Add a usage cell per CLI to every row | [attach-usage.go](../../core/internal/inventory/attach-usage.go) |
 | Filter counts | Counts for the filter chips | [filter-counts.go](../../core/internal/inventory/filter-counts.go) |
-| Types | Row, cell and snapshot shapes; the only map from a CLI id to a fixed wire member (`cells`, `only`) | [types.go](../../core/internal/inventory/types.go), [wire-slots.go](../../core/internal/inventory/wire-slots.go) |
+| Types | Row, cell and snapshot shapes; `cells`, `only`, `events` and `roots` are arrays of `{cli, …}` in registry order | [types.go](../../core/internal/inventory/types.go), [types-json.go](../../core/internal/inventory/types-json.go) |
+| Per-kind support | Each adapter's declaration per item kind: support, run logging, copy format, hook events; it decides `absent` and `unmeasurable` cells and what mutate may write ([overview](overview.md#cli-registry-and-adapters)) | [kinds.go](../../core/internal/inventory/kinds.go) |
 | File access | Bounded reads that tell "missing" from "cannot be read" | [fileio.go](../../core/internal/inventory/fileio.go) |
 
 ## Where each fact comes from

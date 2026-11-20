@@ -46,6 +46,7 @@ func (s *Services) noteFailure(name string, err error) {
 
 func (s *Services) buildHandlers() map[string]rpc.Handler {
 	return map[string]rpc.Handler{
+		"clis.list":               typed(s, "clis.list", s.clisList),
 		"inventory.read":          typed(s, "inventory.read", s.inventoryRead),
 		"usage.scan":              s.usageScan,
 		"loadout.rows":            typed(s, "loadout.rows", s.loadoutRows),
@@ -76,8 +77,8 @@ func (s *Services) limitsRead(ctx context.Context, _ none) (limits.Result, error
 
 // StopParams is the params of activity.stop: the session by CLI and id, never by pid (S-R4).
 type StopParams struct {
-	CLI activity.CLI `json:"cli"`
-	ID  string       `json:"id"`
+	CLI clis.ID `json:"cli"`
+	ID  string  `json:"id"`
 }
 
 func (s *Services) activityStop(ctx context.Context, p StopParams) (activity.StopResult, error) {

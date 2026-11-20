@@ -3,6 +3,8 @@ package usage
 import (
 	"slices"
 	"sort"
+
+	"spacevibe.dev/core/internal/clis"
 )
 
 // aggregate folds the per-file records into totals, session counts and the log window of each CLI with a parser. Files
@@ -17,11 +19,11 @@ func aggregate(files map[string]cachedFile, fileCount int) (Result, error) {
 		return &bucket{skill: map[string]*names{}, agent: map[string]*names{}, hook: map[string]HookTotals{}}
 	}
 	scanned := parsers.InOrder()
-	buckets := make(map[CLI]*bucket, len(scanned))
-	sessions := make(map[CLI]map[string]struct{}, len(scanned))
-	windows := make(map[CLI]*LogWindow, len(scanned))
+	buckets := make(map[clis.ID]*bucket, len(scanned))
+	sessions := make(map[clis.ID]map[string]struct{}, len(scanned))
+	windows := make(map[clis.ID]*LogWindow, len(scanned))
 	for _, p := range scanned {
-		buckets[p.ID], sessions[p.ID], windows[p.ID] = newBucket(), map[string]struct{}{}, &LogWindow{}
+		buckets[p.ID], sessions[p.ID], windows[p.ID] = newBucket(), map[string]struct{}{}, &LogWindow{CLI: p.ID}
 	}
 
 	paths := make([]string, 0, len(files))
@@ -75,8 +77,8 @@ func aggregate(files map[string]cachedFile, fileCount int) (Result, error) {
 		}
 	}
 
-	totals := func(cli CLI) CLITotals {
-		out := emptyTotals()
+	totals := func(cli clis.ID) CLITotals {
+		out := emptyTotals(cli)
 		toUsage := func(source map[string]*names, into map[string]NameUsage) {
 			for name, n := range source {
 				days := make([]string, 0, len(n.days))
@@ -100,21 +102,11 @@ func aggregate(files map[string]cachedFile, fileCount int) (Result, error) {
 		}
 		return out
 	}
-	result := Result{Files: fileCount}
+	result := Result{Totals: Totals{}, Sessions: Sessions{}, Windows: Windows{}, Files: fileCount}
 	for _, p := range scanned {
-		t, err := result.Totals.slot(p.ID)
-		if err != nil {
-			return Result{}, err
-		}
-		n, err := result.Sessions.slot(p.ID)
-		if err != nil {
-			return Result{}, err
-		}
-		w, err := result.Windows.slot(p.ID)
-		if err != nil {
-			return Result{}, err
-		}
-		*t, *n, *w = totals(p.ID), len(sessions[p.ID]), *windows[p.ID]
+		result.Totals = append(result.Totals, totals(p.ID))
+		result.Sessions = append(result.Sessions, SessionCount{CLI: p.ID, Count: len(sessions[p.ID])})
+		result.Windows = append(result.Windows, *windows[p.ID])
 	}
 	return result, nil
 }

@@ -13,12 +13,17 @@ import (
 // plugins, the skillOverrides of settings.json, and the .claude folder of each discovered project.
 type claudeInventory struct{}
 
-// events come from Claude Code's docs.
-func (claudeInventory) events() []string {
-	return []string{"SessionStart", "UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "PostToolUseFailure", "Notification", "SubagentStart", "SubagentStop", "Elicitation", "ElicitationResult", "TeammateIdle", "PreCompact", "PostCompact", "Stop", "StopFailure", "SessionEnd"}
+// kinds: Claude Code logs skill, subagent and hook runs; its events come from its docs.
+func (claudeInventory) kinds() Kinds {
+	return Kinds{
+		KindSkill: {Support: SupportFull, Runs: RunsCounted, CopyFormat: CopySkillFolder},
+		KindAgent: {Support: SupportFull, Runs: RunsCounted, CopyFormat: CopyAgentFields},
+		KindHook: {Support: SupportFull, Runs: RunsCounted, CopyFormat: CopyCommandHook, Events: []string{
+			"SessionStart", "UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "PostToolUseFailure", "Notification",
+			"SubagentStart", "SubagentStop", "Elicitation", "ElicitationResult", "TeammateIdle", "PreCompact", "PostCompact", "Stop",
+			"StopFailure", "SessionEnd"}},
+	}
 }
-
-func (claudeInventory) unloggedHooks() string { return "" }
 
 // projectCandidates are the cwd in the head of the newest session logs of each folder under projects/.
 func (claudeInventory) projectCandidates(ctx context.Context, cli roots.CLIRoots) []string {

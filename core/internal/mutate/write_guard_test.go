@@ -10,7 +10,6 @@ import (
 	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/ojson"
-	"spacevibe.dev/core/internal/usage"
 )
 
 // WriteGuardTests.swift. The three tests that go through RulesStore (a project .claude that is a link, a settings file
@@ -102,7 +101,7 @@ func TestCreateAllRollback(t *testing.T) {
 	}
 	var err error
 	withMode(t, 0o500, sb.r.CLIs[clis.Codex].Skills, func() {
-		_, err = AddSkill(sb.r, []usage.CLI{clis.Claude, clis.Codex}, "both", "when needed", "")
+		_, err = AddSkill(sb.r, []clis.ID{clis.Claude, clis.Codex}, "both", "when needed", "")
 	})
 	wantErr(t, err, 500)
 	if exists(filepath.Join(sb.r.CLIs[clis.Claude].Skills, "both")) {
@@ -165,7 +164,7 @@ func TestReadOnlyFolder(t *testing.T) {
 // hookTimeout adds a Stop hook, reads the hook object back and undoes the entry.
 func hookTimeout(t *testing.T, sb sandbox, timeout *float64) ojson.Value {
 	t.Helper()
-	entry := must(AddHook(sb.r, []usage.CLI{clis.Claude}, "Stop", nil, "echo t", timeout))
+	entry := must(AddHook(sb.r, []clis.ID{clis.Claude}, "Stop", nil, "echo t", timeout))
 	doc := must(ojson.ParseString(sb.bytes(sb.r.CLIs[clis.Claude].HookFile)))
 	must(Undo(sb.r, entry.ID))
 	hooks, _ := doc.Get(ojson.Key("hooks"), ojson.Key("Stop"))
@@ -200,7 +199,7 @@ func TestHookTimeoutFormats(t *testing.T) {
 func TestHookTimeoutNonFinite(t *testing.T) {
 	sb := newSandbox(t)
 	for _, v := range []float64{math.NaN(), math.Inf(1), math.Inf(-1)} {
-		_, err := AddHook(sb.r, []usage.CLI{clis.Claude}, "Stop", nil, "echo t", f(v))
+		_, err := AddHook(sb.r, []clis.ID{clis.Claude}, "Stop", nil, "echo t", f(v))
 		wantErr(t, err, 400)
 	}
 	if exists(sb.r.CLIs[clis.Claude].HookFile) || !sb.journalEmpty() {
@@ -216,7 +215,7 @@ func TestUndoHookFileCreatedBySameEntryAfterHandEdit(t *testing.T) {
 		t.Fatal("hook file exists")
 	}
 	five := 5.0
-	entry := must(AddHook(sb.r, []usage.CLI{clis.Claude}, "Stop", nil, "echo made", &five))
+	entry := must(AddHook(sb.r, []clis.ID{clis.Claude}, "Stop", nil, "echo made", &five))
 	restore, _ := entry.Ops[0].JSON.Member("restore")
 	if existed, _ := restore.Member("existed"); existed.Kind() != ojson.KindBool {
 		t.Fatal("no restore data")

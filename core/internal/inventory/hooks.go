@@ -4,13 +4,14 @@ import (
 	"slices"
 	"strconv"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/ojson"
 )
 
 // Hooks.
 
-func parseHooks(config ojson.Value, cli CLI, owner *string, sourceFile string, project *string, problems *[]string, otherTypes *int) []Hook {
+func parseHooks(config ojson.Value, cli clis.ID, owner *string, sourceFile string, project *string, problems *[]string, otherTypes *int) []Hook {
 	var out []Hook
 	hooksValue, ok := config.Member("hooks")
 	if !ok {

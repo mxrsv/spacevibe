@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/usage"
 )
@@ -14,7 +15,8 @@ import (
 //	              ran inside the scanned logs. Errors is set for hooks.
 //	pending       installed, but no scanned log can have covered it yet (see pendingReason)
 //	unmeasurable  the CLI does not log it (Codex hooks); Reason says why
-//	missing       not installed in that CLI
+//	missing       not installed in that CLI, which has this kind of item
+//	absent        the CLI has no such kind of item (KindSupport absent)
 
 // pendingGrace: a zero-run item that changed inside this window is "pending", not "never ran".
 const pendingGraceMs = 24 * 3600 * 1000
@@ -59,10 +61,10 @@ func AttachUsage(inv Snapshot, in *usage.Input, now time.Time) Snapshot {
 // Service.Rows. An id it holds is "added" at that time; any other id falls back to the file's mtime.
 func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[string]float64) Snapshot {
 	nowMs := float64(now.UnixNano()) / 1e6
-	groups := map[string]map[CLI]matrixRow{}
-	add := func(key string, cli CLI, row matrixRow) {
+	groups := map[string]map[clis.ID]matrixRow{}
+	add := func(key string, cli clis.ID, row matrixRow) {
 		if groups[key] == nil {
-			groups[key] = map[CLI]matrixRow{}
+			groups[key] = map[clis.ID]matrixRow{}
 		}
 		groups[key][cli] = row
 	}
@@ -95,19 +97,21 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 	if in != nil {
 		totals, windows = in.Totals, in.Windows
 	}
-	cellFor := func(row *matrixRow, cli CLI) Cell {
+	cellFor := func(row *matrixRow, kind Kind, cli clis.Bound[inventoryAdapter]) Cell {
+		support := cli.Adapter.kinds().Of(kind)
 		if row == nil {
+			if support.Support == SupportAbsent {
+				return Absent()
+			}
 			return Missing()
 		}
-		if row.kind == KindHook {
-			if reason, err := UnloggedHooks(cli); err == nil && reason != "" {
-				return Unmeasurable(reason)
-			}
+		if support.Runs == RunsNotLogged {
+			return Unmeasurable(support.NotLoggedReason)
 		}
 		if totals == nil {
 			return Pending(ScanNotFinished)
 		}
-		perCLI, err := totals.For(cli)
+		perCLI, err := totals.For(cli.ID)
 		if err != nil { // a CLI whose logs are not scanned: its runs cannot be counted, never another CLI's
 			return Unmeasurable(NotScannedReason)
 		}
@@ -144,7 +148,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		if runs == 0 {
 			var window *usage.LogWindow
 			if windows != nil {
-				if w, err := windows.For(cli); err == nil {
+				if w, err := windows.For(cli.ID); err == nil {
 					window = &w
 				}
 			}
@@ -154,26 +158,31 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		}
 		return Counted(runs, last, errors)
 	}
-	cellsFor := func(key string) *Cells {
+	// One cell per CLI with the inventory concept, in wire order, whichever CLI holds the row.
+	cellsFor := func(key string, kind Kind) Cells {
 		group := groups[key]
-		get := func(cli CLI) *matrixRow {
-			if row, ok := group[cli]; ok {
-				return &row
+		out := Cells{}
+		for _, cli := range adapters.InOrder() {
+			var row *matrixRow
+			if r, ok := group[cli.ID]; ok {
+				row = &r
 			}
-			return nil
+			cell := cellFor(row, kind, cli)
+			cell.CLI = cli.ID
+			out = append(out, cell)
 		}
-		return cellsOf(func(cli CLI) Cell { return cellFor(get(cli), cli) })
+		return out
 	}
 
 	out := inv
 	out.Items = make([]Item, len(inv.Items))
 	for i, item := range inv.Items {
-		item.Cells = cellsFor(item.Key())
+		item.Cells = cellsFor(item.Key(), item.Kind)
 		out.Items[i] = item
 	}
 	out.Hooks = make([]Hook, len(inv.Hooks))
 	for i, hook := range inv.Hooks {
-		hook.Cells = cellsFor(hook.Key())
+		hook.Cells = cellsFor(hook.Key(), KindHook)
 		hook.Usage = nil
 		if perCLI, ok := loggedHookTotals(totals, hook.CLI); ok {
 			u := perCLI.Hook[hook.Hash]
@@ -190,7 +199,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 }
 
 // loggedHookTotals are the usage totals of cli when its logs record hook runs and a scan has finished.
-func loggedHookTotals(totals *usage.Totals, cli CLI) (usage.CLITotals, bool) {
+func loggedHookTotals(totals *usage.Totals, cli clis.ID) (usage.CLITotals, bool) {
 	if totals == nil {
 		return usage.CLITotals{}, false
 	}

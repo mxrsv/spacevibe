@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/redact"
 	"spacevibe.dev/core/internal/textjs"
@@ -43,7 +44,7 @@ func failureTitle(cmd string) string {
 
 type failureGroup struct {
 	kind     FailureKind
-	cli      CLI
+	cli      clis.ID
 	key      string
 	title    string
 	hook     *HookRef
@@ -61,7 +62,7 @@ func groupFailures(logs []logEntry, limit int) []Failure {
 	var order []string
 	groups := map[string]*failureGroup{}
 	seen := map[string]bool{}
-	add := func(cli CLI, gkey string, base failureGroup, id string, at float64, exit *int, reason, session string, project string, hasProject bool) {
+	add := func(cli clis.ID, gkey string, base failureGroup, id string, at float64, exit *int, reason, session string, project string, hasProject bool) {
 		dedupe := string(cli) + "|" + id
 		if seen[dedupe] {
 			return // forked or resumed logs repeat earlier events
@@ -249,11 +250,11 @@ func groupFiles(logs []logEntry, limit int) ([]FileRow, error) {
 	labels := shortestLabels(paths)
 	rows := make([]FileRow, len(ordered))
 	for i, f := range ordered {
-		clis := []CLI{}
+		ids := []clis.ID{}
 		for _, name := range textjs.SortedStrings(keysOf(f.clis)) {
-			clis = append(clis, CLI(name)) // every CLI here has an Activity adapter: editsOf checked it
+			ids = append(ids, clis.ID(name)) // every CLI here has an Activity adapter: editsOf checked it
 		}
-		rows[i] = FileRow{Path: f.path, Label: labels[i], Edits: f.edits, Sessions: len(f.sessions), Last: isoOrNil(f.lastAt), CLIs: clis, Projects: sortedKeys(f.projects)}
+		rows[i] = FileRow{Path: f.path, Label: labels[i], Edits: f.edits, Sessions: len(f.sessions), Last: isoOrNil(f.lastAt), CLIs: ids, Projects: sortedKeys(f.projects)}
 	}
 	return rows, nil
 }

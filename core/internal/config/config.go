@@ -18,6 +18,8 @@ const (
 	// envUserHome picks where the CLI folders are looked for. Each CLI's own root override (CLAUDE_CONFIG_DIR,
 	// CODEX_HOME) is named in its registry entry (clis.Layout.RootEnv).
 	envUserHome = "HOME"
+	// envPath is searched for the binaries a CLI's registry entry names (clis.Installed). Only stat looks at it.
+	envPath = "PATH"
 	// envProcFixture is the same name as proc.EnvProcFixture; config cannot import proc (proc imports config).
 	envProcFixture = identity.EnvPrefix + "PROC_FIXTURE"
 )
@@ -34,6 +36,9 @@ type Config struct {
 	// RootOverrides is each CLI's root override (clis.Layout.RootEnv: CLAUDE_CONFIG_DIR, CODEX_HOME), as given and
 	// keyed by CLI id. A missing or empty value counts as unset.
 	RootOverrides map[clis.ID]string
+	// SearchPath is the folders of PATH, in order. Empty entries are dropped; relative ones are kept and skipped by
+	// clis.Installed.
+	SearchPath []string
 	// ProcFixture is SPACEVIBE_PROC_FIXTURE, a process-list fixture file for dev runs (empty counts as unset).
 	// internal/proc takes it as an argument and never reads the environment.
 	ProcFixture string
@@ -77,6 +82,11 @@ func LoadFrom(getenv func(string) string) (Config, error) {
 				c.RootOverrides = map[clis.ID]string{}
 			}
 			c.RootOverrides[d.ID] = v
+		}
+	}
+	for _, dir := range filepath.SplitList(getenv(envPath)) {
+		if dir != "" {
+			c.SearchPath = append(c.SearchPath, dir)
 		}
 	}
 	c.ProcFixture = getenv(envProcFixture)

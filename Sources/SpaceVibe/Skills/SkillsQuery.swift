@@ -135,7 +135,7 @@ enum SkillsFilterField: String, FilterFieldKind {
     var values: [FilterValue] {
         switch self {
         case .cli:
-            CLIRegistry.inventoryCLIs.map { FilterValue($0.rawValue, "In \($0.label)", chip: $0.label) }
+            CLICatalog.current.inventoryCLIs.map { FilterValue($0.rawValue, "In \($0.label)", chip: $0.label) }
                 + [FilterValue("both", "In both", chip: "Both"), FilterValue("one", "In one only", chip: "One only")]
         case .owner: [FilterValue("mine", "Mine"), FilterValue("plugin", "Plugin")]
         case .rank:
@@ -238,7 +238,7 @@ struct SkillsQuery: Equatable, Sendable {
             }
         case .cli:
             groups = ([group("cli:both", "In both", ordered.filter { $0.presentCLIs.count == 2 })]
-                + CLIRegistry.inventoryCLIs.map { cli in
+                + CLICatalog.current.inventoryCLIs.map { cli in
                     group("cli:\(cli.rawValue)", "Only \(cli.label)", ordered.filter { $0.presentCLIs == [cli] })
                 }).compactMap { $0 }
         case .owner:
@@ -270,10 +270,10 @@ struct SkillsQuery: Equatable, Sendable {
         switch field {
         case .cli:
             let present = row.presentCLIs
-            if let cli = CoreCLI(rawValue: value) { return present.contains(cli) }
             switch value {
             case "both": return present.count == 2
-            default: return present.count == 1
+            case "one": return present.count == 1
+            default: return present.contains(CLIID(rawValue: value))
             }
         case .owner:
             return value == "plugin" ? row.plugin != nil : row.plugin == nil

@@ -27,8 +27,8 @@ type LoadoutRows struct {
 	Items         []Item                  `json:"items"`
 	Hooks         []Hook                  `json:"hooks"`
 	Problems      []string                `json:"problems"`
-	Events        map[string][]string     `json:"events"`
-	Roots         map[string]string       `json:"roots"`
+	Events        []CLIEvents             `json:"events"`
+	Roots         []CLIRoot               `json:"roots"`
 	CountsByScope map[string]FilterCounts `json:"countsByScope"`
 	RowFlags      map[string]RowFlags     `json:"rowFlags"`
 }

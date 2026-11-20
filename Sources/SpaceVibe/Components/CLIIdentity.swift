@@ -1,16 +1,21 @@
 import SwiftUI
 
-/// Everything the UI knows about one CLI: its name, its mark, its colour and the facts its wording depends on. Each value is
-/// one entry of `CLIRegistry`; a screen reads these fields and never branches on which CLI it holds (MC-R1).
+/// Everything the UI knows about one CLI: the facts the core sent in `clis.list` and the look `CLIRegistry` holds for its id.
+/// Each value is one entry of `CLICatalog`; a screen reads these fields and never branches on which CLI it holds (MC-R1).
 struct CLIIdentity: Sendable {
-    /// The id the core writes on the wire (`claude`, `codex`, `gemini`).
-    let id: String
-    /// The CLI's name as the app writes it (GLOSSARY).
+    /// The id the core writes on the wire.
+    let id: CLIID
+    /// The CLI's name as the core's registry writes it (GLOSSARY).
     let label: String
-    let mark: CLIMarkArt
-    let tone: CLITone
-    /// Where its Limits reading comes from, which decides what the Limits page says before and about a reading.
-    let limitsReading: CLILimitsReading
+    let look: CLILook
+    /// Its folder or binary exists (MC8). A CLI that is not installed still shows where the page says so ("not installed").
+    let installed: Bool
+    let concepts: Set<CoreCLIConcept>
+    /// Skill, agent and hook, in that order.
+    let kinds: [CoreKindInfo]
+    /// Where its Limits reading comes from, which decides what the Limits page says before and about a reading; nil without the
+    /// limits concept.
+    let limitsReading: CLILimitsReading?
     /// Whether SpaceVibe reads its sessions from a log. Without one, Activity shows a band that says so.
     let readsSessionLog: Bool
     /// Whether it logs hook runs, so a hook only it has can be counted.
@@ -21,6 +26,47 @@ struct CLIIdentity: Sendable {
     /// Whether a subagent with no `tools` line inherits every tool (Claude Code's subagent docs), so a copy made into it, which
     /// carries no `tools` line, can use every tool.
     let subagentWithoutToolsGetsEveryTool: Bool
+
+    init(_ info: CoreCLIInfo, look: CLILook) {
+        id = info.id
+        label = info.label
+        self.look = look
+        installed = info.installed
+        concepts = Set(info.concepts)
+        kinds = info.kinds
+        limitsReading = info.limitsReading
+        readsSessionLog = info.readsSessionLog
+        logsHookRuns = info.logsHookRuns
+        approvalLimitCode = info.approvalLimitCode
+        subagentWithoutToolsGetsEveryTool = info.subagentWithoutToolsGetsEveryTool
+    }
+
+    var mark: CLIMarkArt? { look.mark }
+    var tone: CLITone { look.tone }
+
+    func has(_ concept: CoreCLIConcept) -> Bool { concepts.contains(concept) }
+
+    /// What the CLI does with `kind`; nil when the core did not describe it, which reads as absent.
+    func kind(_ kind: CoreKind) -> CoreKindInfo? { kinds.first { $0.kind == kind } }
+
+    /// The CLI has `kind` at all (its support is not `absent`).
+    func hasKind(_ kind: CoreKind) -> Bool { (self.kind(kind)?.support ?? .absent) != .absent }
+
+    /// What a screen asks about an id the catalog does not hold (unknown to the core, or turned off). The filter in `CLICatalog`
+    /// keeps such an id off every page, so this is only ever read by a bug: the id as its name, the neutral look, no facts.
+    static func unlisted(_ id: CLIID) -> CLIIdentity {
+        CLIIdentity(CoreCLIInfo(id: id, label: id.rawValue, installed: false, concepts: [], kinds: [], limitsReading: nil,
+                                logsHookRuns: false, readsSessionLog: false, approvalLimitCode: nil,
+                                subagentWithoutToolsGetsEveryTool: false),
+                    look: CLIRegistry.neutral)
+    }
+}
+
+/// A CLI's look: its mark and its identity tone (`CLIRegistry`).
+struct CLILook: Sendable {
+    /// Nil for a CLI with no mark in the table: `CLIMark` draws the tone's dot.
+    let mark: CLIMarkArt?
+    let tone: CLITone
 }
 
 /// A CLI's brand mark: an SVG in `Resources/Brand`. A monochrome mark is drawn as a template in `brandMonochrome`; any other
@@ -50,15 +96,4 @@ struct CLITone: Sendable {
         self.fill = fillColor
         bar = barOpacity.map { fillColor.opacity($0) } ?? fillColor
     }
-}
-
-/// Where a CLI's usage limits are read from.
-/// The raw values are the core's `limits.ReadingKind`, which `core/testdata/cli-registry.json` holds this enum to.
-enum CLILimitsReading: String, Sendable {
-    /// A cache the CLI writes only after it has fetched usage once (`/usage`); the status line can also feed it.
-    case usageCache
-    /// The limits the CLI logs after each turn.
-    case lastTurn
-    /// The CLI keeps no usage limit on disk: it reads "not measurable".
-    case notKept
 }

@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// Settings > Appearance: Theme as three tiles and Font size over two Skills rows that show it. No Language card while English
-/// is the only language (D69).
+/// Settings > Appearance: Theme as three tiles, Font size over two Skills rows that show it, the Session widget switch and the
+/// CLIs the app shows. No Language card while English is the only language (D69).
 struct AppearanceSettings: View {
     @Environment(AppearanceStore.self) private var appearance
     @Environment(\.openStateStore) private var store
     @Environment(\.glancePreferences) private var glancePreferences
+    @Environment(AppEnvironment.self) private var env
 
     var body: some View {
         @Bindable var appearance = appearance
@@ -30,6 +31,8 @@ struct AppearanceSettings: View {
             }
 
             GlanceSettings(preferences: glancePreferences ?? .shared, isOpen: open("glanceWidget"))
+
+            CLISettings(env: env, isOpen: open("clis"))
         }
     }
 
@@ -44,19 +47,19 @@ private struct FontSizeSample: View {
     var body: some View {
         ListRows {
             // One sample in every CLI, one in the first only.
-            sampleRow("ponytail", in: Set(CLIRegistry.inventoryCLIs))
-            sampleRow("impeccable", in: Set(CLIRegistry.inventoryCLIs.prefix(1)))
+            sampleRow("ponytail", in: Set(CLICatalog.current.inventoryCLIs))
+            sampleRow("impeccable", in: Set(CLICatalog.current.inventoryCLIs.prefix(1)))
         }
         .allowsHitTesting(false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Sample rows at this font size")
     }
 
-    private func sampleRow(_ name: String, in clis: Set<CoreCLI>) -> some View {
+    private func sampleRow(_ name: String, in clis: Set<CLIID>) -> some View {
         ListRow(name, lead: CategoryGlyph.skill) {
             LogoStrip {
-                ForEach(CLIRegistry.inventoryCLIs, id: \.self) { cli in
-                    LogoToggle(cli: CoreLimitsCLI(cli), isLit: clis.contains(cli), mode: .readOnly) {}
+                ForEach(CLICatalog.current.inventoryCLIs, id: \.self) { cli in
+                    LogoToggle(cli: cli, isLit: clis.contains(cli), mode: .readOnly) {}
                 }
             }
             WarningSlot()

@@ -9,6 +9,10 @@ func (claudeWriter) agentFile(name, description, instructions string) (string, s
 	return "md", "---\nname: " + name + "\ndescription: " + yamlValue(description) + "\n---\n\n" + agentBody(instructions) + "\n"
 }
 
+// agentWithoutToolsGetsEveryTool: a Claude Code subagent with no tools line "inherits every tool available to
+// subagents" (Claude Code's subagent docs), and agentFile writes none.
+func (claudeWriter) agentWithoutToolsGetsEveryTool() bool { return true }
+
 // takesCopiedHooks: Claude Code loads a hook SpaceVibe wrote as soon as it reads settings.json.
 func (claudeWriter) takesCopiedHooks() bool { return true }
 

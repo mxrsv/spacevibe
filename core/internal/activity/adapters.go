@@ -22,6 +22,9 @@ type sessionSource interface {
 	listLogs(cli roots.CLIRoots) cliRead
 	// limits are the reasons that always leave some state of this CLI unmeasurable; every report lists them.
 	limits() []Reason
+	// approvalLimit is the one of limits that says a wait for approval cannot be told from a busy tool run, the
+	// reason the CLI's state function gives such a session; "" when the CLI has none.
+	approvalLimit() Reason
 }
 
 // cliRead is one CLI's part of one Read: its logs, the live sessions found from them and from the process table,
@@ -60,7 +63,7 @@ var adapters = clis.NewAdapters(clis.Activity, map[clis.ID]activityAdapter{
 })
 
 // folderOf is the log folder of cli, or an error wrapping clis.ErrUnknownCLI or clis.ErrConceptAbsent.
-func folderOf(cli CLI) (logFolder, error) { return adapters.For(cli) }
+func folderOf(cli clis.ID) (logFolder, error) { return adapters.For(cli) }
 
 // editsOf is the edits of one folded log, read by its CLI's folder.
 func editsOf(st *logState) ([]editEvent, error) {
@@ -80,4 +83,14 @@ func fixedLimits() []Limit {
 		}
 	}
 	return out
+}
+
+// ApprovalLimit is the limit code a session of cli carries when a wait for approval cannot be told from a busy tool
+// run: "" when it has none, or an error wrapping clis.ErrUnknownCLI or clis.ErrConceptAbsent.
+func ApprovalLimit(cli clis.ID) (Reason, error) {
+	a, err := adapters.For(cli)
+	if err != nil {
+		return "", err
+	}
+	return a.approvalLimit(), nil
 }

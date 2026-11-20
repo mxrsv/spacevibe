@@ -6,7 +6,7 @@ import SwiftUI
 enum BarTone: Equatable {
     case neutral, warn, danger
     /// A CLI's identity (the Skills pane's meters), from `CLIRegistry`: never a state.
-    case cli(CoreCLI)
+    case cli(CLIID)
 
     var fill: Color {
         switch self {

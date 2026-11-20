@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/proc"
 	"spacevibe.dev/core/internal/roots"
@@ -48,7 +49,7 @@ type lookup struct {
 // livePid is the process of a live session, decided from the system now and never taken from the caller: pids get
 // reused. Its identity (start time and name) is read once here and read again by Stop right before the signal. The
 // session's CLI decides how (stopper); a CLI with no Activity adapter is an error, never looked up as another CLI.
-func livePid(ctx context.Context, r roots.Roots, cli CLI, id string, adapter proc.Adapter) (lookup, error) {
+func livePid(ctx context.Context, r roots.Roots, cli clis.ID, id string, adapter proc.Adapter) (lookup, error) {
 	a, err := adapters.For(cli)
 	if err != nil {
 		return lookup{}, err
@@ -85,7 +86,7 @@ var (
 // the sessions folder could not be read, or the start time is unknown), 403 when it belongs to another user, 500 for
 // any other signal error (and on an OS where processes cannot be measured). A cancelled ctx stops the wait for the
 // process to exit but not the signal that was already sent; the result then says whether it had gone.
-func Stop(ctx context.Context, r roots.Roots, cli CLI, id string, adapter proc.Adapter, opts StopOptions) (StopResult, error) {
+func Stop(ctx context.Context, r roots.Roots, cli clis.ID, id string, adapter proc.Adapter, opts StopOptions) (StopResult, error) {
 	if !adapter.Measurable() {
 		return StopResult{}, coreerr.NewStatus("Sessions cannot be stopped on this system.", coreerr.StatusInternalFailure)
 	}

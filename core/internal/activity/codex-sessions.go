@@ -26,7 +26,7 @@ func codexState(st *logState, lastWriteAgoMs, toolQuietMs float64) stateInfo {
 		case len(st.questions) > 0:
 			return stateInfo{state: StateWaiting, text: "Waiting for your answer to a question.", tool: tool}
 		case tool != nil && lastWriteAgoMs > toolQuietMs:
-			return unmeasurable(ReasonCodexToolSilent, tool)
+			return unmeasurable(codexApprovalLimit, tool)
 		}
 		return stateInfo{state: StateRunning, text: toolText(tool), tool: tool}
 	}

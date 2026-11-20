@@ -2,13 +2,17 @@ import Foundation
 import Testing
 @testable import SpaceVibe
 
-/// `CLIRegistry` is the one table of per-CLI UI facts (MC-R1). Every CLI the wire can name has a complete entry, the entries
-/// agree with the wire ids, and no CLI's colour reads as a state or as the accent (PRODUCT.md colour meanings, MC-R12).
-@Suite("CLI registry: one complete entry per CLI")
+/// `CLIRegistry` is the one table of each CLI's look (MC-R1, MC27): every CLI the core lists has a complete look, and no CLI's
+/// colour reads as a state or as the accent (PRODUCT.md colour meanings, MC-R12). Every other fact comes from `clis.list`
+/// (`CLICatalogTests`).
+@Suite("CLI registry: one complete look per CLI", .fixtureCLIs)
 struct CLIRegistryTests {
     private typealias P = PaletteValue
 
-    static var entries: [CLIIdentity] { CLIRegistry.limitsCLIs.map(CLIRegistry.identity) }
+    /// Every look in the table, and the neutral one a CLI without an entry takes.
+    static var looks: [(id: String, look: CLILook)] {
+        CLIRegistry.looks.map { ($0.key.rawValue, $0.value) }.sorted { $0.id < $1.id } + [("neutral", CLIRegistry.neutral)]
+    }
 
     static var brandFolder: URL {
         URL(fileURLWithPath: #filePath)
@@ -18,36 +22,33 @@ struct CLIRegistryTests {
             .appendingPathComponent("Resources/Brand")
     }
 
-    @Test("every CLI the wire names has an entry under its own id, in the wire's order")
-    func entriesMatchTheWire() {
-        #expect(CLIRegistry.limitsCLIs == CoreLimitsCLI.allCases)
-        #expect(CLIRegistry.inventoryCLIs == CoreCLI.allCases)
-        for cli in CoreLimitsCLI.allCases { #expect(CLIRegistry.identity(cli).id == cli.rawValue) }
-        for cli in CoreCLI.allCases {
-            #expect(CLIRegistry.identity(cli).id == cli.rawValue)
-            #expect(CoreLimitsCLI(cli).rawValue == cli.rawValue)
-            #expect(CoreCLI(CoreLimitsCLI(cli)) == cli)
+    @Test("every CLI the core lists has its own look in the table")
+    func everyListedCLIHasALook() {
+        for info in CLICatalogFixture.list {
+            #expect(CLIRegistry.looks[info.id] != nil, "\(info.id) has no look: add its mark and tone to CLIRegistry")
         }
-        // The inventory lists a subset of the CLIs the app shows, in the same order.
-        #expect(CLIRegistry.limitsCLIs.compactMap { CoreCLI($0) } == CLIRegistry.inventoryCLIs)
     }
 
-    @Test("every entry has a label, a mark that exists, and a full tone")
-    func entriesAreComplete() {
-        let entries = Self.entries
-        #expect(!entries.isEmpty)
-        for entry in entries {
-            #expect(!entry.label.trimmingCharacters(in: .whitespaces).isEmpty, "\(entry.id) has no label")
-            #expect(entry.mark.fileName.hasSuffix(".svg"), "\(entry.id): \(entry.mark.fileName)")
-            let mark = Self.brandFolder.appendingPathComponent(entry.mark.fileName)
-            #expect(FileManager.default.fileExists(atPath: mark.path), "\(entry.id): no mark at \(mark.path)")
-            let fill = entry.tone.fillValue
-            #expect(fill.lightAlpha == 1 && fill.darkAlpha == 1, "\(entry.id): the fill must be opaque")
-            if let opacity = entry.tone.barOpacity { #expect(opacity > 0 && opacity < 1, "\(entry.id): bar opacity \(opacity)") }
+    @Test("every look has a mark that exists and a full tone; the neutral look has no mark")
+    func looksAreComplete() {
+        #expect(!CLIRegistry.looks.isEmpty)
+        for (id, look) in CLIRegistry.looks.map({ ($0.key.rawValue, $0.value) }) {
+            let mark = look.mark
+            #expect(mark != nil, "\(id) has no mark")
+            if let mark {
+                #expect(mark.fileName.hasSuffix(".svg"), "\(id): \(mark.fileName)")
+                let url = Self.brandFolder.appendingPathComponent(mark.fileName)
+                #expect(FileManager.default.fileExists(atPath: url.path), "\(id): no mark at \(url.path)")
+            }
         }
-        #expect(Set(entries.map(\.id)).count == entries.count, "two entries share an id")
-        #expect(Set(entries.map(\.label)).count == entries.count, "two entries share a label")
-        #expect(Set(entries.map(\.mark.fileName)).count == entries.count, "two entries share a mark")
+        for (id, look) in Self.looks {
+            let fill = look.tone.fillValue
+            #expect(fill.lightAlpha == 1 && fill.darkAlpha == 1, "\(id): the fill must be opaque")
+            if let opacity = look.tone.barOpacity { #expect(opacity > 0 && opacity < 1, "\(id): bar opacity \(opacity)") }
+        }
+        let marks = CLIRegistry.looks.values.compactMap { $0.mark?.fileName }
+        #expect(Set(marks).count == marks.count, "two looks share a mark")
+        #expect(CLIRegistry.neutral.mark == nil, "the neutral look draws the tone's dot, never another CLI's mark")
     }
 
     /// The colours that mean a state, and the accent's: a CLI tone is none of them.
@@ -67,10 +68,10 @@ struct CLIRegistryTests {
     @Test("no CLI tone is a state colour or the accent, nor sits in their hue family")
     func tonesKeepClearOfStatesAndAccent() {
         let hueFamilies = HuePolicyTests.states + [("accent", P.accent)]
-        for entry in Self.entries {
-            let tone = entry.tone.fillValue
+        for (id, look) in Self.looks {
+            let tone = look.tone.fillValue
             for (name, value) in Self.reserved {
-                #expect(!Self.same(tone, value), "\(entry.id)'s tone is the \(name) token")
+                #expect(!Self.same(tone, value), "\(id)'s tone is the \(name) token")
             }
             for appearance in Appearance.allCases {
                 let lch = ColorMath.oklch(tone.rgb(appearance))
@@ -78,51 +79,9 @@ struct CLIRegistryTests {
                 for (name, value) in hueFamilies {
                     let distance = ColorMath.hueDistance(lch.h, ColorMath.oklch(value.rgb(appearance)).h)
                     #expect(distance > HuePolicyTests.familyHalfWidth,
-                            "\(appearance): \(entry.id)'s tone is \(String(format: "%.1f", distance))° from \(name)")
+                            "\(appearance): \(id)'s tone is \(String(format: "%.1f", distance))° from \(name)")
                 }
             }
         }
-    }
-
-    /// One CLI's facts that the core keeps too, as the core writes them to `core/testdata/cli-registry.json` from its own registry
-    /// and adapters (`TestRegistryParityFile` in `core/internal/clis`).
-    struct ParityEntry: Decodable, Equatable {
-        let id: String
-        let label: String
-        let concepts: Set<String>
-        let logsHookRuns: Bool
-        let limitsReading: String
-    }
-
-    /// The same facts derived from `CLIRegistry`: the inventory wire enum carries the CLIs the inventory, its writes and the usage
-    /// scan know; `readsSessionLog` is the activity concept; every CLI the app shows has a Limits reading.
-    static func parityEntry(_ cli: CoreLimitsCLI) -> ParityEntry {
-        let identity = cli.identity
-        var concepts: Set<String> = ["limits"]
-        if CoreCLI(cli) != nil { concepts.formUnion(["inventory", "mutate", "usage"]) }
-        if identity.readsSessionLog { concepts.insert("activity") }
-        return ParityEntry(id: identity.id, label: identity.label, concepts: concepts, logsHookRuns: identity.logsHookRuns,
-                           limitsReading: identity.limitsReading.rawValue)
-    }
-
-    @Test("the facts the core keeps too match the core's registry, CLI by CLI and in its order")
-    func matchesTheCoreRegistry() throws {
-        let file = CoreTestData.directory.appendingPathComponent("cli-registry.json")
-        let core = try JSONDecoder().decode([ParityEntry].self, from: Data(contentsOf: file))
-        let app = CLIRegistry.limitsCLIs.map(Self.parityEntry)
-        #expect(core.map(\.id) == app.map(\.id), "CLIs or their order differ from \(file.path)")
-        for (expected, actual) in zip(core, app) {
-            #expect(actual == expected, "\(actual.id): CLIRegistry says \(actual), the core says \(expected)")
-        }
-    }
-
-    /// An id the wire does not know never reaches the registry: decoding refuses it, so no CLI silently takes another's look.
-    @Test("an unknown CLI id fails to decode instead of falling back to another CLI")
-    func unknownIDFailsLoudly() {
-        let decoder = JSONDecoder()
-        #expect(throws: DecodingError.self) { try decoder.decode(CoreCLI.self, from: Data(#""cursor""#.utf8)) }
-        #expect(throws: DecodingError.self) { try decoder.decode(CoreLimitsCLI.self, from: Data(#""cursor""#.utf8)) }
-        #expect(throws: DecodingError.self) { try decoder.decode(CoreCLI.self, from: Data(#""gemini""#.utf8)) }
-        #expect(CoreCLI(CoreLimitsCLI.gemini) == nil, "Gemini CLI has no inventory, so it maps to no inventory CLI")
     }
 }

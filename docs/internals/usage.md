@@ -13,7 +13,7 @@ How the core finds out which skills, subagents and hooks ran, by reading both CL
 | Line parsers | Turn one line into skill, subagent and hook names: one `lineParser` per CLI with the usage concept | [adapters.go](../../core/internal/usage/adapters.go) `parsers`, [claude.go](../../core/internal/usage/claude.go) `claudeLine`, `hookRecord`, [codex.go](../../core/internal/usage/codex.go) `codexLine`, [lines.go](../../core/internal/usage/lines.go) (shared day and name helpers) |
 | Scanner | Walk, cache check, parse, progress, one scan at a time, last result of the process | [scanner.go](../../core/internal/usage/scanner.go) `Scanner.Scan` |
 | Scan cache | `<data>/usage-cache.json`, one record per log | [cache.go](../../core/internal/usage/cache.go) |
-| Aggregation | Fold records into totals, session counts and the log window per CLI; the fixed `claude`/`codex` wire members are reached only through [wire-slots.go](../../core/internal/usage/wire-slots.go) | [aggregate.go](../../core/internal/usage/aggregate.go) |
+| Aggregation | Fold records into totals, session counts and the log window per CLI, one array element each in registry order (`Totals.For` and `Windows.For` read one and never answer with another CLI's) | [aggregate.go](../../core/internal/usage/aggregate.go), [types.go](../../core/internal/usage/types.go) |
 | Price table | Embedded rates, name lookup, cost estimate | [pricing.go](../../core/internal/pricing/pricing.go) `Price`, `EstimateCost`; [pricing.json](../../core/internal/pricing/pricing.json) |
 
 ## Where each fact comes from

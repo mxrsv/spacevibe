@@ -17,9 +17,6 @@ import (
 	"spacevibe.dev/core/internal/roots"
 )
 
-// CLI is a CLI id from the registry (clis.ID). Gemini CLI appears on this surface only (spec, Limits).
-type CLI = clis.ID
-
 // State says what one CLI's files tell about its limits.
 type State string
 
@@ -65,8 +62,8 @@ type Window struct {
 
 // Entry is what one CLI's files say about its usage limits.
 type Entry struct {
-	CLI   CLI   `json:"cli"`
-	State State `json:"state"`
+	CLI   clis.ID `json:"cli"`
+	State State   `json:"state"`
 	// Plan is the plan the record names (Codex `plan_type`), null when it names none.
 	Plan   *string `json:"plan"`
 	Source *Source `json:"source"`
@@ -128,7 +125,7 @@ func folderState(path string, found State) State {
 	return NotInstalled
 }
 
-func measured(cli CLI, at float64, windows []Window) Entry {
+func measured(cli clis.ID, at float64, windows []Window) Entry {
 	return Entry{CLI: cli, State: Measured, At: &at, Windows: windows}
 }
 

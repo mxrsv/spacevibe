@@ -1,16 +1,16 @@
 import Foundation
 import Testing
 
-/// Per-CLI facts live in `CLIRegistry` only (MC-R1): code outside it asks `cli.identity`, `cli.label` or the registry's lists,
-/// and never names a CLI (`.claude`, `CoreCLI.codex`, `CoreLimitsCLI.allCases`, `"codex-tool-silent"`). A `switch` over a CLI
+/// Per-CLI facts come from the core's `clis.list` through `CLICatalog`, and each CLI's look from `CLIRegistry` (MC-R1, MC27):
+/// code outside the look table asks `cli.identity`, `cli.label` or the catalog's lists, and never names a CLI (`.claude`,
+/// `CLIID.codex`, `cells[.codex]`, `"codex-tool-silent"`). A `switch` over a CLI
 /// or a `== .codex` is caught by the same patterns, since each names a case; a string that starts with a CLI's id (the id
 /// itself or a reason code the core prefixes with it) is caught by the string pattern.
 ///
-/// Reads source text, like `StyleBoundaryTests`. Exempt: the registry, `Core/` (the wire DTOs, whose cases and fixed
-/// `claude`/`codex` fields step 0b opens), `Gallery/` and the `*Shots.swift` / `*Synthetic.swift` files, which draw fixed
-/// synthetic CLIs on purpose. `allowed` is a ratchet: each entry is a two-CLI flow that only the owner's multi-CLI design can
+/// Reads source text, like `StyleBoundaryTests`. Exempt: the look table, `Core/` (the wire DTOs, which carry the open `CLIID`
+/// and name no CLI), `Gallery/` and the `*Shots.swift` / `*Synthetic.swift` files, which draw fixed synthetic CLIs on purpose. `allowed` is a ratchet: each entry is a two-CLI flow that only the owner's multi-CLI design can
 /// open, and a count that differs from its entry in either direction fails.
-@Suite("CLI branch policy: only the registry names a CLI")
+@Suite("CLI branch policy: only the registry names a CLI", .fixtureCLIs)
 struct CLIBranchPolicyTests {
     static var appSources: URL { StyleBoundaryTests.appSources }
 
@@ -22,8 +22,8 @@ struct CLIBranchPolicyTests {
         // A bare case: `.claude`, `== .codex`, `case .gemini:`. Not a member of a value (`cells.claude`, `x?.codex`), not a path
         // inside a string (`~/.claude`).
         ("CLI case", #"(?<![\w)\]?!/"])\.(claude|codex|gemini)\b"#),
-        // A qualified case, the registry's own entries, or a loop over the wire enum instead of the registry's list.
-        ("qualified CLI", #"\b(CoreCLI|CoreLimitsCLI|InventoryCLI|CLIRegistry)\.(claude|codex|gemini|allCases)\b"#),
+        // A qualified id, or a loop over every id instead of the catalog's list.
+        ("qualified CLI", #"\b(CLIID|CLIRegistry)\.(claude|codex|gemini|allCases)\b"#),
         // A string that starts with a CLI's id: the id itself or a code the core prefixes with it (`"claude-prompt-vs-busy"`).
         // Not a path (`"~/.claude"`).
         ("CLI string", #""(claude|codex|gemini)\b"#),
@@ -95,13 +95,14 @@ struct CLIBranchPolicyTests {
         #expect(Self.violations(in: "if cli == .claude { return }") == 1)
         #expect(Self.violations(in: "case .codex: Palette.codex") == 1)
         #expect(Self.violations(in: "let order = [.claude, .codex]") == 2)
-        #expect(Self.violations(in: "CLIMark(CoreCLI.claude, size: .glyph)") == 1)
-        #expect(Self.violations(in: "for cli in CoreCLI.allCases {") == 1)
-        #expect(Self.violations(in: "ForEach(CoreLimitsCLI.allCases, id: \\.self)") == 1)
+        #expect(Self.violations(in: "CLIMark(CLIID.claude, size: .glyph)") == 1)
+        #expect(Self.violations(in: "for cli in CLIID.allCases {") == 1)
+        #expect(Self.violations(in: "ForEach(CLIID.allCases, id: \\.self)") == 1)
         #expect(Self.violations(in: "let tone = CLIRegistry.codex.tone") == 1)
-        #expect(Self.violations(in: "for cli in CLIRegistry.inventoryCLIs {") == 0)
+        #expect(Self.violations(in: "for cli in CLICatalog.current.inventoryCLIs {") == 0)
         #expect(Self.violations(in: "let name = cli.identity.label") == 0)
         #expect(Self.violations(in: "row.cells.claude = cell") == 0)
+        #expect(Self.violations(in: "row.cells[.claude] = cell") == 1)
         #expect(Self.violations(in: "let old = reading?.codex") == 0)
         #expect(Self.violations(in: #"static let file = "~/.claude/settings.json""#) == 0)
         #expect(Self.violations(in: #"filter { $0.code == "claude-prompt-vs-busy" || $0.code == "codex-tool-silent" }"#) == 2)

@@ -461,7 +461,7 @@ func TestFileHistory(t *testing.T) { // Swift: "file history: edits across sessi
 	rankA := file("/work/app-a/src/rank.ts")
 	eq(t, "edits", rankA.Edits, 3)
 	eq(t, "sessions", rankA.Sessions, 2)
-	if !slices.Equal(rankA.CLIs, []CLI{clis.Claude, clis.Codex}) {
+	if !slices.Equal(rankA.CLIs, []clis.ID{clis.Claude, clis.Codex}) {
 		t.Errorf("clis = %v", rankA.CLIs)
 	}
 	eq(t, "last", *rankA.Last, activityIso(m(5)))

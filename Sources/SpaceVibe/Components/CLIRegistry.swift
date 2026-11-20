@@ -1,71 +1,32 @@
 import Foundation
 
-/// The one table of per-CLI UI facts (MC-R1, MC17): each CLI's name, mark, colour tokens and the facts its wording reads.
-/// Every other file asks this table through `cli.identity` (or the lists below) and never names a CLI itself;
-/// `CLIBranchPolicyTests` fails on a CLI literal outside this file and the DTO layer in `Core/`. The facts the core also keeps
-/// (id, label, which concepts, hook-run logging, limits reading) must match `core/testdata/cli-registry.json`, which the core
-/// writes from its own registry (`CLIRegistryTests`).
+/// The one table of each CLI's look (MC-R1, MC27): its mark and its identity tone, keyed by the core's id. Every other fact
+/// about a CLI (its label, the concepts and item kinds it has, where its limits come from, how its hooks are logged) comes from
+/// the core's `clis.list`, joined to this table in `CLICatalog`. Every other file asks the catalog through `cli.identity` (or
+/// its lists) and never names a CLI itself; `CLIBranchPolicyTests` fails on a CLI literal outside this file and `Core/`.
 ///
-/// Adding a CLI: add its case to the wire enums in `Core/`, add its entry here and its mark to `Resources/Brand`, and its
-/// tokens to `PaletteValue`. The switches below are exhaustive, so the build fails until the entry exists; nothing falls
-/// back to another CLI's look.
+/// Adding a CLI's look: add its id constant below, its entry in `looks`, its mark to `Resources/Brand` and its tone to
+/// `PaletteValue` (`CLIRegistryTests` checks the mark exists and the tone keeps clear of the states and the accent). A CLI the
+/// core lists with no entry here still shows, with the `neutral` look; nothing falls back to another CLI's look.
 enum CLIRegistry {
-    static let claude = CLIIdentity(
-        id: "claude", label: "Claude Code",
-        mark: CLIMarkArt(fileName: "claude-spark-clay.svg", isMonochrome: false),
-        tone: CLITone(fill: PaletteValue.claude),
-        limitsReading: .usageCache, readsSessionLog: true, logsHookRuns: true, approvalLimitCode: "claude-prompt-vs-busy",
-        subagentWithoutToolsGetsEveryTool: true)
+    static let looks: [CLIID: CLILook] = [
+        .claude: CLILook(mark: CLIMarkArt(fileName: "claude-spark-clay.svg", isMonochrome: false), tone: CLITone(fill: PaletteValue.claude)),
+        // Codex's colour is the text colour; its bar is a little quieter than Claude's clay.
+        .codex: CLILook(mark: CLIMarkArt(fileName: "codex-blossom-white.svg", isMonochrome: true),
+                        tone: CLITone(fill: PaletteValue.codex, barOpacity: Metrics.Bar.codexOpacity)),
+        // Gemini CLI has no brand colour in the app, so it reads neutral.
+        .gemini: CLILook(mark: CLIMarkArt(fileName: "gemini.svg", isMonochrome: false), tone: CLITone(fill: PaletteValue.fg2)),
+    ]
 
-    /// Codex's colour is the text colour; its bar is a little quieter than Claude's clay.
-    static let codex = CLIIdentity(
-        id: "codex", label: "Codex",
-        mark: CLIMarkArt(fileName: "codex-blossom-white.svg", isMonochrome: true),
-        tone: CLITone(fill: PaletteValue.codex, barOpacity: Metrics.Bar.codexOpacity),
-        limitsReading: .lastTurn, readsSessionLog: true, logsHookRuns: false, approvalLimitCode: "codex-tool-silent",
-        subagentWithoutToolsGetsEveryTool: false)
+    /// The look of a CLI the core lists and this table does not: no mark (`CLIMark` draws the tone's dot) and the neutral tone.
+    static let neutral = CLILook(mark: nil, tone: CLITone(fill: PaletteValue.fg2))
 
-    /// Gemini CLI has no brand colour in the app, so it reads neutral. It appears on Limits and Activity only.
-    static let gemini = CLIIdentity(
-        id: "gemini", label: "Gemini CLI",
-        mark: CLIMarkArt(fileName: "gemini.svg", isMonochrome: false),
-        tone: CLITone(fill: PaletteValue.fg2),
-        limitsReading: .notKept, readsSessionLog: false, logsHookRuns: false, approvalLimitCode: nil,
-        subagentWithoutToolsGetsEveryTool: false)
-
-    /// The CLIs the inventory, Activity and the copy actions know, in display order.
-    static let inventoryCLIs: [CoreCLI] = CoreCLI.allCases
-    /// Every CLI the app shows (the Limits reading's), in display order.
-    static let limitsCLIs: [CoreLimitsCLI] = CoreLimitsCLI.allCases
-
-    static func identity(_ cli: CoreLimitsCLI) -> CLIIdentity {
-        switch cli {
-        case .claude: claude
-        case .codex: codex
-        case .gemini: gemini
-        }
-    }
-
-    static func identity(_ cli: CoreCLI) -> CLIIdentity { identity(CoreLimitsCLI(cli)) }
+    static func look(_ id: CLIID) -> CLILook { looks[id] ?? neutral }
 }
 
-extension CoreLimitsCLI {
-    /// The same CLI as the Limits reading names it.
-    init(_ cli: CoreCLI) {
-        switch cli {
-        case .claude: self = .claude
-        case .codex: self = .codex
-        }
-    }
-}
-
-extension CoreCLI {
-    /// The inventory's CLI for a Limits CLI, or nil for one the inventory does not list (Gemini CLI).
-    init?(_ cli: CoreLimitsCLI) {
-        switch cli {
-        case .claude: self = .claude
-        case .codex: self = .codex
-        case .gemini: return nil
-        }
-    }
+/// The ids the look table, the tests and the synthetic shots name. Screens never do (`CLIBranchPolicyTests`).
+extension CLIID {
+    static let claude = CLIID("claude")
+    static let codex = CLIID("codex")
+    static let gemini = CLIID("gemini")
 }

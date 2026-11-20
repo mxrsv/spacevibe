@@ -38,8 +38,13 @@ func (codexActivity) edits(st *logState) []editEvent {
 }
 
 func (codexActivity) limits() []Reason {
-	return []Reason{ReasonCodexToolSilent, ReasonCodexNoRollout, ReasonCodexHookRuns}
+	return []Reason{codexApprovalLimit, ReasonCodexNoRollout, ReasonCodexHookRuns}
 }
+
+// codexApprovalLimit: Codex logs nothing while a tool runs, so codexState reads a quiet tool run as this.
+const codexApprovalLimit = ReasonCodexToolSilent
+
+func (codexActivity) approvalLimit() Reason { return codexApprovalLimit }
 
 // codexRead is Codex's part of one Read.
 type codexRead struct {

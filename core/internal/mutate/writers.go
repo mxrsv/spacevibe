@@ -5,8 +5,8 @@ import (
 
 	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/coreerr"
+	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/roots"
-	"spacevibe.dev/core/internal/usage"
 )
 
 // cliWriter is how SpaceVibe writes one CLI's files, beyond the folders its registry layout names (skills, agents,
@@ -16,6 +16,9 @@ type cliWriter interface {
 	agentFile(name, description, instructions string) (ext, text string)
 	// takesCopiedHooks is true when a hook copied from another CLI may be written into this CLI's hook file.
 	takesCopiedHooks() bool
+	// agentWithoutToolsGetsEveryTool is true when the CLI gives a subagent whose file names no tools every tool. agentFile
+	// never writes a tools line, so this is what a copied agent can do in that CLI.
+	agentWithoutToolsGetsEveryTool() bool
 	// configFiles are the CLI's configuration files an Undo may edit. They are matched by real path, so a file that
 	// is a link out of the CLI folder (a dotfiles setup) is still accepted.
 	configFiles(cli roots.CLIRoots) []string
@@ -30,7 +33,7 @@ var writers = clis.NewAdapters(clis.Mutate, map[clis.ID]cliWriter{
 })
 
 // writerOf is the writer and folders of a CLI SpaceVibe writes.
-func (tx *Tx) writerOf(cli usage.CLI) (cliWriter, roots.CLIRoots, error) {
+func (tx *Tx) writerOf(cli clis.ID) (cliWriter, roots.CLIRoots, error) {
 	w, err := writers.For(cli)
 	if err != nil {
 		return nil, roots.CLIRoots{}, err
@@ -43,20 +46,20 @@ func (tx *Tx) writerOf(cli usage.CLI) (cliWriter, roots.CLIRoots, error) {
 }
 
 // cliRoots is the folders of a CLI SpaceVibe writes; see writerOf.
-func (tx *Tx) cliRoots(cli usage.CLI) (roots.CLIRoots, error) {
+func (tx *Tx) cliRoots(cli clis.ID) (roots.CLIRoots, error) {
 	_, folders, err := tx.writerOf(cli)
 	return folders, err
 }
 
 // label is the CLI's product name from the registry; an id with no entry is shown as it is.
-func label(cli usage.CLI) string {
+func label(cli clis.ID) string {
 	if d, err := clis.Lookup(cli); err == nil {
 		return d.Label
 	}
 	return string(cli)
 }
 
-func labels(targets []usage.CLI) string {
+func labels(targets []clis.ID) string {
 	parts := make([]string, len(targets))
 	for i, cli := range targets {
 		parts[i] = label(cli)
@@ -64,20 +67,67 @@ func labels(targets []usage.CLI) string {
 	return strings.Join(parts, " and ")
 }
 
-// copyTarget is the CLI CopyToOther writes to: the one other CLI SpaceVibe writes. With more than one candidate the
-// target is ambiguous, because the request names none, and the copy is refused. TestCopyTargetAssumesTwoWrittenCLIs
-// fails once a third CLI gets the mutate concept, until this is redesigned by shared format (MC-R8, W-T4).
-func copyTarget(source usage.CLI) (usage.CLI, error) {
-	var others []usage.CLI
-	for _, w := range writers.InOrder() {
-		if w.ID != source {
-			others = append(others, w.ID)
+// AgentWithoutToolsGetsEveryTool is true when an agent SpaceVibe writes into cli (which names no tools) can use every
+// tool there. False for a CLI SpaceVibe does not write.
+func AgentWithoutToolsGetsEveryTool(cli clis.ID) bool {
+	w, err := writers.For(cli)
+	return err == nil && w.agentWithoutToolsGetsEveryTool()
+}
+
+// kindsOf is each CLI's per-kind declaration, from its inventory adapter. Tests swap it to try a declaration no shipped
+// CLI has.
+var kindsOf = inventory.KindsOf
+
+// writableKind refuses a write of kind into cli unless the CLI's inventory adapter declares the kind full: an absent
+// kind is never a target, and a read-only one is never written (spec MC-R5, MC11).
+func writableKind(cli clis.ID, kind inventory.Kind) error {
+	kinds, err := kindsOf(cli)
+	if err != nil {
+		return err
+	}
+	switch kinds.Of(kind).Support {
+	case inventory.SupportFull:
+		return nil
+	case inventory.SupportReadOnly:
+		return fail("SpaceVibe only shows the "+string(kind)+"s of "+label(cli)+", so nothing was changed.", coreerr.StatusForbidden)
+	}
+	return fail(label(cli)+" has no "+string(kind)+"s, so nothing was changed.", coreerr.StatusConflict)
+}
+
+// requireCopyTarget refuses a target id SpaceVibe does not write: an unknown id (wrapping clis.ErrUnknownCLI) or a
+// CLI without the mutate concept (wrapping clis.ErrConceptAbsent). It looks at no file.
+func requireCopyTarget(target clis.ID) error {
+	if _, err := writers.For(target); err != nil {
+		if d, lookup := clis.Lookup(target); lookup == nil {
+			return chain(coreerr.New("SpaceVibe does not write "+d.Label+", so nothing was copied."), err)
 		}
+		return chain(coreerr.New("target must be "+writableIDs()+"."), err)
 	}
-	if len(others) != 1 {
-		return "", fail("SpaceVibe cannot tell which CLI to copy this to.", coreerr.StatusConflict)
+	return nil
+}
+
+// copyAllowed refuses a copy of kind from source into target unless target is another CLI that writes the kind and
+// reads the same copy format (spec MC-R8). Different formats are refused, never converted (MC5).
+func copyAllowed(source, target clis.ID, kind inventory.Kind) error {
+	if source == target {
+		return coreerr.New("This " + string(kind) + " is already in " + label(target) + ". Pick another CLI to copy it to.")
 	}
-	return others[0], nil
+	if err := writableKind(target, kind); err != nil {
+		return err
+	}
+	from, err := kindsOf(source)
+	if err != nil {
+		return err
+	}
+	to, err := kindsOf(target)
+	if err != nil {
+		return err
+	}
+	format := from.Of(kind).CopyFormat
+	if format == "" || format != to.Of(kind).CopyFormat {
+		return fail(label(target)+" reads another "+string(kind)+" format, so this "+string(kind)+" cannot be copied to it.", coreerr.StatusConflict)
+	}
+	return nil
 }
 
 // writableIDs is "claude or codex": the ids of the CLIs SpaceVibe writes, for the refusal of any other id.

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"spacevibe.dev/core/internal/clis"
 	"spacevibe.dev/core/internal/textjs"
 )
 
@@ -17,7 +18,7 @@ const (
 
 type logFile struct {
 	path    string
-	cli     CLI
+	cli     clis.ID
 	session string
 	sub     bool
 	mtimeMs float64

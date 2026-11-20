@@ -9,10 +9,11 @@
 // lines are read by its parser (adapters.go).
 package usage
 
-import "spacevibe.dev/core/internal/clis"
+import (
+	"fmt"
 
-// CLI is a CLI id; its wire value is the registry id ("claude", "codex").
-type CLI = clis.ID
+	"spacevibe.dev/core/internal/clis"
+)
 
 // NameUsage is what the logs say about one skill or agent name: in how many sessions it was used, and on
 // which days (YYYY-MM-DD, sorted).
@@ -35,40 +36,73 @@ type HookTotals struct {
 // CLITotals are the totals of one CLI. Skill and Agent are keyed by the bare name; Hook by the hook hash.
 // The maps are never nil.
 type CLITotals struct {
+	CLI   clis.ID               `json:"cli"`
 	Skill map[string]NameUsage  `json:"skill"`
 	Agent map[string]NameUsage  `json:"agent"`
 	Hook  map[string]HookTotals `json:"hook"`
 }
 
-func emptyTotals() CLITotals {
-	return CLITotals{Skill: map[string]NameUsage{}, Agent: map[string]NameUsage{}, Hook: map[string]HookTotals{}}
+// CLIID is the CLI the totals belong to.
+func (t CLITotals) CLIID() clis.ID { return t.CLI }
+
+func emptyTotals(cli clis.ID) CLITotals {
+	return CLITotals{CLI: cli, Skill: map[string]NameUsage{}, Agent: map[string]NameUsage{}, Hook: map[string]HookTotals{}}
 }
 
-// Totals holds the totals of both CLIs. The fixed members are the wire shape; read and write them through For and
-// set (wire-slots.go).
-type Totals struct {
-	Claude CLITotals `json:"claude"`
-	Codex  CLITotals `json:"codex"`
+// Totals holds the totals of every CLI the scan reads, one element per CLI in wire order.
+type Totals []CLITotals
+
+// For is the totals of one CLI; see errNotScanned for a CLI the result holds none of.
+func (t Totals) For(cli clis.ID) (CLITotals, error) {
+	if e, ok := clis.Find(t, cli); ok {
+		return e, nil
+	}
+	return CLITotals{}, errNotScanned(cli)
 }
 
 // LogWindow is the span of logs scanned for one CLI. Oldest is the first timestamp's day; Newest is the
 // newest log's mtime in ms since 1970.
 type LogWindow struct {
+	CLI    clis.ID `json:"cli"`
 	Files  int     `json:"files"`
 	Oldest *string `json:"oldest"`
 	Newest *int64  `json:"newest"`
 }
 
-// Windows holds the log window of both CLIs, one fixed member each (wire-slots.go).
-type Windows struct {
-	Claude LogWindow `json:"claude"`
-	Codex  LogWindow `json:"codex"`
+// CLIID is the CLI the window belongs to.
+func (w LogWindow) CLIID() clis.ID { return w.CLI }
+
+// Windows holds the log window of every CLI the scan reads, one element per CLI in wire order.
+type Windows []LogWindow
+
+// For is the window of one CLI; see errNotScanned for a CLI the result holds none of.
+func (w Windows) For(cli clis.ID) (LogWindow, error) {
+	if e, ok := clis.Find(w, cli); ok {
+		return e, nil
+	}
+	return LogWindow{}, errNotScanned(cli)
 }
 
-// Sessions counts the distinct sessions per CLI, one fixed member each (wire-slots.go).
-type Sessions struct {
-	Claude int `json:"claude"`
-	Codex  int `json:"codex"`
+// SessionCount is the number of distinct sessions of one CLI.
+type SessionCount struct {
+	CLI   clis.ID `json:"cli"`
+	Count int     `json:"count"`
+}
+
+// CLIID is the CLI the count belongs to.
+func (s SessionCount) CLIID() clis.ID { return s.CLI }
+
+// Sessions counts the distinct sessions of every CLI the scan reads, one element per CLI in wire order.
+type Sessions []SessionCount
+
+// errNotScanned is why a result holds nothing for cli: an error wrapping clis.ErrUnknownCLI for an id with no entry,
+// clis.ErrConceptAbsent for a CLI whose logs the scan does not read, and a plain error for a result that was built
+// without it. It is never another CLI's value.
+func errNotScanned(cli clis.ID) error {
+	if _, err := parsers.For(cli); err != nil {
+		return err
+	}
+	return fmt.Errorf("usage: the result holds no entry for %s", cli)
 }
 
 // Result is the result of one scan: the shape scan() returns in Node usage.

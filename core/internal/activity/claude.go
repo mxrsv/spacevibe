@@ -25,7 +25,12 @@ func (claudeActivity) fold(st *logState, line []byte) { foldClaude(st, line) }
 
 func (claudeActivity) edits(st *logState) []editEvent { return st.edits }
 
-func (claudeActivity) limits() []Reason { return []Reason{ReasonClaudePromptVsBusy} }
+func (claudeActivity) limits() []Reason { return []Reason{claudeApprovalLimit} }
+
+// claudeApprovalLimit: Claude Code records no permission prompt, so claudeState reads a quiet tool run as this.
+const claudeApprovalLimit = ReasonClaudePromptVsBusy
+
+func (claudeActivity) approvalLimit() Reason { return claudeApprovalLimit }
 
 // claudeRead is Claude Code's part of one Read.
 type claudeRead struct {

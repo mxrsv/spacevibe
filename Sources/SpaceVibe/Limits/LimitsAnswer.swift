@@ -52,7 +52,7 @@ struct LimitsAnswer: Equatable {
 
     struct WindowRow: Equatable, Identifiable {
         let id: String
-        let cli: CoreLimitsCLI
+        let cli: CLIID
         let name: String
         /// Whole percent left; nil once the reset has passed.
         let left: Int?
@@ -72,7 +72,7 @@ struct LimitsAnswer: Equatable {
             case note(String, Action?)
         }
 
-        let cli: CoreLimitsCLI
+        let cli: CLIID
         /// Windows listed; nil when the CLI lists none.
         let count: Int?
         let mark: Mark?
@@ -85,7 +85,7 @@ struct LimitsAnswer: Equatable {
 
     struct Reset: Equatable, Identifiable {
         let id: String
-        let cli: CoreLimitsCLI
+        let cli: CLIID
         /// "21:12", "Fri 16:00", "Nov 10".
         let time: String
         /// "Codex Weekly".
@@ -97,7 +97,7 @@ struct LimitsAnswer: Equatable {
     }
 
     struct SourceLine: Equatable, Identifiable {
-        let cli: CoreLimitsCLI
+        let cli: CLIID
         /// "Codex Pro": the CLI and the plan its record names.
         let name: String
         /// "read 4 min ago", "no reading", "not installed", "no log", "reading".
@@ -120,14 +120,14 @@ struct LimitsAnswer: Equatable {
             sentence = nil
             verdict = nil
             resets = nil
-            sources = CLIRegistry.limitsCLIs.map { SourceLine(cli: $0, name: LimitsWording.cliName($0), state: "reading") }
-            bands = CLIRegistry.limitsCLIs.map { Band(cli: $0, count: nil, mark: nil, staleAge: nil, body: .loading) }
+            sources = CLICatalog.current.limitsCLIs.map { SourceLine(cli: $0, name: LimitsWording.cliName($0), state: "reading") }
+            bands = CLICatalog.current.limitsCLIs.map { Band(cli: $0, count: nil, mark: nil, staleAge: nil, body: .loading) }
         case .failed:
             sentence = "No reading yet."
             verdict = Verdict(glyph: .nm, title: "The read did not finish", text: "Refresh to try again.")
             resets = []
-            sources = CLIRegistry.limitsCLIs.map { SourceLine(cli: $0, name: LimitsWording.cliName($0), state: "no reading") }
-            bands = CLIRegistry.limitsCLIs.map {
+            sources = CLICatalog.current.limitsCLIs.map { SourceLine(cli: $0, name: LimitsWording.cliName($0), state: "no reading") }
+            bands = CLICatalog.current.limitsCLIs.map {
                 Band(cli: $0, count: nil, mark: Mark(kind: .danger, label: "Read failed"), staleAge: nil,
                      body: .note("The last read did not finish.", .retry))
             }
@@ -281,7 +281,7 @@ struct LimitsAnswer: Equatable {
     }
 
     /// The slot's glyph in the mock's order: a passed reset, then a stale reading (both the neutral clock), then little left.
-    private static func row(_ window: CoreLimitWindow, cli: CoreLimitsCLI, stale age: String?, now: Date, calendar: Calendar) -> WindowRow {
+    private static func row(_ window: CoreLimitWindow, cli: CLIID, stale age: String?, now: Date, calendar: Calendar) -> WindowRow {
         let name = LimitsWording.name(window)
         let left = window.isCurrent(at: now) ? LimitsWording.shareLeft(window) : nil
         let tone = window.isCurrent(at: now) ? LimitsWording.tone(window) : .normal

@@ -23,7 +23,7 @@ func TestCopySkillTakesTheFolderName(t *testing.T) {
 	r := h.roots()
 	h.write(".claude/skills/pdf-tools/SKILL.md", skillMd("PDF Tools", "d"))
 	h.installCodex()
-	e := must(CopyToOther(r, idOf(t, r, "PDF Tools", inventory.KindSkill, clis.Claude)))
+	e := must(copyToTheOther(r, idOf(t, r, "PDF Tools", inventory.KindSkill, clis.Claude)))
 	if e.Label != "Copied skill pdf-tools to Codex" || !exists(h.path(".codex/skills/pdf-tools/SKILL.md")) {
 		t.Errorf("label %q", e.Label)
 	}
@@ -35,7 +35,7 @@ func TestCopyAgentWithAnUnwritableNameIsRefused(t *testing.T) {
 	r := h.roots()
 	h.write(".claude/agents/reviewer.md", "---\nname: Code_Reviewer\ndescription: d\n---\nReview it.\n")
 	h.installCodex()
-	_, err := CopyToOther(r, idOf(t, r, "Code_Reviewer", inventory.KindAgent, clis.Claude))
+	_, err := copyToTheOther(r, idOf(t, r, "Code_Reviewer", inventory.KindAgent, clis.Claude))
 	if m := wantErr(t, err, 409); !strings.Contains(m, "Code_Reviewer") {
 		t.Errorf("message %q does not name the agent", m)
 	}
@@ -49,7 +49,7 @@ func TestCopyRefusesACLIThatIsNotInstalled(t *testing.T) {
 	h := newHome(t)
 	r := h.roots()
 	h.write(".claude/skills/tdd/SKILL.md", skillMd("tdd", "d"))
-	_, err := CopyToOther(r, idOf(t, r, "tdd", inventory.KindSkill, clis.Claude))
+	_, err := copyToTheOther(r, idOf(t, r, "tdd", inventory.KindSkill, clis.Claude))
 	if m := wantErr(t, err, 409); m != "Codex is not installed on this Mac, so nothing was copied." {
 		t.Errorf("message %q", m)
 	}
@@ -64,7 +64,7 @@ func TestCopySkillWithAnUnwritableFolderNameNamesTheFolder(t *testing.T) {
 	r := h.roots()
 	h.write(".claude/skills/My_Skill/SKILL.md", skillMd("my-skill", "d"))
 	h.installCodex()
-	_, err := CopyToOther(r, idOf(t, r, "my-skill", inventory.KindSkill, clis.Claude))
+	_, err := copyToTheOther(r, idOf(t, r, "my-skill", inventory.KindSkill, clis.Claude))
 	if m := wantErr(t, err, 409); !strings.Contains(m, "My_Skill") {
 		t.Errorf("message %q does not name the folder", m)
 	}

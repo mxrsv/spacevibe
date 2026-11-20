@@ -3,6 +3,7 @@ package activity
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"spacevibe.dev/core/internal/clis"
@@ -22,7 +23,7 @@ func TestFoldRefusesACLIWithoutAdapter(t *testing.T) {
 	sb := newSandbox(t)
 	path := sb.put(".gemini/tmp/chat.jsonl", "{}\n", 0)
 	cases := []struct {
-		id   CLI
+		id   clis.ID
 		want error
 	}{{clis.Gemini, clis.ErrConceptAbsent}, {"nope", clis.ErrUnknownCLI}}
 	for _, c := range cases {
@@ -55,7 +56,7 @@ func TestStopRefusesACLIWithoutAdapter(t *testing.T) {
 	sb.status(11, obj{"procStart": stopStart})
 	p := newFakeProc([]int{11}, map[int]string{11: stopStart}, nil)
 	for _, c := range []struct {
-		id   CLI
+		id   clis.ID
 		want error
 	}{{clis.Gemini, clis.ErrConceptAbsent}, {"nope", clis.ErrUnknownCLI}} {
 		if _, err := stopSession(t, sb, c.id, activitySid(11), p, fastStop); !errors.Is(err, c.want) {
@@ -80,6 +81,41 @@ func TestFixedLimitsInWireOrder(t *testing.T) {
 	for i := range want {
 		if got[i].CLI != want[i].CLI || got[i].Code != want[i].Code || got[i].Text != want[i].Code.Text() {
 			t.Errorf("limit %d = %+v, want %+v", i, got[i], want[i])
+		}
+	}
+}
+
+// The approval limit the shell words a waiting session with comes from the adapter's state function and is one of the
+// limits every report lists, so the shell finds its text there.
+func TestApprovalLimitIsAFixedLimit(t *testing.T) {
+	for _, a := range adapters.InOrder() {
+		code, err := ApprovalLimit(a.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code != "" && !slices.Contains(a.Adapter.limits(), code) {
+			t.Errorf("%s: approval limit %s is not in its fixed limits %v", a.ID, code, a.Adapter.limits())
+		}
+	}
+	if got, _ := ApprovalLimit(clis.Claude); got != ReasonClaudePromptVsBusy {
+		t.Errorf("claude = %q", got)
+	}
+	if got, _ := ApprovalLimit(clis.Codex); got != ReasonCodexToolSilent {
+		t.Errorf("codex = %q", got)
+	}
+	if _, err := ApprovalLimit(clis.Gemini); !errors.Is(err, clis.ErrConceptAbsent) {
+		t.Errorf("gemini = %v", err)
+	}
+	quiet := newLogState(clis.Codex)
+	quiet.status = "busy"
+	quiet.pending.Set("t", pendingCall{name: "Bash"})
+	for name, got := range map[string]stateInfo{
+		"claude": claudeState(true, "busy", quiet, 60_000, 1_000),
+		"codex":  codexState(quiet, 60_000, 1_000),
+	} {
+		want, _ := ApprovalLimit(clis.ID(name))
+		if got.reason == nil || *got.reason != want {
+			t.Errorf("%s state of a quiet tool run = %+v, want the approval limit %s", name, got, want)
 		}
 	}
 }

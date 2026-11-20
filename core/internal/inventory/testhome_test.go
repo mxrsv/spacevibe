@@ -105,7 +105,7 @@ func mustTime(t testing.TB, iso string) time.Time {
 
 func ptr[T any](v T) *T { return &v }
 
-func item(inv Snapshot, name string, cli ...CLI) *Item {
+func item(inv Snapshot, name string, cli ...clis.ID) *Item {
 	want := Claude
 	if len(cli) > 0 {
 		want = cli[0]

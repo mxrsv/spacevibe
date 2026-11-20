@@ -13,6 +13,10 @@ func (codexWriter) agentFile(name, description, instructions string) (string, st
 	return "toml", "name = " + tomlQuote(name) + "\ndescription = " + tomlQuote(description) + "\ndeveloper_instructions = " + tomlQuote(agentBody(instructions)) + "\n"
 }
 
+// agentWithoutToolsGetsEveryTool is false: what Codex gives an agent file with no model or tools is not verified, so
+// SpaceVibe does not claim it.
+func (codexWriter) agentWithoutToolsGetsEveryTool() bool { return false }
+
 // takesCopiedHooks is false: Codex skips a hook SpaceVibe wrote until it is trusted, so a copy would look done and do
 // nothing (spec, "To verify"; G-fix.16).
 func (codexWriter) takesCopiedHooks() bool { return false }

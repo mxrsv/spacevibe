@@ -24,6 +24,7 @@ func TestLoadFrom(t *testing.T) {
 		{"test junk fails closed", map[string]string{"SPACEVIBE_TEST": "yes"}, Config{}, true},
 		{"home", map[string]string{"SPACEVIBE_HOME": "/tmp/x/"}, Config{Home: "/tmp/x"}, false},
 		{"cli folders", map[string]string{"HOME": "/h", "CLAUDE_CONFIG_DIR": "/c", "CODEX_HOME": "/x"}, Config{UserHome: "/h", RootOverrides: map[clis.ID]string{clis.Claude: "/c", clis.Codex: "/x"}}, false},
+		{"path folders", map[string]string{"PATH": "/usr/bin::bin:/opt/x/bin"}, Config{SearchPath: []string{"/usr/bin", "bin", "/opt/x/bin"}}, false},
 		{"proc fixture", map[string]string{"SPACEVIBE_PROC_FIXTURE": "/tmp/p.json"}, Config{ProcFixture: "/tmp/p.json"}, false},
 		{"relative home fails closed", map[string]string{"SPACEVIBE_HOME": "x"}, Config{}, true},
 		{"relative HOME fails closed", map[string]string{"HOME": "h"}, Config{}, true},

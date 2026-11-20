@@ -27,8 +27,8 @@ enum LimitsCountdown {
 
     /// How long before its reset `window` counts, or nil when it never does: a window of a CLI that keeps no limits on disk, an inactive one, one scoped
     /// to a model, or one that is neither the 5-hour nor the weekly window. Claude's `five_hour` and `session` both count.
-    static func lead(_ window: CoreLimitWindow, cli: CoreLimitsCLI, weekly: WeeklyCountdownLead) -> TimeInterval? {
-        guard cli.identity.limitsReading != .notKept, window.active, window.scope == nil else { return nil }
+    static func lead(_ window: CoreLimitWindow, cli: CLIID, weekly: WeeklyCountdownLead) -> TimeInterval? {
+        guard let reading = cli.identity.limitsReading, reading != .notKept, window.active, window.scope == nil else { return nil }
         switch window.minutes {
         case fiveHourMinutes: return fiveHourLead
         case weekMinutes: return weekly.seconds

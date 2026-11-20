@@ -13,7 +13,6 @@ import (
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
-	"spacevibe.dev/core/internal/usage"
 )
 
 // MutationTransactionTests.swift. The Swift "rule" operation used RulesStore.changeVerdict, which the rules package
@@ -29,7 +28,7 @@ func seedTransaction(t *testing.T) (tempHome, roots.Roots) {
 	r := h.roots()
 	h.installCodex()
 	h.write(".claude/settings.json", `{"permissions":{"deny":["Bash"]}}`)
-	claude := []usage.CLI{clis.Claude}
+	claude := []clis.ID{clis.Claude}
 	must(AddSkill(r, claude, "existing-skill", "Synthetic skill", ""))
 	must(AddAgent(r, claude, "existing-agent", "Synthetic agent", "Synthetic instructions."))
 	for _, name := range []string{"missing-first.sh", "missing-second.sh"} {
@@ -51,7 +50,7 @@ func runOperation(t *testing.T, op operation, r roots.Roots) error {
 		t.Fatalf("no claude %s", kind)
 		return ""
 	}
-	both := []usage.CLI{clis.Claude, clis.Codex}
+	both := []clis.ID{clis.Claude, clis.Codex}
 	var err error
 	switch op {
 	case "rule":
@@ -67,9 +66,9 @@ func runOperation(t *testing.T, op operation, r roots.Roots) error {
 	case "removeAgent":
 		_, err = RemoveItem(r, itemID(inventory.KindAgent))
 	case "copySkill":
-		_, err = CopyToOther(r, itemID(inventory.KindSkill))
+		_, err = copyToTheOther(r, itemID(inventory.KindSkill))
 	case "copyAgent":
-		_, err = CopyToOther(r, itemID(inventory.KindAgent))
+		_, err = copyToTheOther(r, itemID(inventory.KindAgent))
 	case "addHook":
 		_, err = AddHook(r, both, "Stop", nil, "echo synthetic", nil)
 	case "removeHook":

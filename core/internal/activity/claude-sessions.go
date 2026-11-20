@@ -38,7 +38,7 @@ func claudeState(alive bool, status string, st *logState, lastWriteAgoMs, toolQu
 	case hasQuestions(st):
 		return stateInfo{state: StateWaiting, text: "Waiting for your answer to a question.", tool: tool}
 	case tool != nil && lastWriteAgoMs > toolQuietMs:
-		return unmeasurable(ReasonClaudePromptVsBusy, tool)
+		return unmeasurable(claudeApprovalLimit, tool)
 	}
 	return stateInfo{state: StateRunning, text: toolText(tool), tool: tool}
 }
