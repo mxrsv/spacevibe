@@ -119,16 +119,18 @@ enum PaletteValue {
     /// The cut-out inside a verdict glyph.
     static let onVerdict = ColorValue(light: 0xFFFFFF, dark: 0x0F1011)
 
-    // Activity's session states, drawn by the glance widget (GW-R2): the muted tone the owner picked on the mock (GW20).
+    // Activity's session states, drawn by the glance widget (GW-R2): the muted tone of GW20, made brighter by GW22 (OKLCH
+    // lightness and chroma raised, hue kept, the mock's "Sáng rõ").
     // State only, like `ok`, `warn` and `bad`. Unmeasurable and idle sessions use `mute`.
     /// A session that is running.
-    static let sessionWorking = ColorValue(light: 0x8F7638, dark: 0xC4A867)
-    /// A session waiting for the user. Departure, both, hue only (OKLCH lightness and chroma kept): the mock's `#C98260`
-    /// (dark) and `#A65C3A` (light) sit 7° and 6° of hue from Claude's clay, inside the ±20° state family
-    /// (`HuePolicyTests`), and the glyph sits beside the Claude logo. Moved towards amber to hue 59, 20° from clay.
-    static let sessionWaiting = ColorValue(light: 0xA16129, dark: 0xC48654)
+    static let sessionWorking = ColorValue(light: 0x9C7802, dark: 0xE1B236)
+    /// A session waiting for the user. Departure, both, hue: the mock's `#C98260` (dark) and `#A65C3A` (light) sit 7° and 6°
+    /// of hue from Claude's clay, inside the ±20° state family (`HuePolicyTests`), and the glyph sits beside the Claude logo.
+    /// Moved towards amber to hue 59, 20° from clay; GW22 then raised its lightness and chroma like the other two, and the
+    /// dark value, which the gamut clip pulled back to hue 58.6, sits at hue 60 (the mock's `#EC861E` read 19.9° from clay).
+    static let sessionWaiting = ColorValue(light: 0xAF6005, dark: 0xEB871B)
     /// A session idle and written to within the last 10 minutes (GW8).
-    static let sessionDone = ColorValue(light: 0x4A7D62, dark: 0x7BA98F)
+    static let sessionDone = ColorValue(light: 0x27885D, dark: 0x6FBE94)
 
     // The two CLIs (identity only)
     static let claude = ColorValue(light: 0xC65F3E, dark: 0xD97757)
