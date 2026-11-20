@@ -5,6 +5,8 @@ Reference: the frozen mock at `~/scratch/spacevibe-reins/linear-directions/` (ou
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. When this plan was written the go-core rename R1 (`REINS_*` to `SPACEVIBE_*`) was being applied, uncommitted, in the same checkout. Commit with `git commit -- <paths>` only (W11).
 Started 2026-11-07 (written while the product was named Reins). Status, checked 2026-11-20: active. U1 to U13 and the cut-over X1 are done (X1 on 2026-11-12, `b877e3a`); open are U14, the owner's eye approval of the build, and the live accessibility checks of U13 (V5-A7, V5-A8). Later simplify passes (D69, D70) changed the built pages; the spec marks them. See the X1 cut-over handoff near the end.
 
+Rule ids: W16 to W18, W21 to W23, UX1 to UX4 and UP1 to UP8 cited in this plan were the owner's global rules until 2026-11-19, when the FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`) replaced them; the old-to-new mapping is in the [docs-normalization plan](2026-11-19-docs-normalization.md#audit-2026-11-19-three-read-only-agents). The citations below are left as written.
+
 ## Relation to other plans (D0)
 
 | Plan | Relation |

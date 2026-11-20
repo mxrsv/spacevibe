@@ -182,7 +182,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
   - go-core: add a status line and start date, move the traps to overview, drop the protocol duplicate.
   - `AGENTS.md:19` points to the go-core plan.
   - Relative dates fixed (D13).
-- [ ] **DN-T9 FE-rules citations.**
+- [x] **DN-T9 FE-rules citations.** Done 2026-11-20. The landing spec cites only W20, which still exists, so it needed no change. The two active plans that cite the old ids (ui-v5, go-core) got one mapping note each instead of a rewrite of every task line.
   - Rewrite every citation of the retired global rules using the mapping under Audit:
     - living docs: `PRODUCT.md:28`, `limits.md:43`;
     - active specs: v5 and the landing spec.

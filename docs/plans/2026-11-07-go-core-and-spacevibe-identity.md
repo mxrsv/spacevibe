@@ -6,6 +6,8 @@ Status, checked 2026-11-20: active. Built and committed: the Go core, the protoc
 Base revision: 39ff3f5 (main, clean at survey time)
 Open items of older plans that this plan now owns are listed in "What this plan takes over" and, for the launch plan, in the Handoff.
 
+Rule ids: W16 to W18, W21 to W23, UX1 to UX4 and UP1 to UP8 cited in this plan were the owner's global rules until 2026-11-19, when the FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`) replaced them; the old-to-new mapping is in the [docs-normalization plan](2026-11-19-docs-normalization.md#audit-2026-11-19-three-read-only-agents). The citations below are left as written.
+
 ## Requirements reference and delivery scope
 
 - Decisions: [decision ledger](../specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) SV1 to SV17. Its "Open (not assumed)" items appear below as owner decisions D-1 to D-7. None of them is decided here.

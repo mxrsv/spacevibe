@@ -3,6 +3,8 @@
 Date: 2026-11-06 (rewritten 2026-11-07; written while the product was named Reins)
 Status: built and cut over, 2026-11-12 (`b877e3a`): the v5 surfaces are the only interface, in development and distribution builds. Open: the owner's eye approval of the build, light mode included (V5-A14; U14 of the [build plan](../plans/2026-11-07-reins-ui-v5-build.md)). Narrowed after the freeze by D69 and D70 (mock substitutions S13 and S14) and by the icon exception D72. The interface as shipped is described in [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md), which also holds the built colour values.
 
+Rule ids: this spec cited the owner's global UI rules by their old ids. Those rules were replaced on 2026-11-19 by the FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`), and on 2026-11-20 every citation here was rewritten to the FE-rule that replaced it; the old-to-new mapping is in the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md#audit-2026-11-19-three-read-only-agents). Two old rules have no FE counterpart and are SpaceVibe's own: the jobs brief in [PRODUCT.md](../../PRODUCT.md) and one word, one meaning in [GLOSSARY.md](../../GLOSSARY.md).
+
 ## Cut-over authorization — 2026-11-12
 
 The owner requested: "cần áp giao diện mới vào hẳn main đi, clean luôn cái giao diện cũ đi". The existing native v5 surfaces become the default in development and distribution builds; the old UI and its switch are removed together. This supersedes the build-time coexistence requirements below, not the safety restriction on gallery/screenshot launch modes. The 2026-11-12 scratch mock proposals are outside this cut-over. Verification and remaining acceptance are recorded in the [owning plan](../plans/2026-11-07-reins-ui-v5-build.md#x1-cut-over-handoff--2026-11-12).
@@ -34,7 +36,7 @@ Outside git (F4), on the owner's Mac: `~/scratch/spacevibe-reins/linear-directio
 | Limits | `b-limits/index.html` | split layout, the bento test page (D56, D59) |
 
 - Entry: `index.html#page=<skills|agents|hooks|rules|activity|limits>&theme=<dark|light>&accent=<1|2|3>`. Serve the folder with any static server (for example `python3 -m http.server <port> --directory ~/scratch/spacevibe-reins/linear-directions`) or open it as `file://`.
-- Kit: `system/shared.css` (tokens; the "rhythm" block at its end holds the D66 spacing), `system/shared.js` (blocks, popover, menus, toast, palette, keys), `system/data.js` (synthetic sample data, one source for every page), `system/components.html` (specimen sheet), `system/check-page.sh` (UP1 check for mock pages).
+- Kit: `system/shared.css` (tokens; the "rhythm" block at its end holds the D66 spacing), `system/shared.js` (blocks, popover, menus, toast, palette, keys), `system/data.js` (synthetic sample data, one source for every page), `system/components.html` (specimen sheet), `system/check-page.sh` (the mock pages' check for FE-K1: only the kit's blocks).
 - Briefs that state the intent: `BRIEF-wireframe.md` (the Answer card, one Filter button, Enter detail, one key one meaning) and `BRIEF-split.md` (D61 split).
 - The frozen state is dark, accent 1, category set 1 (`?cat` absent), group-header treatment 1 (`hdr=1`): the hub's defaults (`index.html`, `system/shared.js` `init`).
 - Mock-only, never built: the hub strip above the window, the floating dev panel (header treatment, accent dots, theme), the `⌘K` "Preview" presets, the `L` key and `?side=left` (spine side flip), the `?cat`, `?hdr`, `?accent`, `?theme` and `?state` parameters, and every toast that says "(mock only)" or "(stub)". The presets still name the states the build must render (V5-R62).
@@ -43,7 +45,7 @@ Outside git (F4), on the owner's Mac: `~/scratch/spacevibe-reins/linear-directio
 
 Reins looked plain and had no identity of its own (ledger, Problem). v5 restyles the whole SwiftUI app after the Linear desktop app (D3, D4) and reorganises it (D43 to D50): the sidebar holds Agents, Activity and Limits; Agents holds the Skills, Subagents, Hooks and Rules tabs; Activity holds Running, Failed and Files. Every page uses one visual system (D54): neutral dark-first surfaces, one blue accent, recolourable thin icons, inset rounded rows, generous two-level spacing (D66). Pages differ only in how they arrange the shared blocks: Skills keeps a list with a permanent detail pane (D17); every other page is split in two halves, small cards on the left led by an Answer card, one tall card of bands on the right (D56, D59, D61, D67). Settings is already polished and only takes the shared token values (D1, D2, D53). The landing page and the app icon wait for the approved app (D14).
 
-## UX brief (UX1)
+## UX brief
 
 Jobs, entities, vocabulary and colour meanings live in [PRODUCT.md](../../PRODUCT.md) ("UX principles") and [GLOSSARY.md](../../GLOSSARY.md); they are not copied here. Main flow: open a page, read its Answer card, act on the fix inside it or on the flagged row in the tall card (one hover or click, D41), undo from the toast if needed. Each page answers one question and serves one job (D38, D51, D52):
 
@@ -69,7 +71,7 @@ Jobs, entities, vocabulary and colour meanings live in [PRODUCT.md](../../PRODUC
 | V5-R5 | Depth comes from tonal layers (`bgSide` < `bgApp` < `bgPanel` < `bgRaise`), 1 px translucent hairlines and a 1 px top-edge highlight (`hi`) on panels, cards, buttons and overlays. No gradients, no illustrations. | D12 |
 | V5-R6 | Dark is the primary appearance. Light has equal quality: every acceptance check runs in both, and no value exists in only one. Light was not looked at after the D66 spacing change (D68); its first eye check is the final eye task. | D13, D68 (L79) |
 | V5-R7 | One token set for the whole app (no per-screen set). Token values change app-wide at once: Settings and every screen not yet rebuilt take the new surfaces and text without a redesign, and must keep passing contrast. | D1, D2, D15, D53 |
-| V5-R8 | Screens compose components and tokens only (UP1 in the app). `StyleBoundaryTests` fails on a font, colour, radius, spacing, size, background, border, shadow, gradient or repeating animation in a screen folder, and on a screen folder it does not know. | D16, D54, D55 |
+| V5-R8 | Screens compose components and tokens only (FE-K1 in the app). `StyleBoundaryTests` fails on a font, colour, radius, spacing, size, background, border, shadow, gradient or repeating animation in a screen folder, and on a screen folder it does not know. | D16, D54, D55 |
 
 ### Icons
 
@@ -130,7 +132,7 @@ The Loadout page of the 2026-11-06 version, now the Skills tab (D43, D46). It is
 
 ### UX principles
 
-Rules under the look: `~/.claude/rules/quality/ux.md` (UX1 to UX4), `~/.claude/rules/quality/ui-process.md` (UP1 to UP7) and the "UX principles" section of [PRODUCT.md](../../PRODUCT.md). Checked by V5-A15 to V5-A17 and V5-A24.
+Rules under the look: the global FE-rules (`~/.claude/rules/frontend.md` and the skill `kyant-ui-rules`) and the "UX principles" section of [PRODUCT.md](../../PRODUCT.md), which wins where it differs. Checked by V5-A15 to V5-A17 and V5-A24.
 
 | ID | Requirement | Ledger |
 | --- | --- | --- |
@@ -200,7 +202,7 @@ Rules under the look: `~/.claude/rules/quality/ux.md` (UX1 to UX4), `~/.claude/r
 
 | ID | Requirement | Ledger |
 | --- | --- | --- |
-| V5-R75 | Every number, share, date, range and sentence shown is derived from the engine's data in the right direction (left vs used, promised vs actual) and checked against real data, not the mock's `data.js` (W23, UP6). An element whose data the app does not have is not built with invented values: it is left out, named as a departure for the eye task, and its data need goes to the engine owner (go-core plan, D-5). Known gaps are listed under "Data the app may not have". | D60, D63 (L81), D65 (L78) |
+| V5-R75 | Every number, share, date, range and sentence shown is derived from the engine's data in the right direction (left vs used, promised vs actual) and checked against real data, not the mock's `data.js` (FE-D3). An element whose data the app does not have is not built with invented values: it is left out, named as a departure for the eye task, and its data need goes to the engine owner (go-core plan, D-5). Known gaps are listed under "Data the app may not have". | D60, D63 (L81), D65 (L78) |
 | V5-R76 | Pages differ only by the arrangement of the shared blocks. A page never restyles a block and adds no border, colour, type size, radius, shadow, gradient, looping animation or native control. A need the blocks cannot express gets a block spec, a gallery specimen and the owner's eye approval before a page uses it. | D44, D45, D54, D55, D56 |
 
 ## Token table
@@ -275,7 +277,7 @@ The mock's four spacing tokens are the custom properties of the rhythm block; ev
 
 ## Components
 
-States are the ones the gallery shows in both appearances. "New" blocks are built beside the old ones and the old ones are deleted at cut-over (W17); a component whose change is token values only is edited in place (D53). File names follow F3 (no generation suffix) and F5/F6.
+States are the ones the gallery shows in both appearances. "New" blocks are built beside the old ones and the old ones are deleted at cut-over (FE-P9); a component whose change is token values only is edited in place (D53). File names follow F3 (no generation suffix) and F5/F6.
 
 | Component | States | Replaces or new |
 | --- | --- | --- |
@@ -339,19 +341,19 @@ The side-by-side check (V5-A1) expects these differences from the frozen mock an
 | V5-A8 | Every logo toggle, warning slot, tab, band, card collapse button and menu item exposes a name and a value to VoiceOver; reduced motion removes every transition and the skeleton pulse. Checked in the built app and recorded. |
 | V5-A9 | The About panel shows a credit for every icon set in use, each with a licence verified against its source (V5-R15). |
 | V5-A10 | The gallery shows every component of the Components table in every listed state, in both appearances (`SPACEVIBE_GALLERY=1`, and `SPACEVIBE_SHOT_SCREEN=shell scripts/dev-fixture.sh --shots <dir>` for `gallery-dark.png` and `gallery-light.png`). |
-| V5-A11 | Sweep (W21): each token, radius, height and word that changes app-wide ends with "changed N of M" from a repo-wide search, each skipped site named with its reason. Settings and every not-yet-rebuilt screen, in both appearances, show no breakage after the token change (contrast, truncation, overlap). |
+| V5-A11 | Sweep (FE-SP3): each token, radius, height and word that changes app-wide ends with "changed N of M" from a repo-wide search, each skipped site named with its reason. Settings and every not-yet-rebuilt screen, in both appearances, show no breakage after the token change (contrast, truncation, overlap). |
 | V5-A12 | `scripts/test.sh` reports `Test run with N tests … passed` with N above 0 and above the count before the work; `scripts/build-app.sh` prints `minos 15.0`; at cut-over `docs/DESIGN-LANGUAGE.md` is rewritten for the shipped language (D1) and `bash ~/.claude/scripts/docs-anchors.sh` reports nothing new. |
-| V5-A13 | Runtime check (W22): every UI check runs in the owner's runtime, the bundle `build/Reins.app` opened with `open -n` on a synthetic home with the dev switch, after stopping any older instance, never the real `~/.claude`; per surface the report says what changed and what did not. |
-| V5-A14 | Owner eye approval happens in ONE final task, after V5-A1 to V5-A13 and V5-A15 to V5-A24 have run: every surface, dark and light (light for the first time since D66), beside the mock. It records the owner's words per surface and the picks named in the open questions (accent shade, category set, Answer size, key map, sidebar glyphs, departures). Only the W17 cut-over may need a second look. |
+| V5-A13 | Runtime check (FE-P4): every UI check runs in the owner's runtime, the bundle `build/Reins.app` opened with `open -n` on a synthetic home with the dev switch, after stopping any older instance, never the real `~/.claude`; per surface the report says what changed and what did not. |
+| V5-A14 | Owner eye approval happens in ONE final task, after V5-A1 to V5-A13 and V5-A15 to V5-A24 have run: every surface, dark and light (light for the first time since D66), beside the mock. It records the owner's words per surface and the picks named in the open questions (accent shade, category set, Answer size, key map, sidebar glyphs, departures). Only the FE-P9 cut-over may need a second look. |
 | V5-A15 | Vocabulary audit: a search over every visible string, accessible name and doc of the built pages finds none of the words V5-R45 bans. Output pasted in the plan. |
 | V5-A16 | Colour audit: a test over the palette proves every category and identity hue and the accent family sit outside the `ok`, `warn` and `bad` hue ranges in both appearances, and that no two categories share a hue. It fails on a collision. |
 | V5-A17 | Flow audit: a walk of each built page proves every flagged state has its action within one hover or click, every write has Undo, and `Stop` shows its named confirmation. Recorded per page. |
 | V5-A18 | Answer tests: each page's Answer sentence and actions come from one model function, with cases for a problem, several problems ("N more"), nothing needs the user, no data or loading, and a CLI not installed, on fixture data. |
 | V5-A19 | States: shots of every state in V5-R62 per page, both appearances, from synthetic fixtures. |
-| V5-A20 | Real data (W23): for every figure, share, date and range on every page, the plan records its source field, the fixture's value and the value shown; data the engine lacks is listed as a departure and not faked. The owner looks at the pages on their real home during the final eye task (read only). |
-| V5-A21 | W17: the dev switch is honoured only in a debug build or a local bundle that `scripts/build-app.sh` made without `--distribution`, never in a distribution build (a `LaunchMode` test plus a check of the build flags); the old surfaces stay the default until cut-over; the cut-over change deletes the old surfaces and the switch in one change, with "changed N of M" for the removed names. |
+| V5-A20 | Real data (FE-D3): for every figure, share, date and range on every page, the plan records its source field, the fixture's value and the value shown; data the engine lacks is listed as a departure and not faked. The owner looks at the pages on their real home during the final eye task (read only). |
+| V5-A21 | FE-P9: the dev switch is honoured only in a debug build or a local bundle that `scripts/build-app.sh` made without `--distribution`, never in a distribution build (a `LaunchMode` test plus a check of the build flags); the old surfaces stay the default until cut-over; the cut-over change deletes the old surfaces and the switch in one change, with "changed N of M" for the removed names. |
 | V5-A22 | Fit at 1440 x 900, per page: which card scrolls inside (Rules, the Subagents spine and the Hooks stack are accepted by D66 and D68), nothing clipped or overlapping; below 700 pt of canvas width the halves stack. Recorded. |
-| V5-A23 | Conformance (UP5): the style-boundary test reports zero hits, and crops of the shared blocks (row, band header, card header, tab head, Answer card, popover) are compared with the same crops of the mock at the same scale, both pasted. |
+| V5-A23 | Conformance (FE-P4): the style-boundary test reports zero hits, and crops of the shared blocks (row, band header, card header, tab head, Answer card, popover) are compared with the same crops of the mock at the same scale, both pasted. |
 | V5-A24 | Numbers once (D60): per page, each figure appears once and names what it counts and over what range. Recorded per page. |
 
 The UX audits (V5-A15 to V5-A17, V5-A24) belong to the build, not to a separate approval stop.
@@ -459,7 +461,7 @@ Recorded for the owner; the documents follow the resolution named in each row.
 | --- | --- | --- | --- |
 | C1 | RESOLVED 2026-11-07: the ledger repeated D63 to D65 (two sessions wrote the same IDs); the UI rows (spacing, layout kept, mock frozen) were renumbered D66 to D68 | ledger lines 76, 77 and 79 | the glossary rows keep D63 (L81), D64 (L80) and D65 (L78); no citation is ambiguous now |
 | C2 | The go-core plan's open decision D-5 ("does new UI work pause") and its S.1 pixel-identical shot gate collide with a UI rebuild; its R1 renames every `REINS_*` variable to `SPACEVIBE_*` (in progress, uncommitted, in the shared checkout on 2026-11-07), R3 renames `Sources/Reins` | `docs/plans/2026-11-07-go-core-and-spacevibe-identity.md` lines 237, 471, 177, 313, 515-526 | the build plan's first gate is D-5; the dev switch is defined once so R1 renames it |
-| C3 | D53 (token values change app-wide at once) vs W17 (the old version stays the default) | ledger line 66; `~/.claude/rules/core/workflow.md` W17 | colour token values change app-wide once (D53); D66 sizes and the new blocks are new tokens used only behind the switch |
+| C3 | D53 (token values change app-wide at once) vs FE-P9 (the old version stays the default) | ledger line 66; `~/.claude/skills/kyant-ui-rules` FE-P9 | colour token values change app-wide once (D53); D66 sizes and the new blocks are new tokens used only behind the switch |
 | C4 | Answer sentence size: the mock renders `.num` at 28 px; PRODUCT.md says the answer sentence is 20 px; BRIEF-wireframe calls `.num` "20px" | `system/shared.css:291`; `PRODUCT.md:32`; `BRIEF-wireframe.md` rule 2 | build 28 (D68) pending open question 1 |
 | C5 | Small cards 8 apart on Hooks and Subagents vs D66's 24 and "nothing hard-coded in a page" | `b-hooks/index.html:11`, `b-subagents/index.html:12` | 24 (S6) |
 | C6 | D66's "collapsed bands become a one-line chip strip (36 high)" is not in the mock: Hooks shows a two-column grid of 44-high band headers, other pages stack collapsed bands 10 apart | ledger line 76; `b-hooks/index.html:22`; `system/shared.css:591,598` | build as the mock (D68, later than D66) |
@@ -476,14 +478,14 @@ Recorded for the owner; the documents follow the resolution named in each row.
 | C17 | The Agents spec's page (one card per CLI at `⌘2`, AG1, compared with mock C′ in AG10) is superseded in placement and look by D43 to D49 and D68 | `docs/specs/2026-11-05-reins-agents.md` "Interface", AG1 and AG10 | the build plan supersedes those UI tasks; its engine tasks, its push panel and AG8 wait for the per-CLI settings panel (D47, D48) |
 | C18 | Rules families in the mock (Bash, Edit/Write, Read, Web, MCP) differ from the engine's capabilities (read, edit, run, network, push, secrets); the mock maps MCP to "Project trust" in Codex | `b-rules/index.html:52`; `system/data.js:85-88`; `Sources/ReinsCore/RulesTypes.swift:12-24` | Hypothesis, unverified (V5-R75): the Rules task maps families from `RuleItem.tool` and checks each Codex fact against `RulesCodexPermissions`. Owner call C1 (2026-11-10): a family's Claude Code side is its wide rules only, so a Codex fact is compared with wide rules and never with a path rule |
 
-## Data the app may not have (W23, UP6)
+## Data the app may not have (FE-D3)
 
 Each item is "Hypothesis, unverified" until its check runs; the check is the next step.
 
 | # | Shown in the mock | What the code has | Deciding check |
 | --- | --- | --- | --- |
 | G1 | Subagent model and tools; "can run Bash"; group by Model; filter Can touch | `InventoryItem` has name, description, owner, file, scope, cells; no model or tools (`Sources/ReinsCore/InventoryTypes.swift:118-141`); `Frontmatter.swift` parses neither | read a fixture agent file's frontmatter and Codex `.toml`; if the engine must parse them, that is engine work (D-5) |
-| G2 | Hook handler kind (command, http, prompt, mcp_tool, agent); filter Handler; "Can't run <kind> handlers" | `InventoryHook` has event, matcher, command, timeout, async (`InventoryTypes.swift:213-236`) | read the CLIs' hook docs (UP6) and the fixture `settings.json`; engine work if needed |
+| G2 | Hook handler kind (command, http, prompt, mcp_tool, agent); filter Handler; "Can't run <kind> handlers" | `InventoryHook` has event, matcher, command, timeout, async (`InventoryTypes.swift:213-236`) | read the CLIs' hook docs (FE-D3) and the fixture `settings.json`; engine work if needed |
 | G3 | Which events and handler kinds Codex supports (the copy rule) | `system/data.js:69-72` marks it unverified | Codex hooks documentation |
 | G4 | Activity Today: tool calls today, estimated cost today, longest running session, estimated cost per day for 14 days | `ActivityStats` holds `logs` and `truncated` only (`Sources/ReinsCore/Activity.swift:69-74`); sessions carry their own cost | engine work, or the card is left out (out-of-scope line, open question 7) |
 | G5 | Time ranges of the failed list and the most-edited list | `ActivityFailure` has first and last; `ActivityFileRow` has last; the window the engine scans is unverified (`b-activity:54` calls its ranges assumptions) | read `Activity.swift` options for the scan window |
