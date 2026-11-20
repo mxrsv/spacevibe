@@ -29,7 +29,7 @@ Requirements: macOS 15 or later, the Xcode Command Line Tools (Xcode itself is n
 | [`scripts/dev.sh`](scripts/dev.sh) | Build, sign and relaunch. It reads the real `~/.claude` and `~/.codex` unless the environment points elsewhere |
 | [`scripts/build-app.sh`](scripts/build-app.sh) | Release build into `build/SpaceVibe.app` |
 
-Every other command, the toolchain rules and the release steps are in [AGENTS.md](AGENTS.md).
+Every other command and the toolchain rules are in [AGENTS.md](AGENTS.md); the release steps are in the [release runbook](docs/operations/release.md).
 
 ## Repository
 
@@ -39,7 +39,7 @@ Every other command, the toolchain rules and the release steps are in [AGENTS.md
 | [`Sources/SpaceVibe`](Sources/SpaceVibe) | The shell: the SwiftUI app, UI only |
 | [`Tests/SpaceVibeTests`](Tests/SpaceVibeTests) | Swift tests for app logic that needs no window |
 | [`site/`](site/README.md) | The public page for `spacevibe.dev`, independent of the Swift build |
-| [`docs/`](docs) | [Internals](docs/internals/README.md), the design language, specs and plans |
+| [`docs/`](docs/README.md) | [Internals](docs/internals/README.md), the design language, the release runbook, specs and plans |
 
 Terms are fixed in [GLOSSARY.md](GLOSSARY.md): a CLI is Claude Code or Codex, and is never called an agent.
 

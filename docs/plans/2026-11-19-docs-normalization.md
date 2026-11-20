@@ -146,7 +146,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
   - Drop the file-responsibility tables and test-file lists; keep the "where each fact comes from" tables, the traps and one `go test` command.
   - Strip plan IDs and migration history (`core-protocol.md` H10, S.3-S.7, G0.1, G-fix, the Swift history; `overview.md` AC3, C3).
   - Move journal retention, Stop re-validation, settings-file scrub and percent-left to their owning page, and link to them from the others.
-- [ ] **DN-T4 Release runbook.**
+- [x] **DN-T4 Release runbook.** Done 2026-11-20: [docs/operations/release.md](../operations/release.md); WEB0 is now the "Deploy gates" section of the landing spec.
   - Create `docs/operations/release.md` from B8/B9.
   - Add the missing precondition: Info.plist 0.1.0 / build 1 equals the `v0.1.0` tag, so `release.sh` refuses until both are bumped.
   - `AGENTS.md` keeps B8/B9 as one-line rules that link to the runbook.

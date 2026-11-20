@@ -47,3 +47,10 @@ Built 2026-11-05 in `site/`, viewed with `cd site && npx next dev -p 3100` at `h
 | `/directions/manual` | Manual | Sticky rail of the four screens; each chapter is question, screen, what Reins does, what it cannot see. |
 
 Owner feedback on the first round: the four categories looked alike and the options did not differ. The bands now show one signature crop per category instead of the whole window (Loadout's paired bars, Limits' figure and ruler, Activity's two lanes, Rules' Allow/Ask/Deny pickers) with the sidebar tab the category lives behind beside the caption; only the hero keeps a whole window. Real screens are dark captures of the SwiftUI app on the synthetic fixture home (`site/public/landing/app/`); Agents and Tokens are renders of the tracked mocks and are captioned as design previews (L7). On pick: delete the other two directions, `/directions` and `DirectionSwitcher`, move the copy from `site/components/landing/directions/copy.ts` into `content.ts`, and replace `/`.
+
+## Deploy gates
+
+Moved here from `AGENTS.md` on 2026-11-20.
+
+- **WEB0, before WEB1.** The owner picks a landing direction (L16 records the pick of 2026-11-05) and `/` is replaced with it, the "On pick" step above. Until then `/` is the first-generation page with a Tokens tab the app does not have, and it must never be deployed.
+- **WEB1 to WEB3.** Creating the Vercel project, repointing `spacevibe.dev` and the DNS check for `reins.spacevibe.dev` are the owner's gates, done in that order after WEB0 and after `kyant.dev` is verified. They are tracked in the [go-core plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md) (SV16).
