@@ -1,6 +1,6 @@
 # SpaceVibe: docs, rules and instructions normalization
 
-Started 2026-11-19. Status: in progress. The owner accepted batch 1 on 2026-11-20 ("ok"); tasks DN-T1 to DN-T9 are being executed, see the ticks under Tasks and the Handoff.
+Started 2026-11-19. Status: historical, completed 2026-11-20. The owner accepted batch 1 on 2026-11-20 ("ok") and DN-T1 to DN-T9 were executed the same day. Commits, on `main`, not pushed: `2c3093a` (DN-T1), `2e424f3` (DN-T2), `970adeb` (DN-T3), `95c4327` (DN-T4), `5dc4846` (DN-T6), `2b195b3` (DN-T7), `d620d92` (DN-T9), `c689d31` (DN-T5), and the closing commit that carries this line (DN-T8). The text below is the record of the work and is not maintained; the docs map is [docs/README.md](../README.md).
 Spec: none. Requirements are the intent the owner confirmed in conversation on 2026-11-18 ("đúng"), summarized under Scope.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions; commit with `git commit -- <paths>` only. The Clean spec is being written in another session: this plan does not edit `docs/specs/2026-11-18-clean.md`.
 
@@ -191,7 +191,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
   - D42 and D55 keep their quoted text. Each gets a note: "the global files were replaced by the FE-rules on 2026-11-19".
   - Historical plans are left as they are.
   - The Clean spec and the session-glance-widget spec and plan belong to other sessions, so their citations (UP6, W23) are raised there instead of edited here.
-- [ ] **DN-T8 Verify and close.**
+- [x] **DN-T8 Verify and close.** Done 2026-11-20; output in the Handoff.
   - The checks below pass.
   - Raised items reported once.
   - This plan is marked historical.
@@ -217,9 +217,41 @@ Plus a per-topic check: for each topic in `docs/README.md`, exactly one document
 - `core/internal/rules/doc.go:4` mentions `Sources/ReinsCore`.
 - Clean spec conflicts (DN-L14).
 
+Added while executing, 2026-11-20:
+
+- Stale rule citations in files this plan may not edit: `docs/specs/2026-11-18-clean.md:40` cites UP6 and `:46` cites W23; both map to FE-D3. The glance widget spec and plan and the countdown spec cite none.
+- Code comments still cite retired ids: `Sources/SpaceVibe/Components/SidebarBlocks.swift:4` (UP1) and `Sources/SpaceVibe/Limits/LimitsAnswer.swift:7` (W23).
+- `scripts/release.sh` checks that the tree is clean but not that the branch is `main`, which rule B9 asks for; the runbook says so.
+- The frozen v5 reference mock `~/scratch/spacevibe-reins/linear-directions/` is gone from the owner's Mac, so V5-A1 (side by side with the mock) cannot run until it is restored or another reference is named.
+- No `LICENSE` exists (launch plan L8, now in the go-core plan's Handoff).
+- The landing direction is picked (L16) but the spec's "On pick" step is not done, so `/` is still the first-generation page with a Tokens section.
+- The owner's sample check of the internals pages (internals-docs plan) is still open; DN-Q4 does not waive it.
+- `Metrics.swift` says a dialog's buttons are 28, while the UI v5 handoff records the lead's approval of 32 for the Stop dialog. Which one the app draws was not checked, so that departure was not carried into `DESIGN-LANGUAGE.md`.
+
 ## Handoff
 
 2026-11-19: three read-only audits returned. This plan was written, and batch 1 waits for the owner. No doc has been edited.
 2026-11-19, later: the owner ran `/kyant-ui-rules`. The FE-rules rewrite was checked against the repo, DN-T9 was added and DN-Q2 now names the FE-K3 conflict.
+
+2026-11-20: executed and closed. The owner's answer to batch 1 was "ok" (2026-11-20).
+
+- Commits, on `main`, nothing pushed: `2c3093a` DN-T1, `2e424f3` DN-T2, `970adeb` DN-T3, `95c4327` DN-T4, `5dc4846` DN-T6, `2b195b3` DN-T7, `d620d92` DN-T9, `c689d31` DN-T5, then the closing commit (DN-T8).
+- Where the work departed from this plan, each because the code or the checkout said otherwise:
+  - DN-T1: the four stale symbols of `core-protocol.md` were fixed in the DN-T3 commit, in the same pass that removed its history. `pending` is described as it is: the core still emits the wire state, and the shell already shows it as Never ran with a note, so D63 is half landed, not unstarted.
+  - DN-T2: the internals-docs plan's open check is not waived, because DN-Q4's text lists eye gates on screens that are gone and that check is not one of them. `mocks/agents` references in frozen records became plain text with a dated note rather than being removed.
+  - DN-T3: each page keeps one "Code:" line naming its packages, so a reader still gets from a page to its code without a file table.
+  - DN-T6: the v5 spec had 36 broken links, not 35; 16 were relinked and 20 became plain text (the audit expected 12 and 23). The colour tables were moved to `DESIGN-LANGUAGE.md` with the values `Palette.swift` holds, because 14 tokens had departed from the spec's values; the spec keeps the candidates that were not built. D23 is marked beside the nine reversed rows, since D49 amends it in its own words.
+  - DN-T7: the launch plan is marked historical too (the `v0.1.0` tag `308a4c3` contradicts its Handoff). The UI v5 plan's `/goal` was rewritten for what is left, not only moved; its 46 broken links were 33 relinked and 13 plain text. The "For U<n> onward" lines stay in that plan's Handoff as a dated record, with a pointer to the living copy. The Stop-dialog departure was not carried over (see Raised).
+  - DN-T9: the mapping from old to new rule ids stays in this plan only, so that the verification grep finds nothing in living docs; `docs/README.md` and the v5 spec link here.
+  - DN-T5 was done after DN-T6 and DN-T7, so the map could name each record's state.
+- Verification, run 2026-11-20 at `c689d31`:
+  - `bash ~/.claude/scripts/docs-compliance.sh` printed "tuân thủ D5", exit 0.
+  - `bash ~/.claude/scripts/docs-anchors.sh` printed nothing, exit 0.
+  - The first grep (`Sources/Reins/`, `ReinsCore`, `Solar`, `⌘L` in living docs): no hits.
+  - The second grep (retired rule ids and files in living docs and the v5 spec): no hits.
+  - Scratch link checker (`/tmp`, not committed; relative links and heading fragments): living docs 432 links, 0 broken; active specs 104, 0 broken; active plans with this plan 130, 0 broken (re-run on the closing tree). Frozen records, for information: 71 links, 10 broken, all to Swift files deleted since, left as written (DN-S3).
+  - `SPACEVIBE_TEST=1 go test -run TestDocMethodTable ./internal/rpc/` passed after the `core-protocol.md` pass (that test reads the page's method table).
+  - Per topic: every row of the topic table in `docs/README.md` names one current document.
+- Left for the owner or other sessions: everything under Raised. Nothing is pushed.
 
 /goal Normalize SpaceVibe repo docs per docs/plans/2026-11-19-docs-normalization.md: apply owner batch 1, finish DN-T1 to DN-T8, docs-compliance and docs-anchors pass, every link in living docs and active specs/plans resolves, one current document per topic in docs/README.md.
