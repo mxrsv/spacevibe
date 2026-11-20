@@ -73,4 +73,7 @@ Waves 2 to 4 and the fixes, 2026-11-19 (Opus agents, one main-session fix):
   - Eye approval.
   - Out-of-scope test files (`ShellModelTests`, `LimitsCountdownTests`, `GlanceWidgetTests`) still leave defaults plists behind.
 
+
+2026-11-20: pushed `main` at `1320e6f` (owner: "ok push"), after `scripts/test.sh` passed with 604 tests in 65 suites. The push includes the other session's GW22 colour change and the Limits countdown page. Still open: the owner's runtime checks listed above, the yes on the Esc departure, and eye approval. The plan stays open until those are recorded.
+
 /goal Build the SpaceVibe session glance widget per docs/plans/2026-11-19-session-glance-widget.md: GL-T1 to GL-T12 done, scripts/test.sh passes with N > 0, every acceptance row in docs/specs/2026-11-19-session-glance-widget.md checked in the owner's runtime with real sessions, build-review passed, owner eye approval recorded.
