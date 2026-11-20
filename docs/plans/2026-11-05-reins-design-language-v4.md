@@ -2,7 +2,7 @@
 
 Spec: [2026-11-03-reins-design-language.md](../specs/2026-11-03-reins-design-language.md), section "v4 changes" (acceptance criteria DL7, DL10, DL11, with DL4 and DL9 still holding).
 Related: the [Agents plan](2026-11-05-reins-agents.md) uses the card button and the verdict picker built here.
-Mock: [`mocks/agents/controls.html`](../../mocks/agents/controls.html)`?icons=tabler&buttons=a`, tracked with synthetic data. It shows the Agents page with the v4 look, and a sheet of every button kind in every state in both appearances.
+Mock: `mocks/agents/controls.html``?icons=tabler&buttons=a`, tracked with synthetic data until 2026-11-20. `mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`. It shows the Agents page with the v4 look, and a sheet of every button kind in every state in both appearances.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. Commit with `git commit -- <paths>` only.
 Started 2026-11-05. Status: the spec was committed (`2b2615f`); no Swift written yet.
 

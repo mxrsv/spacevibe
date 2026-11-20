@@ -4,9 +4,9 @@ Date: 2026-11-05
 Status: the owner confirmed the intent on 2026-11-04, through an interview and a grilling in chat. Mock C′ was accepted as "tạm ổn" on 2026-11-05, after the panel fixes. The page takes the v4 look of the [design-language spec](2026-11-03-reins-design-language.md), picked the same day.
 Parent spec: [Reins](2026-11-02-reins.md). This page replaces its Rules tab and moves hooks out of Loadout.
 Execution: [plan](../plans/2026-11-05-reins-agents.md), after [design language v4](../plans/2026-11-05-reins-design-language-v4.md).
-Mocks, tracked in [`mocks/agents/`](../../mocks/agents/index.html) with synthetic data (serve the folder, for example `python3 -m http.server 4186 --directory mocks/agents`):
-- [`agents-panel.html`](../../mocks/agents/agents-panel.html): C′, also option C′ of that folder's `index.html`.
-- [`controls.html`](../../mocks/agents/controls.html)`?icons=tabler&buttons=a`: the v4 look applied to C′.
+Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`. The paths below are as they were), tracked in `mocks/agents/index.html` with synthetic data (serve the folder, for example `python3 -m http.server 4186 --directory mocks/agents`):
+- `mocks/agents/agents-panel.html`: C′, also option C′ of that folder's `index.html`.
+- `mocks/agents/controls.html``?icons=tabler&buttons=a`: the v4 look applied to C′.
 
 ## Intent
 
@@ -45,7 +45,7 @@ Mocks, tracked in [`mocks/agents/`](../../mocks/agents/index.html) with syntheti
 - **Panel.** A right-hand inspector that pushes the content aside. It is not a modal and not an overlay (owner, 2026-11-04 and 2026-11-05).
   - Only one panel is open at a time.
   - Clicking the open panel's button again closes it; clicking another button swaps the panel, behind the draft guard.
-  - **Width:** drag the left edge between 420 and 720 pt. The width is remembered separately for Advanced and for the other panels, and Advanced opens at 720.
+  - **Width:** drag the left edge between 420 and 720 pt (the two bounds are inferred, not decided; see "Inferred, not decided"). The width is remembered separately for Advanced and for the other panels, and Advanced opens at 720.
   - The CLI cards never get narrower than 440 pt; the window's minimum width grows instead.
   - **Header:** the small CLI mark, the panel's name, the CLI's name and Close (`Esc`).
   - **Tools row:** the panel's scope picker, the file path and Show in Finder. In Rules it is Edit | Preview and Open in editor instead.
@@ -171,6 +171,12 @@ From the 2026-11-04 interview unless dated otherwise.
 - **The write boundary in `PRODUCT.md` widens** to every configuration and instruction file of both CLIs.
 - **Codex profiles are editable** (Q8-b); Codex `[profiles.*]` stay in Advanced only (Q22-a).
 - **Advanced checks syntax only;** there is no bundled schema.
+
+## Inferred, not decided
+
+Lines with no owner decision behind them (W20). They follow the recommendation until the owner says otherwise.
+
+- The panel's width bounds, 420 to 720 pt (Interface, Panel; acceptance AG8). Source: not recorded (the mock or the agent's choice); no owner statement names the numbers. Moved here on 2026-11-20 (DN-L13 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md)).
 
 ## Out of scope
 

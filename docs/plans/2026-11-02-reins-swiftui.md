@@ -3,6 +3,7 @@
 Spec: [2026-11-02-reins.md](../specs/2026-11-02-reins.md) (requirements, platform, interface, acceptance criteria AC1 to AC6).
 Supersedes: [the Electron plan](2026-11-02-reins-electron.md), which stays as history and as the reference for behavior, contracts and screenshots.
 Status: in progress; implementation and outstanding acceptance gates are recorded below. Started 2026-11-02.
+Waiver, 2026-11-20: the owner waived this plan's eye gates S3.3, S4, S5 and S6 ("ok" to DN-Q4 of the [docs-normalization plan](2026-11-19-docs-normalization.md)), because the screens they judged no longer exist. The live eye gate is U14 of the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md). The unticked boxes below stay as the record.
 
 ## Approach
 

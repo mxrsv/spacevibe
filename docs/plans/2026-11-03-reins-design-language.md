@@ -4,6 +4,7 @@ Spec: [2026-11-03-reins-design-language.md](../specs/2026-11-03-reins-design-lan
 Parent plan: [the SwiftUI plan](2026-11-02-reins-swiftui.md), whose packaging and cut-over phases still apply.
 Mock: `~/scratch/spacevibe-reins/design-language/index.html` on the owner's Mac (outside git), with screenshots in `shots/v2-*` and `shots/inter-*` beside it and the Codex review in `codex-review.md`.
 Status: approach and T0 approved by the owner on 2026-11-03 ("chốt theo your rec": commit the pending refactor first, no dev-only switch, this plan as written). Started 2026-11-03.
+Waiver, 2026-11-20: the owner waived this plan's eye gates T11 ("ok" to DN-Q4 of the [docs-normalization plan](2026-11-19-docs-normalization.md)), because the screens they judged no longer exist. The live eye gate is U14 of the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md). The unticked boxes below stay as the record.
 
 ## Approach
 

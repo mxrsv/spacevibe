@@ -4,6 +4,7 @@ Spec: [2026-11-03-reins-design-language.md](../specs/2026-11-03-reins-design-lan
 Related plans: [design language v2](2026-11-03-reins-design-language.md) (shipped), [Limits](2026-11-03-reins-limits.md) (L4 is redone here, task V6), [Tokens](2026-11-03-reins-tokens.md) (takes the v3 tokens when it ships).
 Mock: `~/scratch/spacevibe-reins/design-language/index.html?ver=v3` on the owner's Mac (outside git, synthetic data). Its "Bảng đổi token" v3 section is the old-to-new contract. The icon comparison is `~/scratch/spacevibe-reins/icons/index.html`; the Solar glyphs the mock uses are in `design-language/solar-icons.js`.
 Status: v3 approved by the owner on 2026-11-04 ("ok chốt") on the mock; no Swift written yet. Started 2026-11-04.
+Waiver, 2026-11-20: the owner waived this plan's eye gates V7 ("ok" to DN-Q4 of the [docs-normalization plan](2026-11-19-docs-normalization.md)), because the screens they judged no longer exist. The live eye gate is U14 of the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md). The unticked boxes below stay as the record.
 
 ## Approach
 

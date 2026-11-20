@@ -12,7 +12,7 @@ Architecture: [Go core and SwiftUI shell](../internals/overview.md); vocabulary:
 The current [design language](../DESIGN-LANGUAGE.md) supplies shared controls and styling.
 This is the existing Tokens execution record, not a new feature proposal. The owner approved the scout shortlist and then its implementation direction on 2026-11-12. No application implementation has landed for this plan.
 
-The accepted Board reference remains [the synthetic mock](../../mocks/tokens-board/index.html), with [dark](../../mocks/tokens-board/shot-dark.png) and [light](../../mocks/tokens-board/shot-light-price.png) targets.
+The accepted Board reference remains [the synthetic mock](../../mocks/tokens-board/index.html), with [dark](../../mocks/tokens-board/shot-dark.png) and [light](../../mocks/tokens-board/shot-light-price.png) targets. `mocks/tokens-board/` stays tracked until the Tokens page is decided in the app-wide layout grilling (owner, 2026-11-20, "ok" to DN-Q6 of the [docs-normalization plan](2026-11-19-docs-normalization.md)); before that it was to be deleted when T8 passes.
 Use its information arrangement inside the current shell; do not restore the obsolete shell or copy old font/spacing literals. Do not redesign other pages.
 The spec's excluded features remain excluded; Limits pace, menu-bar additions and pricing network fetches are not tasks here.
 Owner eye approval stays at T8 after the implementation, not between tasks.

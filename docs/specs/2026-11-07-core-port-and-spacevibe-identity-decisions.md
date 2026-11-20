@@ -16,7 +16,7 @@ The 2026-11-02 spec made the engine a Swift library (`ReinsCore`). Owner on that
 | SV2 | Windows and Linux shells are committed within about 3-6 months, which is the reason for SV1. | "yes chuyển sang Go đi" (answer to the commitment question) |
 | SV3 | Shell-to-core protocol: JSON-RPC over stdio, a child process owned by the GUI. The protocol version is sent in `initialize` and a mismatch is refused. Stdout carries protocol only, logs go to stderr, the core exits on stdin EOF, spawn uses an argv array (no shell). No network listener (S-R5). A one-shot `<cli> <command> --json` stays for debugging. | "approve đủ" |
 | SV4 | The macOS app calls the core only through the child process, via one `CoreClient` in Swift. `ReinsCore` is no longer linked by the UI. Migration is one screen at a time. | "approve đủ" |
-| SV5 | Parity oracle: the existing `Tests/ReinsCoreTests/Fixtures/golden/*.json` are frozen as committed files. The Node generator and Node `core/` are deleted as plan S8.3 intended. The Go core must match the goldens byte for byte. A wrong golden is fixed together with its Swift test in one commit. | "approve đủ" |
+| SV5 | NARROWED with the owner's explicit yes on 2026-11-20 ("byte for byte" reads as canonical bytes of the named projections; see "Owner answer on SV5"). Parity oracle: the existing `Tests/ReinsCoreTests/Fixtures/golden/*.json` are frozen as committed files. The Node generator and Node `core/` are deleted as plan S8.3 intended. The Go core must match the goldens byte for byte. A wrong golden is fixed together with its Swift test in one commit. | "approve đủ" |
 | SV6 | The Go core lives in this repository, in a new directory whose name is chosen after reading `~/.claude/templates/project-structure.md`. | "approve đủ" |
 | SV7 | Order: the Go port comes before the first macOS publish, so S0.5, S0.4 and S0.3 are verified once, on the Go core. | "approve đủ" |
 | SV8 | Pre-publish core review order: real-CLI acceptance (S0.5), then write safety and Stop (S0.4), then TCC (S0.3), then S8.1 and S8.2, then feature gaps against the spec. Output is a severity-ranked read-only report on the core whose findings become tasks in an existing plan. The goal is trust for a macOS release, not cross-platform preparation. | "approve đủ" |
@@ -50,7 +50,7 @@ Owner, after seeing the W20 table and the open decisions with recommendations: "
 | --- | --- | --- |
 | D-2 port order | the plan's order | |
 | D-7 directory and module | `core/`, `spacevibe.dev/core` | |
-| C1/Q1 "byte for byte" | canonical bytes of the named projections, case counts asserted | narrows SV5 as the plan proposes |
+| C1/Q1 "byte for byte" | canonical bytes of the named projections, case counts asserted | narrows SV5 as the plan proposes; explicit yes given on 2026-11-20 (see "Owner answer on SV5") |
 | C3/Q2 fixtures | kept as named skipped sites in the rename report | |
 | C2/Q8 | after the Swift tests are deleted, "with its Go test" | |
 | D-3 statusline | `spacevibe statusline install\|undo\|capture` in the Go core | |
@@ -81,6 +81,12 @@ Still open:
 - New Sparkle key pair and the account flip (R2), then AC7 and the H7 check.
 - Runtime checks A1 to A5, F1 eye approval, and every outward gate (GH1, REL1, GH2, WEB1 to WEB3).
 - Windows and Linux UI technology; Hub `/vote`, marketing and the workspace map (workspace session).
+
+## Owner answer on SV5 (2026-11-20)
+
+The [product spec](2026-11-02-reins.md) (RQ-SV5) said that narrowing SV5's "byte for byte" needed the owner's explicit yes, and "tiếp tục hết tất các phase" had only been read as one. Asked directly as DN-Q3 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md) with the recommendation "record an explicit yes to the narrowing", the owner answered: "ok" (2026-11-20).
+
+So SV5 reads: the Go core matches the frozen goldens as canonical bytes of the named projections, with the case counts asserted (row C1/Q1 above). The goldens have been frozen on that reading since 2026-11-07. Nothing else in SV5 changes.
 
 ## Out of scope for this ledger
 

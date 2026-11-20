@@ -139,7 +139,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
   - Fix the TOML contradiction in `mutations.md`.
   - `site/README.md`: `content.ts` does not hold every word; document the `directions/` route.
   - `AGENTS.md`: add the 2026-11-07 ledger to "Read before work"; drop the Electron history; rename R6 to S-R6.
-- [ ] **DN-T2 Batch 1 applied.**
+- [x] **DN-T2 Batch 1 applied.** Done 2026-11-20: D71 (DN-Q1), D72 (DN-Q2), D73 (DN-Q5) in the linear ledger; "Owner answer on SV5" (DN-Q3) in the SV ledger; a waiver line (DN-Q4) in the Electron, SwiftUI, design-language v2, v3 and Limits plans; `mocks/agents/` removed (DN-Q6). DN-L1 and DN-L11 keep their lines.
   - Apply DN-Q1 to DN-Q6 and DN-L1 to DN-L13 as the owner answered.
   - Record each owner answer in the ledger it belongs to: DN-Q1, DN-Q2 and DN-Q5 in the linear ledger; DN-Q3 in the SV ledger; DN-Q4 in the plans it waives.
 - [ ] **DN-T3 Internals pages (D9, D7).**

@@ -8,7 +8,7 @@ SpaceVibe is a local macOS app that shows what Claude Code and Codex are equippe
 
 **Core**:
 The Go engine in `core/` (binary `spacevibe`). Reads the CLIs' files, counts usage, watches sessions and makes every write. Names the engine only, never the whole app.
-_Avoid_: backend, helper, engine (in labels and docs), daemon
+_Avoid_: backend, helper, daemon; engine in UI labels (docs may call the core "the engine")
 
 **Shell**:
 The SwiftUI app in `Sources/SpaceVibe`. Draws what the core reports and asks it for changes; holds no engine logic.
@@ -22,7 +22,7 @@ _Avoid_: agent, tool, provider
 
 **Agents**:
 The name of the page that holds Skills, Subagents, Hooks and Rules. Names the page only, never an item.
-_Avoid_: Loadout (old page name), using "agent" for a CLI or a subagent
+_Avoid_: Loadout (old page name; it survives only in the core's wire methods `loadout.*`), using "agent" for a CLI or a subagent
 
 ### Items
 

@@ -2,7 +2,7 @@
 
 Spec: [2026-11-05-reins-agents.md](../specs/2026-11-05-reins-agents.md), AG1 to AG10.
 Depends on [design language v4](2026-11-05-reins-design-language-v4.md) V5 (the components) before any UI task here. The core tasks A1 to A6 can start now.
-Mock: [`mocks/agents/agents-panel.html`](../../mocks/agents/agents-panel.html) (C′), with the v4 look at [`mocks/agents/controls.html`](../../mocks/agents/controls.html)`?icons=tabler&buttons=a`. Both are tracked with synthetic data, and A12 deletes the folder.
+Mock: `mocks/agents/agents-panel.html` (C′), with the v4 look at `mocks/agents/controls.html``?icons=tabler&buttons=a`. Both were tracked with synthetic data, and A12 was to delete the folder. `mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. Commit with `git commit -- <paths>` only.
 Started 2026-11-05. Status: the owner approved the write approach below on 2026-11-05 (W9, "ok"), adding that every failure shows a toast. The owner also picked the name-based secret rule the same day. The owner picked the A0b mock on 2026-11-05 ("ok chốt"), so A1 can start; the cut-over (A12) is the only owner stop left.
 

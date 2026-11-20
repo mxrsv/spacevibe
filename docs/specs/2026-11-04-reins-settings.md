@@ -12,8 +12,8 @@ Mock, outside git: `~/scratch/spacevibe-reins/settings/index.html` (synthetic da
 - User: the owner, the only user today, who judges the interface by eye.
 - Success: the build matches the chosen mock; Theme and Font size survive a relaunch; the Update section shows Sparkle's
   real state.
-- Constraint: screens compose components and tokens only; no network request beyond Sparkle's (AGENTS.md S-R5); the
-  interface stays English only.
+- Constraint: screens compose components and tokens only; no network request beyond Sparkle's (AGENTS.md S-R5). That
+  the interface stays English only is inferred, not decided (see "Inferred, not decided").
 - Out of scope: Account (owner, 2026-11-04: "bỏ qua Account, làm sau"; a Reins login would reverse "No account" and
   S-R5), translation and a Vietnamese interface, accent colour, density, installing an update without a click, a beta
   channel, a separate macOS Settings window.
@@ -57,6 +57,14 @@ Mock, outside git: `~/scratch/spacevibe-reins/settings/index.html` (synthetic da
   result shows in place and no Sparkle window opens; `View Update` and the menu's `Check for Updates…` open Sparkle's
   standard window. Opening Settings never starts a check. The time shown is Sparkle's last check date, which a probe
   also updates (Sparkle 2, `SPUUpdater.m`, `checkForUpdatesWithDriver:` sets it for every check).
+
+## Inferred, not decided
+
+Lines with no owner decision behind them (W20). They follow the recommendation until the owner says otherwise.
+
+- "The interface stays English only" (Intent, Constraint). Source: not recorded; no owner statement makes it a
+  constraint (the owner's words only put translation and a Vietnamese interface out of scope for this screen). Moved here on
+  2026-11-20 (DN-L13 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md)).
 
 ## Acceptance criteria
 

@@ -6,6 +6,7 @@ Mock: `~/scratch/spacevibe-reins/limits/index.html`, outside git, synthetic data
 its direction B is the target. Placement B, chosen by the owner on 2026-11-03: a sidebar block on every tab, detail in a
 popover.
 Status: engine (L1), placement B (L2), model and wording (L3) done; the L4 popover view (commit `5799e3f`) is superseded by the Limits page of layout H and is redone in task V6 of the [design language v3 plan](2026-11-04-reins-design-language-v3.md); L5 (shots, `distill`/`clarify`, eye approval) folds into that plan's V7. Started 2026-11-03.
+Waiver, 2026-11-20: the owner waived this plan's eye gates L5 (which had been folded into V7 of the design language v3 plan) ("ok" to DN-Q4 of the [docs-normalization plan](2026-11-19-docs-normalization.md)), because the screens they judged no longer exist. The live eye gate is U14 of the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md). The unticked boxes below stay as the record.
 
 ## Approach
 

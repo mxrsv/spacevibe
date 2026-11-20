@@ -6,7 +6,7 @@ Register: product
 A local macOS tool to control Claude Code and Codex CLI: what each agent is equipped with, what it is allowed to do, and what it did. It shows every skill, subagent and hook with how often each one actually ran according to local logs, and lets a developer add or remove one in seconds. Most people pile these up from GitHub and never learn which ones fire or what runs on each event. It also keeps a local token and cost history for both CLIs, so no separate tracker is needed. And it shows how much of each subscription's usage limit is left, from local Claude Code status-line snapshots and Codex session logs; Gemini CLI keeps none, and the app says so instead of guessing.
 
 ## Users
-A developer or vibe coder who runs Claude Code and Codex daily and has collected dozens of skills, agents and hooks. They open it when installing something new, when a session feels slow or noisy, or when cleaning up. Desk, beside an editor and terminal. Today the owner is the only user and judges the interface by eye.
+A developer or vibe coder who runs Claude Code and Codex daily and has collected dozens of skills, agents and hooks. They open it when installing something new, when a session feels slow or noisy, or when cleaning up. Desk, beside an editor and terminal. As of 2026-11-19 the owner is the only user and judges the interface by eye.
 
 ## Mechanism
 One inventory across both CLIs, joined to usage counted from local session logs: installed but never invoked, invoked often, present in one CLI and missing in the other, and exactly which hook commands fire on each event.
@@ -15,12 +15,12 @@ One inventory across both CLIs, joined to usage counted from local session logs:
 Direct, tidy, a little opinionated. It says plainly what is unused and what cannot be measured.
 
 ## Anti-references
-Generic AI dashboards, neon on black, gradients, card grids of icon + title + text, marketplace storefronts, terminal costumes, settings-page sprawl.
+Generic AI dashboards, neon on black, gradients, decorative card grids of icon + title + text (a tile that carries live data and its actions is not one, D56), marketplace storefronts, terminal costumes, settings-page sprawl.
 
 ## Design principles
 - Usage is evidence: an item either ran or never ran; a fresh install says so in a note, and what a CLI does not log reads as not measurable, never as zero. The core still reports a fresh install as `pending` and the shell turns that into the note ([Never ran](GLOSSARY.md#usage)).
-- Rows compared by eye on bars beat hero tiles; severity is tinted in context.
-- Every control performs a real action, and adding or removing is one step (one save for a panel of agent settings) with a visible way back.
+- Each card leads with one datum that answers its question, and where the question is a comparison the rows are compared by eye on bars (D56, D61, D71); severity is tinted in context.
+- Every control performs a real action, and adding or removing is one step with a visible way back.
 - Cost is an estimate and says so; a model with no price reads as not measured, never as 0.
 - Nothing is executed: a hook is shown and written, never run by the app.
 
@@ -33,7 +33,7 @@ Rules under the look; global ones are `~/.claude/rules/quality/ux.md` (UX1-UX4).
 - **Flow: detection and action sit together.** A problem shown in a row (never ran, dead) offers its fix in the same row within one hover or click (the warning popover with `Remove`). Every write has Undo; `Stop` in Activity is the one write without undo and names the pid and the consequence in a confirmation.
 
 ## Accessibility and constraints
-Keyboard navigation, visible focus, WCAG AA, reduced motion. Works offline, no account, no telemetry. Writes go only to the parts of Claude Code's and Codex's configuration the app manages (skills, subagents, hooks, Claude Code's permission rules and its status line entry; [where each write lands](docs/internals/mutations.md#where-each-write-lands)), plus the app's own data folder. MCP servers, the model, `CLAUDE.md` and `AGENTS.md` are never written; each write to agent configuration keeps a restorable copy. Plugin-owned items and managed settings are read-only. Secret values in settings are never read into the UI or logged; in the commands SpaceVibe shows, recognisable credentials are masked. One can be replaced without being shown.
+Keyboard navigation, visible focus, WCAG AA, reduced motion. Works offline, no account, no telemetry. Writes go only to the parts of Claude Code's and Codex's configuration the app manages (skills, subagents, hooks, Claude Code's permission rules and its status line entry; [where each write lands](docs/internals/mutations.md#where-each-write-lands)), plus the app's own data folder. MCP servers, the model, `CLAUDE.md` and `AGENTS.md` are never written; each write to agent configuration keeps a restorable copy. Plugin-owned items and managed settings are read-only. Secret values in settings are never read into the UI or logged; in the commands SpaceVibe shows, recognisable credentials are masked.
 
 ## Distribution
-Public site and downloads: `spacevibe.dev` (the page is built in `site/`; the domain is not repointed yet). The app is a native macOS app (Swift and SwiftUI) that opens no network listener. Its only network requests check for and download updates, once a day and without asking unless turned off in Settings; installing takes a click. No user data passes through the site.
+Public site and downloads: `spacevibe.dev` (the page is built in `site/`). The app is a native macOS app (Swift and SwiftUI) that opens no network listener. Its only network requests check for and download updates, once a day and without asking unless turned off in Settings; installing takes a click. No user data passes through the site.
