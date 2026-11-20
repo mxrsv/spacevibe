@@ -2,19 +2,7 @@
 
 How the core finds out which skills, subagents and hooks ran, by reading both CLIs' session logs, and how it turns logged tokens into an estimated cost. The Agents page and its filter counts read the scan through the inventory join ([inventory.md](inventory.md)); the Activity page shows the cost of each session. The scan counts names, days and hook runs and never reads a token; tokens and cost belong to Activity, which only borrows the price table. Terms follow [GLOSSARY.md](../../GLOSSARY.md).
 
-## Responsibilities and sources of truth
-
-| Part | Responsibility | Source |
-| --- | --- | --- |
-| Log discovery | List `.jsonl`, `.jsonl.zst` and `.jsonl.zstd` logs under a root, one file per session | [log-files.go](../../core/internal/logs/log-files.go) `Walk`, `BaseName`, `IsCompressed` |
-| Line reading | Stream the lines of a plain or zstd log; skip oversized lines; refuse a FIFO or device before opening it | [log-files.go](../../core/internal/logs/log-files.go) `ForEachLine`, [line-splitter.go](../../core/internal/logs/line-splitter.go), [open-regular.go](../../core/internal/logs/open-regular.go) |
-| Zstd stream | Decompress with an output cap and fixed-sentence errors | [zstd-stream.go](../../core/internal/logs/zstd-stream.go) `ZstdStream` |
-| Offset readers | Read only what a log gained since the last read. Used by Activity and Limits, not by the scan | [tail-reader.go](../../core/internal/logs/tail-reader.go), [compressed-log-reader.go](../../core/internal/logs/compressed-log-reader.go) |
-| Line parsers | Turn one line into skill, subagent and hook names, per CLI | [lines.go](../../core/internal/usage/lines.go) `claudeLine`, `codexLine`, `hookRecord` |
-| Scanner | Walk, cache check, parse, progress, one scan at a time, last result of the process | [scanner.go](../../core/internal/usage/scanner.go) `Scanner.Scan` |
-| Scan cache | `<data>/usage-cache.json`, one record per log | [cache.go](../../core/internal/usage/cache.go) |
-| Aggregation | Fold records into totals, session counts and the log window per CLI | [aggregate.go](../../core/internal/usage/aggregate.go) |
-| Price table | Embedded rates, name lookup, cost estimate | [pricing.go](../../core/internal/pricing/pricing.go) `Price`, `EstimateCost`; [pricing.json](../../core/internal/pricing/pricing.json) |
+Code: [`core/internal/usage`](../../core/internal/usage) (line parsers, the scanner, the scan cache, aggregation), [`core/internal/logs`](../../core/internal/logs) (log discovery, line reading and the zstd stream; its offset readers serve Activity and Limits, not the scan) and [`core/internal/pricing`](../../core/internal/pricing) (the embedded price table).
 
 ## Where each fact comes from
 
@@ -64,6 +52,4 @@ How the core finds out which skills, subagents and hooks ran, by reading both CL
 
 ## Verification
 
-- `cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/usage/... ./internal/logs/... ./internal/pricing/...` (the same packages run under `scripts/test.sh`), against temporary homes or the fixture home, never the real config.
-- Scan: [scanner_test.go](../../core/internal/usage/scanner_test.go) (skills, hooks, compressed rollouts, hostile logs, cancel, one scan at a time), [cache_test.go](../../core/internal/usage/cache_test.go), [golden_test.go](../../core/internal/usage/golden_test.go) (cold and warm scans equal the frozen `usage` golden).
-- Logs: [log-files_test.go](../../core/internal/logs/log-files_test.go), [zstd-stream_test.go](../../core/internal/logs/zstd-stream_test.go), [fifo_unix_test.go](../../core/internal/logs/fifo_unix_test.go). Pricing: [pricing_test.go](../../core/internal/pricing/pricing_test.go).
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/usage/... ./internal/logs/... ./internal/pricing/...` (the same packages run under `scripts/test.sh`), against temporary homes or the fixture home, never the real config.

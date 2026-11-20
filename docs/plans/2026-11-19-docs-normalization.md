@@ -142,7 +142,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
 - [x] **DN-T2 Batch 1 applied.** Done 2026-11-20: D71 (DN-Q1), D72 (DN-Q2), D73 (DN-Q5) in the linear ledger; "Owner answer on SV5" (DN-Q3) in the SV ledger; a waiver line (DN-Q4) in the Electron, SwiftUI, design-language v2, v3 and Limits plans; `mocks/agents/` removed (DN-Q6). DN-L1 and DN-L11 keep their lines.
   - Apply DN-Q1 to DN-Q6 and DN-L1 to DN-L13 as the owner answered.
   - Record each owner answer in the ledger it belongs to: DN-Q1, DN-Q2 and DN-Q5 in the linear ledger; DN-Q3 in the SV ledger; DN-Q4 in the plans it waives.
-- [ ] **DN-T3 Internals pages (D9, D7).**
+- [x] **DN-T3 Internals pages (D9, D7).** Done 2026-11-20. Each page now opens with one "Code:" line naming its packages in place of the file table; `TestDocMethodTable` (which reads the method table of `core-protocol.md`) still passes.
   - Drop the file-responsibility tables and test-file lists; keep the "where each fact comes from" tables, the traps and one `go test` command.
   - Strip plan IDs and migration history (`core-protocol.md` H10, S.3-S.7, G0.1, G-fix, the Swift history; `overview.md` AC3, C3).
   - Move journal retention, Stop re-validation, settings-file scrub and percent-left to their owning page, and link to them from the others.

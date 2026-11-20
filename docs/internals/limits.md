@@ -2,22 +2,7 @@
 
 How the app knows how much of each subscription's usage Window is left. Claude Code figures come from its usage cache or from status-line snapshots that `spacevibe statusline capture` records; Codex figures come from its session logs; Gemini CLI keeps none, and the app says so. The Limits page and the sidebar tiles read this result. Terms follow [GLOSSARY.md](../../GLOSSARY.md); the wire shape is in [core-protocol.md](core-protocol.md#wire-types) and is not repeated here.
 
-## Responsibilities and sources of truth
-
-| Part | Responsibility | Source |
-| --- | --- | --- |
-| Read | Combine Claude Code, Codex and Gemini CLI in that order; set each window's `current` flag | [limits.go](../../core/internal/limits/limits.go) `Read`, `Entry.settled` |
-| Claude usage cache | Windows from Claude's own cache of usage | [claude-cache.go](../../core/internal/limits/claude-cache.go) `readClaudeCache` |
-| Snapshot read and merge | Choose between cache and snapshots; merge snapshots; validate one `rate_limits` object | [claude-statusline.go](../../core/internal/limits/claude-statusline.go) `readClaude`, `ParseWindows` |
-| Account key | Bind a snapshot to the logged-in account without storing an id | [claude-statusline.go](../../core/internal/limits/claude-statusline.go) `AccountKey`, [claude-account-key-cache.go](../../core/internal/limits/claude-account-key-cache.go) `CachedAccountKey` |
-| Codex reader | Newest `token_count` rate limits from the newest logs | [codex-logs.go](../../core/internal/limits/codex-logs.go) `readCodex` |
-| Install and uninstall | Wrap and unwrap `statusLine.command` in Claude's settings, journaled; copy the executable | [install.go](../../core/internal/statusline/install.go) `Install`, `Uninstall` |
-| Wrapper text | Quote the wrapper; recognise an existing one | [quote.go](../../core/internal/statusline/quote.go) `Quote`, `unwrapOnce` |
-| Capture command | Run the original status line, pass everything through, keep the limits | [command-capture.go](../../core/internal/statusline/command-capture.go) `runCapture` |
-| Snapshot writer | Keep only the two windows of one session; prune | [snapshot.go](../../core/internal/statusline/snapshot.go) `Capture` |
-| Failure record | One reason code per failed capture | [last-error.go](../../core/internal/statusline/last-error.go) |
-| Entry points | `limits.read`, `spacevibe limits --json`, `spacevibe statusline ...` | [handlers.go](../../core/internal/rpc/methods/handlers.go) `limitsRead`, [oneshot.go](../../core/cmd/spacevibe/oneshot.go), [main.go](../../core/cmd/spacevibe/main.go), [statusline.go](../../core/internal/statusline/statusline.go) `Run` |
-| Display | Share left, tone, staleness; copies the install command, never runs it | [LimitsWording.swift](../../Sources/SpaceVibe/Limits/LimitsWording.swift), [LimitsCanvas.swift](../../Sources/SpaceVibe/Limits/LimitsCanvas.swift) |
+Code: [`core/internal/limits`](../../core/internal/limits) (the read: cache, snapshots, Codex logs) and [`core/internal/statusline`](../../core/internal/statusline) (install, uninstall and the capture command). The shell's share left, tone and staleness are in [LimitsWording.swift](../../Sources/SpaceVibe/Limits/LimitsWording.swift).
 
 ## Where each fact comes from
 
@@ -61,6 +46,6 @@ How the app knows how much of each subscription's usage Window is left. Claude C
 
 ## Verification
 
-- `cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/limits/... ./internal/statusline/...` runs [limits_test.go](../../core/internal/limits/limits_test.go), [statusline_test.go](../../core/internal/limits/statusline_test.go), [hardening_test.go](../../core/internal/limits/hardening_test.go), [golden_test.go](../../core/internal/limits/golden_test.go), [install_test.go](../../core/internal/statusline/install_test.go), [capture_test.go](../../core/internal/statusline/capture_test.go), [command_test.go](../../core/internal/statusline/command_test.go) and [rpc-cannot-capture_test.go](../../core/internal/statusline/rpc-cannot-capture_test.go), all on temporary homes. `SPACEVIBE_TEST=1` makes `roots.Resolve` and the write guard refuse any root under the real home (S-R1); `scripts/test.sh` sets it.
+- `cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/limits/... ./internal/statusline/...` runs on temporary homes. `SPACEVIBE_TEST=1` makes `roots.Resolve` and the write guard refuse any root under the real home (S-R1); `scripts/test.sh` sets it.
 - [scripts/test-statusline.sh](../../scripts/test-statusline.sh) builds the core and drives the real binary in a synthetic home, with python3: exact stdout, stderr and exit status, the size cap, `last-error`, early pipe close, process-group cancellation, default SIGPIPE, install and uninstall. `scripts/test.sh` does not run it; run it by hand after changing `command-capture.go`.
-- Per-OS files: [exit-status_unix.go](../../core/internal/statusline/exit-status_unix.go) and [exit-status_other.go](../../core/internal/statusline/exit-status_other.go). Off unix there is no `/bin/sh` and no SIGPIPE, so capture only reports a failure.
+- Off unix there is no `/bin/sh` and no SIGPIPE, so capture only reports a failure ([exit-status_other.go](../../core/internal/statusline/exit-status_other.go)).

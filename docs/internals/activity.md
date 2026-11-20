@@ -2,21 +2,7 @@
 
 Which Claude Code and Codex sessions are running now, what each one is doing, how it is titled, which commands keep failing, which tool call is open, and the one write: Stop, a SIGTERM to a pid that was looked up again from the live system. The Activity page reads one `ActivityReport` through `activity.read` and `activity.subscribe` ([core-protocol.md](core-protocol.md#activity-subscription) holds the wire shape and the poll). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
 
-## Responsibilities and sources of truth
-
-| Part | Responsibility | Source |
-| --- | --- | --- |
-| Service | The three methods over one `Engine`, so reads and the poll share folded offsets | [service.go](../../core/internal/activity/service.go) `Service`, [handlers.go](../../core/internal/rpc/methods/handlers.go) `activityStop` |
-| Engine | Chooses which logs to fold, keeps read offsets between reads, builds the report | [engine.go](../../core/internal/activity/engine.go) `Engine.Read` |
-| Live sessions | Matches status files and processes to logs; decides the state of each row | [sessions.go](../../core/internal/activity/sessions.go) `liveProcesses`, `claudeState`, `codexState` |
-| Log index | Finds transcripts, subagent logs, rollouts, status files and Codex thread names | [log-index.go](../../core/internal/activity/log-index.go) `listLogs` |
-| Fold | One log line into a small state: first prompt, titles, open tool call, failed commands, edits | [fold-claude.go](../../core/internal/activity/fold-claude.go), [fold-codex.go](../../core/internal/activity/fold-codex.go), [log-state.go](../../core/internal/activity/log-state.go) |
-| Groups | Failed commands and edited files across sessions | [groups.go](../../core/internal/activity/groups.go) `groupFailures` |
-| Titles | Junk test, cut and fallback of a session title | [titles.go](../../core/internal/activity/titles.go) `pickTitle` |
-| Stop | Looks the process up again, checks it twice, signals it | [stop.go](../../core/internal/activity/stop.go) `Stop` |
-| Process adapter | `ps`, `lsof`, `kill(2)`, and the fixture used under `SPACEVIBE_TEST=1` | [adapter.go](../../core/internal/proc/adapter.go) `Adapter`, [system-darwin.go](../../core/internal/proc/system-darwin.go), [fixture.go](../../core/internal/proc/fixture.go), [parse.go](../../core/internal/proc/parse.go) |
-| Text compatibility | JavaScript string, whitespace and time semantics | [text.go](../../core/internal/textjs/text.go), [time.go](../../core/internal/textjs/time.go) |
-| Redaction | Masks recognisable credentials in a command line | [redact.go](../../core/internal/redact/redact.go) `Command` |
+Code: [`core/internal/activity`](../../core/internal/activity) (one `Engine` behind `activity.read`, the poll and Stop, so a read and the poll share folded offsets), [`core/internal/proc`](../../core/internal/proc) (the fixed `ps` and `lsof`, `kill(2)`, and the fixture used under `SPACEVIBE_TEST=1`), [`core/internal/textjs`](../../core/internal/textjs) (JavaScript string, whitespace and time semantics) and [`core/internal/redact`](../../core/internal/redact).
 
 ## Where each fact comes from
 
@@ -75,5 +61,4 @@ The shell's floating widget ([spec](../specs/2026-11-19-session-glance-widget.md
 
 `cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/activity/... ./internal/proc/... ./internal/textjs/... ./internal/redact/...`. Every test builds its own home and fake process list; none reads the real `~/.claude` or `~/.codex` or signals a real process, except [stop_test.go](../../core/internal/activity/stop_test.go) `TestStopRealAdapter` and [system-darwin_test.go](../../core/internal/proc/system-darwin_test.go), which spawn and end their own child.
 
-- Rows and lists against the frozen goldens: [golden_test.go](../../core/internal/activity/golden_test.go). Stop refusals and the reused pid: [stop_test.go](../../core/internal/activity/stop_test.go), [stop-verify_test.go](../../core/internal/activity/stop-verify_test.go). Masking before the cut: [redact_test.go](../../core/internal/activity/redact_test.go). ICU ports against recorded `NSRegularExpression` output: [icu-patterns_test.go](../../core/internal/activity/icu-patterns_test.go). `ps` and `lsof` parsing and the adapter: [parse_test.go](../../core/internal/proc/parse_test.go).
 - Under `SPACEVIBE_TEST=1`, [proc.New](../../core/internal/proc/select.go) never returns the system adapter. With `SPACEVIBE_PROC_FIXTURE` it replays that file (`alive`, `starts`, `threads`, `delayMs`); without it, an empty list; an unreadable file is a startup sentence and an empty list. The fixture starts and signals nothing: `Terminate` only removes the pid from memory, and `Identify` answers `fixture-start` for a listed pid without a recorded start. So a Claude Stop succeeds only when the status file's `procStart` equals that pid's entry in `starts`; otherwise it is 409. A Codex row with a lock stops without either.

@@ -59,7 +59,7 @@ Boundary rules for the Swift app:
 - **S-R5. The app opens no network listener, and its only requests are Sparkle's update check and download**, started by [`UpdateController`](Sources/SpaceVibe/App/UpdateController.swift) in a normal launch of a build with `SPACEVIBE_UPDATE_FEED_URL` set; a build without it, fixture launches and `SPACEVIBE_TEST=1` make none. No crash reporter, no analytics, no system profile, no other request.
 
 - `mocks/` holds an earlier throwaway mock kept as a reference: [`mocks/tokens-board/`](mocks/tokens-board/index.html), tracked with synthetic data, the Board target of the [Tokens plan](docs/plans/2026-11-03-reins-tokens.md). Do not import from it.
-- **S-R6. Only Stop signals a process.** [`activity.Stop`](core/internal/activity/stop.go) is the only code that signals a process, and it sends SIGTERM only to a pid it found itself and matched to the session at that moment. With `SPACEVIBE_TEST=1` it answers from the fixture.
+- **S-R6. Only Stop signals a process.** [`activity.Stop`](core/internal/activity/stop.go) is the only code that signals a process, and it sends SIGTERM only to a pid it found itself and matched to the session at that moment ([what it checks](docs/internals/activity.md#rules-that-are-easy-to-get-wrong)). With `SPACEVIBE_TEST=1` it answers from the fixture.
 
 ## Known traps
 

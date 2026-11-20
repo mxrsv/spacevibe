@@ -2,19 +2,7 @@
 
 What is installed for Claude Code and Codex: skills, subagents and hooks, read from disk without running anything, then joined to usage so each row can say whether it ran. The Agents page, the filter counts and the delete and warning actions all read this snapshot. Terms follow [GLOSSARY.md](../../GLOSSARY.md).
 
-## Responsibilities and sources of truth
-
-| Part | Responsibility | Source |
-| --- | --- | --- |
-| Roots | Where each CLI's config, logs and SpaceVibe's own data live; refuses a real home under `SPACEVIBE_TEST=1` (S-R1) | [roots.go](../../core/internal/roots/roots.go) `Resolve` |
-| Read | Walk both CLIs, enabled Claude plugins and discovered projects into one `InventorySnapshot` | [reader.go](../../core/internal/inventory/reader.go) |
-| Frontmatter | `name` and `description` of a `SKILL.md` or subagent `.md`; flat `key: value` only, not YAML | [frontmatter.go](../../core/internal/inventory/frontmatter.go) |
-| Project discovery | Find projects that have their own `.claude` folder | [projects.go](../../core/internal/inventory/projects.go) |
-| Hook identity and dead hooks | Hook hash, script paths named by a command | [hashes.go](../../core/internal/hashes/hashes.go), [script-paths.go](../../core/internal/inventory/script-paths.go) |
-| Usage join | Add a usage cell per CLI to every row | [attach-usage.go](../../core/internal/inventory/attach-usage.go) |
-| Filter counts | Counts for the filter chips | [filter-counts.go](../../core/internal/inventory/filter-counts.go) |
-| Types | Row, cell and snapshot shapes, hook events per CLI | [types.go](../../core/internal/inventory/types.go) |
-| File access | Bounded reads that tell "missing" from "cannot be read" | [fileio.go](../../core/internal/inventory/fileio.go) |
+Code: [`core/internal/inventory`](../../core/internal/inventory), [`core/internal/roots`](../../core/internal/roots) (where each CLI's config, logs and SpaceVibe's own data live; it refuses a real home under `SPACEVIBE_TEST=1`, S-R1) and [`core/internal/hashes`](../../core/internal/hashes).
 
 ## Where each fact comes from
 
@@ -44,6 +32,7 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 - **Dead hook.** A hook is dead only when its command names at least one script path and every path is missing. A path SpaceVibe cannot stat is not "missing": the hook is not marked dead and a problem sentence says so.
 - **Plugin names.** A plugin-qualified name (`plugin:skill`) is matched by its part after the last `:` ([`hashes.Bare`](../../core/internal/hashes/hashes.go)).
 - **Project discovery is bounded.** At most `MaxProjects` (300, [types.go](../../core/internal/inventory/types.go)) folders, newest first, 3 logs per folder, 64 KB per log. A project never opened with either CLI is not found, and a `cwd` that falls outside the first 64 KB is missed. The home folder and paths under `.claude/worktrees/` are skipped.
+- **Frontmatter is not YAML.** Only flat `key: value` lines are read, for the `name` and `description` of a `SKILL.md` or a subagent `.md` ([frontmatter.go](../../core/internal/inventory/frontmatter.go)).
 - **Unreadable is not empty.** An unreadable CLI root, folder or settings file adds a sentence to `problems` and keeps going; it never reads as "nothing installed". The UI shows `problems`.
 - **Item ownership.** `owner` is `user`, `link` (a symlink) or the plugin name. Only user-level items outside any project are `removable`; plugin items are read-only.
 - **Hook events.** `Events` in [types.go](../../core/internal/inventory/types.go) lists the events each CLI documents. Claude's list comes from its docs, Codex's from observation only.
@@ -65,5 +54,4 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 
 ## Verification
 
-- `scripts/test.sh`: `cd core && go test ./...` runs [inventory_test.go](../../core/internal/inventory/inventory_test.go), [frontmatter_test.go](../../core/internal/inventory/frontmatter_test.go) and [roots_test.go](../../core/internal/roots/roots_test.go) against temporary homes or the fixture home, never the real config.
-- The goldens are frozen (SV5); the Node core that generated them is deleted and lives in git history.
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/inventory/... ./internal/roots/... ./internal/hashes/...` runs against temporary homes or the fixture home, never the real config; `scripts/test.sh` runs it first. The goldens are frozen (SV5).

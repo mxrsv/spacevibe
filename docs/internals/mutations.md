@@ -1,23 +1,8 @@
 # Mutations
 
-Every change SpaceVibe makes to what Claude Code and Codex are equipped with: copying and removing Skills, Subagents and Hooks, removing dead Hooks, adding, removing and re-grading Rules, the status line capture setup, and Undo of each. The Agents page calls `loadout.copyToOther`, `loadout.removeItem` and `loadout.removeDeadHooks`, the Rules page calls `rules.*`, and every Undo calls `journal.undo`. `spacevibe statusline install` and `uninstall` are command-line subcommands with no RPC route. Wire shapes and error codes are in [core-protocol.md](core-protocol.md); journal retention and the trash sweep are in [overview.md](overview.md#data-flow). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
+Every change SpaceVibe makes to what Claude Code and Codex are equipped with: copying and removing Skills, Subagents and Hooks, removing dead Hooks, adding, removing and re-grading Rules, the status line capture setup, and Undo of each. The Agents page calls `loadout.copyToOther`, `loadout.removeItem` and `loadout.removeDeadHooks`, the Rules page calls `rules.*`, and every Undo calls `journal.undo`. `spacevibe statusline install` and `uninstall` are command-line subcommands with no RPC route. Wire shapes and error codes are in [core-protocol.md](core-protocol.md); journal retention and the trash sweep are [below](#journal-retention-and-the-trash-sweep). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
 
-## Responsibilities and sources of truth
-
-| Part | Responsibility | Source |
-| --- | --- | --- |
-| RPC entry | Five methods; looks at the request context before queueing for the lock and again inside it | [service.go](../../core/internal/mutate/service.go) `Service` |
-| Lock handle | One `Tx` per held lock; every locked step is a `Tx` method | [tx.go](../../core/internal/mutate/tx.go) `WithLockContext`, `Tx` |
-| Item writes | Copy and remove Skills, Subagents, Hooks; removable and read-only decision | [items.go](../../core/internal/mutate/items.go) `removeItem`, `copyToOther`; [copy-skill.go](../../core/internal/mutate/copy-skill.go) |
-| Hook edits | Add or remove one hook inside a hook file, undo of hook ops | [hook-edit.go](../../core/internal/mutate/hook-edit.go), [hooks.go](../../core/internal/mutate/hooks.go) |
-| File edit | Backup, validate, re-check, atomic replace of one config file; one journal op | [file-edit.go](../../core/internal/mutate/file-edit.go) `Tx.Apply`, `EditJSON` |
-| Journal and Undo | `<data>/journal.json`, rollback of a failed change, all-or-nothing Undo | [journal.go](../../core/internal/mutate/journal.go), [journal-undo.go](../../core/internal/mutate/journal-undo.go) `Tx.Undo`, [ops.go](../../core/internal/mutate/ops.go) |
-| Containment | Which paths an entry read from the journal may touch | [containment.go](../../core/internal/mutate/containment.go) `containment` |
-| Trash | Restorable copies under `<data>/trash`, slot sweep | [trash.go](../../core/internal/mutate/trash.go) `slot`, `pruneTrash` |
-| Rules writes | One locked `EditJSON` per Rules change | [store.go](../../core/internal/rules/store.go) `Store.edit` |
-| Atomic write | Temp file, validate, re-check, rename; symlink-aware target; byte re-check | [atomic-write.go](../../core/internal/fsx/atomic-write.go) `AtomicWrite`, [target.go](../../core/internal/fsx/target.go) `ResolveTarget`, `UnchangedSince` |
-| Write lock and guard | Process semaphore plus `flock`; real-home refusal under `SPACEVIBE_TEST=1` | [write-lock.go](../../core/internal/fsx/write-lock.go), [write-guard.go](../../core/internal/fsx/write-guard.go) |
-| JSON and TOML | `ojson` splices bytes; `toml` only reads | [document.go](../../core/internal/ojson/document.go), [edit.go](../../core/internal/ojson/edit.go), [toml.go](../../core/internal/toml/toml.go) |
+Code: [`core/internal/mutate`](../../core/internal/mutate) (item, hook and file edits, the journal, Undo, containment, the trash), [`core/internal/fsx`](../../core/internal/fsx) (atomic write, write lock, write guard), [`core/internal/ojson`](../../core/internal/ojson) (splices bytes) and [`core/internal/toml`](../../core/internal/toml) (only reads). Rules writes come from [`core/internal/rules`](../../core/internal/rules) through the same file edit ([rules.md](rules.md)).
 
 ## Where each write lands
 
@@ -44,6 +29,10 @@ One write:
 6. `RecordMutation` puts the entry first, drops what is past 200 entries or 30 days, writes the journal atomically, then prunes the trash. If the journal write fails, the ops are reversed last first.
 
 One Undo: lock, read the journal, find the id (404), refuse if already undone (409) or if any op kind is unknown (400), check every path of every op against `containment` (400), reverse the ops last first (a batch of dead-hook removals as one), mark the entry `undone`, write the journal. A refusal at any op puts back the ones already reversed.
+
+## Journal retention and the trash sweep
+
+A write also ends old history. The journal keeps at most 200 entries no older than 30 days (`JournalLimit`, `JournalMaxAge` in [journal.go](../../core/internal/mutate/journal.go)), and each entry it drops takes its trash copy with it. Every journal write also sweeps `<data>/trash` under the lock: a folder older than 30 days that no remaining entry names, in any op of any kind, is deleted for good. A delete is only ever a folder directly inside `<data>/trash`, checked by the containment rule Undo uses; one that fails is retried by the next write.
 
 ## Rules that are easy to get wrong
 
@@ -74,8 +63,4 @@ One Undo: lock, read the journal, find the id (404), refuse if already undone (4
 
 ## Verification
 
-`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/mutate/... ./internal/fsx/... ./internal/ojson/... ./internal/toml/...` (all four packages pass; `scripts/test.sh` runs it first). Every test writes under `t.TempDir()`; `TestMain` in [main_test.go](../../core/internal/mutate/main_test.go) arms the real-home guard.
-
-- mutate: [file_edit_test.go](../../core/internal/mutate/file_edit_test.go) (edit, hand edit, links, canary), [journal_test.go](../../core/internal/mutate/journal_test.go), [journal_retention_test.go](../../core/internal/mutate/journal_retention_test.go), [mutation_transaction_test.go](../../core/internal/mutate/mutation_transaction_test.go) (rollback), [phase2_test.go](../../core/internal/mutate/phase2_test.go) (containment, copy caps, cancel), [concurrency_test.go](../../core/internal/mutate/concurrency_test.go) (two processes), [write_guard_test.go](../../core/internal/mutate/write_guard_test.go), [golden_test.go](../../core/internal/mutate/golden_test.go).
-- fsx: [atomic-write_test.go](../../core/internal/fsx/atomic-write_test.go), [write-lock_test.go](../../core/internal/fsx/write-lock_test.go), [write-guard_test.go](../../core/internal/fsx/write-guard_test.go), [file-ops_test.go](../../core/internal/fsx/file-ops_test.go).
-- ojson and toml: [roundtrip_test.go](../../core/internal/ojson/roundtrip_test.go), [edit_test.go](../../core/internal/ojson/edit_test.go), [reject_test.go](../../core/internal/ojson/reject_test.go), [toml_test.go](../../core/internal/toml/toml_test.go), [parser_edge_test.go](../../core/internal/toml/parser_edge_test.go).
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/mutate/... ./internal/fsx/... ./internal/ojson/... ./internal/toml/...` (`scripts/test.sh` runs it first). Every test writes under `t.TempDir()`; `TestMain` in [main_test.go](../../core/internal/mutate/main_test.go) arms the real-home guard.

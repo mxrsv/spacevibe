@@ -2,22 +2,7 @@
 
 The permission Rules of the CLIs: for Claude Code the `allow`, `ask` and `deny` entries of `settings.json` (list, add, remove, change verdict, and a capability grid derived from them, with a cell write), and for Codex a read-only summary of its permission keys. The Rules tab reads one `rules.snapshot` per scope and writes through the other `rules.*` methods. A Rule here is a permission entry (see [GLOSSARY.md](../../GLOSSARY.md)); `CLAUDE.md` and `AGENTS.md` are Instructions and no code under `core/internal` reads or writes them, so there is no import, size or token handling to document.
 
-## Responsibilities and sources of truth
-
-| Part | Responsibility | Source |
-| --- | --- | --- |
-| Types | Scope (global, project, local), verdict, capability, cell state, `Rule`, `Listing`, `Preview` | [types.go](../../core/internal/rules/types.go) `Scope`, `Rule` |
-| Rule text | `Tool` or `Tool(specifier)` parse, the write's input check, the live check | [parse.go](../../core/internal/rules/parse.go) `ParseRule`, `checkedRule`, `Check` |
-| Settings JSON | Shape checks of `permissions`, and the in-place list edit | [settings-file.go](../../core/internal/rules/settings-file.go) `permissionsOf`, `editRules` |
-| Store | Locate a scope's file, list, add, remove, change verdict(s); every write | [store.go](../../core/internal/rules/store.go) `Store`, `edit` |
-| Grid | Which cell a rule belongs to and the state of a cell | [grid.go](../../core/internal/rules/grid.go) `placements`, `CapabilityGrid` |
-| Cell write | Preview and replace the rules behind one cell | [capability-write.go](../../core/internal/rules/capability-write.go) `planOn`, `SetCapability` |
-| Codex | Permission keys of `config.toml` and counts of `rules/*.rules`, read only | [codex.go](../../core/internal/rules/codex.go) `ReadCodexPermissions`, [codex-rules.go](../../core/internal/rules/codex-rules.go) `summarizeRules` |
-| Service | Param checks, the process's project list, path scrub, `Snapshot` | [service.go](../../core/internal/rules/service.go) `Service`, `scrub` |
-| Wiring | The eight `rules.*` handlers; one project list shared with inventory | [handlers.go](../../core/internal/rpc/methods/handlers.go), [services.go](../../core/internal/rpc/methods/services.go) |
-| Shell | Whether a cell may be edited; tool families judged by wide rules | [RulesSnapshot.swift](../../Sources/SpaceVibe/Rules/RulesSnapshot.swift) `isEditable`, [RuleFamilies.swift](../../Sources/SpaceVibe/Rules/RuleFamilies.swift) |
-
-The wire shape of each method is in [core-protocol.md](core-protocol.md); this page does not repeat it.
+Code: [`core/internal/rules`](../../core/internal/rules); the eight `rules.*` handlers are wired in [`core/internal/rpc/methods`](../../core/internal/rpc/methods), which shares one project list with inventory. In the shell, `isEditable` in [RulesSnapshot.swift](../../Sources/SpaceVibe/Rules/RulesSnapshot.swift) decides whether a cell may be edited, and [RuleFamilies.swift](../../Sources/SpaceVibe/Rules/RuleFamilies.swift) holds the tool families judged by wide rules. The wire shape of each method is in [core-protocol.md](core-protocol.md); this page does not repeat it.
 
 ## Where each fact comes from
 
@@ -70,11 +55,4 @@ Write (`rules.add`, `remove`, `changeVerdict`, `changeVerdicts`, `setCapability`
 
 ## Verification
 
-`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/rules/...` runs everything below against temporary homes or the fixture home.
-
-- [rules_test.go](../../core/internal/rules/rules_test.go): parse, push pattern, grid mapping, check, Codex readers.
-- [store_test.go](../../core/internal/rules/store_test.go), [change-verdicts_test.go](../../core/internal/rules/change-verdicts_test.go): list, writes, byte-exact Undo, links.
-- [write-lock_test.go](../../core/internal/rules/write-lock_test.go), [transaction_test.go](../../core/internal/rules/transaction_test.go), [guards_test.go](../../core/internal/rules/guards_test.go): re-plan under the lock, cancel, corrupt journal, link escapes.
-- [gfix_unix_test.go](../../core/internal/rules/gfix_unix_test.go), [gfix_test.go](../../core/internal/rules/gfix_test.go): unreadable and truncated inputs.
-- [golden_test.go](../../core/internal/rules/golden_test.go): the frozen goldens on `rules-home`.
-- [`scripts/rules-shots.sh`](../../scripts/rules-shots.sh) writes screenshots of the Rules tab on a synthetic home; it is not a test.
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/rules/...` runs against temporary homes or the fixture home. [`scripts/rules-shots.sh`](../../scripts/rules-shots.sh) writes screenshots of the Rules tab on a synthetic home; it is not a test.
