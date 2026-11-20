@@ -1,6 +1,6 @@
 # SpaceVibe: docs, rules and instructions normalization
 
-Started 2026-11-19. Status: audit done; batch 1 of owner decisions waits (DN-Q1 to DN-Q6, DN-L1 to DN-L14). No doc has been edited yet.
+Started 2026-11-19. Status: in progress. The owner accepted batch 1 on 2026-11-20 ("ok"); tasks DN-T1 to DN-T9 are being executed, see the ticks under Tasks and the Handoff.
 Spec: none. Requirements are the intent the owner confirmed in conversation on 2026-11-18 ("đúng"), summarized under Scope.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions; commit with `git commit -- <paths>` only. The Clean spec is being written in another session: this plan does not edit `docs/specs/2026-11-18-clean.md`.
 
@@ -85,6 +85,8 @@ The audit covered 16 living files, 9 specs and 16 plans.
 
 Each row carries a recommendation. The owner can accept all of them in one answer.
 
+**Owner answer, 2026-11-20: "ok".** Read as: every recommendation below is accepted as written, DN-Q1 to DN-Q6, DN-L1 to DN-L13 and the settled choices DN-S1 to DN-S6. DN-L14 is only raised with the Clean session; this plan does not edit that spec. The answer is recorded where each decision lives: DN-Q1, DN-Q2 and DN-Q5 as D71, D72 and D73 in the [linear ledger](../specs/2026-11-06-reins-linear-identity-decisions.md), DN-Q3 in the [SV ledger](../specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md), and DN-Q4 as a waiver note in each plan whose gate it waives.
+
 | ID | Question | Recommendation | Why |
 | --- | --- | --- | --- |
 | DN-Q1 | `PRODUCT.md:17,22` says "rows compared by eye on bars beat hero tiles" and "no card grids". D56/D61 approved bento tiles. Which one stands? | Align `PRODUCT.md` with D56/D61: one lead datum per card, bars where the question is a comparison. | The later owner decision wins. The layout redesign may revisit it with its own ledger line. |
@@ -126,7 +128,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
 
 ## Tasks
 
-- [ ] **DN-T1 Living facts (no owner needed).**
+- [x] **DN-T1 Living facts (no owner needed).** Done 2026-11-20. The four stale symbols of `core-protocol.md` are fixed in the DN-T3 pass over that page.
   - Fix the false write scope in `PRODUCT.md:36` and `README.md:19`.
   - Replace the vocabulary block in `PRODUCT.md:30` with a link to `GLOSSARY.md`.
   - State `pending` as current behaviour, with D63 as the target, in `GLOSSARY.md`, `PRODUCT.md` and `inventory.md`.

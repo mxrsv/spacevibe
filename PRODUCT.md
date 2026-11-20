@@ -18,7 +18,7 @@ Direct, tidy, a little opinionated. It says plainly what is unused and what cann
 Generic AI dashboards, neon on black, gradients, card grids of icon + title + text, marketplace storefronts, terminal costumes, settings-page sprawl.
 
 ## Design principles
-- Usage is evidence: an item either ran or never ran; a fresh install says so in a note, and what a CLI does not log reads as not measurable, never as zero.
+- Usage is evidence: an item either ran or never ran; a fresh install says so in a note, and what a CLI does not log reads as not measurable, never as zero. The core still reports a fresh install as `pending` and the shell turns that into the note ([Never ran](GLOSSARY.md#usage)).
 - Rows compared by eye on bars beat hero tiles; severity is tinted in context.
 - Every control performs a real action, and adding or removing is one step (one save for a panel of agent settings) with a visible way back.
 - Cost is an estimate and says so; a model with no price reads as not measured, never as 0.
@@ -27,13 +27,13 @@ Generic AI dashboards, neon on black, gradients, card grids of icon + title + te
 ## UX principles
 Rules under the look; global ones are `~/.claude/rules/quality/ux.md` (UX1-UX4). SpaceVibe applies them like this:
 - **Jobs, in priority order; a higher one wins a conflict.** 1. Clean up: find what is never used and remove it. 2. Balance the two CLIs: add what one lacks. 3. Control: which hook fires on which event, which permission is open. 4. Watch: usage left, sessions running.
-- **Vocabulary, one word one meaning.** `CLI` is Claude Code or Codex (Gemini CLI where it is shown). `Agents` are subagents only; a CLI is never called an agent. `Skill`, `Subagent`, `Hook`, `Rule` and `Window` (a usage limit window) name one thing each; never a generic "item" in a label.
-- **Colour, one meaning.** Green, amber and red are reserved for state (fine, needs attention, danger). Category colours (Skills, Agents, Hooks), CLI identity (Claude clay, Codex mono) and the accent (blue) use other hue families and never reuse a state colour.
+- **Vocabulary, one word one meaning.** The terms are fixed in [GLOSSARY.md](GLOSSARY.md); never a generic "item" in a label.
+- **Colour, one meaning.** Green, amber and red are reserved for state (fine, needs attention, danger). Category colours (Skills, Subagents, Hooks, Rules), CLI identity (Claude clay, Codex mono) and the accent (blue) use other hue families and never reuse a state colour.
 - **Primary datum is big, the rest is quiet.** Each card has one primary datum (a window's percentage left, a count, the answer sentence) at 20px; everything else is 13px or smaller. A number shows once, in the place where it answers a question, never repeated in another card.
 - **Flow: detection and action sit together.** A problem shown in a row (never ran, dead) offers its fix in the same row within one hover or click (the warning popover with `Remove`). Every write has Undo; `Stop` in Activity is the one write without undo and names the pid and the consequence in a confirmation.
 
 ## Accessibility and constraints
-Keyboard navigation, visible focus, WCAG AA, reduced motion. Works offline, no account, no telemetry. Writes go only to the configuration and instruction files of Claude Code and Codex (settings and permissions, hooks, MCP servers, model, skills, subagents, `CLAUDE.md` and `AGENTS.md`), plus the app's own data folder; each write to agent configuration keeps a restorable copy. Plugin-owned items and managed settings are read-only. Secret values in settings are never read into the UI or logged; in the commands SpaceVibe shows, recognisable credentials are masked. One can be replaced without being shown.
+Keyboard navigation, visible focus, WCAG AA, reduced motion. Works offline, no account, no telemetry. Writes go only to the parts of Claude Code's and Codex's configuration the app manages (skills, subagents, hooks, Claude Code's permission rules and its status line entry; [where each write lands](docs/internals/mutations.md#where-each-write-lands)), plus the app's own data folder. MCP servers, the model, `CLAUDE.md` and `AGENTS.md` are never written; each write to agent configuration keeps a restorable copy. Plugin-owned items and managed settings are read-only. Secret values in settings are never read into the UI or logged; in the commands SpaceVibe shows, recognisable credentials are masked. One can be replaced without being shown.
 
 ## Distribution
 Public site and downloads: `spacevibe.dev` (the page is built in `site/`; the domain is not repointed yet). The app is a native macOS app (Swift and SwiftUI) that opens no network listener. Its only network requests check for and download updates, once a day and without asking unless turned off in Settings; installing takes a click. No user data passes through the site.

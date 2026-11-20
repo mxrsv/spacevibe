@@ -31,10 +31,10 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 
 ## Runtime path
 
-1. `Roots.resolve` fixes the folders from `HOME`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME` and `SPACEVIBE_HOME`.
-2. `Inventory.read` lists each CLI, then enabled plugins, then each discovered project. It reads the disk synchronously; call it off the main thread.
-3. `attachUsage` takes a `UsageInput` from the usage scan (`UsageScanner`) and fills `cells` on every row and `usage` on every Claude hook.
-4. `filterCounts` turns rows into chip counts.
+1. [`roots.Resolve`](../../core/internal/roots/roots.go) fixes the folders from `HOME`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME` and `SPACEVIBE_HOME`.
+2. [`inventory.Read`](../../core/internal/inventory/reader.go) lists each CLI, then enabled plugins, then each discovered project. It reads the disk synchronously.
+3. [`AttachUsage`](../../core/internal/inventory/attach-usage.go) takes a `usage.Input` from the usage scan ([usage.md](usage.md)) and fills `cells` on every row and `usage` on every Claude hook.
+4. [`FilterCountsOf`](../../core/internal/inventory/filter-counts.go) turns rows into chip counts.
 
 ## Rules that are easy to get wrong
 
@@ -42,15 +42,15 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 - **Split rows.** The core's `key` can hold two members of one CLI (a user skill and a plugin skill of one name; two hooks of one hash with different matchers). The core still builds `cells` and `rowFlags` per `key`, last member wins. The shell ([`LoadoutRows.build`](../../Sources/SpaceVibe/Agents/LoadoutRows.swift)) therefore splits such a group by owner class (`user` and `link` together, else the plugin name; for hooks also the matcher): the first part keeps the core `key`, later parts are `<key>#<n>`, and a duplicate inside one part takes the next number. A split row reads `missing` for a CLI it has no member in, takes `rowFlags` from the core `key`, and a group with at most one member per CLI is unchanged. `globalCount` is the number of built global rows. These initial numbered keys are not stable identities: after a reload, `LoadoutData.build` matches surviving core member ids to the previous rows and reserves their display keys before naming new rows. This keeps the current row, multi-selection and open details on the same surviving member when a sibling is removed or reordered; core usage and flags still use the original core key.
 - **Hook hash is event plus command.** Hashing the command alone inflates run counts, because the same command is often wired to several events ([hashes.go](../../core/internal/hashes/hashes.go)). The logs do not say which file a hook came from, so a hook in a global and a project file shares one count.
 - **Dead hook.** A hook is dead only when its command names at least one script path and every path is missing. A path SpaceVibe cannot stat is not "missing": the hook is not marked dead and a problem sentence says so.
-- **Plugin names.** A plugin-qualified name (`plugin:skill`) is matched by its part after the last `:` (`Inventory.bare`).
-- **Project discovery is bounded.** At most `Inventory.maxProjects` folders, newest first, 3 logs per folder, 64 KB per log. A project never opened with either CLI is not found, and a `cwd` that falls outside the first 64 KB is missed. The home folder and paths under `.claude/worktrees/` are skipped.
+- **Plugin names.** A plugin-qualified name (`plugin:skill`) is matched by its part after the last `:` ([`hashes.Bare`](../../core/internal/hashes/hashes.go)).
+- **Project discovery is bounded.** At most `MaxProjects` (300, [types.go](../../core/internal/inventory/types.go)) folders, newest first, 3 logs per folder, 64 KB per log. A project never opened with either CLI is not found, and a `cwd` that falls outside the first 64 KB is missed. The home folder and paths under `.claude/worktrees/` are skipped.
 - **Unreadable is not empty.** An unreadable CLI root, folder or settings file adds a sentence to `problems` and keeps going; it never reads as "nothing installed". The UI shows `problems`.
 - **Item ownership.** `owner` is `user`, `link` (a symlink) or the plugin name. Only user-level items outside any project are `removable`; plugin items are read-only.
-- **Hook events.** `Inventory.events` lists the events each CLI documents. Claude's list comes from its docs, Codex's from observation only.
+- **Hook events.** `Events` in [types.go](../../core/internal/inventory/types.go) lists the events each CLI documents. Claude's list comes from its docs, Codex's from observation only.
 
 ## Usage cell states
 
-`attachUsage` gives each row one `UsageCellState` per CLI: counted, pending, unmeasurable or missing. [D63](../specs/2026-11-06-reins-linear-identity-decisions.md) replaces `pending` with a note on `Never ran`; the code still emits `pending` until that change lands.
+`AttachUsage` gives each row one `Cell` per CLI, whose state is counted, pending, unmeasurable or missing. `pending` is current behaviour of the core. [D63](../specs/2026-11-06-reins-linear-identity-decisions.md) decided that it stops being a state and becomes a note on `Never ran`: the shell already shows it that way ([`SkillCell`](../../Sources/SpaceVibe/Agents/LoadoutRows.swift) maps an "Added…" reason to Never ran with the note, "No logs scanned" to unmeasurable and an unfinished scan to loading), and the core's state has not been removed.
 
 - **Missing**: the row is not installed in that CLI.
 - **Unmeasurable**: a Codex hook; Codex logs no hook runs.

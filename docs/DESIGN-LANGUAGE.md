@@ -1,6 +1,6 @@
 # SpaceVibe design language
 
-The shipped interface is the v5 shell: Agents (Skills, Subagents, Hooks, Rules), Activity and Limits. It is the same in development and distribution builds; no UI environment switch is required. [Registry](../Sources/SpaceVibe/Shell/TabRegistry.swift), [app shell](../Sources/SpaceVibe/Shell/AppShell.swift), [design decisions](specs/2026-11-06-reins-design-language-v5.md).
+The shipped interface is the v5 shell: three pages, Agents (Skills, Subagents, Hooks, Rules), Activity and Limits, plus Settings and the session glance widget. It is the same in development and distribution builds; no UI environment switch is required. [Registry](../Sources/SpaceVibe/Shell/TabRegistry.swift), [app shell](../Sources/SpaceVibe/Shell/AppShell.swift), [design decisions](specs/2026-11-06-reins-design-language-v5.md).
 
 ## Screens compose shared components
 

@@ -9,8 +9,10 @@ The public page for `spacevibe.dev`: Next.js 16 (App Router, static export) and 
 | `npm run lint`  | ESLint                                                    |
 | `node --test tests/redirects.test.mjs` | `vercel.json` redirects: live family, old Hub routes, no shadowing |
 
-Layout: `app/` (layout, page, `globals.css` tokens, `scene.css` planet scene), `components/landing/` (one file per section; `content.ts` holds every word and number), `public/landing/` (the deep-space raster and three star tiles, shared with the Academy landing).
+Layout: `app/` (layout, page, `globals.css` tokens, `scene.css` planet scene), `components/landing/` (one file per section; `content.ts` holds the words and numbers of `/`), `components/landing/directions/` (the three candidate landings; their words are in `directions/copy.ts`), `public/landing/` (the deep-space raster and three star tiles, shared with the Academy landing).
 
 The example rows mirror the app's synthetic fixture home (`../core/testdata/fixtures`), never a real `~/.claude`; every panel that shows them says "demo data".
 
 `vercel.json` holds the redirects (`output: "export"` rules out `next.config` ones): the `/live` family goes to `https://active.spacevibe.dev`, every other old Hub route goes to the same path on `https://kyant.dev`. Hub's own `/` is not redirected; this site serves it.
+
+Routes: `/` is the first-generation page. `/directions` and its three sub-routes (`/directions/two-clis`, `/directions/manual`, `/directions/deck`) are review scaffolding for the owner's pick of a landing direction, marked `noindex`; the two that lose are deleted with the index when one is picked ([landing spec](../docs/specs/2026-11-05-reins-landing.md)).

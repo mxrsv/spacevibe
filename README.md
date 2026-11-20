@@ -6,7 +6,7 @@ A native macOS app that shows and edits what Claude Code and Codex CLI are equip
 
 ## What is in the app
 
-The shipped interface is described in the [design language](docs/DESIGN-LANGUAGE.md): three areas plus the session widget, the same in development and distribution builds.
+The shipped interface is described in the [design language](docs/DESIGN-LANGUAGE.md): three pages (Agents, Activity, Limits) plus Settings and the session widget, the same in development and distribution builds.
 
 - **Agents**: Skills, Subagents, Hooks and Rules for both CLIs in one inventory, each row with its usage. Adding or removing is one step with Undo.
 - **Activity**: the Claude Code and Codex sessions running now, and `Stop` for one of them.
@@ -17,7 +17,7 @@ The shipped interface is described in the [design language](docs/DESIGN-LANGUAGE
 
 - It opens no network listener, and its only requests check for and download updates ([S-R5](AGENTS.md)). No account, no telemetry.
 - It never executes a hook or a recorded command ([S-R4](AGENTS.md)).
-- It writes only to the configuration and instruction files of the two CLIs and its own data folder, and never reads secret values into the UI or a log ([S-R3](AGENTS.md), [PRODUCT.md](PRODUCT.md)).
+- It writes only to the skills, subagents, hooks, permission rules and status line entry of the two CLIs' configuration and to its own data folder ([where each write lands](docs/internals/mutations.md#where-each-write-lands)); it never writes MCP servers, the model, `CLAUDE.md` or `AGENTS.md`, and never reads secret values into the UI or a log ([S-R3](AGENTS.md), [PRODUCT.md](PRODUCT.md)).
 
 ## Build from source
 

@@ -47,7 +47,7 @@ _Avoid_: policy, permission (for the entry itself)
 _Avoid_: rules, prompt
 
 **Scope**:
-Whether an item is global (user-wide) or belongs to one project.
+Whether an item is global (user-wide) or belongs to one project. A Rule has a third scope, local: the project's `.claude/settings.local.json`.
 _Avoid_: level, location
 
 ### Usage
@@ -56,7 +56,7 @@ _Avoid_: level, location
 An item that appears in the scanned local logs at least once, with its count.
 
 **Never ran**:
-An item that appears in no scanned log. A state to act on. A newly added item carries a quiet note ("added 2 hours ago") so a fresh install is not removed by mistake; there is no separate state for it (D63).
+An item that appears in no scanned log. A state to act on. A newly added item carries a quiet note ("added recently") so a fresh install is not removed by mistake. D63 decided that this note replaces the separate `pending` state; the shell already shows it that way, while the core still reports such an item with the wire state `pending` and a reason ([inventory.md](docs/internals/inventory.md#usage-cell-states)).
 _Avoid_: unused, dead, pending, not counted yet (in labels)
 
 **Unmeasurable**:
