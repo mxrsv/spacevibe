@@ -14,75 +14,75 @@ Inter is the only bundled font. Each [text role](../Sources/SpaceVibe/Tokens/Spa
 
 ## Colour tokens
 
-The values [Palette](../Sources/SpaceVibe/Tokens/Palette.swift) holds, in dark and light. `Palette.swift` is the source: a change there changes this table in the same commit. A token marked † departs from the frozen v5 mock, for contrast or for hue separation; the reason and the mock's value are on its line in `Palette.swift`. The ink twins (`cat*Ink`, `cat*CountInk`, `accentInk`, `accentCountInk`, `successInk`, `warnInk`, `dangerInk`, `claudeInk`), the shadows and the product mark's colours are in `Palette.swift` only. What was specified, and the accent and category candidates that were not built, are in the [v5 spec](specs/2026-11-06-reins-design-language-v5.md#token-table).
+What each colour token is for. The values, dark and light, live only in [Palette](../Sources/SpaceVibe/Tokens/Palette.swift), so this page never drifts from the code. A token marked † departs from the frozen v5 mock, for contrast or for hue separation; the reason and the mock's value are on its line in `Palette.swift`. The ink twins (`cat*Ink`, `cat*CountInk`, `accentInk`, `accentCountInk`, `successInk`, `warnInk`, `dangerInk`, `claudeInk`), the shadows and the product mark's colours are in `Palette.swift` only. What was specified, and the accent and category candidates that were not built, are in the [v5 spec](specs/2026-11-06-reins-design-language-v5.md#token-table).
 
 ### Surfaces and lines
 
-| Token | Dark | Light | Job |
-| --- | --- | --- | --- |
-| `bgSide` | `#0B0C0D` | `#F4F4F5` | Sidebar and window |
-| `bgApp` | `#0F1011` | `#F4F4F5` | Search field ground |
-| `bgPanel` | `#131416` | `#FFFFFF` | Content panel, the Skills list and pane |
-| `bgRaise` | `#191A1D` | `#FBFBFB` | Cards, buttons, meters, chips |
-| `bgSunk` | `#0E0F10` | `#F6F6F7` | Verdict box |
-| `bgPop` | `#1B1C1F` | `#FFFFFF` | Menu, popover, toast, bottom bar, palette, dialog |
-| `bgBand` | `#1B1C20` | `#EEEFF2` | Band header |
-| `bgBandHover` † | `#242528` | `#E8E9EC` | Hovered band header |
-| `bgBandFocus` | `#28292D` | `#E6E7EA` | Focused band header; hovered and focused together take this one fill |
-| `hair` | white 7.5% | black 8% | Hairline border of cards and panels |
-| `hair2` | white 12% | black 14% | Control outline, overlay edge, chart base |
-| `rowDivider` | white 5.5% | black 6.5% | Divider between rows |
-| `hi` | white 5% | white 90% | 1 px top-edge highlight of panels, cards, buttons and overlays |
-| `hover` | white 4% | black 3.5% | Hover fill |
-| `sel` | white 6.5% | black 5.5% | Current row, current sidebar item, and the focus fill |
-| `track` | white 7% | black 6.5% | Meter and bar track |
-| `trackHi` | white 12% | black 10% | Stronger track |
-| `kbdBg` | white 6% | black 3.5% | Key cap fill |
-| `kbdBorder` | white 10% | black 12% | Key cap edge |
-| `kbdOnSolidBorder` † | white 28% | white 28% | Key cap edge on a solid button |
-| `hiOnSolid` | white 22% | white 22% | Top-edge highlight of a solid button |
-| `scrim` | black 50% | `#141418` 25% | Ground behind a dialog |
+| Token | Job |
+| --- | --- |
+| `bgSide` | Sidebar and window |
+| `bgApp` | Search field ground |
+| `bgPanel` | Content panel, the Skills list and pane |
+| `bgRaise` | Cards, buttons, meters, chips |
+| `bgSunk` | Verdict box |
+| `bgPop` | Menu, popover, toast, bottom bar, palette, dialog |
+| `bgBand` | Band header |
+| `bgBandHover` † | Hovered band header |
+| `bgBandFocus` | Focused band header; hovered and focused together take this one fill |
+| `hair` | Hairline border of cards and panels |
+| `hair2` | Control outline, overlay edge, chart base |
+| `rowDivider` | Divider between rows |
+| `hi` | 1 px top-edge highlight of panels, cards, buttons and overlays |
+| `hover` | Hover fill |
+| `sel` | Current row, current sidebar item, and the focus fill |
+| `track` | Meter and bar track |
+| `trackHi` | Stronger track |
+| `kbdBg` | Key cap fill |
+| `kbdBorder` | Key cap edge |
+| `kbdOnSolidBorder` † | Key cap edge on a solid button |
+| `hiOnSolid` | Top-edge highlight of a solid button |
+| `scrim` | Ground behind a dialog |
 
 ### Text
 
-| Token | Dark | Light | Job |
-| --- | --- | --- | --- |
-| `fg` | `#F2F3F4` | `#1B1C1F` | Primary text |
-| `fg2` † | `#A3A7AE` | `#595D65` | Secondary text |
-| `fg3` † | `#8D929A` | `#646870` | Tertiary text |
-| `fg4` | `#4A4E55` | `#B7BAC0` | Disabled and separators; never text a user must read |
+| Token | Job |
+| --- | --- |
+| `fg` | Primary text |
+| `fg2` † | Secondary text |
+| `fg3` † | Tertiary text |
+| `fg4` | Disabled and separators; never text a user must read |
 
 ### Accent, state and identity
 
-| Token | Dark | Light | Job |
-| --- | --- | --- | --- |
-| `accent` | `#4F86F7` | `#2563D9` | Indicators and fills: the current row's bar, a picked checkbox, Activity's active tab, the system tint |
-| `accentText` † | `#568EFF` | `#2563D9` | The accent as text: links, `Show more`, `Clear`, the toast's `Undo` |
-| `accentSolid` † | `#2A5DCB` | `#1E5CD2` | Solid accent fill under white text: primary button, switch, the product mark |
-| `accentBg` | `#4F86F7` 16% | `#2563D9` 10% | Picked row and filter count |
-| `accentCountText` † | `#69A3FF` | `#205ED4` | Count of picks beside a field in the Filter menu |
-| `onAccent` | `#FFFFFF` | `#FFFFFF` | Text on a solid accent fill |
-| `ok` † | `#4CB782` | `#2A9B68` | State: fine |
-| `warn` † | `#E2A33C` | `#B26F00` | State: needs attention |
-| `bad` † | `#E45C6F` | `#D13F58` | State: danger |
-| `badSolid` † | `#B8334C` | `#BE2C49` | Solid danger button fill under white text (Stop) |
-| `badText` † | `#ED6476` | `#C5334F` | Danger button text while hovered |
-| `mute` | `#8A8F98` | `#7A7F88` | Off dot of a CLI status row; unmeasurable and idle sessions |
-| `onVerdict` | `#0F1011` | `#FFFFFF` | Cut-out inside a verdict glyph |
-| `sessionWorking` | `#E1B236` | `#9C7802` | Session state: running (glance widget) |
-| `sessionWaiting` † | `#EB871B` | `#AF6005` | Session state: waiting for the user (glance widget) |
-| `sessionDone` | `#6FBE94` | `#27885D` | Session state: idle and written to within the last 10 minutes (glance widget) |
-| `claude` | `#D97757` | `#C65F3E` | Claude Code identity (clay) |
-| `codex` | `#F2F3F4` | `#1B1C1F` | Codex identity: the text colour |
+| Token | Job |
+| --- | --- |
+| `accent` | Indicators and fills: the current row's bar, a picked checkbox, Activity's active tab, the system tint |
+| `accentText` † | The accent as text: links, `Show more`, `Clear`, the toast's `Undo` |
+| `accentSolid` † | Solid accent fill under white text: primary button, switch, the product mark |
+| `accentBg` | Picked row and filter count |
+| `accentCountText` † | Count of picks beside a field in the Filter menu |
+| `onAccent` | Text on a solid accent fill |
+| `ok` † | State: fine |
+| `warn` † | State: needs attention |
+| `bad` † | State: danger |
+| `badSolid` † | Solid danger button fill under white text (Stop) |
+| `badText` † | Danger button text while hovered |
+| `mute` | Off dot of a CLI status row; unmeasurable and idle sessions |
+| `onVerdict` | Cut-out inside a verdict glyph |
+| `sessionWorking` | Session state: running (glance widget) |
+| `sessionWaiting` † | Session state: waiting for the user (glance widget) |
+| `sessionDone` | Session state: idle and written to within the last 10 minutes (glance widget) |
+| `claude` | Claude Code identity (clay) |
+| `codex` | Codex identity: the text colour |
 
 ### Category colours
 
-| Token | Dark | Light | Job |
-| --- | --- | --- | --- |
-| `catSkill` | `#A78BFA` | `#7C5CE0` | Skills |
-| `catSubagent` | `#D974E0` | `#B83CC8` | Subagents |
-| `catHook` | `#35C0DA` | `#0E8BA8` | Hooks |
-| `catRule` † | `#E471AC` | `#CC4A91` | Rules |
+| Token | Job |
+| --- | --- |
+| `catSkill` | Skills |
+| `catSubagent` | Subagents |
+| `catHook` | Hooks |
+| `catRule` † | Rules |
 
 A tab chip's fills are shares of one colour, `fg` for an inactive tab and the category (the accent on Activity) for the active one (`TabChipAlpha` in `Palette.swift`): 7% at rest, 12% hovered, 26% active, 34% active and focused; the count circle is 12% inactive and 40% active. The active tab's text and count use the category's ink twins.
 

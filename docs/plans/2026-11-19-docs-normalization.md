@@ -253,5 +253,6 @@ Added while executing, 2026-11-20:
   - `SPACEVIBE_TEST=1 go test -run TestDocMethodTable ./internal/rpc/` passed after the `core-protocol.md` pass (that test reads the page's method table).
   - Per topic: every row of the topic table in `docs/README.md` names one current document.
 - Left for the owner or other sessions: everything under Raised. Nothing is pushed.
+- 2026-11-20, after review: the colour tables in `docs/DESIGN-LANGUAGE.md` now list token and job only. The dark and light values live in `Palette.swift` alone, so a colour change touches one file and the page cannot drift (the copied values had made `Palette.swift` and this page a duplicate pair).
 
 /goal Normalize SpaceVibe repo docs per docs/plans/2026-11-19-docs-normalization.md: apply owner batch 1, finish DN-T1 to DN-T8, docs-compliance and docs-anchors pass, every link in living docs and active specs/plans resolves, one current document per topic in docs/README.md.
