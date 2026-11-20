@@ -37,8 +37,14 @@ final class AppEnvironment {
     /// Why the last `clis.list` failed, until one succeeds.
     private(set) var cliListFailure: String?
 
-    init(toasts: ToastCenter? = nil, cliPreferences: CLIPreferences? = nil, makeCoreClient: @escaping () -> any CoreService = { CoreClient() }) {
+    /// Where this environment publishes its catalog: the app's shared store, or a test's own so a test never changes the
+    /// catalog other suites read.
+    private let catalogStore: CLICatalogStore
+
+    init(catalogStore: CLICatalogStore = .shared, toasts: ToastCenter? = nil, cliPreferences: CLIPreferences? = nil,
+         makeCoreClient: @escaping () -> any CoreService = { CoreClient() }) {
         self.toasts = toasts ?? ToastCenter()
+        self.catalogStore = catalogStore
         self.cliPreferences = cliPreferences ?? .shared
         self.makeCoreClient = makeCoreClient
     }
@@ -85,7 +91,7 @@ final class AppEnvironment {
         publishCatalog()
     }
 
-    private func publishCatalog() { CLICatalogStore.shared.catalog = catalog }
+    private func publishCatalog() { catalogStore.catalog = catalog }
 
     /// The Go core, the only engine of every screen (Activity and Stop, Limits, Loadout, Rules), and the engine every Undo runs on. It starts on the first call.
     var goCore: any CoreService { coreClient }

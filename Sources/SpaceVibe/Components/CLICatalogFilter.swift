@@ -51,8 +51,8 @@ extension CLICatalog {
         out.events = rows.events.filter { keep.contains($0.cli) }
         out.roots = rows.roots.filter { keep.contains($0.cli) }
         guard Self.listedCLIs(rows).isSubset(of: keep) else {
-            out.countsByScope = Self.countsByScope(items: out.items, hooks: out.hooks)
-            out.rowFlags = Self.rowFlags(items: out.items, hooks: out.hooks)
+            out.countsByScope = Self.countsByScope(items: out.items, hooks: out.hooks, clis: inventoryCLIs)
+            out.rowFlags = Self.rowFlags(items: out.items, hooks: out.hooks, clis: inventoryCLIs)
             return out
         }
         return out
@@ -87,33 +87,24 @@ extension CLICatalog {
             + hooks.map { CountedRow(key: $0.key, cli: $0.cli, dead: $0.dead, cells: $0.cells, project: $0.project) }
     }
 
-    /// The filter counts of every scope: `global`, and each project folder an item or a hook names.
-    static func countsByScope(items: [CoreInventoryItem], hooks: [CoreInventoryHook]) -> [String: CoreFilterCounts] {
+    /// The filter counts of every scope: `global`, and each project folder an item or a hook names. `clis` is the shown
+    /// inventory CLIs in registry order, so `only` lists each of them, zero included, as the core does.
+    static func countsByScope(items: [CoreInventoryItem], hooks: [CoreInventoryHook], clis: [CLIID]) -> [String: CoreFilterCounts] {
         let rows = countedRows(items: items, hooks: hooks)
-        var out = [LoadoutRows.globalScope: filterCounts(rows.filter { $0.project == nil }, clis: cliOrder(rows))]
+        var out = [LoadoutRows.globalScope: filterCounts(rows.filter { $0.project == nil }, clis: clis)]
         for project in Set(rows.compactMap(\.project)) {
-            out[project] = filterCounts(rows.filter { $0.project == project }, clis: cliOrder(rows))
+            out[project] = filterCounts(rows.filter { $0.project == project }, clis: clis)
         }
         return out
     }
 
     /// Each row key's flags: the filter counts over that key's members, above zero.
-    static func rowFlags(items: [CoreInventoryItem], hooks: [CoreInventoryHook]) -> [String: CoreRowFlags] {
+    static func rowFlags(items: [CoreInventoryItem], hooks: [CoreInventoryHook], clis order: [CLIID]) -> [String: CoreRowFlags] {
         let rows = countedRows(items: items, hooks: hooks)
-        let order = cliOrder(rows)
         return Dictionary(grouping: rows, by: \.key).mapValues { members in
             let counts = filterCounts(members, clis: order)
             return CoreRowFlags(one: counts.only.contains { $0.count > 0 }, neverRan: counts.neverRan > 0, dead: counts.dead > 0)
         }
-    }
-
-    /// The CLIs `only` lists, in the order the rows' cells give (the core's registry order).
-    private static func cliOrder(_ rows: [CountedRow]) -> [CLIID] {
-        var order: [CLIID] = []
-        for row in rows {
-            for cli in (row.cells?.clis ?? []) + [row.cli] where !order.contains(cli) { order.append(cli) }
-        }
-        return order
     }
 
     /// Rows deduplicated by key: a row is present in every CLI whose cell is neither missing nor absent, or in its own CLI when

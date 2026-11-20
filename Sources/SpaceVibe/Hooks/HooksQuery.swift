@@ -188,7 +188,7 @@ struct HooksQuery: Equatable, Sendable {
         let shown = rows.filter { matches($0, context: context) }
         func clis(_ event: String) -> Set<CLIID> { Self.clis(of: event, events: context.events, rows: rows) }
         // Shared events in lifecycle order, then Claude Code's own, then Codex's own (V5-R65).
-        let ordered = all.filter { clis($0).count == 2 } + CLICatalog.current.inventoryCLIs.flatMap { cli in all.filter { clis($0) == [cli] } }
+        let ordered = all.filter { clis($0).count > 1 } + CLICatalog.current.inventoryCLIs.flatMap { cli in all.filter { clis($0) == [cli] } }
         let bands = ordered.compactMap { event -> Band? in
             let inBand = shown.filter { $0.hookEvent == event }.sorted(by: Self.rank)
             guard !inBand.isEmpty else { return nil }
@@ -217,7 +217,7 @@ struct HooksQuery: Equatable, Sendable {
     private static func test(_ field: HooksFilterField, value: String, row: LoadoutRow, context: HooksContext) -> Bool {
         switch field {
         case .cli:
-            value == "both" ? row.presentCLIs.count == 2 : row.presentCLIs == [CLIID(rawValue: value)]
+            value == "both" ? row.presentCLIs.count > 1 : row.presentCLIs == [CLIID(rawValue: value)]
         case .status:
             switch value {
             case "cantRun": row.isDeadHook

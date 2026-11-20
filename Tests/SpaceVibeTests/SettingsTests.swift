@@ -144,7 +144,7 @@ struct SettingsTests {
         let (defaults, suite) = throwawayDefaults()
         defer { defaults.removePersistentDomain(forName: suite) }
         let newCLI = CLICatalogTests.twin("newcli", label: "New CLI")
-        let env = AppEnvironment(cliPreferences: CLIPreferences(defaults: defaults),
+        let env = AppEnvironment(catalogStore: CLICatalogStore(), cliPreferences: CLIPreferences(defaults: defaults),
                                  makeCoreClient: { ListingCore(CLICatalogFixture.list + [newCLI]) })
         #expect(env.catalog.all.isEmpty, "nothing before clis.list lands")
         #expect(await env.loadCLIs())
@@ -167,7 +167,7 @@ struct SettingsTests {
 
     @Test("a failed clis.list keeps the last list and says why")
     func cliListFailure() async {
-        let env = AppEnvironment(cliPreferences: CLIPreferences(defaults: throwawayDefaults().defaults), makeCoreClient: { UnservedCore() })
+        let env = AppEnvironment(catalogStore: CLICatalogStore(), cliPreferences: CLIPreferences(defaults: throwawayDefaults().defaults), makeCoreClient: { UnservedCore() })
         #expect(await env.loadCLIs() == false)
         #expect(env.cliList == nil && env.cliListFailure == "not served by this fake")
     }

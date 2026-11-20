@@ -205,8 +205,8 @@ struct CLICatalogTests {
         _ = try await client.usageScan(progress: nil)
         let rows = try await client.loadoutRows()
         #expect(rows.usage == .ready && rows.countsByScope.count > 1, "a global scope and at least one project")
-        #expect(CLICatalog.countsByScope(items: rows.items, hooks: rows.hooks) == rows.countsByScope)
-        #expect(CLICatalog.rowFlags(items: rows.items, hooks: rows.hooks) == rows.rowFlags)
+        #expect(CLICatalog.countsByScope(items: rows.items, hooks: rows.hooks, clis: CLICatalogFixture.catalog.inventoryCLIs) == rows.countsByScope)
+        #expect(CLICatalog.rowFlags(items: rows.items, hooks: rows.hooks, clis: CLICatalogFixture.catalog.inventoryCLIs) == rows.rowFlags)
     }
 
     // MARK: Absent kinds (MC-R5)
