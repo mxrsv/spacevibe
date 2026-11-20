@@ -1,5 +1,7 @@
 # Reins: design language v3
 
+Historical record, marked 2026-11-20. V2 to V6 were built on 2026-11-04 (`4dc72c4` on `main`, V3 to V6 on the branch `claude/reins-design-v3`, merged in `308a4c3`); V7, the shots and eye gate, is waived (see the waiver line). The look was replaced by design language v5, cut over on 2026-11-12 (`b877e3a`); the three points left "open for the owner" in the Handoff concern screens that no longer exist. Nothing carries over. The text below is kept as it stood and is not maintained.
+
 Spec: [2026-11-03-reins-design-language.md](../specs/2026-11-03-reins-design-language.md) (section "v3 changes"; acceptance criteria DL1 to DL9) and, for the Limits page, [2026-11-02-reins.md](../specs/2026-11-02-reins.md) (Interface: Limits).
 Related plans: [design language v2](2026-11-03-reins-design-language.md) (shipped), [Limits](2026-11-03-reins-limits.md) (L4 is redone here, task V6), [Tokens](2026-11-03-reins-tokens.md) (takes the v3 tokens when it ships).
 Mock: `~/scratch/spacevibe-reins/design-language/index.html?ver=v3` on the owner's Mac (outside git, synthetic data). Its "Bảng đổi token" v3 section is the old-to-new contract. The icon comparison is `~/scratch/spacevibe-reins/icons/index.html`; the Solar glyphs the mock uses are in `design-language/solar-icons.js`.

@@ -1,8 +1,8 @@
-# Reins: internals reference pages
+# SpaceVibe: internals reference pages
 
 Requirements: agreed in chat on 2026-11-07, no spec. Scope: one reference page per `ReinsCore` subsystem, so an agent reads only the page for the code it touches. Model: magpie's `docs/subsystems/` (a page per subsystem with a responsibilities and sources-of-truth table, an index, "update the page in the same PR") and orca's "read only when the task touches it" index.
 Checkout: `spacevibe-reins` on `main`. Commit with `git commit -- <paths>` only.
-Status: T1 to T8 written and committed (T1, T2 on 2026-11-07; T3 to T8 on 2026-11-15). Open: the owner's check in Acceptance that each page lets an agent skip unrelated code. Approved so far: the model above and the `AGENTS.md` read-when list (done 2026-11-07).
+Status, checked 2026-11-20: active, one item open. The pages changed shape on 2026-11-20 ([docs-normalization plan](2026-11-19-docs-normalization.md), DN-T3): the file-responsibility tables and test-file lists this plan's model called for are gone (D9), each page opens with one "Code:" line, and the engine they describe is the Go core, not `ReinsCore`. The owner's check below is not one of the gates waived by DN-Q4, so it stays open. T1 to T8 written and committed (T1, T2 on 2026-11-07; T3 to T8 on 2026-11-15). Open: the owner's check in Acceptance that each page lets an agent skip unrelated code. Approved so far: the model above and the `AGENTS.md` read-when list (done 2026-11-07).
 
 ## Directory (D3)
 

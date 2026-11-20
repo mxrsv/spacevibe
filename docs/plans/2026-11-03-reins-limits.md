@@ -1,5 +1,7 @@
 # Reins: Limits
 
+Historical record, marked 2026-11-20. L1 to L4 were built (engine, placement B, model and wording; popover `5799e3f`, later repairs recorded below); L5, the shots and eye gate, is waived (see the waiver line). The Limits page was rebuilt as a v5 page (D59; cut over 2026-11-12, `b877e3a`) and the engine is now the Go core ([limits.md](../internals/limits.md)). Later Limits work has its own records: the [limit reset countdown spec](../specs/2026-11-19-limit-reset-countdown.md). Nothing carries over. The text below is kept as it stood and is not maintained.
+
 Spec: [2026-11-02-reins.md](../specs/2026-11-02-reins.md) (Interface: Limits; Scope: Limits; acceptance criteria AC5, AC6, AC10).
 Parent plan: [the SwiftUI plan](2026-11-02-reins-swiftui.md), whose packaging and cut-over phases still apply.
 Mock: `~/scratch/spacevibe-reins/limits/index.html`, outside git, synthetic data, typical and edge data in light and dark;

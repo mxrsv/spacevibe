@@ -174,7 +174,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
     - Move SV D-1 to Open.
     - Add namespace lines.
   - Fix the relative dates.
-- [ ] **DN-T7 Plans.**
+- [x] **DN-T7 Plans.** Done 2026-11-20. Historical: electron, swiftui, design-language v2, v3 and v4, limits, site-landing, review-fixes and launch. On hold: agents. Still active: go-core, ui-v5, settings (S10), tokens, internals-docs (the owner's sample check is not among the gates DN-Q4 waives, so it stays open).
   - Mark historical or superseded, each with date and commits: electron (`6ceaf44`), swiftui, design-language v2/v3/v4, limits, site-landing, review-fixes (complete 2026-11-11).
   - internals-docs: historical after the owner's sample check, or waived by DN-Q4.
   - Move open items to their owners (DN-S6).

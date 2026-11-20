@@ -1,5 +1,7 @@
 # Reins landing page (`site/`)
 
+Historical record, marked 2026-11-20. The first-generation page was built and committed on 2026-11-03 (`4281317`) and never deployed; its eye approval never happened. It is superseded by the [landing spec](../specs/2026-11-05-reins-landing.md) of 2026-11-05, whose "Deploy gates" own what is left, and by SV10 (the page is for `spacevibe.dev`). The text below is kept as it stood and is not maintained.
+
 Date: 2026-11-03
 Status: **checkpoint** — built, verified mechanically, committed; waiting for the owner's eye approval. Not pushed, not deployed.
 Requirements: no separate spec. Product truth is [PRODUCT.md](../../PRODUCT.md) and the Identity and Distribution sections of the [Reins spec](../specs/2026-11-02-reins.md); the page claims nothing those two do not say. Scope agreed in conversation on 2026-11-03: one public page for `reins.spacevibe.dev` in the visual world of the SpaceVibe Academy landing (planet limb, star field), with the four tabs as its sections and a download CTA.

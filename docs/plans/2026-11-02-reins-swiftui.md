@@ -1,5 +1,7 @@
 # Reins: native SwiftUI app
 
+Historical record, marked 2026-11-20. Superseded on 2026-11-07 by the [go-core plan](2026-11-07-go-core-and-spacevibe-identity.md) (SV1 to SV4): the Swift engine this plan built was deleted on 2026-11-07 (`359eab0`) and its screens were replaced by the v5 interface on 2026-11-12 (`b877e3a`). Open items moved, not kept here: S0.3 to S0.6, S7.3 and S8.1 to S8.3 are in that plan's "What this plan takes over" table; the eye gates S3.3 to S6 are waived (see the waiver line); S7.1 and S7.2 have no successor task (the release build is `scripts/build-app.sh --distribution` and the [release runbook](../operations/release.md)). The text below is kept as it stood and is not maintained.
+
 Spec: [2026-11-02-reins.md](../specs/2026-11-02-reins.md) (requirements, platform, interface, acceptance criteria AC1 to AC6).
 Supersedes: [the Electron plan](2026-11-02-reins-electron.md), which stays as history and as the reference for behavior, contracts and screenshots.
 Status: in progress; implementation and outstanding acceptance gates are recorded below. Started 2026-11-02.

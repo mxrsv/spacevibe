@@ -1,5 +1,7 @@
 # Reins: design language and component base
 
+Historical record, marked 2026-11-20. T0 to T10 shipped on 2026-11-03 (`28b55b7` to `9193a76`); T11, the eye gate, is waived (see the waiver line). The look it built was replaced by design language v5, cut over on 2026-11-12 (`b877e3a`); the spec it served is frozen (D73). Nothing carries over. The text below is kept as it stood and is not maintained.
+
 Spec: [2026-11-03-reins-design-language.md](../specs/2026-11-03-reins-design-language.md) (acceptance criteria DL1 to DL6).
 Parent plan: [the SwiftUI plan](2026-11-02-reins-swiftui.md), whose packaging and cut-over phases still apply.
 Mock: `~/scratch/spacevibe-reins/design-language/index.html` on the owner's Mac (outside git), with screenshots in `shots/v2-*` and `shots/inter-*` beside it and the Codex review in `codex-review.md`.

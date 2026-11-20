@@ -98,6 +98,29 @@ A tab chip's fills are shares of one colour, `fg` for an inactive tab and the ca
 
 Settings composes the same blocks as the other pages ([Tile](../Sources/SpaceVibe/Components/Tile.swift), [ListRow](../Sources/SpaceVibe/Components/ListRow.swift), [ActionButtonStyle](../Sources/SpaceVibe/Components/ActionButtonStyle.swift), [StatusBar](../Sources/SpaceVibe/Components/StatusBar.swift)) plus its own [RailTab](../Sources/SpaceVibe/Components/RailTab.swift), [ThemeTile](../Sources/SpaceVibe/Components/ThemeTile.swift), [SegmentedControl](../Sources/SpaceVibe/Components/SegmentedControl.swift) and [SpaceVibeSwitch](../Sources/SpaceVibe/Components/SpaceVibeSwitch.swift) on the same tokens. Icons come from two sets and one drawn set ([IconPolicyTests](../Tests/SpaceVibeTests/IconPolicyTests.swift)): MingCute Line for the categories, Phosphor for the sidebar, content and Settings (Duotone) and for the glance widget's session states (Bold), plus SpaceVibe's own [verdict glyphs](../Sources/SpaceVibe/Components/VerdictGlyph.swift). This is SpaceVibe's recorded exception to the global one-icon-library rule (FE-K3 of `~/.claude/rules/frontend.md`; [D72](specs/2026-11-06-reins-linear-identity-decisions.md)); moving to one library would be its own code task.
 
+## Building a page
+
+The conventions every page follows, moved here from the UI v5 build plan's handoff on 2026-11-20. A new page that needs something else gets a new shared component first, never a local variant.
+
+- **A page is a tab.** A page conforms to [SpaceVibeTab](../Sources/SpaceVibe/Shell/SpaceVibeTab.swift): its `content` draws its own [TabHead](../Sources/SpaceVibe/Components/TabChips.swift), an optional [FilterChipRow](../Sources/SpaceVibe/Components/FilterChip.swift) and its canvas, and its `hints` and `source` fill the status bar. A confirmation that must cover the whole window is the tab's `modal`, drawn by the shell (Stop uses it).
+- **Model, query, wording.** A tab keeps its state and writes in a model, its filtering and ranking in a pure query file, and every sentence in a wording file ([Skills](../Sources/SpaceVibe/Skills) and [Subagents](../Sources/SpaceVibe/Subagents) are the examples). A small card that drops when it has no row builds its list in the query file and the view only tests whether it is empty.
+- **Cards, rows, bands.** Cards are [Tile](../Sources/SpaceVibe/Components/Tile.swift) or [AnswerCard](../Sources/SpaceVibe/Components/AnswerCard.swift), rows are `ListRows { ListRow }` ([ListRow](../Sources/SpaceVibe/Components/ListRow.swift)), bands are `BandStack { Band }` ([Band](../Sources/SpaceVibe/Components/Band.swift)) with their open state from the `openStateStore` environment value, keyed by page and band id. Header actions and Answer fixes are slots that take the shared buttons.
+- **Split pages.** A split page is a [SplitCanvas](../Sources/SpaceVibe/Components/SplitCanvas.swift): small cards on one side, each with a `maxHeight` so its body scrolls, and one spine `Tile` with `Metrics.Tile.spineMaxHeight` that stretches. A spine moved with `j`/`k` needs `scrollTarget` and an `.id` on each row.
+- **Overlays.** `overlayHost()` sits once at the window's root ([OverlayHost](../Sources/SpaceVibe/Components/OverlayHost.swift)). Menus and popovers come from [ToolbarMenuButton](../Sources/SpaceVibe/Components/ToolbarMenu.swift), [WarningSlot](../Sources/SpaceVibe/Components/WarningSlot.swift) and `anchoredOverlay(isPresented:id:placement:)` with a [PopoverSurface](../Sources/SpaceVibe/Components/PopoverSurface.swift); a row's detail popover belongs to the page, which gives the focus back to the row when it closes. Menu, popover, toast and dialog surfaces use `blockSurface(Palette.bgPop, edge: Palette.hair2)` ([BlockSurface](../Sources/SpaceVibe/Components/BlockSurface.swift)) plus their shadow.
+- **Glyphs.** [SpaceVibeIcon](../Sources/SpaceVibe/Components/SpaceVibeIcon.swift) draws a category or content glyph and [VerdictGlyph](../Sources/SpaceVibe/Components/VerdictGlyph.swift) a verdict; a block that takes an icon takes `any GlyphSource`.
+- **Focus.** A row that is both current and focused takes one `sel` fill, never two stacked.
+- **Writes.** A write made of several journal entries is one `performBatchWithUndo` on [AppEnvironment](../Sources/SpaceVibe/App/AppEnvironment.swift): one toast, one Undo, newest first, all or nothing. A change kept only in memory (Activity's dismissals) shows its toast through [ToastCenter](../Sources/SpaceVibe/Shell/ToastCenter.swift) with an `undo` closure that restores the old value.
+
+## Departures from the frozen mock
+
+Where the build differs from the frozen v5 mock on purpose. The build lead approved these on 2026-11-07 and 2026-11-08; the owner's eye approval of the whole build is still open (V5-A14 of the [v5 spec](specs/2026-11-06-reins-design-language-v5.md)).
+
+- Colour: the tokens marked † under "Colour tokens".
+- A menu opens 4 pt below its button (`Metrics` menu `gap`), where the spec's text gave a fixed 52 from the tab head's top.
+- An inactive tab that is hovered or focused draws its label, glyph and count in `fg`; the mock keeps the count `fg2`, which reads 3.89:1 on the hovered circle ([TabChips](../Sources/SpaceVibe/Components/TabChips.swift)).
+- The active tab's glyph takes the label's ink in both appearances.
+- The white check in a lit logo's badge is decorative and not counted for contrast; the badge's fill against its ring carries the state ([LogoToggle](../Sources/SpaceVibe/Components/LogoToggle.swift)).
+
 ## Gallery and verification
 
 [ComponentGallery](../Sources/SpaceVibe/Gallery/ComponentGallery.swift) renders current containers, controls, glyphs, the Skills pane and Settings specimens. Gallery and screenshot launch modes remain development-only through [LaunchMode](../Sources/SpaceVibe/App/LaunchMode.swift); promoting the UI does not enable those modes in distributed builds.

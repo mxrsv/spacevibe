@@ -1,5 +1,7 @@
 # Reins: design language v4
 
+Historical record, marked 2026-11-20. Superseded on 2026-11-06 by ledger decision D15 (a Linear-based spec replaces plan v4): only V1, the spec text, was done (`2b2615f`); V2 to V8 were never built. The Tabler pick it rested on is superseded by D72. What it would have delivered is owned by the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md). The text below is kept as it stood and is not maintained.
+
 Spec: [2026-11-03-reins-design-language.md](../specs/2026-11-03-reins-design-language.md), section "v4 changes" (acceptance criteria DL7, DL10, DL11, with DL4 and DL9 still holding).
 Related: the [Agents plan](2026-11-05-reins-agents.md) uses the card button and the verdict picker built here.
 Mock: `mocks/agents/controls.html``?icons=tabler&buttons=a`, tracked with synthetic data until 2026-11-20. `mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`. It shows the Agents page with the v4 look, and a sheet of every button kind in every state in both appearances.

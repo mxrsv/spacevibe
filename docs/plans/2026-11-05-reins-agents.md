@@ -1,5 +1,7 @@
 # Reins: Agents
 
+On hold and partly superseded, marked 2026-11-20. Nothing after A0b was built. Superseded by the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md) (D43 to D49, D68): A8, A10 and the UI half of A12. Moved: the engine tasks A1 to A6 would be written in the Go core, not in `Sources/ReinsCore` (go-core plan D-5), and are not started. Waiting for the later phase the owner has not opened (D47, D48): A7, A9, A11. Its dependency, design language v4, is superseded. See the status of the [spec](../specs/2026-11-05-reins-agents.md). The text below is kept as it stood.
+
 Spec: [2026-11-05-reins-agents.md](../specs/2026-11-05-reins-agents.md), AG1 to AG10.
 Depends on [design language v4](2026-11-05-reins-design-language-v4.md) V5 (the components) before any UI task here. The core tasks A1 to A6 can start now.
 Mock: `mocks/agents/agents-panel.html` (C′), with the v4 look at `mocks/agents/controls.html``?icons=tabler&buttons=a`. Both were tracked with synthetic data, and A12 was to delete the folder. `mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`.

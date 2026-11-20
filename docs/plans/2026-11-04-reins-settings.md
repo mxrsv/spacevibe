@@ -1,9 +1,9 @@
-# Reins: Settings
+# SpaceVibe: Settings
 
 Spec: [2026-11-04-reins-settings.md](../specs/2026-11-04-reins-settings.md) (ST1 to ST7).
 Mock: `~/scratch/spacevibe-reins/settings/index.html`, combination A2.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions; commit with `git commit -- <paths>` only.
-Started 2026-11-04. Status: S1 to S9 done and committed (`9ba6917`, `3088300`, and the follow-up for Sparkle's no-update error); S10 waits for the owner's eye approval.
+Started 2026-11-04 (written while the product was named Reins). Status, checked 2026-11-20: active, one task open (S10, the owner's eye approval). Since S9 the screen lost its Language card (D69) and moved to the v5 components with its layout kept (D70); those changes are recorded in the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md), not here. S1 to S9 done and committed (`9ba6917`, `3088300`, and the follow-up for Sparkle's no-update error); S10 waits for the owner's eye approval.
 
 ## Approach
 

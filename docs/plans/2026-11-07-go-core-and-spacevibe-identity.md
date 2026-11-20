@@ -1,7 +1,10 @@
 # Standalone Go core, stdio protocol and SpaceVibe identity
 
 Record: Active task plan
+Started: 2026-11-07
+Status, checked 2026-11-20: active. Built and committed: the Go core, the protocol, the Swift shell's cut-over to it and the rename (phases P0, PR, G0 to G2, S, R1, R3 to R6, X1's workflow). Open, all the owner's: the Sparkle key (R2), the runtime checks A1 to A5, X2, F1 and the gates GH1, REL1, GH2 and WEB1 to WEB3; see "Next action" in the Handoff.
 Base revision: 39ff3f5 (main, clean at survey time)
+Open items of older plans that this plan now owns are listed in "What this plan takes over" and, for the launch plan, in the Handoff.
 
 ## Requirements reference and delivery scope
 
@@ -30,7 +33,7 @@ Affected sibling plans: [Agents](2026-11-05-reins-agents.md) A1 to A6 and [Token
 
 ## Conflicts between the ledger and the repo (surfaced, not resolved)
 
-- **C1. "Byte for byte" (SV5) is not what the oracle checks today.**
+- **C1. "Byte for byte" (SV5) is not what the oracle checked on 2026-11-07.**
   - Goldens are Node `JSON.stringify(v, null, 2)` output (`scripts/make-golden.mjs:49`). Swift compares parsed JSON: `FixtureHome.firstDifference` ignores key order and compares numbers as `NSNumber` (`Tests/ReinsCoreTests/Support/FixtureHome.swift:113-136`).
   - Swift compares projections, not raw output: `RulesGoldenView` (`RulesGoldenTests.swift:73-226`) and the sorted views in `ActivityGoldenTests.swift:16-32`.
   - Rules writes are compared as parsed settings on purpose (`RulesGoldenTests.swift:7-8`).
@@ -60,7 +63,7 @@ The app links no engine code at the end (SV4). The core is bundled at `Contents/
 
 ### Directory and module (proposed; owner confirms in D-7)
 
-`~/.claude/templates/project-structure.md` has no Go/Swift layout, so the repo convention applies: one top-level directory per toolchain with its own manifest (`site/` today). Recommended: `core/`, created only after P0.3 deletes the Node `core/`, so the two never coexist. This keeps the ledger's word "core" for one thing (UX2). Cost: `git log -- core/` mixes Node history with Go. Alternative: `engine/`. The module path is `spacevibe.dev/core`, which does not depend on the GitHub repo name (D-1 is open).
+`~/.claude/templates/project-structure.md` has no Go/Swift layout, so the repo convention applies: one top-level directory per toolchain with its own manifest (`site/` on 2026-11-07). Recommended: `core/`, created only after P0.3 deletes the Node `core/`, so the two never coexist. This keeps the ledger's word "core" for one thing (UX2). Cost: `git log -- core/` mixes Node history with Go. Alternative: `engine/`. The module path is `spacevibe.dev/core`, which does not depend on the GitHub repo name (D-1 is open).
 
 ```
 core/                         (new) go.mod, go.sum
@@ -115,9 +118,9 @@ Order inside each layer is free. Each domain package closes its golden only when
 1. **Layer 0 to 1 leaves (G1):** textjs, ojson, toml, logs, hashes, roots, fsx, pricing, proc, plus the golden harness.
 2. **G2.1** inventory + usage (`inventory.json`, `usage.json`), in parallel with **G2.2** activity (`activity.json`, `activity-proc.json`).
 3. **G2.3** mutate (`mutate.json`) → **G2.4** rules (`rules.json`).
-4. **G2.5** limits (no golden today: G0.1 creates one first) → **G2.6** statusline (D-3).
+4. **G2.5** limits (no golden on 2026-11-07: G0.1 creates one first) → **G2.6** statusline (D-3).
 
-Modules with no golden today:
+Modules with no golden on 2026-11-07:
 
 | Module | First test to create |
 | --- | --- |
@@ -141,22 +144,11 @@ Each golden test builds the named projection and compares canonical bytes. On fa
 | `rules-view` | `ruleObject`, `gridObject`, preview outcome, `{ok}\|{error:{status,message}}`, parsed `.json` files after each write excluding the data folder, Codex flag view |
 | `mutate-tree` | Path → sha1 of text with the root replaced, trash listing, ≥37 scenarios |
 
-Every golden test also asserts its case count, so an unloaded golden cannot pass with zero cases (as `MutateTests.swift:16-21` does today).
+Every golden test also asserts its case count, so an unloaded golden cannot pass with zero cases (as `MutateTests.swift:16-21` did on 2026-11-07).
 
 ### Protocol (SV3, SV12; full text in PR.1)
 
-- **Framing.** NDJSON: one JSON-RPC 2.0 object per line. Request lines are capped at 1 MiB, response lines at 64 MiB. Batches are refused with `-32600`.
-- **Handshake.** `initialize` params: `{protocolVersion, client:{name, version}}`. Result: `{protocolVersion, core:{name, version}, identity:{envPrefix, dataDir}, methods:[…]}`. A version mismatch gets `-32001`. Any request before `initialize` gets `-32002`.
-- **Errors.** The standard codes, plus `-32000` with `data:{status, message}`. `message` is the ReinsError-style sentence and never quotes file content (S-R3).
-- **Notifications.** `usage/progress`, `activity/report` and `$/cancelRequest`.
-- **Activity.** `activity.subscribe` returns a full report first. The core polls every 3 s (`ActivityModel.swift:14`) and pushes a full report only when it changed. A reconnect re-subscribes and gets a fresh snapshot (resync); there are no deltas.
-- **Output discipline.**
-  - One writer goroutine owns stdout. At start the core dups fd 1 for the protocol and points `os.Stdout` at stderr, so a stray print can never corrupt the stream.
-  - Logs go to stderr and carry fixed reasons only.
-- **Lifecycle.**
-  - On stdin EOF: stop reading, cancel reads, let in-flight writes finish (at most 5 s), exit 0.
-  - No listener and no network imports (S-R5).
-- **One-shot mode.** `--json` covers reads only. Exposing writes there would add a second writer for no debugging gain (reversible).
+The protocol as built is documented in one place, [core-protocol.md](../internals/core-protocol.md): framing, handshake, errors, notifications, the Activity subscription, output discipline, lifecycle and the one-shot mode. The summary that stood here duplicated it and was removed on 2026-11-20 (in git history, last at `5dc4846`).
 
 ### Swift migration (SV4, W17)
 
@@ -194,26 +186,7 @@ Each name is one constant per language. Go `internal/identity` is the source. Sw
 
 ### Swift-to-Go traps seen in the code
 
-- **JSON.** `encoding/json` sorts map keys, HTML-escapes `<>&` unless told not to, always escapes U+2028 and U+2029, and its errors quote input text. Use it only inside the canonical test writer (for ES6 float text). Config files go through `ojson` (`OrderedJSON.swift:21-28`: byte round trip, splice edits, duplicate key last-wins, depth 256).
-- **JS text semantics.** `ActivityText` uses the JS whitespace set (`ActivityText.swift:10-15`, which includes U+FEFF; Go's `unicode.IsSpace` also counts U+0085), UTF-16 lengths, slices and sort (:61-74), and drops a half surrogate pair (:61). Do not use `strings.TrimSpace` or `strings.Fields`.
-- **Regex.**
-  - `Rules.boundary` uses lookarounds (`RulesParse.swift:60`), which RE2 rejects. Go's ASCII `\b` gives the same result.
-  - Go's `\s` lacks `\v`, so the explicit JS space class (:59) must be ported.
-  - ICU's `$` also matches before a final newline; Go's does not.
-  - Every `NSRegularExpression` gets vector tests (patterns found in 9 files, e.g. `ActivityFold.swift:128-142`).
-- **Paths.**
-  - `Roots.resolvedPath` resolves the deepest existing ancestor of a missing path (`Roots.swift:104-117`). `filepath.EvalSymlinks` fails on missing paths, so port the algorithm.
-  - The real home must come from the password database (`Roots.swift:81-86`), never from `os.UserHomeDir` (H1).
-  - Symlinked targets stay links (`FileEdit.swift:171-183`).
-- **Atomic write.** `O_EXCL` temp file, `fchmod`, `fsync`, read-back validation, a byte re-check before rename, `unlink` on failure (`FileEditAtomicWrite.swift`; `FileEdit.swift:80-85`).
-- **Locks.**
-  - `WriteLock` is an `NSRecursiveLock` (`WriteLock.swift:13`), nested by `addHook` → `FileEdit` → `Journal`. Go's `sync.Mutex` is not re-entrant, so split each function into a locked entry and an unlocked body.
-  - Cross-process safety today is only the re-check before rename (`WriteLock.swift:10-11`). Add `flock` on `<data>/write.lock` in both engines (X-lock).
-- **Trash moves.** `FileManager.moveItem` copies across volumes (`JournalTrash.swift:58`); `os.Rename` returns EXDEV (H13).
-- **Lines.** `bufio.Scanner` stops at 64 KB. The scanner allows 32 MiB lines (`UsageScanner.swift:10`). Keep the zstd 512 MiB cap.
-- **Unicode.** Swift `String` `==`, `<` and `Dictionary` keys use canonical equivalence; Go compares bytes (H14). `FileEdit.swift:57` already compares bytes.
-- **Shared formats.** The usage cache is designed to be readable by either engine (`UsageScanCache.swift:3`). The journal format is fixed (`Journal.swift:6-10`, newest first, 200 entries). Both must stay identical while the engines coexist.
-- **Numbers.** `String(Double)` in Swift (`LimitsClaudeStatusline.swift:44`) and Go's float formatting differ. Bytes on disk differ; parsed values agree.
+Moved on 2026-11-20 to [overview.md](../internals/overview.md#swift-to-go-traps), which is kept current. The list that stood here carried line references into the Swift engine, deleted in S.8 (`359eab0`); it is in git history, last at `5dc4846`.
 
 ### Alternatives rejected
 
@@ -512,7 +485,7 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
   - Files:
     - New in `Sources/Reins/Core/`: `CoreService.swift`, `CoreTypes*.swift`, `InProcessCore.swift`.
     - Edited: `Sources/Reins/App/AppEnvironment.swift` (`core: any CoreService`; `performWithUndo` takes DTO journal entries; an app-side error DTO replaces `ReinsError.message`).
-    - The screen models and views of Components, Shell, Limits, Activity, Loadout and Rules: the 51 files that import ReinsCore today.
+    - The screen models and views of Components, Shell, Limits, Activity, Loadout and Rules: the 51 files that imported ReinsCore on 2026-11-07.
     - `Tests/ReinsTests/*` rebuilt on DTOs.
   - Depends on: D-5, PR.1 (DTO shapes)
   - Verify:
@@ -1146,6 +1119,7 @@ Checkout `main` at `a8bce31`, run 2026-11-08 on darwin/arm64, `go1.25.5`. Comman
   - `/api/auth` and `/vote` redirects in `site/vercel.json` go to `kyant.dev`; login may break. The Hub session decides before WEB2.
   - The repo name constant `mxrsv/spacevibe` in `scripts/release.sh` and `site/components/landing/content.ts` is a working value only.
   - Copy changes not checked by eye, including the new Codex "not readable" sentence; F1 covers them.
+- Taken over from the [launch plan](2026-11-03-reins-launch.md) on 2026-11-20, when it was marked historical: its L6, L7 and L12 are R2 and REL1 here (steps in the [release runbook](../operations/release.md)), its L9 is A1 to A5, its L13 is WEB1 to WEB3. One item had no home: L8's licence. No `LICENSE` exists and `README.md` says none is chosen; the owner picks one before the repository is announced (GH1, REL1).
 - Process incident: an agent amended another session's commit and then reset it back. The reflog was checked and is intact; no commit was lost. Agents must not amend or reset commits they did not make (W11).
 
 /goal Deliver docs/plans/2026-11-07-go-core-and-spacevibe-identity.md: a Go core in core/ (D-7) that matches every frozen golden by canonical bytes and every ported Swift unit test, driven by the SwiftUI app only through CoreClient over JSON-RPC 2.0 on stdio with version refusal, protocol-only stdout and exit on EOF; ReinsCore, CZstd and the Node oracle deleted; env, data folder, bundle id dev.spacevibe.app and Sparkle key renamed, with the rename report naming every remaining "reins" site; S0.5, S0.4, S0.3, S8.1 and S8.2 (AC1, AC2, AC4, AC5) passed once on the Go core with the final identity, AC3, AC7 and AC10 green, and owner eye approval in F1; stop at decisions D-1 to D-7 and before every outward-facing gate (GitHub rename, v0.1.0 text, release, Vercel or DNS).

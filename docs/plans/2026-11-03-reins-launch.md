@@ -1,5 +1,7 @@
 # Reins launch: release configuration
 
+Historical record, marked 2026-11-20. Superseded on 2026-11-07 by SV9 to SV14 and the [go-core plan](2026-11-07-go-core-and-spacevibe-identity.md). L1 to L5 (the release tooling) are built. `v0.1.0` was tagged on 2026-11-04 (`308a4c3`) and published under the old name, although L10 and L11 below were never ticked and the Handoff still says nothing was tagged; that release is deprecated (SV14). Open items moved, not kept here: L6, L7 and L12 are the go-core plan's R2 and gate REL1 with the new key (steps in the [release runbook](../operations/release.md)); L9 is its runtime checks A1 to A5; L13 is its gates WEB1 to WEB3 for `spacevibe.dev`; L8's licence choice is listed in that plan's Handoff. The text below is kept as it stood and is not maintained.
+
 Date: 2026-11-03
 Status: in progress. The tooling tasks (L1 to L4) are built and verified; the owner-only steps and the first release are open.
 Requirements: the Distribution and Constraints sections of the [Reins spec](../specs/2026-11-02-reins.md) and the Distribution section of [PRODUCT.md](../../PRODUCT.md). Owner's ask on 2026-11-03: launch early, then optimize a little every day. No separate spec; this plan records the release decisions and their evidence.

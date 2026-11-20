@@ -1,5 +1,7 @@
 # Review fixes (2026-11-10 Fable review)
 
+Historical implementation record, marked 2026-11-20. Complete on 2026-11-11: all 25 tasks, the review (R1, two passes) and the owner's eye approval (E1); the implementing commits are listed per task and in the Handoff. The text below is kept as it stood and is not maintained.
+
 Requirements: no spec. The findings of the read-only whole-repo review of 2026-11-10 (baseline `744d734`) are the requirements; the owner asked in chat on 2026-11-10 that Fable decide each fix and Sonnet implement it ("tôi cần Fable để đưa ra quyết định fix còn sonnet sẽ thực hiện fix"). Review record, outside git: `~/scratch/spacevibe-reins/2026-11-10-fable-review/` (`report.md` in Vietnamese, `findings/*.md` per reviewer with trigger, path and `Check`, `verification.md`, `fix-decisions.md` from the Fable fix architect). Each task below carries a one-line statement of its findings so this plan stands without that folder.
 Checkout: `spacevibe-reins` on `main`, shared. Builders: Sonnet subagents, up to five per wave, no two in a wave on one file; they never commit. The lead (this session) runs the checks, reads each diff and commits with `git commit -- <paths>` (W11).
 Status: plan written 2026-11-10; the owner accepted every owner call C1–C7 as Fable decided and started the build ("ok build", 2026-11-10). Complete 2026-11-11: all 25 tasks, the review (R1, two passes) and the owner's eye approval (E1) done. Nothing pushed; push and merge wait for the owner.
