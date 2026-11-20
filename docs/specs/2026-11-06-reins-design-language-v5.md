@@ -1,24 +1,28 @@
-# Reins design language v5
+# SpaceVibe: design language v5
+
+Date: 2026-11-06 (rewritten 2026-11-07; written while the product was named Reins)
+Status: built and cut over, 2026-11-12 (`b877e3a`): the v5 surfaces are the only interface, in development and distribution builds. Open: the owner's eye approval of the build, light mode included (V5-A14; U14 of the [build plan](../plans/2026-11-07-reins-ui-v5-build.md)). Narrowed after the freeze by D69 and D70 (mock substitutions S13 and S14) and by the icon exception D72. The interface as shipped is described in [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md), which also holds the built colour values.
 
 ## Cut-over authorization — 2026-11-12
 
 The owner requested: "cần áp giao diện mới vào hẳn main đi, clean luôn cái giao diện cũ đi". The existing native v5 surfaces become the default in development and distribution builds; the old UI and its switch are removed together. This supersedes the build-time coexistence requirements below, not the safety restriction on gallery/screenshot launch modes. The 2026-11-12 scratch mock proposals are outside this cut-over. Verification and remaining acceptance are recorded in the [owning plan](../plans/2026-11-07-reins-ui-v5-build.md#x1-cut-over-handoff--2026-11-12).
 
-
-Status: rewritten 2026-11-07 to cover the whole ledger (D1 to D68, 68 decision lines) and the mock the owner froze as the build reference on 2026-11-07 (D68, ledger line 79). Not built: no Swift for v5 exists. Light mode was not eye-checked after the D66 spacing change. Execution: [build plan](../plans/2026-11-07-reins-ui-v5-build.md).
+Status as written on 2026-11-07: rewritten to cover the whole ledger (D1 to D68, 68 decision lines) and the mock the owner froze as the build reference on 2026-11-07 (D68, ledger line 79). On that day no Swift for v5 existed; it is built since (see Status above). Light mode was not eye-checked after the D66 spacing change. Execution: [build plan](../plans/2026-11-07-reins-ui-v5-build.md).
 
 Sources, in this order of authority:
 
 - Decisions: [the Linear identity ledger](2026-11-06-reins-linear-identity-decisions.md). Cited as `D<n>`. Three IDs were written twice by two sessions (D63 to D65); the UI rows were renumbered D66 to D68 on 2026-11-07 (C1), so every ID is unique. A citation may still add the ledger line, for example `D63 (L81)`.
 - Words and meanings: [PRODUCT.md](../../PRODUCT.md) (jobs, colour meanings) and [GLOSSARY.md](../../GLOSSARY.md) (one word, one meaning). They win any copy conflict ([AGENTS.md](../../AGENTS.md), "Read before work").
 - Structure, blocks, look and behaviour: the frozen mock (below). Where the mock carries a word, state, number or element that a ledger line removed, the ledger wins and the case is listed under "Mock substitutions", so the side-by-side check knows the expected difference.
-- Current rulebook (replaced at cut-over): [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md). Boundary and toolchain rules: [AGENTS.md](../../AGENTS.md).
+- Rulebook: [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md), rewritten at the cut-over to describe v5. Boundary and toolchain rules: [AGENTS.md](../../AGENTS.md).
 
 Requirement IDs V5-R1 to V5-R48 and V5-A1 to V5-A17 keep their 2026-11-06 meaning where the requirement survives; a row whose content changed says so, and new rows start at V5-R49 and V5-A18. Environment variables use the `SPACEVIBE_` prefix that the go-core plan's task R1 introduces (it was being applied, uncommitted, in the shared checkout when this was written; before it lands, read `REINS_` for `SPACEVIBE_`).
 
 ## Reference mock (frozen, D68)
 
 Outside git (F4), on the owner's Mac: `~/scratch/spacevibe-reins/linear-directions/`.
+
+**Missing.** The folder is not at that path any more (found missing in the 2026-11-19 docs audit; `ls` still fails on 2026-11-20), and no other copy is recorded. Everything below describes it as frozen on 2026-11-07. The side-by-side check V5-A1 cannot run against it until the owner restores it or names another reference.
 
 | Surface | Page | Approved as |
 | --- | --- | --- |
@@ -140,7 +144,7 @@ Rules under the look: `~/.claude/rules/quality/ux.md` (UX1 to UX4), `~/.claude/r
 
 | ID | Requirement | Ledger |
 | --- | --- | --- |
-| V5-R49 | The sidebar pages are `Agents` (`⌘1`), `Activity` (`⌘2`) and `Limits` (`⌘3`); `Settings` opens from the sidebar footer. `Agents` holds the tabs `Skills`, `Subagents`, `Hooks`, `Rules` (no `All`); `Activity` holds `Running`, `Failed`, `Files`. The `Loadout` and `Rules` sidebar pages go. | D43, D46, D47, D49, D50 |
+| V5-R49 | CHANGED by D70 (2026-11-16): `Activity` holds `Running` and `Failed` only; the `Files` tab is dropped. As written: The sidebar pages are `Agents` (`⌘1`), `Activity` (`⌘2`) and `Limits` (`⌘3`); `Settings` opens from the sidebar footer. `Agents` holds the tabs `Skills`, `Subagents`, `Hooks`, `Rules` (no `All`); `Activity` holds `Running`, `Failed`, `Files`. The `Loadout` and `Rules` sidebar pages go. | D43, D46, D47, D49, D50 |
 | V5-R50 | Sidebar (220 wide, padding 0 16 16, on `bgSide`): window-button row (48); product row (40: the app mark in an accent tile, the product name from one constant, so the SV9 rename touches one place); search row (40, `⌘K` cap, opens the palette; 8 above, 20 below); the page items (40 high, 4 apart, glyph, label, and Agents' total item count at the right; current item `sel` fill and 500 weight); flexible space; CLI status rows (32 high, 4 apart, a hairline and 12 above them): Claude Code, Codex and Gemini CLI, each with its logo and a state (`reading` with a success dot; `not installed` or `no log` with a muted dot); footer: `Settings` (36) and the appearance toggle (36 x 36). The current Limits sidebar block is not in the mock and goes (C16). | D66, D68 (L79) |
 | V5-R51 | Content panel: inset 12 from the window on top, right and bottom; `bgPanel`, radius 8, 1 px `hair` border, top-edge highlight. Inside, top to bottom: the tab head (60; tabs at the left from a 32 edge, actions at the right ending 32 from the edge; toolbar buttons 32 high, padding 0 12, borderless; menus open 52 below its top), the filter chip row (padding 8 12, only while a filter is active), the page canvas, and the status bar (32, hairline above, keys at the left, the data source at the right). Limits has an empty tab area and one `Refresh` button. | D29, D66 |
 | V5-R52 | Split layout for Subagents, Hooks, Rules, Activity and Limits: a 12-column canvas with 32 padding and 24 between cards; the left half (6 columns) stacks the small cards, 24 apart, the Answer card first; the right half (6 columns) is one tall spine card holding the page's main list as bands. Below 700 pt of canvas width both halves span the full width, small cards first. When the canvas is taller than the window, it scrolls inside the panel (the cost D66 accepted); a small card with a fixed maximum height scrolls inside itself. | D45, D54, D56, D59, D61, D66, D67 (L77) |
@@ -152,7 +156,7 @@ Rules under the look: `~/.claude/rules/quality/ux.md` (UX1 to UX4), `~/.claude/r
 | V5-R58 | Figures and chart blocks: `Stats`, 2 to 4 figures (20/28 600 over a 12/16 `fg3` label, columns at least 88 wide, 12 apart); `Column chart`, one bar per bucket, 72 high, 2 apart, top radius 2, neutral `fg3` fill, the current bucket `fg`, an empty bucket as a 2 pt `hair2` line, a hairline base, an axis line of 11 pt labels under it (first bucket, what is counted and over what range, "today"). Approved with the mock (D68). | D61, D68 (L79) |
 | V5-R59 | Stop confirmation: a 400-wide dialog centred over the window on the scrim (padding 20 20 16, 8 apart): title `Stop "<session title>"?` (14/20 600); body "Sends SIGTERM to pid <pid> (<CLI>, <project>). Unsaved work in that session may be lost. This cannot be undone."; small line "Reins checks that the pid still belongs to this session before it sends anything."; actions at the right, 12 above: `Cancel` with `esc`, and the solid danger button `Stop session` with the stop glyph. Focus starts on `Cancel`; `Tab` cycles the two buttons. After a stop the toast reads "Sent SIGTERM to pid <pid>. "<title>" is stopped." with no Undo. The pid is the real `ActivitySession.pid`, re-validated first (S-R4). | D41, D65 (L78) |
 | V5-R60 | A number appears once on a page, where it answers a question (D60): no small card repeats the spine's figures. Every number names what it counts and its time range. The Next resets card shows no share; no reset tick on bars. | D59, D60 |
-| V5-R61 | The tab head of Subagents, Hooks, Rules and Activity holds the tabs and ONE `Filter` button (one menu level when the page has one field); no scope control, no `View`, no other button. Skills keeps its own head (V5-R19); Limits has `Refresh` only. Activity's Files tab has no filter. | D29, D37, D54, D68 (L79) |
+| V5-R61 | CHANGED by D70 (2026-11-16): Activity's tab head has no `Filter` button (its one-field Filter is dropped), and the Files sentence no longer applies. As written: The tab head of Subagents, Hooks, Rules and Activity holds the tabs and ONE `Filter` button (one menu level when the page has one field); no scope control, no `View`, no other button. Skills keeps its own head (V5-R19); Limits has `Refresh` only. Activity's Files tab has no filter. | D29, D37, D54, D68 (L79) |
 | V5-R62 | Every page renders the states its mock presets name: Skills (normal, nothing matches with `Clear filters`, empty category); Subagents (sample, none yet, loading, Codex not installed, 40 subagents scrolling, all healthy); Hooks (sample, healthy, many, none, Codex not installed, loading); Rules (sample, healthy, none, loading, Codex not installed, 60 rules, invalid settings file); Activity (sample, healthy, nothing running, loading, many sessions, no failures, no files); Limits (sample, healthy, all low, 50+ windows, stale read, unknown window, no reading yet, not installed, unreadable, failed read with `Retry`, loading). | D54, D68 (L79) |
 
 ### Subagents (Agents > Subagents)
@@ -180,10 +184,10 @@ Rules under the look: `~/.claude/rules/quality/ux.md` (UX1 to UX4), `~/.claude/r
 
 | ID | Requirement | Ledger |
 | --- | --- | --- |
-| V5-R69 | Tabs `Running`, `Failed`, `Files`, each with its glyph and count, active chip in the accent. `Filter` (field CLI: Claude Code, Codex) on Running and Failed; the chip row stays on every tab so filtered counts are explained, and each Answer names the filter it answers for ("… in Codex"). Keys per tab as in V5-R36; hint bar right: "Read from local session logs". | D50, D61, D68 (L79) |
+| V5-R69 | CHANGED by D70 (2026-11-16): the tabs are `Running` and `Failed`; Activity has no `Filter` and no chip row, the per-CLI bands slice the lists. As written: Tabs `Running`, `Failed`, `Files`, each with its glyph and count, active chip in the accent. `Filter` (field CLI: Claude Code, Codex) on Running and Failed; the chip row stays on every tab so filtered counts are explained, and each Answer names the filter it answers for ("… in Codex"). Keys per tab as in V5-R36; hint bar right: "Read from local session logs". | D50, D61, D68 (L79) |
 | V5-R70 | Running: `Answer` ("<N> waiting for you" with a verdict box: session title, "<CLI> asks: <question>", the command and project, and `Open` and `Stop…`; or "Nothing is waiting for you."); `Today` (`Stats`: tool calls today, estimated cost today, longest running session while it runs; a 14-day `Column chart` of estimated cost per day; a `Limits` button); spine `Running` ("<N> sessions") with one band per CLI (waiting first, open when it has a waiting session) plus a Gemini CLI band "no log". Row: title, project (112), state ("waiting", "idle", "running <tool>", 104), warn triangle when waiting. Detail popover: the question, "Answer in the terminal. Reins only shows the question.", `Open` (`o`) and `Stop…` (`s`). | D41, D50, D61, D65 (L78, L79) |
 | V5-R71 | Failed: `Answer` ("<N> still failing" with a verdict box: command, reason, "<CLI>. No later run has passed.", `Copy` and `Open`; or "No command is still failing."); `Passed later` (one sentence and `Dismiss passed`, with Undo; dropped when empty); spine `Failed commands` ("<N> commands, <range>") with one band per CLI. Row: command, reason (up to 176), "<n> times", "still failing" or "passed later", warn triangle while still failing. Detail popover: reason and counts with the range, `Copy` (`c`), `Open` (`o`), `Dismiss` (with Undo). | D41, D50, D60, D61, D68 (L79) |
-| V5-R72 | Files: `Answer` ("<file> is today's most-edited file." with its path and `Open`; or "No file was edited today."); `Busiest projects` ("file edits, <range>": bar rows with an edit count and an open button); spine `Edited files` ("<N> files") with bands `Today` and `Most edited, <range>`. Row: file name, folder (up to 200, right-aligned), "<n> edits". Detail popover: edits and `Open`. | D50, D60, D61, D68 (L79) |
+| V5-R72 | DROPPED by D70 (2026-11-16): the Files tab is gone; the core still reports files. As written: Files: `Answer` ("<file> is today's most-edited file." with its path and `Open`; or "No file was edited today."); `Busiest projects` ("file edits, <range>": bar rows with an edit count and an open button); spine `Edited files` ("<N> files") with bands `Today` and `Most edited, <range>`. Row: file name, folder (up to 200, right-aligned), "<n> edits". Detail popover: edits and `Open`. | D50, D60, D61, D68 (L79) |
 
 ### Limits
 
@@ -201,76 +205,20 @@ Rules under the look: `~/.claude/rules/quality/ux.md` (UX1 to UX4), `~/.claude/r
 
 ## Token table
 
-Values are read from `system/shared.css`. "Swift today" names what the row replaces or extends in [`Tokens`](../../Sources/Reins/Tokens) and [`Components`](../../Sources/Reins/Components); "new" has no counterpart. Mock-only values (`desk`, traffic-light colours, the dev panel) are not tokens.
+The mock's values were read from `system/shared.css`. The colour tables that stood here (surfaces and lines, text, accent, state and identity, category colours) moved to [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md#colour-tokens) on 2026-11-20, where they hold the values the code has; a value that departs from the mock says why on its line in [`Palette.swift`](../../Sources/SpaceVibe/Tokens/Palette.swift). The tables as specified are in git history (last at `95c4327`). Mock-only values (`desk`, traffic-light colours, the dev panel) are not tokens.
 
-### Surfaces and lines
+Kept here because they are not built values:
 
-| Token | Dark | Light | Swift today |
-| --- | --- | --- | --- |
-| `bgSide` (sidebar, window) | `#0B0C0D` | `#F4F4F5` | replaces `Palette.well` |
-| `bgApp` (search field ground) | `#0F1011` | `#F4F4F5` | replaces `Palette.background` |
-| `bgPanel` (content panel, list, pane) | `#131416` | `#FFFFFF` | replaces `Palette.surface` as the page ground |
-| `bgRaise` (cards, buttons, meters, chips) | `#191A1D` | `#FBFBFB` | replaces `Palette.surfaceRaised` |
-| `bgSunk` (verdict box) | `#0E0F10` | `#F6F6F7` | new |
-| `bgPop` (menu, popover, toast, bottom bar, palette, dialog) | `#1B1C1F` | `#FFFFFF` | new |
-| `bgBand` (band header) | `#1B1C20` | `#EEEFF2` | new |
-| `hair` | white 7.5% | black 8% | replaces `Palette.divider` and `border` |
-| `hair2` (control outline, overlay edge, chart base) | white 12% | black 14% | extends `Palette.border` |
-| `rowDivider` | white 5.5% | black 6.5% | new |
-| `hi` (top-edge highlight) | white 5% | white 90% | new |
-| `hover` | white 4% | black 3.5% | replaces `Palette.hover` |
-| `sel` (current row, current nav item, focus fill) | white 6.5% | black 5.5% | replaces `Palette.selection` |
-| `track` | white 7% | black 6.5% | replaces `Palette.track` |
-| `trackHi` | white 12% | black 10% | new |
-| `kbdBg` / `kbdBorder` | white 6% / 10% | black 3.5% / 12% | extends `Kbd` |
-| `scrim` | black 50% | `#141418` 25% | replaces `Palette.overlay` |
-
-### Text
-
-| Token | Dark | Light | Swift today |
-| --- | --- | --- | --- |
-| `fg` | `#F2F3F4` | `#1B1C1F` | replaces `Palette.text` |
-| `fg2` | `#A3A7AE` | `#5E626A` | replaces `textSecondary` |
-| `fg3` | `#6B7078` | `#8B8F97` | replaces `textTertiary` (raised where it carries text, V5-A2) |
-| `fg4` (disabled, separators) | `#4A4E55` | `#B7BAC0` | new; not for text a user must read |
-
-### Accent, state, identity
-
-| Token | Dark | Light | Swift today |
-| --- | --- | --- | --- |
-| `accent` shade 1 (build value) | `#4F86F7` | `#2563D9` | replaces `Palette.accent` and `accentSolid` |
-| `accent` shade 2 (candidate) | `#6D83F5` | `#3F4FD6` | |
-| `accent` shade 3 (candidate) | `#3DA1EE` | `#0A6CC4` | |
-| `accentBg` (picked row, filter count) | accent 16% | accent 10% | extends `selection` |
-| `ok` | `#4CB782` | `#2F9E6B` | replaces `success` |
-| `warn` | `#E2A33C` | `#C4811A` | replaces `warn` |
-| `bad` | `#E5604F` | `#D2442F` | replaces `danger` |
-| `mute` (off dot) | `#8A8F98` | `#7A7F88` | new |
-| `onVerdict` (glyph cut-out) | `#0F1011` | `#FFFFFF` | extends `onAccent` |
-| `claude` | `#D97757` | `#C65F3E` | replaces `Palette.claude` |
-| `codex` | `#F2F3F4` | `#1B1C1F` | replaces `Palette.codex` (the blue `#1596D6` goes) |
-| `*Ink`, `*Tint` twins | | | dropped unless a built page still needs one |
-
-Verdict glyphs are one neutral colour (`fg2`, D58); the 2026-11-06 verdict-to-colour mapping is withdrawn. The kit's `nm` colour (`#8C94C8`) is not used.
-
-### Category colours
-
-| Token | Dark | Light | Notes |
-| --- | --- | --- | --- |
-| `catSkill` | `#A78BFA` | `#7C5CE0` | Skills |
-| `catSubagent` | `#D974E0` | `#B83CC8` | Subagents; set 1 (set 2 swapped it with Hooks: `#4FC9E6` / `#0C86A6`) |
-| `catHook` | `#35C0DA` | `#0E8BA8` | Hooks; set 1 (set 2: `#E56BD0` / `#C0389F`) |
-| `catRule` | `#E8709F` | `#D2487F` | Rules; about 30° of hue from `bad`, checked by V5-A16 |
-| Reserved state hues | `ok`, `warn`, `bad` families | same | no category, identity or accent hue falls inside them |
-| Tab chip, inactive | `fg` 7%; hover 12% | same | text, glyph and count `fg2`; hover `fg` |
-| Tab chip, active | category 26%; focus 34% | same | text (600), glyph, count in the category colour; in light, text and count mixed 68% with black |
-| Tab count circle | inactive `fg` 12%; active category 40% | same | 10 pt, min 16 x 16, padding 0 4 |
+- Accent candidates for the owner's eye pick (D10, V5-R3): shade 2 `#6D83F5` dark, `#3F4FD6` light; shade 3 `#3DA1EE` dark, `#0A6CC4` light. Shade 1 is the build value.
+- Category set 2, not built (V5-R11): it swapped Subagents and Hooks, `#4FC9E6` / `#0C86A6` for Subagents and `#E56BD0` / `#C0389F` for Hooks.
+- Verdict glyphs are one neutral colour (`fg2`, D58); the 2026-11-06 verdict-to-colour mapping is withdrawn. The kit's `nm` colour (`#8C94C8`) is not used.
+- Reserved state hues: no category, identity or accent hue falls inside the `ok`, `warn` and `bad` families (V5-A16).
 
 ### Type
 
-Body is 13/20 weight 400, Inter with `cv11`, `ss03` and tabular figures. Roles, mapped to [`ReinsType`](../../Sources/Reins/Tokens/ReinsType.swift):
+Body is 13/20 weight 400, Inter with `cv11`, `ss03` and tabular figures. Roles, mapped to `ReinsType` (now [`SpaceVibeType`](../../Sources/SpaceVibe/Tokens/SpaceVibeType.swift)):
 
-| Use | Mock | Swift today |
+| Use | Mock | Swift on 2026-11-07 |
 | --- | --- | --- |
 | Tab count, filter count | 10/1, 500, tabular | new `micro` |
 | Section and nav labels, kbd, menu headings, chart axis, secondary meta | 11/16, 500 (labels) or 400 | new `small` |
@@ -285,9 +233,9 @@ Settings > Font size keeps moving every role together (`TypeScale`).
 
 ### Rhythm and sizes (D66)
 
-The mock's four spacing tokens are the custom properties of the rhythm block; every other value there is a component size. In Swift, spacing tokens live in `Rhythm` ([`PageLayout.swift`](../../Sources/Reins/Components/PageLayout.swift)) and sizes in `Metrics` ([`Metrics.swift`](../../Sources/Reins/Tokens/Metrics.swift)); a page holds none of them (V5-R8).
+The mock's four spacing tokens are the custom properties of the rhythm block; every other value there is a component size. In Swift, spacing tokens live in `Rhythm` ([`PageLayout.swift`](../../Sources/SpaceVibe/Components/PageLayout.swift)) and sizes in `Metrics` ([`Metrics.swift`](../../Sources/SpaceVibe/Tokens/Metrics.swift)); a page holds none of them (V5-R8).
 
-| Token or size | Value | Swift today |
+| Token or size | Value | Swift on 2026-11-07 |
 | --- | --- | --- |
 | `--rh-edge`: content edge (canvas padding, tab head side padding) | 32 | `Metrics.pagePadding` 24 |
 | `--rh-card`: between cards (and between stacked small cards) | 24 | `Rhythm.cards` 24 |
@@ -331,30 +279,30 @@ States are the ones the gallery shows in both appearances. "New" blocks are buil
 
 | Component | States | Replaces or new |
 | --- | --- | --- |
-| Shell: sidebar with product row, search row, page items, CLI status rows, footer | rest, hover, current, focus; CLI reading, not installed, no log | replaces [`SidebarView`](../../Sources/Reins/Shell/SidebarView.swift), [`SidebarItem`](../../Sources/Reins/Components/SidebarItem.swift) (48) and [`LimitsSidebarBlock`](../../Sources/Reins/Limits/LimitsSidebarBlock.swift) |
-| Content panel with tab head, filter chip row, status bar | default, filtered | replaces [`TopBarView`](../../Sources/Reins/Shell/TopBarView.swift), [`PageLayout`](../../Sources/Reins/Components/PageLayout.swift) ground and [`HintBar`](../../Sources/Reins/Components/HintBar.swift) |
+| Shell: sidebar with product row, search row, page items, CLI status rows, footer | rest, hover, current, focus; CLI reading, not installed, no log | replaces `SidebarView` (`Sources/Reins/Shell/SidebarView.swift`, removed), `SidebarItem` (`Sources/Reins/Components/SidebarItem.swift`, removed) (48) and `LimitsSidebarBlock` (`Sources/Reins/Limits/LimitsSidebarBlock.swift`, removed) |
+| Content panel with tab head, filter chip row, status bar | default, filtered | replaces `TopBarView` (`Sources/Reins/Shell/TopBarView.swift`, removed), [`PageLayout`](../../Sources/SpaceVibe/Components/PageLayout.swift) ground and `HintBar` (`Sources/Reins/Components/HintBar.swift`, removed) |
 | Tab chip with count circle | inactive, hover, active (per category, accent for Activity), focus, light | new |
-| Toolbar button (Filter, View, Refresh, scope) with menus | rest, hover, open, focus, filtered count | replaces [`ScopePicker`](../../Sources/Reins/Components/ScopePicker.swift) body and the ghost kind of [`ReinsButtonStyle`](../../Sources/Reins/Components/ReinsButtonStyle.swift) |
-| Filter chip (`field \| value \| x`) and chip row with `Clear` | default, hover close, focus | replaces [`FilterChip`](../../Sources/Reins/Components/FilterChip.swift) |
-| Card (Tile) with header, count, state glyph, actions, chevron | open, collapsed, loading, empty | new; replaces [`GroupedList`](../../Sources/Reins/Components/GroupedList.swift), [`CardHeader`](../../Sources/Reins/Components/CardHeader.swift) and [`ContentCard`](../../Sources/Reins/Components/ContentCard.swift) on rebuilt pages |
-| Answer card body (sentence, verdict box, actions, "more" note) | needs you, nothing needs you, loading | new; replaces [`StatusLead`](../../Sources/Reins/Components/StatusLead.swift) |
-| Band (header and body; collapsed grid variant) | open, collapsed, problem, hover, focus | replaces [`GroupLabel`](../../Sources/Reins/Components/GroupLabel.swift) and `SectionRow` |
-| Row (list and card) with lead slot, checkbox, slots, divider | rest, hover, current, picked, current and picked, focus | replaces [`Row`](../../Sources/Reins/Components/Row.swift) usage and [`LoadoutRowView`](../../Sources/Reins/Loadout/LoadoutRowView.swift) |
-| Bar, share, count cells | neutral, warn, danger, unknown (dashed) | replaces [`Ruler`](../../Sources/Reins/Components/Ruler.swift) and [`UsageCell`](../../Sources/Reins/Components/UsageCell.swift) bars |
-| Logo toggle and strip | lit, dim, hover on lit (danger badge), hover on dim, pressed, focus, read-only, only copy, just-changed pop | replaces [`CLIDot`](../../Sources/Reins/Components/CLIDot.swift) and Loadout's `RowActionButton` pair |
-| Warning slot and popover; detail popover | empty, warn, danger, neutral clock, lock, open | new; reuses [`ConfirmationDialog`](../../Sources/Reins/Components/ConfirmationDialog.swift)'s overlay tokens |
+| Toolbar button (Filter, View, Refresh, scope) with menus | rest, hover, open, focus, filtered count | replaces `ScopePicker` (`Sources/Reins/Components/ScopePicker.swift`, removed) body and the ghost kind of `ReinsButtonStyle` (`Sources/Reins/Components/ReinsButtonStyle.swift`, removed) |
+| Filter chip (`field \| value \| x`) and chip row with `Clear` | default, hover close, focus | replaces [`FilterChip`](../../Sources/SpaceVibe/Components/FilterChip.swift) |
+| Card (Tile) with header, count, state glyph, actions, chevron | open, collapsed, loading, empty | new; replaces `GroupedList` (`Sources/Reins/Components/GroupedList.swift`, removed), `CardHeader` (`Sources/Reins/Components/CardHeader.swift`, removed) and `ContentCard` (`Sources/Reins/Components/ContentCard.swift`, removed) on rebuilt pages |
+| Answer card body (sentence, verdict box, actions, "more" note) | needs you, nothing needs you, loading | new; replaces `StatusLead` (`Sources/Reins/Components/StatusLead.swift`, removed) |
+| Band (header and body; collapsed grid variant) | open, collapsed, problem, hover, focus | replaces `GroupLabel` (`Sources/Reins/Components/GroupLabel.swift`, removed) and `SectionRow` |
+| Row (list and card) with lead slot, checkbox, slots, divider | rest, hover, current, picked, current and picked, focus | replaces `Row` (`Sources/Reins/Components/Row.swift`, removed) usage and `LoadoutRowView` (`Sources/Reins/Loadout/LoadoutRowView.swift`, removed) |
+| Bar, share, count cells | neutral, warn, danger, unknown (dashed) | replaces `Ruler` (`Sources/Reins/Components/Ruler.swift`, removed) and `UsageCell` (`Sources/Reins/Components/UsageCell.swift`, removed) bars |
+| Logo toggle and strip | lit, dim, hover on lit (danger badge), hover on dim, pressed, focus, read-only, only copy, just-changed pop | replaces `CLIDot` (`Sources/Reins/Components/CLIDot.swift`, removed) and Loadout's `RowActionButton` pair |
+| Warning slot and popover; detail popover | empty, warn, danger, neutral clock, lock, open | new; reuses [`ConfirmationDialog`](../../Sources/SpaceVibe/Components/ConfirmationDialog.swift)'s overlay tokens |
 | Stats and column chart | 2, 3, 4 figures; buckets with zero and current | new |
 | Verdict glyph and verdict box | five glyphs, neutral | new |
-| Skills detail pane (head, description, verdict, meters, files, actions) | normal, never ran, newly added, plugin read-only, one CLI only, nothing selected | replaces [`FactTile`](../../Sources/Reins/Components/FactTile.swift) and `UsageCell` use |
+| Skills detail pane (head, description, verdict, meters, files, actions) | normal, never ran, newly added, plugin read-only, one CLI only, nothing selected | replaces `FactTile` (`Sources/Reins/Components/FactTile.swift`, removed) and `UsageCell` use |
 | Bottom bar | hidden, shown, mixed | new |
-| Toast with Undo and `Z` | shown, bulk text, no-Undo (Stop) | extends [`Toast`](../../Sources/Reins/Components/Toast.swift) |
-| Confirmation dialog (Stop) with the solid danger button | open, focus on Cancel | extends `ConfirmationDialog`, replaces [`ActivityStopConfirmation`](../../Sources/Reins/Activity/ActivityStopConfirmation.swift) look |
+| Toast with Undo and `Z` | shown, bulk text, no-Undo (Stop) | extends [`Toast`](../../Sources/SpaceVibe/Components/Toast.swift) |
+| Confirmation dialog (Stop) with the solid danger button | open, focus on Cancel | extends `ConfirmationDialog`, replaces [`ActivityStopConfirmation`](../../Sources/SpaceVibe/Activity/ActivityStopConfirmation.swift) look |
 | Buttons (normal, primary, danger, solid danger, icon) with optional key cap | rest, hover, pressed, disabled, focus | extends `ReinsButtonStyle` |
-| `Kbd` | cap, on accent, on solid danger | extends [`Kbd`](../../Sources/Reins/Components/Kbd.swift) |
-| Palette | open, empty, selected row | restyles [`PaletteParts`](../../Sources/Reins/Components/PaletteParts.swift) and [`CommandPalette`](../../Sources/Reins/Shell/CommandPalette.swift) |
-| Empty state and loading skeleton | no items, nothing matches with `Clear filters`, loading | extends [`EmptyState`](../../Sources/Reins/Components/EmptyState.swift) |
+| `Kbd` | cap, on accent, on solid danger | extends `Kbd` (`Sources/Reins/Components/Kbd.swift`, removed) |
+| Palette | open, empty, selected row | restyles [`PaletteParts`](../../Sources/SpaceVibe/Components/PaletteParts.swift) and `CommandPalette` (`Sources/Reins/Shell/CommandPalette.swift`, removed) |
+| Empty state and loading skeleton | no items, nothing matches with `Clear filters`, loading | extends [`EmptyState`](../../Sources/SpaceVibe/Components/EmptyState.swift) |
 
-Not touched: [`RailTab`](../../Sources/Reins/Components/RailTab.swift), [`ThemeTile`](../../Sources/Reins/Components/ThemeTile.swift), [`ReinsSwitch`](../../Sources/Reins/Components/ReinsSwitch.swift), [`ReinsMark`](../../Sources/Reins/Components/ReinsMark.swift) (Settings; tokens only).
+Not touched: [`RailTab`](../../Sources/SpaceVibe/Components/RailTab.swift), [`ThemeTile`](../../Sources/SpaceVibe/Components/ThemeTile.swift), `ReinsSwitch` (now [`SpaceVibeSwitch`](../../Sources/SpaceVibe/Components/SpaceVibeSwitch.swift)), `ReinsMark` (now [`SpaceVibeMark`](../../Sources/SpaceVibe/Components/SpaceVibeMark.swift)) (Settings; tokens only).
 
 ## Mock substitutions (the ledger wins over the mock's text)
 
@@ -381,7 +329,7 @@ The side-by-side check (V5-A1) expects these differences from the frozen mock an
 
 | ID | Check |
 | --- | --- |
-| V5-A1 | Side-by-side parity (W20, D68): each built surface is compared with its frozen mock page at 1440 x 900, per surface: shell and sidebar; Skills (normal, filtered, grouped, multi-select with bottom bar, warning popover, pane states); Subagents; Hooks; Rules; Activity Running, Failed and Files; Limits; the Stop dialog, toast, palette, menus and popovers. Each surface is judged on structure, content (with only the "Mock substitutions" as differences), look and theme, in dark and in light. Token counts, test counts and green builds never stand in for this check. |
+| V5-A1 | CHANGED by D70 (2026-11-16): Activity is compared on Running and Failed only, and S13 and S14 are expected differences. As written: Side-by-side parity (W20, D68): each built surface is compared with its frozen mock page at 1440 x 900, per surface: shell and sidebar; Skills (normal, filtered, grouped, multi-select with bottom bar, warning popover, pane states); Subagents; Hooks; Rules; Activity Running, Failed and Files; Limits; the Stop dialog, toast, palette, menus and popovers. Each surface is judged on structure, content (with only the "Mock substitutions" as differences), look and theme, in dark and in light. Token counts, test counts and green builds never stand in for this check. |
 | V5-A2 | A contrast test reads the tokens and checks every text and meaning-carrying pair on its composited surface at 4.5:1 (text) or 3:1 (controls, focus fill, state icons, logo state), in both appearances, including inactive and active tab text, count circles, `fg3` text, warning glyphs on `bgPanel` and `bgRaise`, Answer sentences on `bgRaise`, and `onVerdict` on a verdict glyph. A miss fails; the token is fixed, not exempted. |
 | V5-A3 | `StyleBoundaryTests` covers every screen folder (Agents, Skills, Subagents, Hooks, Rules, Activity, Limits, Shell, Settings, and Loadout until cut-over), fails on the patterns of V5-R8 (the existing ones plus `.background(` with a colour, `.border(`, `.shadow(`, `.overlay(` with a stroked shape, gradients and `repeatForever`), holds no v5 file in its allowlist (an old screen file that hits only a new pattern may sit there until the cut-over deletes it), and has a test that every folder under `Sources/Reins` is either a listed screen folder or explicitly exempt (`Tokens`, `Components`, `Gallery`, `App`). |
 | V5-A4 | `IconPolicyTests`: category glyphs come only from the MingCute generated set, content and sidebar glyphs only from the generated sets the owner keeps (open question 6), verdict glyphs only from Reins's own set, CLI logos only from `CLIMark`; no `Image(systemName:)` outside `Gallery/`; sizes never below 12; the credits string names every set in use. |
@@ -410,7 +358,7 @@ The UX audits (V5-A15 to V5-A17, V5-A24) belong to the build, not to a separate 
 
 ## Traceability (W20)
 
-One row per ledger line (68). Where an ID repeats in the ledger, the row names the line.
+One row per ledger line (D1 to D68 as of 2026-11-07, then D69 to D73 added on 2026-11-20). Where an ID repeats in the ledger, the row names the line.
 
 | Decision | Owner's words (quoted) | Requirements | Acceptance |
 | --- | --- | --- | --- |
@@ -482,6 +430,11 @@ One row per ledger line (68). Where an ID repeats in the ledger, the row names t
 | D68 (L79) | "ok chốt giao diện" | V5-R1, V5-R3, V5-R6, V5-R11, V5-R12, V5-R53, V5-R57, V5-R58, V5-R62; reference mock section | V5-A1, V5-A14, V5-A22 |
 | D64 (L80) | "ok hết" (Runs for hooks, Sessions for skills and subagents; `agent` wire value stays) | V5-R21, V5-R30, V5-R33, V5-R45, V5-R64 | V5-A15 |
 | D63 (L81) | "skill chỉ có dựa vào đã chạy lần nào hoặc chưa chạy" + "ok approve" | V5-R14, V5-R27, V5-R29, V5-R75 | V5-A5, V5-A15 |
+| D69 (L82) | "ok fix hết" (on the list: remove B C D G I J K M O P Q R S, keep A E F H, replace L and N with one line) | mock substitution S13, which narrows the D68 reference where the frozen mock repeated itself | V5-A1 (S13 is an expected difference) |
+| D70 (L83) | "Gỡ tab Files", "Port sang component v5", "Giữ như hiện tại", "Sửa spec theo ⌘3" + "làm luôn các mục còn lại đi" | V5-R49, V5-R61, V5-R69 and V5-R72 as marked; mock substitution S14 | V5-A1 (S14 is an expected difference) |
+| D71 | "ok" (2026-11-20; `PRODUCT.md` follows D56 and D61) | none here: it amends `PRODUCT.md` to match the split layout V5-R52 already requires | none |
+| D72 | "ok" (2026-11-20; MingCute plus Phosphor plus the verdict glyphs, an exception to the one-icon-library rule) | V5-R10 to V5-R15 as built; conflict C13 | `IconPolicyTests` |
+| D73 | "ok" (2026-11-20; the 2026-11-03 design-language spec is frozen) | none here: DL1 is carried by V5-R4 and DL11 by V5-A2 | V5-A2 |
 
 ## Out of scope
 

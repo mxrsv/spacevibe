@@ -1,6 +1,6 @@
 # Limits
 
-How the app knows how much of each subscription's usage Window is left. Claude Code figures come from its usage cache or from status-line snapshots that `spacevibe statusline capture` records; Codex figures come from its session logs; Gemini CLI keeps none, and the app says so. The Limits page and the sidebar tiles read this result. Terms follow [GLOSSARY.md](../../GLOSSARY.md); the wire shape is in [core-protocol.md](core-protocol.md#wire-types) and is not repeated here.
+How the app knows how much of each subscription's usage Window is left. Claude Code figures come from its usage cache or from status-line snapshots that `spacevibe statusline capture` records; Codex figures come from its session logs; Gemini CLI keeps none, and the app says so. The Limits page, the sidebar's CLI status rows and the glance widget's countdown pill read this result. Terms follow [GLOSSARY.md](../../GLOSSARY.md); the wire shape is in [core-protocol.md](core-protocol.md#wire-types) and is not repeated here.
 
 Code: [`core/internal/limits`](../../core/internal/limits) (the read: cache, snapshots, Codex logs) and [`core/internal/statusline`](../../core/internal/statusline) (install, uninstall and the capture command). The shell's share left, tone and staleness are in [LimitsWording.swift](../../Sources/SpaceVibe/Limits/LimitsWording.swift).
 

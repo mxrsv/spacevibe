@@ -1,5 +1,9 @@
 # Standalone Go core and SpaceVibe identity, decision ledger
 
+Date: 2026-11-07
+Status: active ledger. SV1 to SV17 settled on 2026-11-07; the owner's later answers are in the dated sections below (2026-11-07, 2026-11-08, 2026-11-20). Open items are under "Open (not assumed)" and "Still open".
+ID namespace: `D<n>` without a hyphen is a decision of the Linear identity ledger; `SV<n>` is a decision of the SV ledger; `D-<n>` with a hyphen is an open item of the go-core plan. Other documents reuse short ids (`C1` to `C3`, `X1`, `G1`): cite those with their document, for example "v5 C1" or "go-core plan D-1" ([docs/README.md](../README.md#id-namespaces)).
+
 Source: grilling session 2026-11-07. Owner's words are quoted (Vietnamese originals kept where the wording matters; "approve đủ" means the owner accepted every recommended answer in the round).
 Every later artifact (spec, plan, build prompt, subagent brief) cites these IDs (W20). Status: all rounds settled 2026-11-07 except the items under "Open", which are not assumed.
 
@@ -32,7 +36,9 @@ The 2026-11-02 spec made the engine a Swift library (`ReinsCore`). Owner on that
 
 ## Open (not assumed)
 
-- Repo name. The recommendation was `mxrsv/spacevibe`, with `spacevibe-app` named as safer because the workspace uses `spacevibe-<product>` and `spacevibe-workspace` exists. The owner has not picked between them.
+The list as it stood on 2026-11-07. Items settled since are in "Owner answers at plan execution" and "Status 2026-11-08"; the repo name is still open.
+
+- Repo name (go-core plan D-1). The recommendation was `mxrsv/spacevibe`, with `spacevibe-app` named as safer because the workspace uses `spacevibe-<product>` and `spacevibe-workspace` exists. The owner has not picked between them. Until then `mxrsv/spacevibe` is only a working value kept in one constant; gate GH1 still needs explicit approval, and the owner may pick `spacevibe-app`.
 - Spike (fact, not a decision): Go reads a `.jsonl.zst` rollout, parses TOML and cross-compiles to Windows before any port starts.
 - Windows and Linux UI technology (native per OS or a shared web UI). Needed only when the second shell starts.
 - Module order of the Go port.
@@ -44,7 +50,7 @@ The 2026-11-02 spec made the engine a Swift library (`ReinsCore`). Owner on that
 
 ## Owner answers at plan execution (2026-11-07)
 
-Owner, after seeing the W20 table and the open decisions with recommendations: "tiếp tục hết tất các phase". Read as: take the plan's recommendation for every open item below. Each is reversible until the gate that publishes it.
+Owner, after seeing the W20 table and the open decisions with recommendations: "tiếp tục hết tất các phase". Read as: take the plan's recommendation for every open item below. Each is reversible until the gate that publishes it. The repo name (D-1) is not in this table: the owner did not decide it, so it stays under "Open (not assumed)".
 
 | Item | Taken | Note |
 | --- | --- | --- |
@@ -57,7 +63,6 @@ Owner, after seeing the W20 table and the open decisions with recommendations: "
 | D-4 `--version` of the CLIs | the core does not run them | |
 | D-5 new UI work | UI-only work continues; engine tasks of the Agents and Tokens plans move to Go after G1 | |
 | D-6 Windows hardware | yes, X2 needs real hardware | |
-| D-1 repo name | working value `mxrsv/spacevibe`, kept in one constant | NOT decided by the owner; GH1 still needs explicit approval and the owner may pick `spacevibe-app` |
 
 Still the owner's alone: every outward-facing gate (GH1, REL1, GH2, WEB1 to WEB3), the Sparkle key creation in R2, the runtime checks A1 to A5, X2, F1.
 
@@ -92,6 +97,6 @@ So SV5 reads: the Go core matches the frozen goldens as canonical bytes of the n
 
 Building the Windows or Linux shell, the visual design of the `spacevibe.dev` landing, and any edit outside this repository.
 
-## Traceability still owed (W20)
+## Traceability (W20)
 
-The spec must map SV1-SV17 to a requirement ID and an acceptance check before it is committed. "Match the goldens byte for byte" (SV5) is the acceptance for the port; "no reference to Reins remains" (SV9, SV11) is a repo-wide search ending in "changed N of M, each skipped site named" (W21), with the fixtures and the `v0.1.0` release text reported separately.
+Done: the [product spec](2026-11-02-reins.md#decision-traceability-w20) maps SV1 to SV17 to a requirement ID and an acceptance check. The acceptance for the port is SV5 as the owner narrowed it (canonical bytes of the named projections, see "Owner answer on SV5"). "No reference to Reins remains" (SV9, SV11) is a repo-wide search ending in "changed N of M, each skipped site named", with the fixtures and the `v0.1.0` release text reported separately; the go-core plan's task R6 holds that report.

@@ -155,7 +155,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
   - A map of one current document per topic: product, glossary, design language, decisions, internals, operations, and active specs and plans.
   - The spec and plan templates (DN-S4).
   - The ID namespaces.
-- [ ] **DN-T6 Specs.**
+- [x] **DN-T6 Specs.** Done 2026-11-20. Differences from the audit's counts: the v5 spec had 36 broken links, of which 16 were relinked and 20 became plain text; the colour tables moved to `DESIGN-LANGUAGE.md` with the values `Palette.swift` holds today, not the spec's (14 tokens had departed); D23 is marked as well as the nine reversed rows.
   - Two-line status headers.
   - Mark parts as superseded with pointers:
     - 2026-11-02: Interface, Scope and Constraints items replaced by v5 and D70.

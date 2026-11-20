@@ -1,7 +1,8 @@
-# Reins: Settings
+# SpaceVibe: Settings
 
-Date: 2026-11-04
-Status: intent confirmed by the owner on 2026-11-04 (interview in chat); mock combination **Rail A + Content 2** chosen the
+Date: 2026-11-04 (written while the product was named Reins)
+Status: built, 2026-11-04 (`9ba6917`, `3088300`); the owner's eye approval is open (plan S10). Changed since: the Language card is dropped (D69) and the screen moved to the v5 components with its layout kept (D70); Settings > Limits and the widget switch in Appearance come from the [limit reset countdown](2026-11-19-limit-reset-countdown.md) and [session glance widget](2026-11-19-session-glance-widget.md) specs.
+Intent confirmed by the owner on 2026-11-04 (interview in chat); mock combination **Rail A + Content 2** chosen the
 same day. Parent spec: [Reins](2026-11-02-reins.md). Execution: [plan](../plans/2026-11-04-reins-settings.md).
 Mock, outside git: `~/scratch/spacevibe-reins/settings/index.html` (synthetic data; rail A "Thanh công cụ", content 2
 "Xem trước").
@@ -9,7 +10,7 @@ Mock, outside git: `~/scratch/spacevibe-reins/settings/index.html` (synthetic da
 ## Intent
 
 - Outcome: a Settings screen that starts with two sections, Appearance and Update; more sections come later.
-- User: the owner, the only user today, who judges the interface by eye.
+- User: the owner, the only user on 2026-11-04, who judges the interface by eye.
 - Success: the build matches the chosen mock; Theme and Font size survive a relaunch; the Update section shows Sparkle's
   real state.
 - Constraint: screens compose components and tokens only; no network request beyond Sparkle's (AGENTS.md S-R5). That

@@ -1,7 +1,8 @@
 # Reins: Agents
 
 Date: 2026-11-05
-Status: the owner confirmed the intent on 2026-11-04, through an interview and a grilling in chat. Mock C′ was accepted as "tạm ổn" on 2026-11-05, after the panel fixes. The page takes the v4 look of the [design-language spec](2026-11-03-reins-design-language.md), picked the same day.
+Status: partly superseded on 2026-11-06, marked 2026-11-20; the page as specified here was never built. Superseded: the placement and look (one card per CLI at `⌘2`, AG1, AG10) by D43 to D49 and D68, as the [v5 spec](2026-11-06-reins-design-language-v5.md) records under conflict C17: `Agents` is the page at `⌘1` that holds Skills, Subagents, Hooks and Rules. Narrowed: Codex is read only in Rules until a later phase (D48), which holds back the Codex writes of this spec ("Codex becomes writable", AG6). Deferred: the per-CLI settings panels, Instructions included, are a later phase with no plan yet (D47). Nothing below is a requirement of the shipped app until that phase is opened.
+Status as written on 2026-11-05: the owner confirmed the intent on 2026-11-04, through an interview and a grilling in chat. Mock C′ was accepted as "tạm ổn" on 2026-11-05, after the panel fixes. The page takes the v4 look of the [design-language spec](2026-11-03-reins-design-language.md), picked the same day.
 Parent spec: [Reins](2026-11-02-reins.md). This page replaces its Rules tab and moves hooks out of Loadout.
 Execution: [plan](../plans/2026-11-05-reins-agents.md), after [design language v4](../plans/2026-11-05-reins-design-language-v4.md).
 Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`. The paths below are as they were), tracked in `mocks/agents/index.html` with synthetic data (serve the folder, for example `python3 -m http.server 4186 --directory mocks/agents`):
@@ -11,7 +12,7 @@ Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to D
 ## Intent
 
 - **Outcome:** one page with a card per CLI. Each card has buttons that open that CLI's configuration in a panel on the right, where every setting of Claude Code and Codex can be changed. The owner asked for "toàn diện, không hạn chế".
-- **User:** the owner, the only user today, who judges the interface by eye.
+- **User:** the owner, the only user on 2026-11-05, who judges the interface by eye.
 - **Why:** each CLI's configuration is spread over Rules and Loadout. The owner wants one place per CLI, in that CLI's own terms.
 - **Success:**
   - From the page, a permission is changed in at most two clicks plus the edit, saved after one confirmation, and undone from the toast.
@@ -26,7 +27,7 @@ Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to D
 
 ## Interface
 
-- **Placement.** Agents replaces Rules in the sidebar: Loadout, Agents, Activity, then the Limits entry, with Agents on `⌘2`. Its sidebar icon is Solar's `bot`.
+- **Placement.** SUPERSEDED by D43 and D49 (v5 C17): Agents is the first page, `⌘1`, with the tabs Skills, Subagents, Hooks and Rules; there is no Loadout page and no Solar icon. As written: Agents replaces Rules in the sidebar: Loadout, Agents, Activity, then the Limits entry, with Agents on `⌘2`. Its sidebar icon is Solar's `bot`.
 - **Page.** One card per CLI, stacked, with no tools row.
   - The card opens with the 40 pt CLI mark, the name in `title`, and one sentence at Global:
     - Claude Code: its default mode, then the ask and deny rule counts.
@@ -166,7 +167,7 @@ From the 2026-11-04 interview unless dated otherwise.
 - **Panel, not modal.** A modal cramps long content, stacks a second dialog on top and locks the window.
 - **Push, not overlay** (2026-11-05). An overlay would cover the cards' buttons and the other CLI.
 - **Hooks are per CLI; skills and subagents are shared.**
-- **Codex becomes writable.** This reverses the parent spec's "writing Codex settings is out of scope".
+- **Codex becomes writable.** NARROWED by D48: Codex is read only in Rules until a later phase. As written: This reverses the parent spec's "writing Codex settings is out of scope".
 - **Configuration is comprehensive.** Common groups get forms; everything else goes through Advanced.
 - **The write boundary in `PRODUCT.md` widens** to every configuration and instruction file of both CLIs.
 - **Codex profiles are editable** (Q8-b); Codex `[profiles.*]` stay in Advanced only (Q22-a).
