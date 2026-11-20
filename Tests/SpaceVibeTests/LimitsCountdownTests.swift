@@ -78,11 +78,28 @@ struct LimitsCountdownTests {
     @MainActor
     @Test("the weekly lead is 1 h when nothing is saved, and a choice is remembered")
     func remembersLead() {
-        let defaults = UserDefaults(suiteName: "spacevibe-tests-\(UUID().uuidString)")!
+        let suite = "spacevibe-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
         #expect(LimitsCountdownPreferences(defaults: defaults).weeklyLead == .hours1)
         LimitsCountdownPreferences(defaults: defaults).weeklyLead = .hours24
         #expect(LimitsCountdownPreferences(defaults: defaults).weeklyLead == .hours24)
         defaults.set(7, forKey: LimitsCountdownPreferences.weeklyLeadKey)
         #expect(LimitsCountdownPreferences(defaults: defaults).weeklyLead == .hours1)
+    }
+
+    @MainActor
+    @Test("with no defaults the choice lives in memory and starts where it is told")
+    func inMemory() {
+        let shot = LimitsCountdownPreferences(defaults: nil, weeklyLead: .hours24)
+        #expect(shot.weeklyLead == .hours24)
+        shot.weeklyLead = .hours5
+        #expect(shot.weeklyLead == .hours5)
+    }
+
+    @Test("a ticking clock starts on the whole second at or before now")
+    func wholeSecond() {
+        #expect(LimitsCountdown.wholeSecond(before: Date(timeIntervalSince1970: 100.7)) == Date(timeIntervalSince1970: 100))
+        #expect(LimitsCountdown.wholeSecond(before: Date(timeIntervalSince1970: 100)) == Date(timeIntervalSince1970: 100))
     }
 }

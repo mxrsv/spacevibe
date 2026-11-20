@@ -149,11 +149,12 @@ struct LimitsCanvas: View {
     }
 
     /// The row's countdown (LC-R3): it ticks every second from a minute before its lead, so it starts on time although the
-    /// page redraws once a minute; otherwise the slot holds its width, empty.
+    /// page redraws once a minute; otherwise the slot holds its width, empty. Ticks fall on whole seconds, as the widget's
+    /// do, so the page and the pill never read a second apart.
     @ViewBuilder
     private func countdownSlot(_ reset: LimitsAnswer.Reset, now: Date) -> some View {
         if let lead = reset.countdownLead, reset.resetsAt.timeIntervalSince(now) <= lead + LimitsCountdown.wakeAhead {
-            TimelineView(.periodic(from: .now, by: LimitsCountdown.tick)) { context in
+            TimelineView(.periodic(from: LimitsCountdown.wholeSecond(before: now), by: LimitsCountdown.tick)) { context in
                 let left = LimitsCountdown.remaining(until: reset.resetsAt, lead: lead, now: context.date)
                 CountdownCell(text: left.map(LimitsCountdown.clock), tone: textTone(reset.tone), spoken: left.map(LimitsCountdown.spoken),
                               width: Metrics.Limits.resetCountdown)

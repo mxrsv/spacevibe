@@ -1,7 +1,7 @@
 # SpaceVibe: Limit reset countdown
 
 Date: 2026-11-19
-Status: decided. Intent confirmed and grilled with the owner on 2026-11-19 (chat); the owner picked the widget form on the [widget mock](2026-11-19-session-glance-widget.md#mock) the same day (LC10). The Limits page change follows the page's existing look. Built 2026-11-19: LC-R1 to LC-R4 (Limits page and Settings > Limits); LC-R5 to LC-R8 wait for the widget plan's GL-T13.
+Status: decided. Intent confirmed and grilled with the owner on 2026-11-19 (chat); the owner picked the widget form on the [widget mock](2026-11-19-session-glance-widget.md#mock) the same day (LC10). The Limits page change follows the page's existing look. Built: LC-R1 to LC-R4 on 2026-11-19 (`b0e58cd`), LC-R5 to LC-R8 by the widget plan's GL-T13 (`104468e`); build review on 2026-11-20 fixed the palette entry, the page's tick phase and the 24 h shot. Waiting for the owner's eye in the running app.
 Parent: [PRODUCT.md](../../PRODUCT.md) (Limits). Touches the [session glance widget](2026-11-19-session-glance-widget.md) (GW21) and reads `limits.read` ([core-protocol.md](../internals/core-protocol.md), [limits.md](../internals/limits.md)).
 
 ## Intent
@@ -9,7 +9,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) (Limits). Touches the [session glance wid
 - **Outcome:** a countdown to a limit reset, in the session glance widget and on the Limits page.
 - **User:** the owner, working in another app, who wants to know when a limit opens again.
 - **Why now:** the widget is being designed (GW1 to GW20) and has no code yet, so the countdown joins it before it is built.
-- **Success:** with a fixture where a 5-hour window resets in 59 min and a weekly window in 23 h, and the weekly lead set to 24 h, both count; the widget shows the 5-hour one; the Limits page ticks every second. The owner checks it by eye.
+- **Success:** the headless shots show a 5-hour window at 42 min and weekly windows inside a 24 h lead counting on the Limits page, and the widget pill showing the window that resets first. The frozen fixture home has no window inside a lead and a fixture launch shows no widget, so the ticking itself is checked by the owner in the running app when a real window enters its lead (or with the weekly lead at 24 h).
 - **Constraint:** no new request (S-R5) and no new process (S-R4). `limits.read` reads local files only.
 
 ## Decisions
@@ -45,7 +45,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) (Limits). Touches the [session glance wid
 | Pure tests: a 5-hour window at 61 min, 60 min and 59 min; a weekly window at each lead; inactive, scoped, past and Gemini windows never count. | LC-R1 |
 | Pure tests: `23:12:05`, `1:00:00`, `59:59`, `00:01`. | LC-R2 |
 | Limits page shots: a counting 5-hour row (normal, low and out tone) and a counting weekly row at a 24 h lead, beside rows that do not count; the time column sits at the same place in every row. The owner checks the ticking by eye in the running app. | LC-R3 |
-| `SettingsTests`: default 1 h; choosing 24 h makes a weekly window at 23 h count on the page at once. | LC-R4 |
+| `LimitsCountdownTests`: default 1 h, a choice remembered, an unknown value read as 1 h, and a 24 h lead making a weekly row at 23 h count. `PaletteSearchTests`: "countdown" and "weekly" open Settings > Limits. The page picking up a change at once is checked in the running app. | LC-R4 |
 | Widget shots: the pill with sessions, beside the faint mark, in a vertical slot, with two counting windows (the first to reset wins), and no pill outside every lead; the widget's frame is the same with and without the pill. Placed beside the widget mock. | LC-R5 |
 | Widget shots: hovering the pill and hovering the widget open the same popover; its Limits group with two windows stays pinned with 12 sessions; no session plus a counting window. | LC-R6 |
 | Click the pill in the owner's runtime: SpaceVibe opens on Limits with that window selected. | LC-R7 |
@@ -58,7 +58,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) (Limits). Touches the [session glance wid
 | --- | --- | --- |
 | LC1 | LC-R3, LC-R5 | Limits page run, widget pill shots |
 | LC2 | LC-R1 | LC-R1 pure tests |
-| LC3 | LC-R1, LC-R4 | `SettingsTests` |
+| LC3 | LC-R1, LC-R4 | `LimitsCountdownTests`, `PaletteSearchTests` |
 | LC4 | LC-R1 | LC-R1 pure tests (61, 60, 59 min) |
 | LC5 | LC-R2, LC-R3 | LC-R2 tests, Limits page run |
 | LC6 | LC-R1, LC-R5, LC-R6 | Gemini excluded in tests; "first to reset wins" shot; hover shot |

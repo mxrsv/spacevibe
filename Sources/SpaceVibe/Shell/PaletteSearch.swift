@@ -40,6 +40,17 @@ enum PaletteSearch {
             trailing: "\u{2318},",
             keywords: ["preferences", "appearance", "theme", "font size", "update"]
         ) { shell.openSettings() }
+        // Settings > Limits by what it sets, since "limits" alone finds the Limits tab first (LC-R4). Typed queries only: the
+        // empty palette keeps one Settings entry.
+        let countdown = PaletteEntry(
+            id: "shell.settings.limits",
+            title: "Weekly countdown",
+            glyph: ContentGlyph.gauge,
+            keywords: ["settings", "limits", "countdown", "reset", "weekly"]
+        ) {
+            shell.openSettings()
+            shell.settingsSection = .limits
+        }
         var actions = shell.activeTab.paletteActions
         // Only the newest item, so Undo stays last in, first out.
         if let newest = toasts?.undoStack.last {
@@ -51,7 +62,7 @@ enum PaletteSearch {
                 keywords: ["revert", "restore"]
             ) { [toasts] in toasts?.undoLast() })
         }
-        actions += [global, settings]
+        actions += [global, settings] + (words.isEmpty ? [] : [countdown])
 
         let sections = [
             PaletteSection(title: "Go to", entries: goTo.filter { matches($0, words) }),

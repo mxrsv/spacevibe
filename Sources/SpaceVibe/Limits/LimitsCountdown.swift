@@ -22,6 +22,11 @@ enum LimitsCountdown {
     /// A row starts ticking this long before its countdown starts: the Limits page itself redraws once a minute.
     static let wakeAhead: TimeInterval = 60
 
+    /// The whole second at or before `date`: where a ticking clock starts, so every tick lands on a second boundary.
+    static func wholeSecond(before date: Date) -> Date {
+        Date(timeIntervalSince1970: date.timeIntervalSince1970.rounded(.down))
+    }
+
     private static let fiveHourMinutes = 300
     private static let weekMinutes = 10080
 

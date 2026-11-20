@@ -46,6 +46,11 @@ enum LimitsShots {
             try write(env.limits, "limits-unused")
             env.limits.showInactive = false
             for (name, model) in states(env, now: Date()) { try write(model, "limits-state-\(name)") }
+            // LC-R3 at a 24 h weekly lead, in memory only: the weekly rows count in H:MM:SS beside a 5-hour row that does not.
+            let saved = LimitsCountdownPreferences.shared
+            LimitsCountdownPreferences.shared = LimitsCountdownPreferences(defaults: nil, weeklyLead: .hours24)
+            defer { LimitsCountdownPreferences.shared = saved }
+            try write(longLead(env, now: Date()), "limits-state-countdown-24h")
         }
     }
 
@@ -74,6 +79,22 @@ enum LimitsShots {
             guard case .windows(let rows) = band.body else { return total }
             return total + rows.filter { $0.left != nil }.count
         }, "Next resets lists every shown window whose reset is still ahead, once")
+    }
+
+    /// Weekly windows inside a 24 h lead: Claude Code's low, Codex's normal; both 5-hour windows outside their hour.
+    private static func longLead(_ env: AppEnvironment, now: Date) -> LimitsModel {
+        let t = now.timeIntervalSince1970
+        func window(_ id: String, _ minutes: Int, used: Double, resets: Double) -> CoreLimitWindow {
+            CoreLimitWindow(id: id, minutes: minutes, scope: nil, usedPercent: used, resetsAt: t + resets, active: true, current: true)
+        }
+        let hour = 3600.0
+        return LimitsModel(env: env, results: [
+            CoreLimitsEntry(cli: .claude, state: .measured, plan: nil, source: .claudeStatusline, at: t - 120, windows: [
+                window("five_hour", 300, used: 40, resets: 3 * hour), window("seven_day", 10080, used: 85, resets: 23 * hour + 12 * 60 + 5)]),
+            CoreLimitsEntry(cli: .codex, state: .measured, plan: "plus", source: nil, at: t - 120, windows: [
+                window("primary", 300, used: 30, resets: 2 * hour), window("secondary", 10080, used: 20, resets: 7 * hour + 4 * 60)]),
+            CoreLimitsEntry(cli: .gemini, state: .notMeasurable, plan: nil, source: nil, at: nil, windows: []),
+        ])
     }
 
     /// The V5-R62 states (`b-limits` presets) as in-memory readings, relative to `now`; the fixture's two variants cover the

@@ -50,6 +50,19 @@ struct PaletteSearchTests {
         #expect(ran == ["b"])
     }
 
+    @MainActor
+    @Test("\"countdown\" and \"weekly\" find Settings > Limits, and choosing it opens Settings there")
+    func findsWeeklyCountdown() throws {
+        let shell = ShellModel.forTests()
+        for query in ["countdown", "weekly", "limits settings"] {
+            let titles = PaletteSearch.sections(shell: shell, query: query).flatMap(\.entries).map(\.title)
+            #expect(titles.contains("Weekly countdown"), "\(query)")
+        }
+        let entry = try #require(PaletteSearch.sections(shell: shell, query: "countdown").flatMap(\.entries).first { $0.title == "Weekly countdown" })
+        entry.perform()
+        #expect(shell.isSettingsOpen && shell.settingsSection == .limits)
+    }
+
     @Test("no Undo action while the stack is empty or no center is given")
     func noUndoWithoutItems() {
         let titles = { (toasts: ToastCenter?) in
