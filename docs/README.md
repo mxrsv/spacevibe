@@ -32,7 +32,8 @@ A spec owns requirements and acceptance; a plan owns tasks, progress, verificati
 | Settings | [spec](specs/2026-11-04-reins-settings.md) | [plan](plans/2026-11-04-reins-settings.md) | active: built, eye approval open |
 | Session glance widget | [spec](specs/2026-11-19-session-glance-widget.md) | [plan](plans/2026-11-19-session-glance-widget.md) | active |
 | Limit reset countdown | [spec](specs/2026-11-19-limit-reset-countdown.md) | the widget plan (its task GL-T13) | active |
-| Clean | [spec](specs/2026-11-18-clean.md) | none | draft |
+| App-wide redesign (macOS frame, v2) | [spec](specs/2026-11-20-spacevibe-redesign.md) | none | draft: mock checkpointed, eye approval open |
+| Clean | [spec](specs/2026-11-18-clean.md), absorbed by the redesign spec | none | draft |
 | Tokens page | [product spec, "Tab: Tokens"](specs/2026-11-02-reins.md#tab-tokens) | [plan](plans/2026-11-03-reins-tokens.md) | active: not built |
 | Landing page | [spec](specs/2026-11-05-reins-landing.md) | none | draft, direction picked |
 | Internals pages | none | [plan](plans/2026-11-07-reins-internals-docs.md) | active: the owner's check open |
@@ -92,6 +93,7 @@ Short ids repeat across documents. Cite an id together with its document unless 
 | `AC<n>`, `RQ-SV<n>` | [product spec](specs/2026-11-02-reins.md) |
 | `V5-R<n>`, `V5-A<n>`, and inside it `S<n>` (mock substitutions), `C<n>` (conflicts), `G<n>` (data gaps) | [v5 spec](specs/2026-11-06-reins-design-language-v5.md) |
 | `ST<n>`, `AG<n>`, `CL-…`, `GW…`, `LC…`, `DL<n>` | the Settings, Agents, Clean, glance widget, countdown and frozen design-language specs |
+| `RD<n>`, `RD-R<n>`, `RD-A<n>` | [redesign spec](specs/2026-11-20-spacevibe-redesign.md) |
 | `L<n>` | three owners: the landing spec's ledger, the launch plan's tasks, the Limits plan's tasks |
 | `C1` to `C3` | three owners: v5 conflicts, go-core conflicts, the review-fixes plan's owner calls |
 | `X1` | three owners: the UI v5 cut-over, the go-core cross-platform task, the workspace rule "one session, one repo" |
