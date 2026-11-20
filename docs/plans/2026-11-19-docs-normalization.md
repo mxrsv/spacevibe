@@ -151,7 +151,7 @@ Settled without asking (reversible; listed so the owner can correct a line):
   - Add the missing precondition: Info.plist 0.1.0 / build 1 equals the `v0.1.0` tag, so `release.sh` refuses until both are bumped.
   - `AGENTS.md` keeps B8/B9 as one-line rules that link to the runbook.
   - The WEB0 gate and the mocks schedule leave `AGENTS.md`: WEB0 goes to the landing spec, the schedule is settled by DN-Q6.
-- [ ] **DN-T5 `docs/README.md`.**
+- [x] **DN-T5 `docs/README.md`.** Done 2026-11-20, after DN-T6 and DN-T7 so the map could name each record's state.
   - A map of one current document per topic: product, glossary, design language, decisions, internals, operations, and active specs and plans.
   - The spec and plan templates (DN-S4).
   - The ID namespaces.

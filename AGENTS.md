@@ -6,7 +6,7 @@ SpaceVibe is a native macOS app that shows and edits what Claude Code and Codex 
 
 ## Read before work
 
-Always: [PRODUCT.md](PRODUCT.md) (purpose, jobs in priority order, colour meanings; wins any UI or copy conflict) and [GLOSSARY.md](GLOSSARY.md) (one word, one meaning; use these terms in comments, labels and docs). Read the rest only when the task touches it:
+Always: [PRODUCT.md](PRODUCT.md) (purpose, jobs in priority order, colour meanings; wins any UI or copy conflict) and [GLOSSARY.md](GLOSSARY.md) (one word, one meaning; use these terms in comments, labels and docs). Read the rest only when the task touches it; the [docs map](docs/README.md) names the one current document per topic and holds the spec and plan templates:
 
 - UI of any page: [design language](docs/DESIGN-LANGUAGE.md), then the spec and plan of that page. The design language is this repo's `DESIGN.md` under the owner's global FE-rules (`~/.claude/rules/frontend.md`): where it or [PRODUCT.md](PRODUCT.md) differs from them, this repo wins (the icon sets are one such case, D72).
 - A decision or its wording: the [interface and vocabulary decisions](docs/specs/2026-11-06-reins-linear-identity-decisions.md) (ids `D1` onward) and the [core and SpaceVibe identity decisions](docs/specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) (ids `SV1` to `SV17`: the Go core, the rename, distribution). Cite the id; never narrow one (W20).
