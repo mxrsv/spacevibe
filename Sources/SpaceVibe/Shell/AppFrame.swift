@@ -22,7 +22,7 @@ struct AppFrame: View {
     /// - `sidebarValues`: fixed values (a screenshot); nil reads them from the store.
     @MainActor
     init(page: FramePage = .inbox, env: AppEnvironment? = nil, look: MaterialLook? = nil,
-         sidebarValues: FrameSidebarValues? = nil, content: @escaping PageContent = { page, _ in .notBuilt(page) }) {
+         sidebarValues: FrameSidebarValues? = nil, content: @escaping PageContent = { page, model in .region(page, model: model) }) {
         let env = env ?? .shared
         _model = State(initialValue: FrameModel(core: env.goCore, toasts: env.toasts, route: FrameRoute(page: page)))
         forcedLook = look
