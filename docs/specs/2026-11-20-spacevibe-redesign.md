@@ -83,10 +83,10 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
   | Page | First glance | Second glance |
   | --- | --- | --- |
   | Inbox | `11 need you` (or `Clear · Nothing needs you`) | The first group head and its first row |
-  | Skills / Subagents | `4 never ran` | The `Never ran` group head with `Select N Suggested`, then rows sorted by Sessions |
+  | Skills / Subagents | `N never ran` (plugin and project items count; they are never suggested) | The `Never ran` group head with `Select N Suggested`, then rows sorted by Sessions |
   | Hooks | `3 dead or never ran` | The lifecycle strip (red and amber nodes) |
   | Rules | `1 rule allows a whole tool` (Claude Code); the riskiest setting word for a read-only CLI | The other CLIs' one-line summaries beside the figure |
-  | Clean | `1.02 GB can be cleaned` (the sidebar figure) | The bar: selected, can be cleaned, locked |
+  | Clean | `1.02 GB can be cleaned` (the sidebar figure) | The bar: selected against what can be cleaned; bytes in use as text |
   | Limits | The Window that needs you: over the limit, then furthest behind pace, else the lowest left | The same Window's row and its tick |
   | Activity | `1 waiting for you` (or the running count) | The waiting row |
   | Settings | The first row of the pane | – |
@@ -208,7 +208,7 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Pinning:** Balance pins live in Settings › CLIs only, two to three, and only for CLIs that hold Skills or Subagents; the All CLIs menu no longer pins.
 - **Plugin-owned Never ran items:** counted in the Skills hero (a fact), listed read-only in Clean (CL-R1), never an Inbox finding.
 - **Row state icons:** grey inside rows (severity once per group, RD10) except Activity's waiting hand, which stays amber; FE-C3 asks for coloured state icons everywhere.
-- **Session state glyphs:** the mock draws play / hand / pause / check / question; the shipped `SessionStateGlyph` uses another set. The build keeps one set; which one is open.
+- **Session state glyphs:** one set in the app, the shipped `SessionStateGlyph` (working, waiting, done, unmeasurable; idle is a dot), as RD34 carries the widget.
 - **Sidebar Activity figure:** the waiting count when a session waits, otherwise the running count.
 - **Dead Hook runs:** a dead Hook shows the runs the logs hold (they can be above 0 if the script was deleted after running); unverified against the engine.
 - **Keep on watch findings:** a kept Window or waiting session comes back when its state changes (a new Window, a new wait).
