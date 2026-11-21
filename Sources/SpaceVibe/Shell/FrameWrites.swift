@@ -174,25 +174,29 @@ extension FrameWrite {
     }
 
     /// Turns CLIs off for a row: every file those CLIs read it from goes (`loadout.removeFrom`). The core refuses when a
-    /// CLI not named reads one of those files; the toast names who lost it and who still has it.
+    /// CLI not named reads one of those files; the toast names who lost it (the mock's "Removed pdf-extract from Codex").
     static func removeFrom(_ row: FrameRow, clis: [String], registry: [CoreRegistryCLI], control: String? = nil) -> FrameWrite {
         let member = row.writableMembers.first ?? row.items.first?.id ?? row.id
         return FrameWrite(control: control ?? "removeFrom:\(row.id)", label: "Removed \(row.name)", touches: loadoutSources) { core in
             let result = try await core.loadoutRemoveFrom(id: member, clis: clis)
-            return .entryToast(result.entry, label: removedLabel(row.name, lost: result.lost, stillHave: result.stillHave, registry))
+            return .entryToast(result.entry, label: removedLabel(row.name, lost: result.lost, registry))
         }
     }
 
     /// `Remove N selected`: the rows shown and ticked (`FrameWorld.removalSet`), removed as one change with one Undo
     /// (`loadout.removeMany`). The label counts rows, not copies; the call passes every member id of each row, or only
     /// those in `members` when given.
+    ///
+    /// The toast is the mock's `removeIds` sentence: each kind with its word ("Removed Hook lint-staged.sh from Claude Code",
+    /// "Removed 3 Skills from Codex"), and ". settings.json was edited" when a Hook went, since its removal edits that file.
     static func removeMany(_ rows: [FrameRow], members: Set<String>? = nil, registry: [CoreRegistryCLI], control: String = "removeMany") -> FrameWrite {
         let ids = rows.flatMap(\.memberIDs).filter { members?.contains($0) ?? true }
-        let what = selection(rows)
-        return FrameWrite(control: control, label: "Removed \(what)", touches: loadoutSources) { core in
+        let what = selection(rows, namesKind: true)
+        let edits = rows.contains { $0.kind == .hook } ? edited("settings.json") : ""
+        return FrameWrite(control: control, label: "Removed \(what)\(edits)", touches: loadoutSources) { core in
             let result = try await core.loadoutRemoveMany(ids: ids)
             let label = result.lost.isEmpty ? "Removed \(what)" : "Removed \(what) from \(names(result.lost, registry))"
-            return .entryToast(result.entry, label: label)
+            return .entryToast(result.entry, label: label + edits)
         }
     }
 
@@ -228,16 +232,18 @@ extension FrameWrite {
         return ". \(names(ids, registry)) \(one ? "reads" : "read") the same folder, so \(one ? "it has" : "they have") it too"
     }
 
-    /// "Removed s from Codex. Claude Code still has it"; "Removed a copy of s" when nobody lost it.
-    static func removedLabel(_ name: String, lost: [String], stillHave: [String], _ registry: [CoreRegistryCLI]) -> String {
-        let head = lost.isEmpty ? "Removed a copy of \(name)" : "Removed \(name) from \(names(lost, registry))"
-        guard !stillHave.isEmpty else { return head }
-        return head + ". \(names(stillHave, registry)) still \(stillHave.count == 1 ? "has" : "have") it"
+    /// "Removed s from Codex" (the mock's toggle toast); "Removed a copy of s" when no CLI lost it.
+    static func removedLabel(_ name: String, lost: [String], _ registry: [CoreRegistryCLI]) -> String {
+        lost.isEmpty ? "Removed a copy of \(name)" : "Removed \(name) from \(names(lost, registry))"
     }
 
-    /// One row by name; otherwise each kind counted, in page order ("2 Skills, Subagent review and 3 Hooks").
-    static func selection(_ rows: [FrameRow]) -> String {
-        if rows.count == 1 { return rows[0].name }
+    /// ". settings.json was edited": what a removal of Hooks or Rules adds (the mock's `edits`).
+    static func edited(_ file: String) -> String { ". \(file) was edited" }
+
+    /// One row by name ("pdf-extract"; with `namesKind`, "Skill pdf-extract", the mock's `removeIds`); otherwise each kind
+    /// counted, in page order ("2 Skills, Subagent review and 3 Hooks").
+    static func selection(_ rows: [FrameRow], namesKind: Bool = false) -> String {
+        if rows.count == 1 && !namesKind { return rows[0].name }
         let kinds: [(CoreKind, String)] = [(.skill, "Skill"), (.agent, "Subagent"), (.hook, "Hook")]
         let parts = kinds.compactMap { kind, word -> String? in
             let of = rows.filter { $0.kind == kind }

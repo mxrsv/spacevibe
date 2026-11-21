@@ -12,9 +12,9 @@ struct HooksList: View {
     @State private var listWidth: CGFloat = 0
 
     var body: some View {
-        let list = HooksListModel.from(model.store, view: state.view)
+        let list = HooksListModel.from(model.store, view: state.view, query: model.search.query)
         // Below the mock's 940 the Status column folds into the row's sub-line; until measured, keep the wide layout.
-        let foldsStatus = listWidth > 0 && listWidth < TableColumnWidth.statusColumnMinListWidth
+        let foldsStatus = listWidth > 0 && listWidth < TableColumnWidth.wideListWidth
         SpaceVibeScrollView {
             VStack(alignment: .leading, spacing: SpaceRole.step12) {
                 HooksListHeader(list: list) { state.pressNode($0) }
@@ -41,7 +41,11 @@ struct HooksList: View {
                 StatusBanner(.problem(.attention), title: "\(cli.name) folder could not be read",
                              detail: "\(rootName(cli)) could not be read, so every \(cli.name) figure is Unmeasurable here, not zero.") { tryAgain }
             }
-            table(list, foldsStatus: foldsStatus)
+            if list.isSearchMiss {
+                FrameSearchNoMatch(items: HooksFrame.searchItems, search: model.search)
+            } else {
+                table(list, foldsStatus: foldsStatus)
+            }
         }
     }
 
@@ -72,7 +76,7 @@ struct HooksList: View {
                     }
                 }
             }
-            VStack(alignment: .leading, spacing: 0) {
+            RowGroup {
                 HooksTableHeader(list: list, foldsStatus: foldsStatus) { state.toggleAll(list.tickable) }
                 ForEach(list.stages) { stage in
                     Text(verbatim: stage.stage)
@@ -86,7 +90,6 @@ struct HooksList: View {
                     ForEach(stage.rows) { row in rowView(row, list: list, foldsStatus: foldsStatus) }
                 }
             }
-            .groupSurface()
             HooksTableNotes(list: list)
         }
     }

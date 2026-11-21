@@ -122,6 +122,12 @@ struct CLIToggleState: Hashable, Sendable {
         }
     }
 
+    /// While the toggle's own write runs: what the tooltip and VoiceOver say, and whether a press goes through (it does not:
+    /// the pending toggle ignores it, and stays drawn pending, so nothing is sent twice).
+    static let pendingTooltip = "Writing\u{2026}"
+    static let pendingSpoken = "Writing, wait for it to finish"
+    static func acceptsPress(isPending: Bool) -> Bool { !isPending }
+
     /// The tooltip: "Claude Code: On, 31 sessions"; Not supported says what is missing ("Amp has no Subagents").
     var tooltip: String {
         if case .notSupported(let noun) = presence { return "\(cli.name) has no \(noun)" }

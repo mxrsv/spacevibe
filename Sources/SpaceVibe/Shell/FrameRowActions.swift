@@ -26,11 +26,17 @@ struct FrameShortcut: Hashable, Sendable, CustomStringConvertible {
         return marks.filter { modifiers.contains($0.0) }.map(\.1).joined() + key.uppercased()
     }
 
-    /// What the frame's own commands hold (`FrameCommands`): ⌘1 to ⌘8, ⌘I, ⌘R, ⌘, and the two Undo keys. A row action may
-    /// not take one of these.
+    /// What the frame's own commands hold (`FrameCommands`): ⌘1 to ⌘8, ⌘I, ⌘R, ⌘,, ⌘F and the two Undo keys, and the plain
+    /// letters the frame reads itself (RD39): j and k move the selection, Z undoes, A toggles the focused logo. A row action
+    /// may not take one of these.
     static let reserved: [FrameShortcut] =
         FrameCommandMap.pageShortcuts.map(\.shortcut)
-        + [FrameCommandMap.inspector, FrameCommandMap.refresh, FrameCommandMap.settings, FrameCommandMap.undo, FrameCommandMap.redo]
+        + [FrameCommandMap.inspector, FrameCommandMap.refresh, FrameCommandMap.settings, FrameCommandMap.find,
+           FrameCommandMap.undo, FrameCommandMap.redo]
+        + (["j", "k", "z", "a"] as [Character]).map { FrameShortcut($0, modifiers: []) }
+
+    /// A letter with no Command, Control or Option: it would fire inside a text field if it were a menu key equivalent.
+    var isPlainKey: Bool { modifiers.isDisjoint(with: [.command, .control, .option]) }
 }
 
 /// One action on a row (RD-R16 Keyboard, R3): Keep, Remove from…, Add to…, Stop…, Copy Command. The same value becomes a
@@ -55,6 +61,24 @@ struct FrameRowAction: Identifiable {
             if FrameShortcut.reserved.contains(shortcut) || !seen.insert(shortcut).inserted { clashes.append(shortcut) }
         }
         return clashes
+    }
+
+    /// The menu-bar key equivalent: the shortcut unless it is a plain letter. A menu key equivalent fires even while a text
+    /// field has the focus, so a plain letter (S for Stop) is read by the list instead (`plainKey`), never by the menu.
+    var menuShortcut: FrameShortcut? {
+        guard let shortcut, !shortcut.isPlainKey else { return nil }
+        return shortcut
+    }
+
+    /// The enabled action whose plain-letter shortcut is `characters` (Shift alone allowed), among `actions`; nil for any
+    /// other key. The frame calls it from the list's key handler only, so a text field's typing never reaches it.
+    static func plainKey(_ characters: String, modifiers: EventModifiers, in actions: [FrameRowAction]) -> FrameRowAction? {
+        guard modifiers.isDisjoint(with: [.command, .control, .option]), let key = characters.lowercased().first,
+              characters.count == 1 else { return nil }
+        return actions.first { action in
+            guard let shortcut = action.shortcut, shortcut.isPlainKey, action.isEnabled else { return false }
+            return shortcut.key.lowercased().first == key
+        }
     }
 }
 

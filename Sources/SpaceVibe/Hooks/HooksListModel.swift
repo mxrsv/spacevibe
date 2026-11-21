@@ -130,7 +130,12 @@ struct HooksListModel: Sendable {
     /// Every installed CLI, hidden ones too: the removal toast names who lost a Hook.
     let registry: [CoreRegistryCLI]
 
+    /// The toolbar's search (⌘F): the stages keep only the rows it matches; the hero and the strip count every Hook.
+    let query: FrameSearchQuery
+
     var visible: [HooksListRow] { stages.flatMap(\.rows) }
+    /// The search hides every row the filters would show: "No hooks match" with Clear Search.
+    var isSearchMiss: Bool { phase == .normal && !query.isEmpty && visible.isEmpty }
     var deadOrNeverRan: [HooksListRow] { all.filter(\.isDeadOrNeverRan) }
     /// The group head's severity: critical with a dead Hook, attention with only Never ran ones.
     var deadHeadSeverity: GroupSeverity {
@@ -160,7 +165,9 @@ struct HooksListModel: Sendable {
     /// The CLIs that hold a row, for its logos and sentences.
     func holders(of row: HooksListRow) -> [CoreRegistryCLI] { clis.filter { row.clis.contains($0.id) } }
 
-    init(world: FrameWorld, loading: Set<FrameSource>, failed: Set<FrameSource>, failure: String?, view: HooksViewState, now: Date) {
+    init(world: FrameWorld, loading: Set<FrameSource>, failed: Set<FrameSource>, failure: String?, view: HooksViewState,
+         query: FrameSearchQuery = FrameSearchQuery(""), now: Date) {
+        self.query = query
         let registry = world.clis.map(\.id)
         let order = HooksLifecycle.firingOrder(world.snapshot.loadout?.events ?? [:], registry: registry)
         let rows = world.rows(.hook)
@@ -201,6 +208,7 @@ struct HooksListModel: Sendable {
 
         let shown = all.filter { row in
             (view.event.map { row.stage == $0 } ?? true) && (view.cli.map(row.clis.contains) ?? true)
+                && query.matches(row.row.searchFields + [row.label])
         }
         let stageNames = shown.reduce(into: [String]()) { names, row in if !names.contains(row.stage) { names.append(row.stage) } }
         stages = stageNames.map { name in HooksStage(stage: name, rows: shown.filter { $0.stage == name }) }
@@ -226,11 +234,12 @@ struct HooksListModel: Sendable {
 
     /// From the store as it stands.
     @MainActor
-    static func from(_ store: FrameStore, view: HooksViewState, now: Date = Date()) -> HooksListModel {
+    static func from(_ store: FrameStore, view: HooksViewState, query: FrameSearchQuery = FrameSearchQuery(""),
+                     now: Date = Date()) -> HooksListModel {
         var failure: String?
         if case .failed(let message) = store.states[.loadout] { failure = message }
         return HooksListModel(world: store.world(now: now), loading: store.loading, failed: store.failedEmpty, failure: failure,
-                              view: view, now: now)
+                              view: view, query: query, now: now)
     }
 
     // MARK: Rows

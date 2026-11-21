@@ -88,6 +88,19 @@ struct InboxRowModel: Identifiable, Equatable, Sendable {
     let actions: [InboxAction]
 
     var id: String { finding.id }
+
+    /// What the toolbar's search reads: the drawn name, sub-line and evidence, and the subject's own name, description,
+    /// command and path.
+    var searchFields: [String?] {
+        var fields: [String?] = [title, sub, evidence]
+        switch finding.subject {
+        case .row(let row), .balance(let row, _, _), .failingHook(let row, _): fields += row.searchFields
+        case .rule(let rule, let file): fields += [rule.rule, InboxWording.settingsFile(file)]
+        case .window: break
+        case .session(let session): fields += [session.title, session.project]
+        }
+        return fields
+    }
 }
 
 /// A job's head and rows (RD-R4): severity once at the head, `Select N Suggested` on Clean up only.
@@ -160,13 +173,18 @@ struct InboxPage: Equatable, Sendable {
     let ticked: [String]
     /// False while scanning or failed: the list is skeleton rows or nothing.
     let showsList: Bool
+    /// The toolbar's search hides every open and kept row while there are some: "No findings match" with Clear Search.
+    let isSearchMiss: Bool
+
+    /// What the toolbar's search finds.
+    static let searchItems = "findings"
 
     /// The open rows in page order.
     var rows: [InboxRowModel] { groups.flatMap(\.rows) }
     /// The rows the arrow keys walk: the open rows, then the kept ones while shown.
     var order: [String] { rows.map(\.id) + (showsKept ? kept.map(\.id) : []) }
     /// "New findings land here." under the hero: nothing open, and the page is not scanning or failed.
-    var isClear: Bool { showsList && groups.isEmpty }
+    var isClear: Bool { showsList && groups.isEmpty && !isSearchMiss }
 
     func row(_ id: String?) -> InboxRowModel? {
         guard let id else { return nil }
@@ -177,13 +195,18 @@ struct InboxPage: Equatable, Sendable {
     /// - `failure`: the store's sentence for a failed source, shown when `figure` is `.failed`.
     /// - `hasHost`: whether a session pid has a host app to bring forward (`HostAppResolver`), so a missing one is drawn
     ///   disabled before it is pressed.
+    /// - `query`: the toolbar's search; the groups, the kept rows and what `Remove N selected` takes keep only the rows it
+    ///   matches, while the hero counts every open finding (AR3).
     init(world: FrameWorld, figure: PageFigure, failure: String? = nil, ticked: Set<String> = [], showsKept: Bool = false,
-         hasHost: (Int) -> Bool = { _ in true }, now: Date) {
+         hasHost: (Int) -> Bool = { _ in true }, query: FrameSearchQuery = FrameSearchQuery(""), now: Date) {
         let wording = InboxWording(world: world, now: now)
-        let open = world.findings.map { wording.row($0, kept: false, hasHost: hasHost) }
-        let keptRows = world.keptFindings.map { wording.row($0, kept: true, hasHost: hasHost) }
-        groups = Findings.groups(world.findings).map { group in
+        let everyOpen = world.findings.map { wording.row($0, kept: false, hasHost: hasHost) }
+        let everyKept = world.keptFindings.map { wording.row($0, kept: true, hasHost: hasHost) }
+        let open = query.filter(everyOpen, fields: \.searchFields)
+        let keptRows = query.filter(everyKept, fields: \.searchFields)
+        groups = Findings.groups(world.findings).compactMap { group in
             let rows = open.filter { $0.finding.job == group.job }
+            guard !rows.isEmpty else { return nil }
             return InboxGroupModel(job: group.job, severity: group.job == .balance ? .none : GroupSeverity(group.severity), rows: rows,
                                    suggested: group.job == .cleanUp ? rows.filter(\.isRemovable).map(\.id) : [])
         }
@@ -205,13 +228,16 @@ struct InboxPage: Equatable, Sendable {
             banner = .failed(failure ?? "SpaceVibe could not read your CLI folders.")
             showsList = false
         default:
-            let count = open.count
+            let count = everyOpen.count
             hero = count == 0 ? .clear("Clear") : .value(NumberWording.count(count), unit: nil)
             heroLabel = count == 0 ? "Nothing needs you" : count == 1 ? "needs you" : "need you"
             banner = wording.unreadable
             showsList = true
         }
-        primary = showsList && !open.isEmpty ? .remove(count: self.ticked.count) : .hidden
+        primary = showsList && !everyOpen.isEmpty ? .remove(count: self.ticked.count) : .hidden
+        // Rows were listed before the search (open ones, or kept ones while shown) and it hides them all.
+        let listedBefore = !everyOpen.isEmpty || (showsKept && !everyKept.isEmpty)
+        isSearchMiss = showsList && !query.isEmpty && listedBefore && open.isEmpty && (self.showsKept ? keptRows.isEmpty : true)
     }
 }
 

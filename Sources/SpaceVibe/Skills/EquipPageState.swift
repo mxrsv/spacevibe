@@ -3,8 +3,8 @@ import Observation
 
 /// The Skills or Subagents page's own state while the frame shows it (AR3): the view state (filter, CLI pick, ticks), the open
 /// menu, legend, sheet and shared-file confirmation, and the writes they start. The list, the toolbar and the inspector are
-/// separate views the frame places, so they share this one object: one per page per `FrameModel`, made the first time the page
-/// draws and dropped with the model.
+/// separate views the frame places, so they share this one object: one per page per `FrameModel` (`FrameModel.pageState`),
+/// made the first time the page draws.
 @MainActor
 @Observable
 final class EquipPageState {
@@ -32,27 +32,8 @@ final class EquipPageState {
         self.model = model
     }
 
-    // MARK: One per page per frame
-
-    private struct Entry {
-        weak var model: FrameModel?
-        let state: EquipPageState
-    }
-
-    private struct Key: Hashable {
-        let model: ObjectIdentifier
-        let page: FramePage
-    }
-
-    private static var entries: [Key: Entry] = [:]
-
     static func of(_ model: FrameModel, kind: EquipKind) -> EquipPageState {
-        entries = entries.filter { $0.value.model != nil }
-        let key = Key(model: ObjectIdentifier(model), page: kind.page)
-        if let entry = entries[key], entry.model === model { return entry.state }
-        let state = EquipPageState(kind: kind, model: model)
-        entries[key] = Entry(model: model, state: state)
-        return state
+        model.pageState(EquipPageState.self, page: kind.page) { EquipPageState(kind: kind, model: model) }
     }
 
     // MARK: Reading
@@ -63,13 +44,22 @@ final class EquipPageState {
             return EquipListModel.make(kind: kind, world: FrameWorld(snapshot: FrameSnapshot(), now: now), loading: [], failed: [],
                                        failure: nil, view: view, now: now)
         }
-        return EquipListModel.from(model.store, kind: kind, view: view, now: now)
+        return EquipListModel.from(model.store, kind: kind, view: view, query: model.search.query, now: now)
     }
 
     var router: FrameRouter? { model?.router }
+    var search: FrameSearch? { model?.search }
     var store: FrameStore? { model?.store }
 
     func isPending(_ control: String) -> Bool { model?.writes.isPending(control) ?? false }
+
+    /// The row's CLIs whose logo or tile has a write running: that CLI's own toggle, or every one of the row while a
+    /// shared-file removal of it runs.
+    func pendingToggles(_ row: EquipListRow) -> Set<String> {
+        let ids = row.toggles.map(\.cli.id)
+        if isPending(EquipControl.shared(row.id)) { return Set(ids) }
+        return Set(ids.filter { isPending(EquipControl.toggle(row.id, $0)) })
+    }
 
     // MARK: View state
 
@@ -108,7 +98,8 @@ final class EquipPageState {
     /// before the core answers (AR4). Returns the write's task (tests wait on it).
     @discardableResult
     func press(_ toggle: CLIToggleState, on row: EquipListRow, from anchor: Anchor) -> Task<Void, Never>? {
-        guard let model else { return nil }
+        // A second press while the write runs is ignored (the toggle shows it pending).
+        guard let model, !pendingToggles(row).contains(toggle.cli.id) else { return nil }
         let registry = model.store.snapshot.registry
         let control = EquipControl.toggle(row.id, toggle.cli.id)
         switch EquipToggles.intent(toggle, row: row.row, readers: row.readers) {
@@ -139,10 +130,12 @@ final class EquipPageState {
         let removal = prompt.removal
         let control = EquipControl.shared(row.id)
         return Task { @MainActor in
-            if copyFirst, !removal.savable.isEmpty {
-                guard await model.writes.perform(.copyTo(row.row, targets: removal.savable, registry: registry, control: control)) else { return }
+            let copied = copyFirst ? removal.savable : []
+            if !copied.isEmpty {
+                guard await model.writes.perform(.copyTo(row.row, targets: copied, registry: registry, control: control)) else { return }
             }
-            await model.writes.perform(.removeMembers([row.row], members: removal.members, registry: registry, control: control))
+            await model.writes.perform(.removeMembers([row.row], members: removal.members, registry: registry, control: control,
+                                                      shared: true, copiedTo: copied))
         }
     }
 

@@ -4,30 +4,22 @@ import SwiftUI
 /// The Skills or Subagents list (RD-R2: first the hero `N never ran`, then the `Never ran` group head with `Select N
 /// Suggested` and the rows by Sessions, most first): the hero, then by state the scanning or problem band, the empty state, or
 /// the table. Each row is its name, its logo toggles (one per shown CLI, wrapping at 5, RD-R11), the Sessions bar and count, and
-/// Last ran. Ticked rows turn the head into `N selected` with `Add to…` and `Remove from…`. The per-CLI sheet opens over the
-/// list. The reference mock's `pageEquip` (`src/c-inbox-equip.js`).
+/// Last ran. Ticked rows turn the head into `N selected` with `Add to…` and `Remove from…`. The per-CLI sheet is the page's
+/// dialog, over the whole window (`EquipSheetDialog`). The reference mock's `pageEquip` (`src/c-inbox-equip.js`).
 struct EquipList: View {
     let state: EquipPageState
     @Environment(FrameChrome.self) private var chrome
 
     var body: some View {
         let list = state.list()
-        ZStack {
-            SpaceVibeScrollView {
-                VStack(alignment: .leading, spacing: SpaceRole.step12) {
-                    PageHero(list.heroFigure, label: list.heroLabel)
-                    phaseContent(list)
-                }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+        SpaceVibeScrollView {
+            VStack(alignment: .leading, spacing: SpaceRole.step12) {
+                PageHero(list.heroFigure, label: list.heroLabel)
+                phaseContent(list)
             }
-            .frameListKeys(rows: list.visible.map(\.id), router: state.router ?? FrameRouter(), chrome: chrome)
-            if let sheet = state.sheet {
-                PerCLISheet(model: EquipSheet.model(sheet, rows: list.all, kind: list.kind, clis: list.clis),
-                            isWorking: state.isPending(EquipControl.sheet(list.kind.page)),
-                            toggle: { state.sheetToggle($0) }, switchMode: { state.sheetSwitch($0) },
-                            cancel: { state.cancelSheet() }, confirm: { state.confirmSheet() })
-            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        .frameListKeys(rows: list.visible.map(\.id), router: state.router ?? FrameRouter(), chrome: chrome)
         .onDisappear { state.closeOverlays() }
     }
 
@@ -54,7 +46,11 @@ struct EquipList: View {
                 StatusBanner(.problem(.attention), title: "\(cli.name) folder could not be read",
                              detail: "\(rootName(cli, list)) could not be read, so every \(cli.name) figure is Unmeasurable here, not zero.") { tryAgain }
             }
-            table(list)
+            if list.isSearchMiss, let search = state.search {
+                FrameSearchNoMatch(items: list.kind.searchItems, search: search)
+            } else {
+                table(list)
+            }
         }
     }
 
@@ -82,7 +78,7 @@ struct EquipList: View {
     private func table(_ list: EquipListModel) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             groupHead(list)
-            VStack(alignment: .leading, spacing: 0) {
+            RowGroup {
                 EquipTableHeader(list: list, isLegendOpen: Binding(get: { state.isLegendOpen }, set: { state.isLegendOpen = $0 })) {
                     state.toggleAll(list.tickable)
                 }
@@ -95,7 +91,6 @@ struct EquipList: View {
                 }
                 ForEach(list.visible) { row in rowView(row, list: list) }
             }
-            .groupSurface()
         }
     }
 
@@ -161,7 +156,7 @@ struct EquipToggleCell: View {
     let state: EquipPageState
 
     var body: some View {
-        CLIToggleStrip(states: row.toggles) { toggle in state.press(toggle, on: row, from: .row) }
+        CLIToggleStrip(states: row.toggles, pending: state.pendingToggles(row)) { toggle in state.press(toggle, on: row, from: .row) }
             .popover(isPresented: isPresented, attachmentAnchor: .rect(.rect(anchor)), arrowEdge: .bottom) { confirmation }
     }
 

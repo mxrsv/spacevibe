@@ -18,15 +18,6 @@ struct EquipInspector: View {
     }
 }
 
-/// One fact line of the inspector (the mock's `dl.kv`).
-struct EquipFact: Equatable, Sendable {
-    let key: String
-    let value: String
-    var isPath = false
-    /// A quiet line under the value ("read by Codex and Amp").
-    var note: String?
-}
-
 private struct EquipInspectorBody: View {
     let row: EquipListRow
     let list: EquipListModel
@@ -42,23 +33,7 @@ private struct EquipInspectorBody: View {
             }
             action
             InspectorSection("CLIs") { EquipTileCell(row: row, state: state) }
-            Grid(alignment: .topLeading, horizontalSpacing: SpaceRole.step8, verticalSpacing: SpaceRole.step6) {
-                ForEach(Array(EquipInspectorFacts.facts(row, clis: list.clis, now: Date()).enumerated()), id: \.offset) { _, fact in
-                    GridRow {
-                        Text(fact.key).typeRole(.quiet).foregroundStyle(ColorRole.ink3)
-                        VStack(alignment: .leading, spacing: 0) {
-                            if fact.isPath {
-                                MiddleTruncatedText(fact.value).typeRole(.mono).foregroundStyle(ColorRole.ink)
-                            } else {
-                                Text(fact.value).typeRole(.quiet).foregroundStyle(ColorRole.ink).fixedSize(horizontal: false, vertical: true)
-                            }
-                            if let note = fact.note {
-                                Text(note).typeRole(.quiet).foregroundStyle(ColorRole.ink3).fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                    }
-                }
-            }
+            KeyValueList(facts: EquipInspectorFacts.facts(row, clis: list.clis, now: Date()))
             if let path = row.row.items.first?.path {
                 Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) } label: {
                     PushButtonLabel("Show in Finder", icon: .folderOpen, size: .small)
@@ -107,7 +82,7 @@ private struct EquipTileCell: View {
     let state: EquipPageState
 
     var body: some View {
-        CLITileGrid(states: row.toggles) { toggle in state.press(toggle, on: row, from: .tile) }
+        CLITileGrid(states: row.toggles, toggle: { toggle in state.press(toggle, on: row, from: .tile) }, pending: state.pendingToggles(row))
             .popover(isPresented: isPresented, attachmentAnchor: .rect(.rect(anchor)), arrowEdge: .bottom) { confirmation }
     }
 
@@ -149,7 +124,7 @@ enum EquipInspectorFacts {
 
     /// "Read-only · project payments-web", "Read-only · design-kit plugin"; nil for the user's own.
     static func readOnlyLine(_ row: EquipListRow) -> String? {
-        if row.row.isProject { return "Read-only · project \(EquipToggles.projectName(row.row) ?? "")" }
+        if row.row.isProject { return "Read-only · project \(CLIToggleStates.projectName(row.row) ?? "")" }
         guard row.row.isPlugin else { return nil }
         return "Read-only · \(pluginName(row.row)) plugin"
     }
@@ -159,11 +134,11 @@ enum EquipInspectorFacts {
     }
 
     /// Owner, each file (`Shared` when several shown CLIs read it, with who), Added.
-    static func facts(_ row: EquipListRow, clis: [CoreRegistryCLI], now: Date) -> [EquipFact] {
-        var facts: [EquipFact] = []
-        let owner = row.row.isProject ? "Project \(EquipToggles.projectName(row.row) ?? "")"
+    static func facts(_ row: EquipListRow, clis: [CoreRegistryCLI], now: Date) -> [InspectorFact] {
+        var facts: [InspectorFact] = []
+        let owner = row.row.isProject ? "Project \(CLIToggleStates.projectName(row.row) ?? "")"
             : row.row.isPlugin ? "\(pluginName(row.row)) plugin" : "You"
-        facts.append(EquipFact(key: "Owner", value: owner))
+        facts.append(InspectorFact(key: "Owner", value: owner))
         let shown = clis.filter { $0.supports.supports(row.row.kind) }.map(\.id)
         var seen: Set<String> = []
         for item in row.row.items {
@@ -171,12 +146,12 @@ enum EquipInspectorFacts {
             guard seen.insert(path).inserted else { continue }
             let readBy = row.readers.readers?.members.first { $0.id == item.id }?.readBy.filter(shown.contains) ?? []
             let shared = readBy.count > 1
-            facts.append(EquipFact(key: shared ? "Shared" : "File", value: path, isPath: true,
+            facts.append(InspectorFact(key: shared ? "Shared" : "File", value: path, isMono: true,
                                    note: shared ? "read by \(CLINames.sentence(row.readers.names(readBy)))" : nil))
         }
         if let seenAt = row.row.firstSeen {
             let added = DayWording.added(secondsAgo: now.timeIntervalSince(seenAt))
-            facts.append(EquipFact(key: "Added", value: added.hasPrefix("added ") ? String(added.dropFirst("added ".count)) : added))
+            facts.append(InspectorFact(key: "Added", value: added.hasPrefix("added ") ? String(added.dropFirst("added ".count)) : added))
         }
         return facts
     }

@@ -37,4 +37,8 @@ enum BlockRole {
     static let dialogListMaxHeight: CGFloat = 252
     /// A legend swatch (`.tleg i`, 12 × 12, radius 4).
     static let legendSwatch: CGFloat = 12
+    /// The toolbar's search field (`.srch`, 176 wide), and the main column width under which it folds to its icon button
+    /// (the mock's `srch`: `mw < 860`).
+    static let searchFieldWidth: CGFloat = 176
+    static let searchFoldsBelowListWidth: CGFloat = 860
 }

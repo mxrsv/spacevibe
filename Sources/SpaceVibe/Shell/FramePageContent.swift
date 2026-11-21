@@ -8,8 +8,11 @@ struct FramePageContent {
     var subtitle: String?
     /// The `?` popover beside the title (RD32).
     var help: String
-    /// The page's own toolbar controls (search, segmented filters, the CLI menu), between the title and the inspector button.
+    /// The page's own toolbar controls (segmented filters, the CLI menu), between the title and the inspector button.
     var toolbarControls: AnyView?
+    /// What the page's search finds, plural ("skills"): the frame draws the one search field after the page's controls, as
+    /// the mock's `srch()`, and ⌘F focuses it; the page filters its list by `FrameModel.search`. Nil: no search on the page.
+    var searchItems: String?
     /// The one primary or destructive button, drawn in the fixed-width slot at the toolbar's end.
     var primary: AnyView?
     var body: AnyView
@@ -17,6 +20,8 @@ struct FramePageContent {
     /// The selected row's actions, repeated at the overlay inspector's top below 1100 pt, where the overlay covers the row
     /// (DS-R10 Inspector).
     var overlayActions: AnyView?
+    /// The sheet or confirmation open on the page, drawn by the frame over the whole window (RD-R16 Dialogs).
+    var dialog: FrameDialog?
 
     /// A region that is not built yet (plan, FE-P9 shape): "Not built yet" on the list, and on a page that has an inspector
     /// the inspector's empty state.
@@ -28,6 +33,35 @@ struct FramePageContent {
             inspector: page.hasInspector
                 ? AnyView(PageEmptyState(icon: .sidebarSimple, text: "Select a row to see its details."))
                 : nil)
+    }
+}
+
+/// A sheet or a confirmation a page has open (RD-R16 Dialogs; the mock's `.scrim`): the frame draws it above the sidebar,
+/// the toolbar, the list and the inspector, so its scrim covers the whole window, as the mock draws it. While it is open the
+/// frame hides everything below it from VoiceOver and the keyboard, moves the focus into it and gives the focus back where it
+/// was when it closes; Esc cancels it before any other overlay (`FrameEscape`), and the menu bar's page, inspector, refresh,
+/// Undo and Item commands wait (`FrameCommandTarget.isModal`). The content is a `DialogSheet`, whose Cancel is the default
+/// button (Return); `id` tells one dialog from the next, so the focus moves in again when another one replaces it.
+struct FrameDialog {
+    let id: String
+    let content: AnyView
+    /// Esc: the dialog's Cancel. The dialog itself ignores it while its write runs.
+    let cancel: @MainActor () -> Void
+
+    init<Content: View>(id: String, cancel: @escaping @MainActor () -> Void, @ViewBuilder content: () -> Content) {
+        self.id = id
+        self.cancel = cancel
+        self.content = AnyView(content())
+    }
+}
+
+/// What Esc closes in the frame, first match wins: the open dialog, then the overlay inspector and the page help. Pure.
+enum FrameEscape: Equatable, Sendable {
+    case dialog, overlays, nothing
+
+    static func target(hasDialog: Bool, presentation: InspectorPresentation, isHelpOpen: Bool) -> FrameEscape {
+        if hasDialog { return .dialog }
+        return presentation == .overlay || isHelpOpen ? .overlays : .nothing
     }
 }
 

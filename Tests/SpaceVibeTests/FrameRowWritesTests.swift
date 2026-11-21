@@ -68,19 +68,19 @@ struct FrameRowWritesTests {
         store.stop()
     }
 
-    @Test("removeFrom names who lost the item and who still has it; nobody lost it is a copy")
+    @Test("removeFrom names who lost the item (the mock's toggle toast); nobody lost it is a copy")
     func removeFromToast() async {
         let (core, store, writes, toasts) = await setUp()
         let a = row([D.item("a", cells: ["claude": D.sessions(1), "codex": D.sessions(0)]), D.item("a", cli: .codex, cells: [:])])[0]
         core.lost = ["codex"]
         core.stillHave = ["claude"]
         await writes.perform(.removeFrom(a, clis: ["codex"], registry: registry))
-        #expect(toasts.current?.message == "Removed a from Codex. Claude still has it")
+        #expect(toasts.current?.message == "Removed a from Codex")
         #expect(core.sent["loadout.removeFrom"] == "claude:skill:a [\"codex\"]")
         core.lost = []
         core.stillHave = ["claude", "codex"]
         await writes.perform(.removeFrom(a, clis: ["codex"], registry: registry))
-        #expect(toasts.current?.message == "Removed a copy of a. Claude and Codex still have it")
+        #expect(toasts.current?.message == "Removed a copy of a")
         store.stop()
     }
 
@@ -108,10 +108,10 @@ struct FrameRowWritesTests {
         await writes.perform(.removeMany(rows, registry: registry))
         #expect(core.sent["loadout.removeMany"] == "[\"claude:skill:a\", \"codex:skill:agents:a\", \"claude:agent:b\", \"claude:hook:hh\"]")
         #expect(core.count("loadout.removeMany") == 1)
-        #expect(toasts.current?.message == "Removed Skill a, Subagent b and Hook \(rows[2].name) from Claude and Codex")
+        #expect(toasts.current?.message == "Removed Skill a, Subagent b and Hook \(rows[2].name) from Claude and Codex. settings.json was edited")
         #expect(toasts.undoStack.count == 1)
         await writes.perform(.removeMany([rows[0]], registry: registry))
-        #expect(toasts.current?.message == "Removed a from Claude and Codex")
+        #expect(toasts.current?.message == "Removed Skill a from Claude and Codex")
         store.stop()
     }
 

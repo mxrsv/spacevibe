@@ -138,7 +138,7 @@ private struct PushButtonBody: View {
         let shape = CornerRoleShape(corner)
         let onGlass = style.isOnGlass(look)
         HStack(spacing: style.kind == .primary || style.kind == .destructive ? SpaceRole.step8 : SpaceRole.step6) {
-            if style.isLoading { StillSpinner(onPrimary: style.kind == .primary) }
+            if style.isLoading { PendingMark(onPrimary: style.kind == .primary) }
             configuration.label
         }
         .typeRole(style.typeRole)
@@ -163,9 +163,10 @@ private struct PushButtonBody: View {
     }
 }
 
-/// Loading: the mock's `.spin`, a ring with its top quarter in the label's ink. Still (no loop, DS-R9).
-private struct StillSpinner: View {
-    let onPrimary: Bool
+/// Loading: the mock's `.spin`, a ring with its top quarter in the label's ink. Still (no loop, DS-R9). The one pending mark:
+/// a loading button and a logo toggle or tile whose write runs draw it.
+struct PendingMark: View {
+    var onPrimary = false
 
     var body: some View {
         ZStack {

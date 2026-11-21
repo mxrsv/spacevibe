@@ -3,14 +3,14 @@ import SwiftUI
 /// Claude Code's Rules page (RD-R2: first the hero `N rules allow a whole tool`, then the other CLIs' lines beside it): the
 /// hero and the strip, on Project the project and file bar, then by phase the reading band, the problem band, the empty
 /// state, or the Capabilities grid and the Rules table. The reference mock's `pageRules` (`src/d-hooks-rules.js`). The
-/// capability preview is drawn by this view's own overlay host, and the Add Rule sheet over it.
+/// capability preview is drawn by the frame's overlay host, and the Add Rule sheet is the page's dialog (`RulesFrame`).
 struct RulesList: View {
     let model: FrameModel
     let state: RulesPageState
     @Environment(FrameChrome.self) private var chrome
 
     var body: some View {
-        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope)
+        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope, query: model.search.query)
         SpaceVibeScrollView {
             VStack(alignment: .leading, spacing: SpaceRole.step12) {
                 RulesHeader(list: list) { state.isCLIMenuOpen = true }
@@ -20,13 +20,6 @@ struct RulesList: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frameListKeys(rows: list.rows.map(\.id), router: model.router, chrome: chrome)
-        .overlayHost()
-        .overlay(alignment: .center) {
-            if let draft = state.addDraft {
-                RulesAddSheet(state: state, draft: draft, fileName: RulesListModel.fileName(draft.file, projects: list.projects))
-                    .ignoresSafeArea()
-            }
-        }
     }
 
     @ViewBuilder
@@ -50,7 +43,7 @@ struct RulesList: View {
                 Button { state.openAdd() } label: { PushButtonLabel(RulesFrame.addTitle, icon: .plus, size: .small) }
                     .buttonStyle(PushButtonStyle(.control, size: .small))
                     .focusEffectDisabled()
-                    .disabled(!list.isWritable || state.addDraft != nil)
+                    .disabled(!list.isWritable)
             }
         case .normal:
             problemBand(list)
@@ -58,7 +51,11 @@ struct RulesList: View {
                 GroupHead("Capabilities")
                 RulesCapabilityGrid(list: list, state: state)
                 GroupHead("Rules")
-                table(list)
+                if list.isSearchMiss {
+                    FrameSearchNoMatch(items: RulesFrame.searchItems, search: model.search)
+                } else {
+                    table(list)
+                }
             }
         }
     }
@@ -76,7 +73,7 @@ struct RulesList: View {
     private func table(_ list: RulesListModel) -> some View {
         let ids = list.rows.map(\.id)
         let ticked = ids.filter(list.ticked.contains).count
-        return VStack(alignment: .leading, spacing: 0) {
+        return RowGroup {
             HStack(spacing: SpaceRole.step12) {
                 CheckboxCell(.header(ticked: ticked, total: ids.count), label: "Select every Rule shown") { state.toggleAll(ids) }
                     .disabled(ids.isEmpty || !list.isWritable)
@@ -96,7 +93,6 @@ struct RulesList: View {
                 rowView(row, list: list).rowStripe(index.isMultiple(of: 2))
             }
         }
-        .groupSurface()
     }
 
     private func caption(_ text: String) -> some View {

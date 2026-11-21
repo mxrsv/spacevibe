@@ -288,13 +288,13 @@ struct EquipListModelTests {
         let list = Self.model(clis: 6)
         let commit = try #require(list.row("skill::commit-helper"))
         let facts = EquipInspectorFacts.facts(commit, clis: list.clis, now: Self.now)
-        #expect(facts.first == EquipFact(key: "Owner", value: "You"))
-        #expect(facts.contains(EquipFact(key: "Shared", value: "~/.agents/skills/commit-helper", isPath: true, note: "read by Codex, Cursor CLI and Amp")))
+        #expect(facts.first == InspectorFact(key: "Owner", value: "You"))
+        #expect(facts.contains(InspectorFact(key: "Shared", value: "~/.agents/skills/commit-helper", isMono: true, note: "read by Codex, Cursor CLI and Amp")))
         #expect(EquipInspectorFacts.readOnlyLine(commit) == nil)
         #expect(EquipInspectorFacts.readOnlyLine(list.row("skill::brand-voice")!) == "Read-only · design-kit plugin")
         #expect(EquipInspectorFacts.readOnlyLine(list.row("skill:~/work/payments-web:checkout-flows")!) == "Read-only · project payments-web")
         let pdf = EquipInspectorFacts.facts(list.row("skill::pdf-extract")!, clis: list.clis, now: Self.now)
-        #expect(pdf.last == EquipFact(key: "Added", value: "41 days ago"))
+        #expect(pdf.last == InspectorFact(key: "Added", value: "41 days ago"))
         #expect(EquipInspectorFacts.isLong(String(repeating: "a", count: 161)) && !EquipInspectorFacts.isLong("short"))
     }
 }

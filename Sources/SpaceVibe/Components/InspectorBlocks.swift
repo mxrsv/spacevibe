@@ -65,11 +65,26 @@ struct InspectorNote: View {
 struct InspectorFact: Hashable, Identifiable, Sendable {
     let key: String
     let value: String
+    /// A path, a command or a rule's text: the value renders in SF Mono (RD-R5, DS-R2 `mono`).
+    var isMono = false
+    /// A quiet line under the value ("read by Codex and Amp").
+    var note: String?
+
+    init(key: String, value: String, isMono: Bool = false, note: String? = nil) {
+        self.key = key
+        self.value = value
+        self.isMono = isMono
+        self.note = note
+    }
 
     var id: String { key }
+
+    /// The type role of the value: `mono` for a path, a command or a rule, `quiet` otherwise.
+    var valueRole: TypeRole { isMono ? .mono : .quiet }
 }
 
-/// The facts (`.kv`): keys in an 84 column in `ink3`, values in `ink` that wrap anywhere, both `quiet`. VoiceOver reads each
+/// The facts (`.kv`): keys in an 84 column in `ink3`, values in `ink` that wrap anywhere, both `quiet`, a path, command or
+/// rule value in `mono` (`InspectorFact.isMono`). VoiceOver reads each
 /// pair as one line ("Project, payments-web").
 struct KeyValueList: View {
     let facts: [InspectorFact]
@@ -83,19 +98,28 @@ struct KeyValueList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: SpaceRole.step6) {
-            ForEach(facts) { fact in
+            // By position: a list may hold two facts with one key (two Files).
+            ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in
                 HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step8) {
                     Text(fact.key)
                         .foregroundStyle(ColorRole.ink3)
                         .frame(width: keyColumn, alignment: .leading)
-                    Text(verbatim: fact.value)
-                        .foregroundStyle(ColorRole.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: fact.value)
+                            .typeRole(fact.valueRole)
+                            .foregroundStyle(ColorRole.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let note = fact.note {
+                            Text(note)
+                                .foregroundStyle(ColorRole.ink3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .typeRole(.quiet)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(fact.key), \(fact.value)")
+                .accessibilityLabel(fact.note.map { "\(fact.key), \(fact.value), \($0)" } ?? "\(fact.key), \(fact.value)")
             }
         }
     }

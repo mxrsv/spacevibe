@@ -3,7 +3,7 @@ import Observation
 
 /// The Hooks page's own state while the frame shows it (AR3): the view state (ticks and filters) and the open `All CLIs` menu.
 /// The list, the toolbar and the inspector are separate views the frame places, so they share this one object; there is one
-/// per `FrameModel`, made the first time the page draws and dropped with the model.
+/// per `FrameModel` (`FrameModel.pageState`), made the first time the page draws.
 @MainActor
 @Observable
 final class HooksPageState {
@@ -16,23 +16,9 @@ final class HooksPageState {
         self.model = model
     }
 
-    // MARK: One per frame
-
-    private struct Entry {
-        weak var model: FrameModel?
-        let state: HooksPageState
-    }
-
-    private static var entries: [ObjectIdentifier: Entry] = [:]
-
     /// The page state of this frame's model.
     static func of(_ model: FrameModel) -> HooksPageState {
-        entries = entries.filter { $0.value.model != nil }
-        let key = ObjectIdentifier(model)
-        if let entry = entries[key], entry.model === model { return entry.state }
-        let state = HooksPageState(model: model)
-        entries[key] = Entry(model: model, state: state)
-        return state
+        model.pageState(HooksPageState.self) { HooksPageState(model: model) }
     }
 
     // MARK: View state

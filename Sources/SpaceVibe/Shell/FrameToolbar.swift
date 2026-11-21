@@ -9,6 +9,10 @@ struct FrameToolbar: View {
     /// Below 1100 pt with the overlay open the toolbar narrows beside it and leaves the title out (the mock's `.ovo .ttl`).
     let hidesTitle: Bool
     let chrome: FrameChrome
+    /// The page's search (`FramePageContent.searchItems`), and whether the main column is narrow enough to fold the field to
+    /// its icon button.
+    var search: FrameSearch?
+    var searchFolds = false
     @Environment(\.materialLook) private var look
 
     var body: some View {
@@ -39,6 +43,10 @@ struct FrameToolbar: View {
             }
             Spacer(minLength: 0)
             if let controls = content.toolbarControls { controls }
+            if let items = content.searchItems, let search {
+                @Bindable var search = search
+                SearchField(text: $search.text, label: "Search \(items)", folded: searchFolds, focusRequest: search.focusRequest)
+            }
             if content.inspector != nil {
                 let label = "\(chrome.isInspectorShown ? "Hide" : "Show") Inspector (\(FrameCommandMap.inspector))"
                 Button { chrome.toggleInspector() } label: { SpaceVibeIcon(frame: .sidebarSimple, size: .control) }

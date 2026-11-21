@@ -63,16 +63,25 @@ struct SpaceVibeFrameApp: App {
     @NSApplicationDelegateAdaptor(SpaceVibeAppDelegate.self) private var appDelegate
     @State private var shell: ShellModel
     @State private var env = AppEnvironment.shared
+    /// The frame's one model (store, writes, route, page states): the main window, Settings and the Journal share it.
+    @State private var model: FrameModel
     private let mode = LaunchMode.current()
 
     init() {
         _shell = State(initialValue: SpaceVibeApp.boot(mode: mode))
+        _model = State(initialValue: Self.makeModel(AppEnvironment.shared))
+    }
+
+    /// The app's frame model over `env`'s core and toasts.
+    @MainActor
+    static func makeModel(_ env: AppEnvironment) -> FrameModel {
+        FrameModel(core: env.goCore, toasts: env.toasts)
     }
 
     var body: some Scene {
         MainWindowScene(appDelegate: appDelegate) {
             Group {
-                if case .gallery = mode { ComponentGalleryWindow() } else { AppFrame(env: env) }
+                if case .gallery = mode { ComponentGalleryWindow() } else { AppFrame(model: model) }
             }
             .spaceVibeRoot(shell: shell, toasts: env.toasts, env: env)
         }
@@ -81,7 +90,7 @@ struct SpaceVibeFrameApp: App {
             AppInfoCommands(updates: env.updates)
         }
         Window("Settings", id: SettingsWindowFrame.windowID) {
-            SettingsWindowFrame()
+            SettingsWindowFrame(model: model)
                 .frameLookRoot()
                 .spaceVibeRoot(shell: shell, toasts: env.toasts, env: env)
         }
@@ -93,7 +102,7 @@ struct SpaceVibeFrameApp: App {
         .commandsRemoved()
         // Settings › Data › Show Journal (RB-R8).
         Window("Journal", id: JournalWindow.windowID) {
-            JournalWindow()
+            JournalWindow(model: model)
                 .frameLookRoot()
                 .spaceVibeRoot(shell: shell, toasts: env.toasts, env: env)
         }

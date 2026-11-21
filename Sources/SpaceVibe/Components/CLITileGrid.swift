@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// The inspector's "CLIs" grid for a Skill or Subagent (DS-R10 "CLI tile"; RD15, RD-R12; the mock's `.tiles`): one 72 × 60
-/// tile per CLI in the fixed order, at most 3 rows (`CLITileGridLayout`). The box around the logo is the information here
+/// tile per CLI in the fixed order, at most 3 rows (`CLITileGridLayout`); where four columns of 72 do not fit the width it is
+/// given (10 CLIs in the 336 inspector), every tile narrows by the same amount, as the mock's grid does. The box around the logo is the information here
 /// (its heat step), which the owner chose over FE-K4 for this block only (design notes §18).
 ///
 /// A tile is the same toggle as the row's logo and takes the same `CLIToggleState`, so the two never disagree. On: the heat
@@ -12,15 +13,21 @@ import SwiftUI
 struct CLITileGrid: View {
     let states: [CLIToggleState]
     let toggle: (CLIToggleState) -> Void
+    /// The CLIs whose write runs now: their tile shows the pending state and ignores another press.
+    var pending: Set<String> = []
+
+    @State private var available: CGFloat = 0
 
     var body: some View {
         let steps = HeatStep.steps(states)
+        let width = CLITileGridLayout.tileWidth(states.count, available: available)
         VStack(alignment: .leading, spacing: SpaceRole.step8) {
             VStack(alignment: .leading, spacing: BlockRole.tileGap) {
                 ForEach(Array(CLITileGridLayout.lines(states.count).enumerated()), id: \.offset) { _, line in
                     HStack(spacing: BlockRole.tileGap) {
                         ForEach(line, id: \.self) { index in
-                            CLITile(state: states[index], step: steps[index]) { toggle(states[index]) }
+                            CLITile(state: states[index], step: steps[index], width: width,
+                                    isPending: pending.contains(states[index].cli.id)) { toggle(states[index]) }
                         }
                     }
                 }
@@ -29,6 +36,8 @@ struct CLITileGrid: View {
             .accessibilityLabel("CLIs")
             CLITileLegend()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { available = $0 }
     }
 }
 
@@ -36,19 +45,37 @@ struct CLITileGrid: View {
 struct CLITile: View {
     let state: CLIToggleState
     let step: HeatStep
+    var width: CGFloat = BlockRole.tileWidth
+    /// Its write runs: drawn pending, and a second press does nothing (FE-P: pending at the control that started it).
+    var isPending = false
     let toggle: () -> Void
+
+    init(state: CLIToggleState, step: HeatStep, width: CGFloat = BlockRole.tileWidth, isPending: Bool = false,
+         toggle: @escaping () -> Void) {
+        self.state = state
+        self.step = step
+        self.width = width
+        self.isPending = isPending
+        self.toggle = toggle
+    }
 
     var body: some View {
         if state.isToggle {
-            Button(action: toggle) { EmptyView() }
-                .buttonStyle(CLITileStyle(state: state, step: step))
+            Button { if CLIToggleState.acceptsPress(isPending: isPending) { toggle() } } label: { EmptyView() }
+                .buttonStyle(CLITileStyle(state: state, step: step, width: width, isPending: isPending))
                 .focusEffectDisabled()
-                .help(state.tooltip)
+                .help(isPending ? CLIToggleState.pendingTooltip : state.tooltip)
                 .accessibilityLabel(state.cli.name)
-                .accessibilityValue(state.spokenState)
-                .accessibilityAddTraits(.isToggle)
+                .accessibilityValue(isPending ? CLIToggleState.pendingSpoken : state.spokenState)
+                .accessibilityAddTraits(isPending ? [.isToggle, .updatesFrequently] : .isToggle)
+                .onKeyPress(keys: [KeyEquivalent("a")]) { press in
+                    // RD39: A toggles the focused logo (D69); the tile is the same toggle.
+                    guard press.modifiers.isDisjoint(with: [.command, .control, .option]) else { return .ignored }
+                    if CLIToggleState.acceptsPress(isPending: isPending) { toggle() }
+                    return .handled
+                }
         } else {
-            CLITileFace(state: state, step: step, hovered: false)
+            CLITileFace(state: state, step: step, hovered: false, width: width)
                 .help(state.tooltip)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(state.cli.name)
@@ -61,22 +88,28 @@ struct CLITile: View {
 private struct CLITileStyle: ButtonStyle {
     let state: CLIToggleState
     let step: HeatStep
+    let width: CGFloat
+    let isPending: Bool
 
-    func makeBody(configuration: Configuration) -> some View { Styled(configuration: configuration, state: state, step: step) }
+    func makeBody(configuration: Configuration) -> some View {
+        Styled(configuration: configuration, state: state, step: step, width: width, isPending: isPending)
+    }
 
     private struct Styled: View {
         let configuration: ButtonStyle.Configuration
         let state: CLIToggleState
         let step: HeatStep
+        let width: CGFloat
+        let isPending: Bool
         @Environment(\.isFocused) private var isFocused
         @Environment(\.specimenInteraction) private var specimen
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var hovering = false
 
         var body: some View {
-            let hovered = hovering || specimen.contains(.hover)
-            let pressed = configuration.isPressed || specimen.contains(.press)
-            CLITileFace(state: state, step: step, hovered: hovered)
+            let hovered = !isPending && (hovering || specimen.contains(.hover))
+            let pressed = !isPending && (configuration.isPressed || specimen.contains(.press))
+            CLITileFace(state: state, step: step, hovered: hovered, width: width, isPending: isPending)
                 .offset(y: hovered && !pressed ? -MotionRole.lift(reduceMotion: reduceMotion) : 0)
                 .scaleEffect(MotionRole.scale(pressed: pressed, reduceMotion: reduceMotion))
                 .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.tileDuration), value: hovered)
@@ -93,6 +126,8 @@ private struct CLITileFace: View {
     let state: CLIToggleState
     let step: HeatStep
     let hovered: Bool
+    var width: CGFloat = BlockRole.tileWidth
+    var isPending = false
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: RadiusRole.step10, style: .continuous)
@@ -111,7 +146,8 @@ private struct CLITileFace: View {
                 .lineLimit(1)
         }
         .padding(.horizontal, SpaceRole.step2)
-        .frame(width: BlockRole.tileWidth, height: BlockRole.tileHeight)
+        .frame(width: width, height: BlockRole.tileHeight)
+        .opacity(isPending ? OpacityRole.dim : 1)
         .background { ground(shape) }
         .overlay {
             if hovered && state.isToggle { shape.fill(ColorRole.hoverFill) }
@@ -146,7 +182,10 @@ private struct CLITileFace: View {
 
     @ViewBuilder
     private var corner: some View {
-        if state.badge == .lock || state.badge == .link {
+        if isPending {
+            PendingMark()
+                .padding(SpaceRole.step4)
+        } else if state.badge == .lock || state.badge == .link {
             FrameGlyph(state.badge == .lock ? .lockSimple : .link, side: SizeRole.icon12, ink: ColorRole.ink3)
                 .padding(SpaceRole.step4)
         } else if state.showsCheck {

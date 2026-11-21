@@ -255,8 +255,9 @@ struct RulesPreviewWordingTests {
     func wording() {
         let rule = D.rule("Bash", wide: true)
         #expect(RulesWriteWording.changed(rule, to: .ask, in: "f") == "Changed Bash from Allow to Ask in f")
-        #expect(RulesWriteWording.removed([rule], from: "f") == "Removed Rule Bash from f")
-        #expect(RulesWriteWording.removed([rule, rule], from: "f") == "Removed 2 Rules from f")
+        // The mock's `removeIds` toast: what went, then the file that was edited.
+        #expect(RulesWriteWording.removed([rule], from: "~/.claude/settings.json") == "Removed Rule Bash. settings.json was edited")
+        #expect(RulesWriteWording.removed([rule, rule], from: "~/p/.claude/settings.local.json") == "Removed 2 Rules. settings.local.json was edited")
         #expect(RulesWriteWording.addPreview("  Bash(git log:*) ", as: .ask, to: "f") == "Writes Bash(git log:*) as Ask to f.")
     }
 

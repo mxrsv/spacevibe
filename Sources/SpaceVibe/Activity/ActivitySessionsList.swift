@@ -20,13 +20,13 @@ struct ActivitySessionsList: View {
                 RowTableHead(check: ItemRow<EmptyView, EmptyView>.Check(
                     value: data.headerCheck, label: "Select all shown sessions", toggle: { context.state.toggleAll(data) })) {
                     HStack(spacing: SpaceRole.step12) {
-                        Color.clear.frame(width: TableColumn.glyph)
+                        Color.clear.frame(width: TableColumnWidth.glyph)
                         Text("Session").frame(maxWidth: .infinity, alignment: .leading)
                         if isWide {
-                            Text("Current tool").frame(width: TableColumn.currentTool, alignment: .leading)
-                            Text("Age").frame(width: TableColumn.age, alignment: .leading)
+                            Text("Current tool").frame(width: TableColumnWidth.currentTool, alignment: .leading)
+                            Text("Age").frame(width: TableColumnWidth.age, alignment: .leading)
                         }
-                        Text("Action").frame(width: TableColumn.action, alignment: .trailing)
+                        Text("Action").frame(width: TableColumnWidth.sessionAction, alignment: .trailing)
                     }
                 }
                 .disabled(data.stoppableIDs.isEmpty)
@@ -58,18 +58,18 @@ struct ActivitySessionsList: View {
                     .help([row.session.title, row.subLine].joined(separator: "\n"))
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if isWide {
-                    toolCell(row).frame(width: TableColumn.currentTool, alignment: .leading)
+                    toolCell(row).frame(width: TableColumnWidth.currentTool, alignment: .leading)
                     Text(row.ageCell)
                         .typeRole(.quiet.figures)
                         .foregroundStyle(ColorRole.ink3)
                         .lineLimit(1)
                         .help(row.inspectorAge)
-                        .frame(width: TableColumn.age, alignment: .leading)
+                        .frame(width: TableColumnWidth.age, alignment: .leading)
                 }
                 HStack(spacing: SpaceRole.step8) {
                     if isSelected { FrameRowActionButtons(actions: actions) }
                 }
-                .frame(width: TableColumn.action, alignment: .trailing)
+                .frame(width: TableColumnWidth.sessionAction, alignment: .trailing)
             }
         }
         .frameRowActions(actions)
@@ -105,7 +105,7 @@ struct ActivitySessionGlyph: View {
                 Color.clear
             }
         }
-        .frame(width: TableColumn.glyph, height: TableColumn.glyph)
+        .frame(width: TableColumnWidth.glyph, height: TableColumnWidth.glyph)
         .help(row.stateWord)
         .accessibilityHidden(true)
     }

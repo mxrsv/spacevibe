@@ -61,6 +61,10 @@ final class FrameChrome {
     private(set) var windowWidth: CGFloat = 0
     /// Whether the page showing has an inspector (its region gave one).
     var pageHasInspector = false
+    /// Whether the page showing has a search field (its region named what it finds), so ⌘F has something to focus.
+    var pageHasSearch = false
+    /// Whether a page's dialog covers the window (`FramePageContent.dialog`): the menu bar's commands wait for it.
+    var isDialogOpen = false
     var isHelpOpen = false
     /// The row an arrow key moved the selection to (`frameListKeys`); nil after a pointer click, on another page and when the
     /// list loses focus. Only that row draws the focus bar.
@@ -71,6 +75,11 @@ final class FrameChrome {
     }
 
     var isInspectorShown: Bool { presentation != .hidden }
+
+    /// The main column's width: the window less the sidebar and a docked inspector (the mock's `mw`).
+    func listWidth(sidebar: CGFloat, inspector: CGFloat) -> CGFloat {
+        max(0, windowWidth - sidebar - (presentation == .docked ? inspector : 0))
+    }
 
     func setWindowWidth(_ width: CGFloat) {
         let wasOverlayWidth = FrameInspectorState.isOverlayWidth(windowWidth)

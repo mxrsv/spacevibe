@@ -86,7 +86,7 @@ enum EquipFrameShots {
             ready = true
         }
         try ShotHarness.wait("the \(kind.page.title) shot \(shot.name)") { ready }
-        let view = AppFrame(page: kind.page, env: env, look: look, sidebarValues: .from(model.store)) { _, _ in EquipFrame.content(kind, model: model) }
+        let view = AppFrame(model: model, look: look, sidebarValues: .from(model.store))
             .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)), toasts: toasts, env: env)
             .frame(width: shot.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: "frame-\(kind.page.rawValue)-\(shot.name)-\(look)", choice: choice, to: directory)

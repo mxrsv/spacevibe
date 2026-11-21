@@ -198,7 +198,8 @@ struct FrameWorld: Sendable {
             if let early = gate([.activity], usageToo: false) { return early }
             return .count(waiting.isEmpty ? running.count : waiting.count, tone: waiting.isEmpty ? nil : .attention)
         case .clean:
-            if let early = gate(usage.union([.activity]), usageToo: true) { return early }
+            // `.clean` is loading or failed only once Clean has asked for a scan (`FrameStore.readClean`).
+            if let early = gate(usage.union([.activity, .clean]), usageToo: true) { return early }
             return clean.cleanableBytes.map(PageFigure.bytes) ?? .notMeasured
         }
     }

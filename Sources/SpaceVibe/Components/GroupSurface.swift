@@ -1,8 +1,9 @@
 import SwiftUI
 
 extension View {
-    /// A group of rows on its own ground (DS-R10 "Group"; the mock's `.grp`): the group surface in the look's group corner,
-    /// clipped, so rows group by a background step and space, never by divider lines (FE-SP5).
+    /// The group ground (DS-R10 "Group"; the mock's `.grp`), the one implementation of it: the group surface in the look's
+    /// group corner, clipped, so content groups by a background step and space, never by divider lines (FE-SP5). Rows go in
+    /// `RowGroup`, a padded card is `GroupCard`; both stand on this.
     func groupSurface() -> some View {
         modifier(GroupSurfaceGround())
     }

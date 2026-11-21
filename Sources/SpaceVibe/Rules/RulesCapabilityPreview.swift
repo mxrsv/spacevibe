@@ -91,10 +91,11 @@ enum RulesWriteWording {
         "Added \(rule) as \(PermissionDial.title(verdict)) in \(fileName)"
     }
 
-    /// "Removed Rule Bash from ~/.claude/settings.json", "Removed 3 Rules from …".
+    /// "Removed Rule Bash. settings.json was edited", "Removed 3 Rules. settings.local.json was edited" (the mock's
+    /// `removeIds` toast, with the file the rules were in).
     static func removed(_ rules: [CoreRule], from fileName: String) -> String {
         let what = rules.count == 1 ? "Rule \(rules[0].rule)" : NumberWording.plural(rules.count, "Rule")
-        return "Removed \(what) from \(fileName)"
+        return "Removed \(what)" + FrameWrite.edited((fileName as NSString).lastPathComponent)
     }
 
     /// The Add Rule sheet's line before anything is written: "Writes Bash(git log:*) as Ask to ~/.claude/settings.json."

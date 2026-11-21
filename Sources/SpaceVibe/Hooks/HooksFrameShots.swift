@@ -27,7 +27,7 @@ enum HooksFrameShots {
         Shot(name: "normal-1600", scenario: .normal, width: 1600),
         Shot(name: "selected", scenario: .normal) { model, _ in model.router.select(deadHook) },
         Shot(name: "ticked", scenario: .normal) { model, state in
-            state.toggleAll(HooksListModel.from(model.store, view: state.view).suggested)
+            state.toggleAll(HooksListModel.from(model.store, view: state.view, query: model.search.query).suggested)
         },
         Shot(name: "event", scenario: .normal) { _, state in state.filter(event: "PreToolUse") },
         Shot(name: "many", scenario: .many),
@@ -66,7 +66,7 @@ enum HooksFrameShots {
             ready = true
         }
         try ShotHarness.wait("the Hooks shot \(shot.name)") { ready }
-        let view = AppFrame(page: .hooks, env: env, look: look, sidebarValues: .from(model.store)) { _, _ in HooksFrame.content(model: model) }
+        let view = AppFrame(model: model, look: look, sidebarValues: .from(model.store))
             .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)), toasts: toasts, env: env)
             .frame(width: shot.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: "frame-hooks-\(shot.name)-\(look)", choice: choice, to: directory)
@@ -82,7 +82,7 @@ enum HooksFrameShots {
 
     private static func remove(_ id: String, model: FrameModel, state: HooksPageState) async {
         model.router.select(id)
-        guard let row = HooksListModel.from(model.store, view: state.view).row(id), let write = HooksRemoval.write([row], registry: model.store.snapshot.registry) else { return }
+        guard let row = HooksListModel.from(model.store, view: state.view, query: model.search.query).row(id), let write = HooksRemoval.write([row], registry: model.store.snapshot.registry) else { return }
         await model.writes.perform(write)
     }
 }

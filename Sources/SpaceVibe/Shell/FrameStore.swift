@@ -7,6 +7,8 @@ enum FrameSource: Hashable, Sendable {
     case rules(FrameScope)
     /// `findings.kept`: the Keep list, kept in `facts.findings.kept`.
     case kept
+    /// `clean.scan`: what Clean can move, kept in `facts.clean`. Never part of the refresh (`FrameStore.readClean`).
+    case clean
 }
 
 /// Where one source stands. A failure keeps the last reading: `failed` with data is a refresh that failed, without data a
@@ -29,7 +31,8 @@ enum FrameSourceState: Equatable, Sendable {
 ///   refresh subscribes again.
 /// - A later answer of the same source wins; an older one that arrives late is dropped.
 ///
-/// It exists only while the redesign switch is on: `AppFrame` creates it. The v5 pages keep their own reads.
+/// It exists only while the redesign switch is on: the app's `FrameModel` holds it (`SpaceVibeFrameApp`), and the main,
+/// Settings and Journal windows read the same one. The v5 pages keep their own reads.
 @MainActor
 @Observable
 final class FrameStore {
@@ -46,9 +49,10 @@ final class FrameStore {
     /// `cliPreferences`, `world` takes `hidden` and `findings.pinned` from Settings › CLIs instead of from here.
     var facts = FrameFacts()
 
-    /// The running frame's store, for the windows beside it (Settings, Journal; RB-R8): set by `start()`, so it is the store
-    /// `AppFrame` kept, never one SwiftUI built and dropped. Nil before the main window starts and after it closes.
-    static private(set) weak var running: FrameStore?
+    /// Reads `clean.scan` (RB-R5 sets it). The scan walks every log of every CLI (the RB-E7 build-review), so it is never
+    /// polled: the 10 s activation refresh skips it, and only `readClean()` runs it, which RB-R5 calls when Clean opens and
+    /// ⌘R (`refresh(force: true)`) calls too. Nil: Clean is not wired yet and nothing reads it.
+    @ObservationIgnored var cleanScanner: (@MainActor () async throws -> CleanScan)?
 
     /// Settings › CLIs (Show, Balance pins). Nil: `facts.hidden` and `facts.findings.pinned` stand as set (tests).
     @ObservationIgnored let cliPreferences: CLIPreferences?
@@ -93,7 +97,6 @@ final class FrameStore {
     func start(now: Date = Date()) async {
         guard !isStarted else { return }
         isStarted = true
-        Self.running = self
         lastRefresh = now
         subscribe()
         await readEverything(refreshProjects: true)
@@ -105,7 +108,27 @@ final class FrameStore {
         if !force, let last = lastRefresh, now.timeIntervalSince(last) < Self.refreshInterval { return }
         lastRefresh = now
         if subscription == nil { subscribe() }
-        await readEverything(refreshProjects: force)
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.readEverything(refreshProjects: force) }
+            if force { group.addTask { await self.readClean() } }
+        }
+    }
+
+    /// `clean.scan` now, through `cleanScanner`: on opening Clean and on ⌘R only, never on the activation refresh. A failure
+    /// keeps the last scan (`failed` with data). Nothing happens without a scanner.
+    func readClean() async {
+        guard let cleanScanner else { return }
+        let generation = begin(.clean)
+        do {
+            let scan = try await cleanScanner()
+            guard isLatest(.clean, generation) else { return }
+            facts.clean = scan
+            states[.clean] = .ready
+        } catch is CancellationError {
+            return
+        } catch {
+            if isLatest(.clean, generation) { states[.clean] = .failed(AppEnvironment.message(error)) }
+        }
     }
 
     /// Reads these sources again, at once. A write and its Undo call it with the sources they touched.
@@ -142,6 +165,7 @@ final class FrameStore {
         case .journal: snapshot.journal != nil
         case .rules(let file): snapshot.rules[file] != nil
         case .kept: hasKept
+        case .clean: facts.clean != nil
         }
     }
 
@@ -195,6 +219,10 @@ final class FrameStore {
                     facts.findings.kept = Set(value.kept)
                     hasKept = true
                 }
+            case .clean:
+                // Only `readClean` reads it (never polled); a write that touched Clean asks for it here.
+                await readClean()
+                return
             case .rules(let file):
                 let value = try await core.rulesSnapshot(scope: file.scope, dir: file.dir, refreshProjects: refreshProjects && file == .global)
                 guard isLatest(source, generation) else { return }

@@ -207,7 +207,7 @@ struct InboxPageTests {
     func tiles() {
         let world = S.world(.normal, clis: 10)
         let item = world.rows.first { $0.id == "skill::pdf-extract" }!
-        let tiles = ItemTileStates.states(of: item, in: world)
+        let tiles = CLIToggleStates.states(of: item, in: world)
         #expect(tiles.count == 10)
         #expect(tiles.first { $0.cli.id == "aider" }?.presence == .notSupported(noun: "Skills"))
         let codex = tiles.first { $0.cli.id == "codex" }!

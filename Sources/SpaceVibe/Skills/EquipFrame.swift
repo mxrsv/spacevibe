@@ -12,11 +12,16 @@ enum EquipFrame {
         return FramePageContent(
             help: kind.page.help,
             toolbarControls: list.phase == .empty ? nil : AnyView(EquipToolbarControls(state: state)),
+            // The mock draws no search on the empty page (`mid` is empty there).
+            searchItems: list.phase == .empty ? nil : kind.searchItems,
             primary: AnyView(EquipRemoveSelectedButton(state: state)),
             body: AnyView(EquipList(state: state)),
             inspector: AnyView(EquipInspector(state: state)),
             // The rows draw no action buttons (their logos are the actions, as the mock's), so the overlay repeats none.
-            overlayActions: nil)
+            overlayActions: nil,
+            dialog: state.sheet.map { _ in
+                FrameDialog(id: "\(kind.page.rawValue).sheet", cancel: { state.cancelSheet() }) { EquipSheetDialog(state: state) }
+            })
     }
 
     /// A row's actions as its context-menu items, accessibility actions and the Item menu (RD-R16): `Add to…` and `Remove…`
@@ -56,7 +61,21 @@ struct EquipToolbarControls: View {
                               close: { state.isCLIMenuOpen = false })
                 }
         }
-        .disabled(state.sheet != nil)
+    }
+}
+
+/// The per-CLI sheet (RD-R11 "Bulk and Remove…") as the page's dialog over the whole window (RD-R16).
+struct EquipSheetDialog: View {
+    let state: EquipPageState
+
+    var body: some View {
+        if let sheet = state.sheet {
+            let list = state.list()
+            PerCLISheet(model: EquipSheet.model(sheet, rows: list.all, kind: list.kind, clis: list.clis),
+                        isWorking: state.isPending(EquipControl.sheet(list.kind.page)),
+                        toggle: { state.sheetToggle($0) }, switchMode: { state.sheetSwitch($0) },
+                        cancel: { state.cancelSheet() }, confirm: { state.confirmSheet() })
+        }
     }
 }
 
@@ -74,7 +93,7 @@ struct EquipRemoveSelectedButton: View {
             }
             .buttonStyle(PushButtonStyle(.destructive, isLoading: state.isPending(EquipControl.sheet(list.kind.page))))
             .focusEffectDisabled()
-            .disabled(list.picked.isEmpty || state.sheet != nil)
+            .disabled(list.picked.isEmpty)
             .help(title)
         } else {
             Color.clear.accessibilityHidden(true)

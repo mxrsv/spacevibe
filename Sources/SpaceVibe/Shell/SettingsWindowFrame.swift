@@ -46,8 +46,8 @@ struct SettingsWindowPreview {
 /// (RB-R8: General, CLIs, Limits, Data, Updates; `SettingsPanes.swift`). Declared as its own `Window` scene by
 /// `SpaceVibeFrameApp` only, so a v5 launch never has it; the v5 Settings overlay stays until RB-X1.
 ///
-/// It reads the frame's store (`FrameStore.running`, AR2) for the registry, the status-line snapshot and the Journal, and
-/// edits the app's preferences: theme and Session widget in the v5 stores, the Weekly lead in `LimitsCountdownPreferences`,
+/// It reads the app's frame model (`SpaceVibeFrameApp`: the one the main window shows, AR2) for the registry, the
+/// status-line snapshot and the Journal, and edits the app's preferences: theme and Session widget in the v5 stores, the Weekly lead in `LimitsCountdownPreferences`,
 /// Show and Balance pins in `CLIPreferences`, Open at login through macOS (`LoginItem`). A switch applies at once and is its
 /// own undo, so no toast follows; a refused one (macOS said no, the Show guard, a fourth pin) shows the error toast in this
 /// window's own toast host.
@@ -59,10 +59,13 @@ struct SettingsWindowFrame: View {
     @State private var pane: SettingsPane
     @State private var toasts: ToastCenter
     private let preview: SettingsWindowPreview?
+    /// The app's frame model; nil in a screenshot, which reads `preview` instead.
+    private let model: FrameModel?
     @Environment(\.openWindow) private var openWindow
     @Environment(\.glancePreferences) private var glancePreferences
 
-    init(pane: SettingsPane = .general, preview: SettingsWindowPreview? = nil) {
+    init(model: FrameModel? = nil, pane: SettingsPane = .general, preview: SettingsWindowPreview? = nil) {
+        self.model = model
         _pane = State(initialValue: preview?.state.openingPane ?? pane)
         let toasts = ToastCenter(announce: preview == nil)
         if let refusal = preview?.refusal { toasts.show(refusal, tone: .danger) }
@@ -95,11 +98,13 @@ struct SettingsWindowFrame: View {
         .ignoresSafeArea()
         .navigationTitle("Settings")
         .onExitCommand { toasts.dismiss() }
+        // Opened before the main window has read anything, the panes still get the registry (`start` runs once).
+        .task { await model?.store.start() }
     }
 
     private func context(now: Date) -> SettingsPaneContext {
         SettingsPaneContext(
-            facts: preview?.facts ?? SettingsFacts(store: FrameStore.running), now: now,
+            facts: preview?.facts ?? SettingsFacts(store: model?.store), now: now,
             cli: preview?.cli ?? .shared, glance: preview?.glance ?? glancePreferences ?? .shared,
             countdown: preview?.countdown ?? LimitsCountdownPreferences.shared, loginItem: preview?.loginItem ?? .shared,
             dataFolder: preview?.dataFolder ?? SettingsDataWording.dataFolder(),

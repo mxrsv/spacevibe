@@ -154,7 +154,7 @@ struct RulesFrameWritesTests {
         state.removeSelected(list.removal, fileName: list.fileName)
         #expect(await eventually { state.view.ticked.isEmpty })
         #expect(core.sent("rules.removeMany") == ["rules.removeMany global  [\"global:allow:Bash\", \"global:deny:Read(./.env)\"]"])
-        #expect(toasts.current?.message == "Removed 2 Rules from ~/.claude/settings.json" && toasts.undoStack.count == 1)
+        #expect(toasts.current?.message == "Removed 2 Rules. settings.json was edited" && toasts.undoStack.count == 1)
         model.store.stop()
     }
 

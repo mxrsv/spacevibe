@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The Inbox list (RD-R4, RD-R13; the reference mock's `pageInbox`): the hero, the scanning or problem band, the groups by job
 /// with severity once at each head, the Balance and kept lines, and the kept group while shown. The shared-file confirmation
-/// sits over the list while it is open.
+/// is the page's dialog, which the frame draws over the whole window (`InboxConfirmationDialog`).
 struct InboxList: View {
     let page: InboxPage
     let selection: String?
@@ -23,7 +23,10 @@ struct InboxList: View {
                     .padding(.bottom, SpaceRole.step20)
                 if let banner = page.banner { bannerView(banner, actions: actions).padding(.bottom, SpaceRole.step16) }
                 if page.banner == .scanning {
-                    SkeletonRows(count: 6).groupSurface()
+                    RowGroup { SkeletonRows(count: 6) }
+                }
+                if page.isSearchMiss {
+                    FrameSearchNoMatch(items: InboxPage.searchItems, search: actions.model.search)
                 }
                 if page.showsList {
                     if page.isClear {
@@ -37,18 +40,16 @@ struct InboxList: View {
                         GroupHead(group.title, count: group.rows.count, severity: group.severity) {
                             if !group.suggested.isEmpty { pick(group.suggested) }
                         }
-                        VStack(spacing: 0) {
+                        RowGroup {
                             ForEach(group.rows) { row in rowView(row, evidence: evidence, actions: actions) }
                         }
-                        .groupSurface()
                     }
                     lines
                     if page.showsKept {
                         GroupHead("Kept", count: page.kept.count)
-                        VStack(spacing: 0) {
+                        RowGroup {
                             ForEach(page.kept) { row in rowView(row, evidence: evidence, actions: actions) }
                         }
-                        .groupSurface()
                     }
                 }
             }
@@ -56,12 +57,6 @@ struct InboxList: View {
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { state.listWidth = $0 }
         .frameListKeys(rows: page.order, router: actions.model.router, chrome: chrome)
-        .overlay(alignment: .center) {
-            if let confirmation = state.confirming {
-                RemoveConfirmation(items: confirmation.items, isWorking: actions.isConfirming, cancel: actions.cancelConfirmation,
-                                   remove: actions.confirm)
-            }
-        }
     }
 
     private func rowView(_ row: InboxRowModel, evidence: Bool, actions: InboxActions) -> some View {

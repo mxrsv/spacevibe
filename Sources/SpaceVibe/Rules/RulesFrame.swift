@@ -7,8 +7,9 @@ enum RulesFrame {
     @MainActor
     static func content(model: FrameModel) -> FramePageContent {
         let state = RulesPageState.of(model)
-        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope)
+        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope, query: model.search.query)
         let controls = AnyView(RulesToolbarControls(model: model, state: state))
+        // Another CLI's page lists no rules, so it has nothing to search (the mock's `srch()` filters the rule table).
         guard list.isClaudePage else {
             return FramePageContent(help: FramePage.rules.help, toolbarControls: controls,
                                     body: AnyView(RulesReadOnlyList(model: model, state: state)))
@@ -17,15 +18,22 @@ enum RulesFrame {
         return FramePageContent(
             help: FramePage.rules.help,
             toolbarControls: controls,
+            searchItems: Self.searchItems,
             primary: AnyView(RulesPrimaryButton(model: model, state: state)),
             body: AnyView(RulesList(model: model, state: state)),
             inspector: AnyView(RulesInspector(model: model, state: state)),
             overlayActions: selected.map { row in
                 AnyView(RulesRowActionButtons(actions: actions(for: row, list: list, state: state), state: state, file: list.file))
+            },
+            dialog: state.addDraft.map { draft in
+                FrameDialog(id: "rules.add", cancel: { state.closeAdd() }) {
+                    RulesAddSheet(state: state, draft: draft, fileName: RulesListModel.fileName(draft.file, projects: list.projects))
+                }
             }
         )
     }
 
+    static let searchItems = "rules"
     static let changeToAskTitle = "Change to Ask"
     static let removeTitle = "Remove Rule"
     static let addTitle = "Add Rule\u{2026}"
@@ -62,7 +70,7 @@ struct RulesToolbarControls: View {
 
     var body: some View {
         @Bindable var state = state
-        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope)
+        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope, query: model.search.query)
         HStack(spacing: SpaceRole.step8) {
             MenuTrigger(title: list.cli.name, lead: .cli(CLIIdentity(id: list.cli.id, name: list.cli.name)), isOpen: state.isCLIMenuOpen,
                         label: "CLI") { state.isCLIMenuOpen.toggle() }
@@ -90,7 +98,7 @@ struct RulesPrimaryButton: View {
     let state: RulesPageState
 
     var body: some View {
-        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope)
+        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope, query: model.search.query)
         switch list.primary {
         case .none:
             EmptyView()
@@ -98,7 +106,6 @@ struct RulesPrimaryButton: View {
             Button { state.openAdd() } label: { PushButtonLabel(RulesFrame.addTitle, icon: .plus).lineLimit(1) }
                 .buttonStyle(PushButtonStyle(.primary))
                 .focusEffectDisabled()
-                .disabled(state.addDraft != nil)
                 .help("Add an Allow, Ask or Deny rule to \(list.fileName)")
         case .removeSelected(let count):
             Button { state.removeSelected(list.removal, fileName: list.fileName) } label: {

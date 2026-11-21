@@ -47,6 +47,8 @@ struct ActivityPageInput: Sendable {
     var elapsedMs: Double = 0
     var now = Date()
     var calendar = Calendar.current
+    /// The toolbar's search (⌘F): both tabs keep only the rows it matches; the hero counts every session.
+    var query = FrameSearchQuery("")
 }
 
 /// One session as the Sessions table shows it (the mock's `pageActivity` rows and `sessInspector`). Pure wording over the
@@ -238,6 +240,8 @@ struct ActivityPageData: Sendable {
     let phase: ActivityPhase
     let groups: [ActivitySessionGroup]
     let failures: [ActivityFailureRow]
+    /// The search hides every row of the tab showing while it has some: "No sessions match" with Clear Search.
+    let isSearchMiss: Bool
 
     init(_ input: ActivityPageInput) {
         self.input = input
@@ -251,7 +255,10 @@ struct ActivityPageData: Sendable {
         let name = { (cli: CoreCLI) in names[cli.rawValue] ?? cli.label }
         let clis = input.clis.filter { input.scope == nil || $0.id == input.scope }
 
-        let rows = input.sessions.map { ActivitySessionRow($0, cliName: name($0.cli), elapsedMs: input.elapsedMs) }
+        let everyRow = input.sessions.map { ActivitySessionRow($0, cliName: name($0.cli), elapsedMs: input.elapsedMs) }
+        let rows = input.query.filter(everyRow) { row in
+            [row.session.title, row.session.project, row.cliName, row.session.currentTool?.name, row.session.currentTool?.target]
+        }
         groups = clis.compactMap { cli in
             let mine = rows.enumerated().filter { $0.element.session.cli.rawValue == cli.id }
                 .sorted { ($0.element.rank, $0.offset) < ($1.element.rank, $1.offset) }.map(\.element)
@@ -259,13 +266,24 @@ struct ActivityPageData: Sendable {
         }
 
         let shown = Set(clis.map(\.id))
-        failures = input.failures.enumerated()
+        let everyFailure = input.failures.enumerated()
             .filter { shown.contains($0.element.cli.rawValue) }
             .map { (offset: $0.offset, row: ActivityFailureRow($0.element, cliName: name($0.element.cli), now: input.now, calendar: input.calendar)) }
             .filter { !input.dismissed.contains($0.row.item.dismissKey) }
             .sorted { ($0.row.failure.count, -$0.offset) > ($1.row.failure.count, -$1.offset) }
             .map(\.row)
+        failures = input.query.filter(everyFailure) { row in
+            [row.title, row.failure.title, row.failure.reason, row.cliName] + row.failure.projects
+        }
+        let hidden = switch input.tab {
+        case .sessions: groups.isEmpty && everyRow.contains { row in clis.contains { $0.id == row.session.cli.rawValue } }
+        case .failures: failures.isEmpty && !everyFailure.isEmpty
+        }
+        isSearchMiss = !input.query.isEmpty && hidden
     }
+
+    /// What the toolbar's search finds on the tab showing.
+    var searchItems: String { input.tab == .sessions ? "sessions" : "failures" }
 
     // MARK: Hero
 

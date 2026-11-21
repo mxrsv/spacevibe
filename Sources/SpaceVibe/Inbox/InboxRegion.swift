@@ -3,10 +3,8 @@ import Observation
 import SwiftUI
 
 /// The Inbox's own view state (AR3: never in the store): the ticked rows, whether kept findings are listed, the removal
-/// waiting for its confirmation and the list's width. Nothing is ticked at first (RD41).
-///
-/// `FrameModel` has no home for a page's view state and `FramePageContent.region` is rebuilt on every frame render, so one
-/// state lives per model here (`of(_:)`), dropped with its model.
+/// waiting for its confirmation and the list's width. Nothing is ticked at first (RD41). One per `FrameModel`
+/// (`FrameModel.pageState`).
 @MainActor
 @Observable
 final class InboxPageState {
@@ -15,17 +13,8 @@ final class InboxPageState {
     var confirming: InboxConfirmation?
     var listWidth: CGFloat = 0
 
-    @ObservationIgnored private static var states: [ObjectIdentifier: (model: WeakModel, state: InboxPageState)] = [:]
-
-    struct WeakModel { weak var model: FrameModel? }
-
     static func of(_ model: FrameModel) -> InboxPageState {
-        states = states.filter { $0.value.model.model != nil }
-        let key = ObjectIdentifier(model)
-        if let found = states[key] { return found.state }
-        let state = InboxPageState()
-        states[key] = (WeakModel(model: model), state)
-        return state
+        model.pageState(InboxPageState.self) { InboxPageState() }
     }
 
     func toggleTick(_ id: String) {
@@ -89,18 +78,36 @@ extension FramePageContent {
         let state = state ?? InboxPageState.of(model)
         let inputs = fixed ?? .live(model.store)
         let page = InboxPage(world: inputs.world, figure: inputs.figure, failure: inputs.failure, ticked: state.ticked,
-                             showsKept: state.showsKept, hasHost: { host.hostApp($0) != nil }, now: inputs.now)
+                             showsKept: state.showsKept, hasHost: { host.hostApp($0) != nil }, query: model.search.query,
+                             now: inputs.now)
         let selection = fixed == nil ? model.router.route.selection : inputs.selection
         let actions = InboxActions(model: model, state: state, page: page, world: inputs.world, host: host)
         let selected = page.row(selection)
         let narrow = !FindingRowLayout.showsEvidence(listWidth: state.listWidth)
         return FramePageContent(
             help: FramePage.inbox.help,
+            searchItems: InboxPage.searchItems,
             primary: page.primary == .hidden ? nil : AnyView(InboxRemoveButton(page: page, narrow: narrow, actions: actions)),
             body: AnyView(InboxList(page: page, selection: selection, state: state, actions: actions)),
             inspector: AnyView(InboxInspector(row: selected, world: inputs.world, now: inputs.now, actions: actions,
                                               hasRows: !page.rows.isEmpty || !page.kept.isEmpty)),
-            overlayActions: selected.map { AnyView(InboxOverlayActions(row: $0, actions: actions)) })
+            overlayActions: selected.map { AnyView(InboxOverlayActions(row: $0, actions: actions)) },
+            dialog: state.confirming.map { confirmation in
+                FrameDialog(id: "inbox.confirm", cancel: actions.cancelConfirmation) {
+                    InboxConfirmationDialog(confirmation: confirmation, actions: actions)
+                }
+            })
+    }
+}
+
+/// The removal that names its readers first (RD-R11), as the page's dialog over the whole window (RD-R16).
+struct InboxConfirmationDialog: View {
+    let confirmation: InboxConfirmation
+    let actions: InboxActions
+
+    var body: some View {
+        RemoveConfirmation(items: confirmation.items, isWorking: actions.isConfirming, cancel: actions.cancelConfirmation,
+                           remove: actions.confirm)
     }
 }
 
@@ -210,6 +217,8 @@ struct InboxActions {
     /// A tile turned on or off in the inspector (RD-R11): on copies into that CLI's folder; off removes every file it reads
     /// the item from, asking first when another CLI reads one of them.
     func toggleTile(_ tile: CLIToggleState, row: FrameRow) {
+        // A second press while the row's tile write runs is ignored (the tiles show it pending).
+        guard !writes.isPending("tile:\(row.id)") else { return }
         let registry = world.snapshot.registry
         guard tile.isOn else {
             Task { await writes.perform(.copyTo(row, targets: [tile.cli.id], registry: registry, control: "tile:\(row.id)")) }

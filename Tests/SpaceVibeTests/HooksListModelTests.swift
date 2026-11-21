@@ -289,7 +289,8 @@ struct HooksListModelTests {
         #expect(await model.writes.perform(write))
         #expect(core.count("loadout.removeMany") == 1)
         #expect(core.sent["loadout.removeMany"] == "[\"claude:hook:lint\"]")
-        #expect(toasts.current?.message == "Removed lint.sh from Claude")
+        // The mock's sentence: the kind, and the file a Hook removal edits.
+        #expect(toasts.current?.message == "Removed Hook lint.sh from Claude. settings.json was edited")
         #expect(toasts.canUndoByKey)
 
         core.writeResult = .failure(CoreError("Couldn’t remove lint.sh: ~/.claude/settings.json changed since SpaceVibe read it. Nothing changed.", status: 409))
@@ -311,7 +312,7 @@ struct HooksListModelTests {
         #expect(await model.writes.perform(write))
         #expect(core.count("loadout.removeMany") == 1)
         #expect(core.sent["loadout.removeMany"].map { $0.contains("claude:hook:lint") && $0.contains("claude:hook:notify") } == true)
-        #expect(toasts.current?.message == "Removed 2 Hooks from Claude")
+        #expect(toasts.current?.message == "Removed 2 Hooks from Claude. settings.json was edited")
     }
 
     @Test("the page state is one per frame model and drops a removed row's tick and selection")
@@ -346,7 +347,7 @@ struct HooksListModelTests {
         #expect(facts.first { $0.key == "Average" }?.value == "214 ms")
         #expect(HooksInspectorFacts.headline(format, holders: list.holders(of: format)) == "PostToolUse · Claude") // FrameTestData names a CLI by its capitalized id
         let lint = list.row("hook::lint")!
-        #expect(HooksInspectorFacts.facts(lint, holders: [], now: FrameTestData.now).contains(HooksInspectorFact(key: "Script", value: "File is missing")))
+        #expect(HooksInspectorFacts.facts(lint, holders: [], now: FrameTestData.now).contains(InspectorFact(key: "Script", value: "File is missing")))
         let codex = list.row("hook::cx-guard")!
         #expect(HooksInspectorFacts.facts(codex, holders: list.holders(of: codex), now: FrameTestData.now).first?.value
                 == "Unmeasurable: Codex logs no Hook runs")

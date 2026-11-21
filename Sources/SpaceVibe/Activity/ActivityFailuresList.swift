@@ -33,7 +33,7 @@ struct ActivityFailuresList: View {
         }) {
             HStack(spacing: SpaceRole.step12) {
                 FrameGlyph(row.icon, side: SizeRole.icon16, ink: ColorRole.ink3)
-                    .frame(width: TableColumn.glyph)
+                    .frame(width: TableColumnWidth.glyph)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: SpaceRole.step8) {
                         CLILogo(CLIIdentity(id: row.failure.cli.rawValue, name: row.cliName), size: SizeRole.logo16)
@@ -53,11 +53,11 @@ struct ActivityFailuresList: View {
                     .typeRole(.pageTitle.figures)
                     .foregroundStyle(ColorRole.ink)
                     .lineLimit(1)
-                    .frame(width: TableColumn.failureCount, alignment: .trailing)
+                    .frame(width: TableColumnWidth.failureCount, alignment: .trailing)
                 HStack(spacing: SpaceRole.step8) {
                     if isSelected { FrameRowActionButtons(actions: actions) }
                 }
-                .frame(width: TableColumn.failureAction, alignment: .trailing)
+                .frame(width: TableColumnWidth.failureAction, alignment: .trailing)
             }
         }
         .frameRowActions(actions)

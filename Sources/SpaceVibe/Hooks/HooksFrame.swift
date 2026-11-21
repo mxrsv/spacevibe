@@ -6,18 +6,22 @@ enum HooksFrame {
     @MainActor
     static func content(model: FrameModel) -> FramePageContent {
         let state = HooksPageState.of(model)
-        let list = HooksListModel.from(model.store, view: state.view)
+        let list = HooksListModel.from(model.store, view: state.view, query: model.search.query)
         let selected = list.row(model.router.route.selection)
         return FramePageContent(
             subtitle: list.subtitle,
             help: FramePage.hooks.help,
             toolbarControls: list.hasToolbarControls ? AnyView(HooksCLIMenu(model: model, state: state)) : nil,
+            // The mock draws no search on the empty page (`mid` is empty there).
+            searchItems: list.phase == .empty ? nil : searchItems,
             primary: AnyView(HooksRemoveSelectedButton(model: model, state: state)),
             body: AnyView(HooksList(model: model, state: state)),
             inspector: AnyView(HooksInspector(model: model, state: state)),
             overlayActions: selected.map { AnyView(HooksRowActionButtons(actions: actions(for: $0, state: state), state: state, row: $0)) }
         )
     }
+
+    static let searchItems = "hooks"
 
     /// A row's actions, one list for its buttons, context menu, accessibility actions and the Item menu (RD-R16): a Claude
     /// Code Hook the page may write gets `Remove from Claude Code`; a project, plugin or Codex Hook gets none.
@@ -44,7 +48,7 @@ struct HooksRemoveSelectedButton: View {
     let state: HooksPageState
 
     var body: some View {
-        let list = HooksListModel.from(model.store, view: state.view)
+        let list = HooksListModel.from(model.store, view: state.view, query: model.search.query)
         if !list.hasRemoveSelected {
             EmptyView()
         } else {
@@ -69,7 +73,7 @@ struct HooksCLIMenu: View {
 
     var body: some View {
         @Bindable var state = state
-        let list = HooksListModel.from(model.store, view: state.view)
+        let list = HooksListModel.from(model.store, view: state.view, query: model.search.query)
         let chosen = list.cliOptions.first { $0.cli.id == state.view.cli }?.cli
         MenuTrigger(title: CLIMenuEntries.scopeTitle(list.cliOptions, scope: state.view.cli), lead: chosen.map { .cli($0) } ?? .none,
                     isOpen: state.isCLIMenuOpen, label: "CLIs shown") { state.isCLIMenuOpen.toggle() }

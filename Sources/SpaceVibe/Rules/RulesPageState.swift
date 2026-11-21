@@ -16,7 +16,7 @@ struct RulesAddDraft: Equatable, Sendable {
 
 /// The Rules page's own state while the frame shows it (AR3): the CLI page, the ticks, the open menus, the capability
 /// preview and the Add Rule sheet. The list, the toolbar and the inspector are separate views the frame places, so they
-/// share this one object, one per `FrameModel` (as `HooksPageState`). Every write goes through `FrameWrites` (AR4); the
+/// share this one object, one per `FrameModel` (`FrameModel.pageState`). Every write goes through `FrameWrites` (AR4); the
 /// file is the route's scope (AR5).
 @MainActor
 @Observable
@@ -37,29 +37,15 @@ final class RulesPageState {
         self.model = model
     }
 
-    // MARK: One per frame
-
-    private struct Entry {
-        weak var model: FrameModel?
-        let state: RulesPageState
-    }
-
-    private static var entries: [ObjectIdentifier: Entry] = [:]
-
     static func of(_ model: FrameModel) -> RulesPageState {
-        entries = entries.filter { $0.value.model != nil }
-        let key = ObjectIdentifier(model)
-        if let entry = entries[key], entry.model === model { return entry.state }
-        let state = RulesPageState(model: model)
-        entries[key] = Entry(model: model, state: state)
-        return state
+        model.pageState(RulesPageState.self) { RulesPageState(model: model) }
     }
 
     var file: FrameScope { model?.router.route.scope ?? .global }
 
     func list(now: Date = Date()) -> RulesListModel? {
         guard let model else { return nil }
-        return RulesListModel.from(model.store, view: view, file: file, now: now)
+        return RulesListModel.from(model.store, view: view, file: file, query: model.search.query, now: now)
     }
 
     // MARK: View state

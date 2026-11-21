@@ -8,7 +8,7 @@ struct RulesInspector: View {
     let state: RulesPageState
 
     var body: some View {
-        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope)
+        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope, query: model.search.query)
         if let row = list.row(model.router.route.selection) {
             let actions = RulesFrame.actions(for: row, list: list, state: state)
             VStack(alignment: .leading, spacing: SpaceRole.step16) {
@@ -49,7 +49,7 @@ struct RulesInspector: View {
         [
             InspectorFact(key: "Capability", value: list.capability(of: row.rule)?.label ?? "No capability"),
             InspectorFact(key: "Scope", value: list.scopeTitle),
-            InspectorFact(key: "File", value: list.fileName),
+            InspectorFact(key: "File", value: list.fileName, isMono: true),
         ]
     }
 }
@@ -93,7 +93,7 @@ struct RulesReadOnlyList: View {
     let state: RulesPageState
 
     var body: some View {
-        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope)
+        let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope, query: model.search.query)
         SpaceVibeScrollView {
             VStack(alignment: .leading, spacing: SpaceRole.step12) {
                 if let page = list.readOnly {

@@ -23,8 +23,6 @@ struct GroupCard<Content: View>: View {
     var spacing: CGFloat = SpaceRole.step16
     @ViewBuilder var content: Content
 
-    @Environment(\.materialLook) private var look
-
     init(inset: Inset = .regular, spacing: CGFloat = SpaceRole.step16, @ViewBuilder content: () -> Content) {
         self.inset = inset
         self.spacing = spacing
@@ -36,7 +34,7 @@ struct GroupCard<Content: View>: View {
             .padding(.vertical, inset.vertical)
             .padding(.horizontal, inset.horizontal)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(CornerRoleShape(RadiusRole.groupCorner(look)).fill(ColorRole.groupSurface))
+            .groupSurface()
             .accessibilityElement(children: .contain)
     }
 

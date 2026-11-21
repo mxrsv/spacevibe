@@ -30,6 +30,7 @@ enum ActivityPage {
         return FramePageContent(
             help: FramePage.activity.help,
             toolbarControls: AnyView(ActivityToolbarControls(context: context)),
+            searchItems: context.data().searchItems,
             primary: AnyView(ActivityStopButton(context: context)),
             body: AnyView(ActivityPageBody(context: context)),
             inspector: AnyView(ActivityInspector(context: context)),
@@ -50,7 +51,8 @@ struct ActivityPageContext {
         return ActivityPageData(ActivityPageInput(
             clis: preview.clis, sessions: preview.sessions, failures: preview.failures, hasReport: preview.hasReport,
             source: preview.source, figure: preview.figure, tab: preview.tab ?? state.tab, scope: state.scope, dismissed: state.dismissed,
-            ticked: preview.ticked ?? state.ticked, selection: preview.selection ?? model.router.route.selection, now: preview.now))
+            ticked: preview.ticked ?? state.ticked, selection: preview.selection ?? model.router.route.selection, now: preview.now,
+            query: model.search.query))
     }
 
     /// The rows the Stop alert names: the page's, or the ones a shot pins.
@@ -174,11 +176,15 @@ private struct ActivityPageBody: View {
             problem(title: "Sessions could not be read", detail: reason)
         case .ready(let stale):
             if let stale { problem(title: "Showing the last reading", detail: stale) }
-            switch data.input.tab {
-            case .sessions:
-                ActivitySessionsList(context: context, data: data, isWide: listWidth >= TableColumn.wideListWidth)
-            case .failures:
-                ActivityFailuresList(context: context, data: data)
+            if data.isSearchMiss {
+                FrameSearchNoMatch(items: data.searchItems, search: context.model.search)
+            } else {
+                switch data.input.tab {
+                case .sessions:
+                    ActivitySessionsList(context: context, data: data, isWide: listWidth >= TableColumnWidth.wideListWidth)
+                case .failures:
+                    ActivityFailuresList(context: context, data: data)
+                }
             }
         }
     }

@@ -12,6 +12,7 @@ struct FrameBlockSpecimens: View {
         FrameSpecimenColumns {
             buttons
             checkboxes
+            controls
             rows
             groupHeads
             heroes
@@ -106,6 +107,48 @@ struct FrameBlockSpecimens: View {
         }
     }
 
+    // MARK: Switch, search, segmented control, dial, chip, field
+
+    private var controls: some View {
+        FrameSpecimenGroup(title: "Switch, search field, segmented control, Permission dial, chip and text field: every state") {
+            line {
+                FrameSwitch("On", isOn: true) {}
+                FrameSwitch("Off", isOn: false) {}
+                FrameSwitch("Disabled", isOn: true) {}.disabled(true)
+            }
+            line {
+                SearchField(text: .constant(""), label: "Search skills")
+                SearchField(text: .constant(""), label: "Search, focused").specimen(.focus)
+                SearchField(text: .constant("pdf extract"), label: "Search with text")
+                SearchField(text: .constant(""), label: "Search, folded", folded: true)
+            }
+            line {
+                FrameSegmentedControl(segments: [FrameSegment(id: "all", title: "All"), FrameSegment(id: "never", title: "Never ran")],
+                                      selection: "all", label: "Skills shown") { _ in }
+            }
+            line {
+                PermissionDial(selection: .allow, label: "Allow") { _ in }
+                PermissionDial(selection: .ask, label: "Ask") { _ in }
+                PermissionDial(selection: .deny, label: "Deny") { _ in }
+            }
+            line {
+                PermissionDial(selection: nil, label: "Mixed", lockedWord: "Mixed") { _ in }
+                PermissionDial(selection: .ask, label: "Disabled") { _ in }.disabled(true)
+            }
+            line {
+                LabelChip("Whole tool", icon: .warningFill, iconInk: ColorRole.stateAttention)
+                LabelChip("added 2 hours ago", icon: .clock)
+                LabelChip("Shared")
+            }
+            VStack(alignment: .leading, spacing: SpaceRole.step12) {
+                TextInputField(placeholder: "Bash(git log:*)", text: .constant(""), label: "Rule", isMono: true)
+                TextInputField(placeholder: "Bash(git log:*)", text: .constant("Bash(rm -rf"), label: "Rule", isMono: true,
+                               message: "Bash(rm -rf is not a rule: a pattern needs its closing bracket.")
+            }
+            .frame(width: BlockRole.sheetWidth)
+        }
+    }
+
     // MARK: Hero and meters
 
     private var heroes: some View {
@@ -161,6 +204,7 @@ struct FrameBlockSpecimens: View {
                 CLILogoToggle(CLIToggleState(cli: .codex, presence: .off)) {}.specimen(.hover)
                 CLILogoToggle(CLIToggleState(cli: .claude, presence: .on(.sessions(3)))) {}.specimen(.press)
                 CLILogoToggle(CLIToggleState(cli: .codex, presence: .on(.sessions(3)))) {}.specimen(.focus)
+                CLILogoToggle(CLIToggleState(cli: .codex, presence: .off), isPending: true) {}
             }
             line {
                 CLIToggleStrip(states: FrameSpecimenData.row(2)) { _ in }
@@ -181,7 +225,11 @@ struct FrameBlockSpecimens: View {
                     CLITile(state: CLIToggleState(cli: .claude, presence: .on(.sessions(40))), step: .high) {}.specimen(.hover)
                     CLITile(state: CLIToggleState(cli: .codex, presence: .off), step: .none) {}.specimen(.hover)
                     CLITile(state: CLIToggleState(cli: .claude, presence: .on(.sessions(12))), step: .middle) {}.specimen(.focus)
+                    CLITile(state: CLIToggleState(cli: .codex, presence: .off), step: .none, isPending: true) {}
                 }
+                FrameSpecimenCaption("10 CLIs in the 336 inspector: four narrower tiles")
+                CLITileGrid(states: FrameSpecimenData.row(10)) { _ in }
+                    .frame(width: InspectorWidth.wide.points - 2 * SpaceRole.step16)
             }
         }
     }

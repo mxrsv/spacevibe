@@ -79,22 +79,25 @@ extension FrameWrite {
 }
 
 /// The Journal window (Settings › Data › Show Journal): its own `Window` scene beside Settings, declared by
-/// `SpaceVibeFrameApp` only. It reads the frame's store (`FrameStore.running`) and undoes through the write path (AR4) with
-/// its own toast host, so a refusal shows here and nowhere else.
+/// `SpaceVibeFrameApp` only. It reads the app's frame model (the one the main window shows) and undoes through the write
+/// path (AR4) with its own toast host, so a refusal shows here and nowhere else.
 struct JournalWindow: View {
     static let windowID = "journal"
 
-    /// A screenshot's facts; nil reads the running store.
+    /// A screenshot's facts; nil reads the model's store.
     private let preview: SettingsFacts?
+    /// The app's frame model; nil in a screenshot.
+    private let model: FrameModel?
     @State private var toasts = ToastCenter()
     @State private var writes: FrameWrites?
 
-    init(preview: SettingsFacts? = nil) {
+    init(model: FrameModel? = nil, preview: SettingsFacts? = nil) {
+        self.model = model
         self.preview = preview
     }
 
     var body: some View {
-        let store = FrameStore.running
+        let store = model?.store
         let facts = preview ?? SettingsFacts(store: store)
         let list = JournalList(history: facts.journal, state: facts.journalState, now: Date())
         ZStack(alignment: .top) {
@@ -126,6 +129,7 @@ struct JournalWindow: View {
         .ignoresSafeArea()
         .navigationTitle("Journal")
         .onExitCommand { toasts.dismiss() }
+        .task { await model?.store.start() }
     }
 
     @ViewBuilder

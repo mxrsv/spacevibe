@@ -119,6 +119,12 @@ struct RulesListModel: Equatable {
     let capabilities: [RulesCapabilityRow]
     let rows: [RulesRuleRow]
     let ticked: Set<String>
+    /// The toolbar's search (⌘F): `rows` keeps only the rules whose text it matches; the hero, the grid and the strip count
+    /// every rule.
+    let query: FrameSearchQuery
+
+    /// The search hides every rule of the file: "No rules match" with Clear Search.
+    var isSearchMiss: Bool { phase == .normal && !query.isEmpty && rows.isEmpty }
 
     var isClaudePage: Bool { cli.id == Self.editableCLI }
     var isGlobal: Bool { file == .global && phase != .noProjects }
@@ -153,13 +159,16 @@ struct RulesListModel: Equatable {
 
     /// From the store's world, the states of its sources and the route's file.
     @MainActor
-    static func from(_ store: FrameStore, view: RulesViewState, file: FrameScope, now: Date = Date()) -> RulesListModel {
+    static func from(_ store: FrameStore, view: RulesViewState, file: FrameScope, query: FrameSearchQuery = FrameSearchQuery(""),
+                     now: Date = Date()) -> RulesListModel {
         let world = store.world(now: now)
         return RulesListModel(world: world, states: store.states, file: file, view: view,
-                              figure: world.figure(for: .rules, loading: store.loading, failed: store.failedEmpty))
+                              figure: world.figure(for: .rules, loading: store.loading, failed: store.failedEmpty), query: query)
     }
 
-    init(world: FrameWorld, states: [FrameSource: FrameSourceState], file: FrameScope, view: RulesViewState, figure: PageFigure) {
+    init(world: FrameWorld, states: [FrameSource: FrameSourceState], file: FrameScope, view: RulesViewState, figure: PageFigure,
+         query: FrameSearchQuery = FrameSearchQuery("")) {
+        self.query = query
         let snapshot = world.snapshot
         let global = snapshot.rules[.global]
         let supported = world.clis.filter(\.supports.rule)
@@ -204,7 +213,7 @@ struct RulesListModel: Equatable {
             problem = reading.notReadable || !reading.problems.isEmpty
                 ? (reading.problems.first ?? "\(fileName) could not be read, so its rules are unknown, not empty.") : nil
             capabilities = reading.grid.map { RulesCapabilityRow(cell: $0, isEditable: editable.isEditable($0)) }
-            rows = reading.rules.filter { $0.scope == file.scope && $0.dir == file.dir }
+            rows = reading.rules.filter { $0.scope == file.scope && $0.dir == file.dir && query.matches([$0.rule]) }
                 .sorted { $0.rule.localizedCompare($1.rule) == .orderedAscending }
                 .map(RulesRuleRow.init)
         } else {

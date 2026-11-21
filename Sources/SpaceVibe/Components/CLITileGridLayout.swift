@@ -22,10 +22,20 @@ enum CLITileGridLayout {
         return stride(from: 0, to: max(0, count), by: columns).map { Array($0 ..< min($0 + columns, count)) }
     }
 
-    /// The grid's width: whole tiles and the gaps between them.
-    static func width(_ count: Int) -> CGFloat {
+    /// The grid's width: whole tiles and the gaps between them, each tile at most 72 and narrower when `available` is less
+    /// than four of them need (the mock's `.tiles`: `width: min(100%, cols × 72 + (cols − 1) × 6)`, columns `minmax(0, 1fr)`).
+    static func width(_ count: Int, available: CGFloat = .infinity) -> CGFloat {
         let columns = CGFloat(columns(count))
-        return columns * BlockRole.tileWidth + (columns - 1) * BlockRole.tileGap
+        return columns * tileWidth(count, available: available) + (columns - 1) * BlockRole.tileGap
+    }
+
+    /// One tile's width: 72 (RD-R12) while the columns fit in `available`, otherwise the share of it each column gets after
+    /// the 6 pt gaps. Never below 0; an unknown width (0 or less, before the first layout) keeps 72.
+    static func tileWidth(_ count: Int, available: CGFloat) -> CGFloat {
+        guard available > 0 else { return BlockRole.tileWidth }
+        let columns = CGFloat(columns(count))
+        let share = (available - (columns - 1) * BlockRole.tileGap) / columns
+        return max(0, min(BlockRole.tileWidth, share.rounded(.down)))
     }
 }
 

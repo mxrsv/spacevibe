@@ -1,31 +1,9 @@
 import SwiftUI
 
-/// The fixed column widths of the new frame's tables (the mock's `--cols` on `.th` and `.tr`). A table names its columns here,
-/// so a screen holds no number (DS-R3) and a long name or a missing value never moves a column (FE-L1).
-enum TableColumn {
-    /// The table head's height (`.th`).
-    static let headHeight: CGFloat = 30
-    /// A state glyph or a kind icon before the name.
-    static let glyph: CGFloat = 20
-    /// Activity: the open tool call (`220px`).
-    static let currentTool: CGFloat = 220
-    /// Activity: the session's age (`96px`).
-    static let age: CGFloat = 96
-    /// The trailing action cell where the selected row's buttons sit (`112px`).
-    static let action: CGFloat = 112
-    /// Activity › Failures: the failure count (`64px`).
-    static let failureCount: CGFloat = 64
-    /// Activity › Failures: the selected row's Copy Command (`148px`).
-    static let failureAction: CGFloat = 148
-    /// The list width from which a table shows its wide columns (the mock's `ctx.wide`, `mw >= 940`).
-    static let wideListWidth: CGFloat = 940
-}
-
-/// A group of rows on the group surface (DS-R10 "Row" sits inside it; the mock's `.grp`): the group corner of the look, the
-/// rows clipped to it, separated by a background step and space, never a divider line (FE-SP5).
+/// A group of rows on the group surface (DS-R10 "Row" sits inside it; the mock's `.grp`): the one block every list, table and
+/// skeleton stacks its rows in, top to bottom with no gap, full width, on `groupSurface()`. A padded card is `GroupCard`.
 struct RowGroup<Content: View>: View {
     @ViewBuilder var content: Content
-    @Environment(\.materialLook) private var look
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -34,8 +12,7 @@ struct RowGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) { content }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(ColorRole.groupSurface)
-            .clipShape(CornerRoleShape(RadiusRole.groupCorner(look)))
+            .groupSurface()
     }
 }
 
@@ -67,7 +44,7 @@ struct RowTableHead<Columns: View>: View {
         .foregroundStyle(ColorRole.ink3)
         .lineLimit(1)
         .padding(.horizontal, SpaceRole.step12)
-        .frame(maxWidth: .infinity, minHeight: TableColumn.headHeight, maxHeight: TableColumn.headHeight, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: TableColumnWidth.headerHeight, maxHeight: TableColumnWidth.headerHeight, alignment: .leading)
     }
 }
 
@@ -76,33 +53,4 @@ extension View {
     func rowStripe(_ isStriped: Bool) -> some View {
         background(isStriped ? ColorRole.zebraFill : .clear)
     }
-}
-
-/// Rows that stand in for a list still being read (the mock's `skel`): `count` table-height rows, each one bar of a stable,
-/// varied width on the hover step. Still, no shimmer loop (DS-R9). Hidden from VoiceOver: the scanning banner above says what
-/// is read.
-struct SkeletonRows: View {
-    let count: Int
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ForEach(0..<max(0, count), id: \.self) { index in
-                GeometryReader { box in
-                    RoundedRectangle(cornerRadius: RadiusRole.step6, style: .continuous)
-                        .fill(ColorRole.hoverFill)
-                        .frame(width: box.size.width * Self.share(index), height: Self.barHeight)
-                        .frame(maxHeight: .infinity, alignment: .center)
-                }
-                .padding(.horizontal, SpaceRole.step12)
-                .frame(height: SizeRole.tableRow)
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    /// The bar's height (`.sk`).
-    static let barHeight: CGFloat = 10
-
-    /// The mock's widths: 46% plus a step of 13 points modulo 40, so the rows differ but never change between renders.
-    static func share(_ index: Int) -> CGFloat { CGFloat(46 + (index * 13) % 40) / 100 }
 }

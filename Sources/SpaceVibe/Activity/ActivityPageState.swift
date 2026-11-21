@@ -1,7 +1,6 @@
 import AppKit
 import Foundation
 import Observation
-import ObjectiveC
 
 /// The redesign Activity page's own view state and its actions (plan AR3: page state never lives in the store). The tab,
 /// the `All CLIs` pick, the ticks, the dismissed failures, the open Stop alert, and when the latest report arrived. Writes
@@ -52,7 +51,7 @@ final class ActivityPageState {
             source: store.states[.activity],
             figure: world.figure(for: .activity, loading: store.loading, failed: store.failedEmpty),
             tab: tab, scope: scope, dismissed: dismissed, ticked: ticked, selection: model.router.route.selection,
-            elapsedMs: elapsedMs(for: report, now: now), now: now)
+            elapsedMs: elapsedMs(for: report, now: now), now: now, query: model.search.query)
     }
 
     /// Milliseconds since `report` was first seen; a new report starts the count again.
@@ -196,14 +195,8 @@ final class ActivityPageState {
 }
 
 extension ActivityPageState {
-    private static var key: UInt8 = 0
-
-    /// The one page state of this frame: made on first use and kept with the `FrameModel`, which owns every other part of the
-    /// frame. (A page-state slot on `FrameModel` itself would replace this; it is the shared model's to add.)
+    /// The one page state of this frame, kept with the `FrameModel` (`FrameModel.pageState`).
     static func of(_ model: FrameModel) -> ActivityPageState {
-        if let state = objc_getAssociatedObject(model, &key) as? ActivityPageState { return state }
-        let state = ActivityPageState()
-        objc_setAssociatedObject(model, &key, state, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        return state
+        model.pageState(ActivityPageState.self) { ActivityPageState() }
     }
 }

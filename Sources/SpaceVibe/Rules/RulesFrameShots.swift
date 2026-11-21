@@ -89,7 +89,7 @@ enum RulesFrameShots {
             ready = true
         }
         try ShotHarness.wait("the Rules shot \(shot.name)") { ready }
-        let view = AppFrame(page: .rules, env: env, look: look, sidebarValues: .from(model.store)) { _, _ in RulesFrame.content(model: model) }
+        let view = AppFrame(model: model, look: look, sidebarValues: .from(model.store))
             .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)), toasts: toasts, env: env)
             .frame(width: shot.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: "frame-rules-\(shot.name)-\(look)", choice: choice, to: directory)

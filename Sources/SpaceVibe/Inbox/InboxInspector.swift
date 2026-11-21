@@ -79,7 +79,7 @@ struct InboxInspector: View {
         CommandBlock(rule.rule)
         KeyValueList(facts: [
             InspectorFact(key: "Scope", value: file.dir == nil ? "Global" : "Project · \(InboxWording.place(file))"),
-            InspectorFact(key: "File", value: InboxWording.settingsFile(file)),
+            InspectorFact(key: "File", value: InboxWording.settingsFile(file), isMono: true),
         ])
         InspectorNote("A bare tool name allows every call of that tool. Ask or narrow it.", icon: .warningFill,
                       iconInk: ColorRole.stateAttention)
@@ -122,7 +122,9 @@ struct InboxInspector: View {
                             isDestructive: true) { actions.remove([item], control: "removeMany:\(item.id)") },
         ])
         InspectorSection("CLIs") {
-            CLITileGrid(states: ItemTileStates.states(of: item, in: world)) { actions.toggleTile($0, row: item) }
+            let states = CLIToggleStates.states(of: item, in: world)
+            CLITileGrid(states: states, toggle: { actions.toggleTile($0, row: item) },
+                        pending: actions.writes.isPending("tile:\(item.id)") ? Set(states.map(\.cli.id)) : [])
         }
         KeyValueList(facts: InboxInspectorFacts.item(item, world: world, now: now))
         if let path = item.items.first?.path {
@@ -183,7 +185,7 @@ enum InboxInspectorFacts {
         if let seen = item.firstSeen {
             facts.append(InspectorFact(key: "Added", value: added(seen, now: now)))
         }
-        facts.append(InspectorFact(key: "File", value: (hook.file as NSString).abbreviatingWithTildeInPath))
+        facts.append(InspectorFact(key: "File", value: (hook.file as NSString).abbreviatingWithTildeInPath, isMono: true))
         return facts
     }
 
@@ -198,8 +200,8 @@ enum InboxInspectorFacts {
             let path = (member.path as NSString).abbreviatingWithTildeInPath
             if readBy.count > 1 { shared.append("\(path), read by \(CLINames.sentence(readBy.map(world.cliName)))") } else { own.append(path) }
         }
-        if !own.isEmpty { facts.append(InspectorFact(key: own.count == 1 ? "File" : "Files", value: own.joined(separator: "\n"))) }
-        if !shared.isEmpty { facts.append(InspectorFact(key: "Shared", value: shared.joined(separator: "\n"))) }
+        if !own.isEmpty { facts.append(InspectorFact(key: own.count == 1 ? "File" : "Files", value: own.joined(separator: "\n"), isMono: true)) }
+        if !shared.isEmpty { facts.append(InspectorFact(key: "Shared", value: shared.joined(separator: "\n"), isMono: true)) }
         if let seen = item.firstSeen { facts.append(InspectorFact(key: "Added", value: added(seen, now: now))) }
         return facts
     }

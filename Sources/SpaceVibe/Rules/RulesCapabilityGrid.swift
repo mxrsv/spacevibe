@@ -8,11 +8,11 @@ struct RulesCapabilityGrid: View {
     let state: RulesPageState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        RowGroup {
             ForEach(Array(list.capabilities.enumerated()), id: \.element.id) { index, row in
                 HStack(spacing: SpaceRole.step12) {
                     FrameGlyph(row.icon, side: SizeRole.icon20, ink: ColorRole.ink3)
-                        .frame(width: TableColumn.glyph)
+                        .frame(width: TableColumnWidth.glyph)
                     Text(row.label)
                         .typeRole(.bodyMedium)
                         .foregroundStyle(ColorRole.ink)
@@ -35,7 +35,6 @@ struct RulesCapabilityGrid: View {
                 .accessibilityLabel("\(row.label), \(row.why)")
             }
         }
-        .groupSurface()
     }
 
     private func dial(_ row: RulesCapabilityRow) -> some View {

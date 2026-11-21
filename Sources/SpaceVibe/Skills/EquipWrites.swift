@@ -13,11 +13,23 @@ extension FrameWrite {
     /// Removes exactly `members` as one change with one Undo (`loadout.removeMany`). Unlike `removeMany(_:members:)`, the ids
     /// may belong to other rows (a link to the same file under another name), which the engine requires to be named; `rows`
     /// only words the toast ("Removed pdf-extract from Codex and Amp").
-    static func removeMembers(_ rows: [FrameRow], members: [String], registry: [CoreRegistryCLI], control: String) -> FrameWrite {
+    ///
+    /// `shared`: the removal a `SharedFileConfirmation` confirmed, worded as the mock's: "Removed pdf-extract for Codex and
+    /// Amp", or with `copiedTo` "Copied pdf-extract to Claude Code, then removed it for Codex and Amp".
+    static func removeMembers(_ rows: [FrameRow], members: [String], registry: [CoreRegistryCLI], control: String,
+                              shared: Bool = false, copiedTo: [String] = []) -> FrameWrite {
         let what = selection(rows)
         return FrameWrite(control: control, label: "Removed \(what)", touches: loadoutSources) { core in
             let result = try await core.loadoutRemoveMany(ids: members)
-            let label = result.lost.isEmpty ? "Removed a copy of \(what)" : "Removed \(what) from \(names(result.lost, registry))"
+            let lost = names(result.lost, registry)
+            let label: String
+            if result.lost.isEmpty {
+                label = "Removed a copy of \(what)"
+            } else if shared, !copiedTo.isEmpty {
+                label = "Copied \(what) to \(names(copiedTo, registry)), then removed it for \(lost)"
+            } else {
+                label = shared ? "Removed \(what) for \(lost)" : "Removed \(what) from \(lost)"
+            }
             return .entryToast(result.entry, label: label)
         }
     }

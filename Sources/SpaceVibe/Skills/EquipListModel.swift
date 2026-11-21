@@ -36,7 +36,7 @@ struct EquipViewState: Equatable, Sendable {
 /// total with its bar, Last ran, and whether it can be ticked.
 struct EquipListRow: Identifiable, Sendable {
     let row: FrameRow
-    let readers: EquipReaders
+    let readers: RowReaders
     /// One per shown CLI, in the fixed order; the inspector's tiles take the same values (RD-R12).
     let toggles: [CLIToggleState]
     /// Sessions over the shown CLIs that have the kind.
@@ -87,6 +87,8 @@ struct EquipListModel: Sendable {
     /// Shown CLIs whose folder could not be read: each gets the problem band.
     let unreadable: [CoreRegistryCLI]
     let roots: [String: String]
+    /// The toolbar's search (⌘F): `visible` and `suggested` keep only the rows it matches; the hero counts every row.
+    var query = FrameSearchQuery("")
 
     static let scanningTitle = "Counting sessions in your logs…"
     static let loadingTitle = "Reading your CLI folders…"
@@ -132,6 +134,9 @@ struct EquipListModel: Sendable {
         return picked.isEmpty ? "Select rows to remove" : "Remove \(NumberWording.count(picked.count)) selected…"
     }
 
+    /// The search hides every row the filters would show: the page says "No skills match" with Clear Search.
+    var isSearchMiss: Bool { phase == .normal && !query.isEmpty && visible.isEmpty }
+
     /// The table's line when the filters leave nothing (the mock's wording).
     var noMatch: String {
         let who = view.cli.flatMap { id in clis.first { $0.id == id }?.name } ?? "these CLIs"
@@ -149,15 +154,16 @@ struct EquipListModel: Sendable {
     // MARK: Building
 
     @MainActor
-    static func from(_ store: FrameStore, kind: EquipKind, view: EquipViewState, now: Date = Date()) -> EquipListModel {
+    static func from(_ store: FrameStore, kind: EquipKind, view: EquipViewState, query: FrameSearchQuery = FrameSearchQuery(""),
+                     now: Date = Date()) -> EquipListModel {
         var failure: String?
         if case .failed(let message) = store.states[.loadout] { failure = message }
         return make(kind: kind, world: store.world(now: now), loading: store.loading, failed: store.failedEmpty, failure: failure,
-                    view: view, now: now)
+                    view: view, query: query, now: now)
     }
 
     static func make(kind: EquipKind, world: FrameWorld, loading: Set<FrameSource>, failed: Set<FrameSource>, failure: String?,
-                     view: EquipViewState, now: Date) -> EquipListModel {
+                     view: EquipViewState, query: FrameSearchQuery = FrameSearchQuery(""), now: Date) -> EquipListModel {
         let snapshot = world.snapshot
         let scanning = snapshot.loadout?.usage == .scanning
         let figure = world.figure(for: kind.page, loading: loading, failed: failed)
@@ -165,14 +171,14 @@ struct EquipListModel: Sendable {
         let supporting = clis.filter { $0.supports.supports(kind.kind) }.map(\.id)
         let folders = snapshot.loadout?.folders ?? []
         let built = world.rows(kind.kind).map { row -> EquipListRow in
-            let readers = EquipReaders(readers: world.readers(of: row), registry: snapshot.registry, kind: kind.kind, folders: folders)
+            let readers = RowReaders(readers: world.readers(of: row), registry: snapshot.registry, kind: kind.kind, folders: folders)
             let counted = supporting.compactMap { row.cell($0).count }
             let lastDays = supporting.compactMap { id -> Int? in
                 if case .sessions(_, _, let last?, _) = row.cell(id) { return daysAgo(last, now: now) }
                 return nil
             }.min()
             return EquipListRow(
-                row: row, readers: readers, toggles: EquipToggles.states(row, clis: clis, readers: readers, noun: kind.noun),
+                row: row, readers: readers, toggles: CLIToggleStates.states(row, clis: clis, readers: readers, noun: kind.noun),
                 total: counted.reduce(0, +), hasUnknown: supporting.contains { row.cell($0) == .unknown },
                 lastRan: scanning ? nil : DayWording.lastRan(daysAgo: lastDays), subline: subline(row, scanning: scanning, now: now),
                 isPending: scanning)
@@ -181,9 +187,10 @@ struct EquipListModel: Sendable {
         let all = built.enumerated().sorted { a, b in a.element.total != b.element.total ? a.element.total > b.element.total : a.offset < b.offset }
             .map(\.element)
         let inScope = all.filter { row in view.cli.map { row.row.presence($0) == .on } ?? true }
-        let visible = inScope.filter { view.filter == .all || scanning || $0.isNeverRan }
+        let visible = inScope.filter { (view.filter == .all || scanning || $0.isNeverRan) && query.matches($0.row.searchFields) }
         let suggestedIDs = world.suggested
-        let suggested = inScope.filter { $0.isNeverRan && suggestedIDs.contains($0.id) && $0.isTickable }.map(\.id)
+        let suggested = inScope.filter { $0.isNeverRan && suggestedIDs.contains($0.id) && $0.isTickable && query.matches($0.row.searchFields) }
+            .map(\.id)
         let unreadable = clis.filter { cli in all.contains { $0.row.cell(cli.id) == .unknown } }
         let phase: Phase
         if snapshot.loadout == nil {
@@ -192,14 +199,15 @@ struct EquipListModel: Sendable {
             phase = all.isEmpty ? .empty : .normal
         }
         return EquipListModel(kind: kind, phase: phase, isScanning: scanning, figure: figure, view: view, clis: clis, all: all,
-                              visible: visible, suggested: suggested, unreadable: unreadable, roots: snapshot.loadout?.roots ?? [:])
+                              visible: visible, suggested: suggested, unreadable: unreadable, roots: snapshot.loadout?.roots ?? [:],
+                              query: query)
     }
 
     /// The quiet line under the name (the mock's `.nm i`): the project, the D63 "added …" note on a Never ran row once the scan
     /// has counted, then the description.
     static func subline(_ row: FrameRow, scanning: Bool, now: Date) -> String? {
         var parts: [String] = []
-        if row.isProject, let name = EquipToggles.projectName(row) { parts.append("Project · \(name)") }
+        if row.isProject, let name = CLIToggleStates.projectName(row) { parts.append("Project · \(name)") }
         if !scanning, row.status == .neverRan, let seen = row.firstSeen { parts.append(DayWording.added(secondsAgo: now.timeIntervalSince(seen))) }
         if let description = row.items.first?.description, !description.isEmpty { parts.append(description) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")

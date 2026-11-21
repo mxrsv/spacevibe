@@ -114,7 +114,7 @@ struct EquipWritesTests {
         #expect(state.shared?.anchor == .row && state.shared?.removal.wording.removeTitle == "Remove for 2 CLIs")
         await state.confirmShared(copyFirst: false)?.value
         #expect(core.writes == ["removeMany [\"claude:skill:commit-helper\"]"])
-        #expect(state.shared == nil && toasts.current?.message == "Removed commit-helper from Claude Code and opencode")
+        #expect(state.shared == nil && toasts.current?.message == "Removed commit-helper for Claude Code and opencode")
     }
 
     @Test("Copy to …, then remove: the copy first, then the removal, each with its Undo")
