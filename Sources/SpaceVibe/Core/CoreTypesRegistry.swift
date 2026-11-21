@@ -35,12 +35,22 @@ struct CoreRegistryResult: Codable, Equatable, Sendable {
     var clis: [CoreRegistryCLI]
 }
 
+/// One day of a counted hook cell's `last7Days` (RB-E5): the day (YYYY-MM-DD, UTC like every usage day) and the runs and
+/// errors logged on it.
+struct CoreHookDay: Codable, Equatable, Sendable {
+    var day: String
+    var runs: Int
+    var errors: Int
+}
+
 /// One CLI's cell for one `loadout.rows` row, keyed by registry id in `cliCells`. A skill or subagent counts sessions and
 /// days, a hook counts runs and errors (GLOSSARY: Runs are hooks only). `note` is set only on a counted zero that may be too
-/// new for the logs (D63).
+/// new for the logs (D63). A hook's `errors` is lifetime; `week` is its last 7 days, oldest first and ending on the core's
+/// today, which RD26's failing Hook reads (`errorsLast7Days`). An empty `week` means the core sent none (a cell built by
+/// hand or an older shape): it is not written back and reads as unknown, never as 0 errors.
 enum CoreCLICell: Equatable, Sendable {
     case sessions(count: Int, days: [String], last: String?, note: String?)
-    case runs(count: Int, errors: Int, last: String?, note: String?)
+    case runs(count: Int, errors: Int, last: String?, note: String?, week: [CoreHookDay] = [])
     /// Installed, but nothing SpaceVibe can count: never 0.
     case unmeasurable(reason: String)
     /// Installed; no usage scan has finished in this core process.
@@ -52,7 +62,7 @@ enum CoreCLICell: Equatable, Sendable {
 }
 
 extension CoreCLICell: Codable {
-    private enum Keys: String, CodingKey { case state, sessions, days, runs, errors, last, note, reason }
+    private enum Keys: String, CodingKey { case state, sessions, days, runs, errors, errorsLast7Days, last7Days, last, note, reason }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -61,7 +71,8 @@ extension CoreCLICell: Codable {
             let last = try c.decodeIfPresent(String.self, forKey: .last)
             let note = try c.decodeIfPresent(String.self, forKey: .note)
             if let runs = try c.decodeIfPresent(Int.self, forKey: .runs) {
-                self = .runs(count: runs, errors: try c.decode(Int.self, forKey: .errors), last: last, note: note)
+                let week = try c.decodeIfPresent([CoreHookDay].self, forKey: .last7Days) ?? []
+                self = .runs(count: runs, errors: try c.decode(Int.self, forKey: .errors), last: last, note: note, week: week)
             } else {
                 self = .sessions(count: try c.decode(Int.self, forKey: .sessions), days: try c.decode([String].self, forKey: .days), last: last, note: note)
             }
@@ -82,10 +93,14 @@ extension CoreCLICell: Codable {
             try c.encode(count, forKey: .sessions)
             try c.encode(days, forKey: .days)
             try Self.encode(last: last, note: note, into: &c)
-        case .runs(let count, let errors, let last, let note):
+        case .runs(let count, let errors, let last, let note, let week):
             try c.encode("counted", forKey: .state)
             try c.encode(count, forKey: .runs)
             try c.encode(errors, forKey: .errors)
+            if !week.isEmpty {
+                try c.encode(week.reduce(0) { $0 + $1.errors }, forKey: .errorsLast7Days)
+                try c.encode(week, forKey: .last7Days)
+            }
             try Self.encode(last: last, note: note, into: &c)
         case .unmeasurable(let reason):
             try c.encode("unmeasurable", forKey: .state)
@@ -105,7 +120,7 @@ extension CoreCLICell: Codable {
     /// Sessions for a skill or subagent, runs for a hook; nil unless counted.
     var count: Int? {
         switch self {
-        case .sessions(let count, _, _, _), .runs(let count, _, _, _): count
+        case .sessions(let count, _, _, _), .runs(let count, _, _, _, _): count
         default: nil
         }
     }
@@ -113,9 +128,16 @@ extension CoreCLICell: Codable {
     /// A counted zero the core marks as possibly too new for the logs (D63): the item was added recently.
     var isRecentlyAdded: Bool {
         switch self {
-        case .sessions(0, _, _, let note?), .runs(0, _, _, let note?): !note.isEmpty
+        case .sessions(0, _, _, let note?), .runs(0, _, _, let note?, _): !note.isEmpty
         default: false
         }
+    }
+
+    /// A counted hook's errors in its last 7 days (RD26); nil for any other cell and when the core sent no week. The
+    /// lifetime `errors` never stands in.
+    var errorsLast7Days: Int? {
+        if case .runs(_, _, _, _, let week) = self, !week.isEmpty { return week.reduce(0) { $0 + $1.errors } }
+        return nil
     }
 }
 

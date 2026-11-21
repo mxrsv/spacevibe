@@ -3,8 +3,10 @@ package inventory
 import (
 	"encoding/json"
 	"slices"
+	"time"
 
 	"spacevibe.dev/core/internal/cliregistry"
+	"spacevibe.dev/core/internal/usage"
 )
 
 // CLICell states: the cells of the `cliCells` map that loadout.rows puts on every item and hook, one per
@@ -44,9 +46,11 @@ type CLICell struct {
 	// was used on (YYYY-MM-DD, sorted, never nil).
 	Sessions *int
 	Days     []string
-	// Runs and Errors are set on a counted hook.
+	// Runs and Errors are set on a counted hook (lifetime, inside the scanned logs). Week is the same hook's last
+	// HookWeekDays days, oldest first and ending today, every day present (RD26 counts errors here, never Errors).
 	Runs   *int
 	Errors *int
+	Week   []HookDayCount
 	// Last is the last day it was used, null when unknown. Counted only.
 	Last *string
 	// Note is set on a counted zero that may be too new for the logs (D63). Counted only; "" when none.
@@ -55,35 +59,78 @@ type CLICell struct {
 	Reason string
 }
 
+// HookWeekDays is how many days a counted hook cell lists: errors in the last 7 days make a failing Hook (RD26).
+const HookWeekDays = 7
+
+// HookDayCount is one day of a hook cell's week: the day (YYYY-MM-DD, the log's own date text, as usage days are)
+// and the runs and errors logged on it.
+type HookDayCount struct {
+	Day    string `json:"day"`
+	Runs   int    `json:"runs"`
+	Errors int    `json:"errors"`
+}
+
+// hookWeek is the last HookWeekDays days of one hook up to the day of now, oldest first, zeros included. The day
+// of now is taken in UTC, because a usage day is the date text of the log's timestamp, which the CLIs write in UTC.
+func hookWeek(days usage.HookDays, now time.Time) []HookDayCount {
+	today := now.UTC()
+	out := make([]HookDayCount, HookWeekDays)
+	for i := range out {
+		day := today.AddDate(0, 0, i-(HookWeekDays-1)).Format("2006-01-02")
+		d := days[day]
+		out[i] = HookDayCount{Day: day, Runs: d.Runs, Errors: d.Errors}
+	}
+	return out
+}
+
+// errorsIn is the sum of the errors of a week.
+func errorsIn(week []HookDayCount) int {
+	sum := 0
+	for _, d := range week {
+		sum += d.Errors
+	}
+	return sum
+}
+
 // cliCellWire is every member any state can write; MarshalJSON fills the ones its state has.
 type cliCellWire struct {
-	State    string   `json:"state"`
-	Sessions *int     `json:"sessions,omitempty"`
-	Days     []string `json:"days,omitempty"`
-	Runs     *int     `json:"runs,omitempty"`
-	Errors   *int     `json:"errors,omitempty"`
-	Last     *string  `json:"last"`
-	Note     string   `json:"note,omitempty"`
-	Reason   string   `json:"reason,omitempty"`
+	State           string         `json:"state"`
+	Sessions        *int           `json:"sessions,omitempty"`
+	Days            []string       `json:"days,omitempty"`
+	Runs            *int           `json:"runs,omitempty"`
+	Errors          *int           `json:"errors,omitempty"`
+	ErrorsLast7Days *int           `json:"errorsLast7Days,omitempty"`
+	Last7Days       []HookDayCount `json:"last7Days,omitempty"`
+	Last            *string        `json:"last"`
+	Note            string         `json:"note,omitempty"`
+	Reason          string         `json:"reason,omitempty"`
 }
 
 // MarshalJSON writes:
 //
 //	counted skill or agent  {state, sessions, days, last, note?}
-//	counted hook            {state, runs, errors, last, note?}
+//	counted hook            {state, runs, errors, errorsLast7Days, last7Days, last, note?}
 //	unmeasurable            {state, reason}
 //	scanning, missing, unknown, notSupported  {state}
+//
+// errorsLast7Days is the sum of last7Days' errors, written so a caller never adds it up differently.
 func (c CLICell) MarshalJSON() ([]byte, error) {
 	switch c.State {
 	case CLICellCounted:
 		if c.Runs != nil {
+			week := c.Week
+			if week == nil {
+				week = []HookDayCount{}
+			}
 			return json.Marshal(struct {
-				State  string  `json:"state"`
-				Runs   int     `json:"runs"`
-				Errors int     `json:"errors"`
-				Last   *string `json:"last"`
-				Note   string  `json:"note,omitempty"`
-			}{c.State, *c.Runs, derefInt(c.Errors), c.Last, c.Note})
+				State           string         `json:"state"`
+				Runs            int            `json:"runs"`
+				Errors          int            `json:"errors"`
+				ErrorsLast7Days int            `json:"errorsLast7Days"`
+				Last7Days       []HookDayCount `json:"last7Days"`
+				Last            *string        `json:"last"`
+				Note            string         `json:"note,omitempty"`
+			}{c.State, *c.Runs, derefInt(c.Errors), errorsIn(week), week, c.Last, c.Note})
 		}
 		days := c.Days
 		if days == nil {
@@ -121,7 +168,11 @@ func (c *CLICell) UnmarshalJSON(data []byte) error {
 		switch {
 		case w.Runs != nil:
 			errors := derefInt(w.Errors)
-			*c = CLICell{State: w.State, Runs: w.Runs, Errors: &errors, Last: w.Last, Note: w.Note}
+			week := w.Last7Days
+			if week == nil {
+				week = []HookDayCount{}
+			}
+			*c = CLICell{State: w.State, Runs: w.Runs, Errors: &errors, Week: week, Last: w.Last, Note: w.Note}
 		case w.Sessions != nil:
 			days := w.Days
 			if days == nil {

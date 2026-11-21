@@ -40,7 +40,16 @@ struct CoreLimitsEntry: Codable, Equatable, Sendable {
     var windows: [CoreLimitWindow]
 }
 
+/// The status line capture as `limits.read` reports it (RB-E5, RD24).
+struct CoreLimitsStatusline: Codable, Equatable, Sendable {
+    /// Seconds since 1970: the newest status line snapshot of this Claude account, also when the usage cache won the
+    /// Claude entry. Nil when there is none.
+    @CoreNullable var at: Double?
+}
+
 /// The `limits.read` result, in order claude, codex, gemini.
 struct CoreLimitsResult: Codable, Equatable, Sendable {
     var limits: [CoreLimitsEntry]
+    /// Always on the wire since RB-E5; optional so a result built in a test or by the v5 pages may leave it out.
+    var statusline: CoreLimitsStatusline? = nil
 }

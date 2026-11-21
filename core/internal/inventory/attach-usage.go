@@ -42,6 +42,16 @@ func pendingReason(addedMs *float64, window *usage.LogWindow, nowMs float64) str
 	return ""
 }
 
+// isoMs is a time in ms since 1970 as the protocol's timestamp text (ISO 8601 UTC with milliseconds, the text of a
+// journal `at`), nil for nil. A fraction of a millisecond is dropped.
+func isoMs(ms *float64) *string {
+	if ms == nil {
+		return nil
+	}
+	text := time.UnixMilli(int64(*ms)).UTC().Format("2006-01-02T15:04:05.000Z")
+	return &text
+}
+
 type matrixRow struct {
 	id    string
 	kind  Kind
@@ -66,6 +76,7 @@ type reading struct {
 	days    []string
 	last    *string
 	errors  *int
+	week    []HookDayCount
 	pending string
 }
 
@@ -81,7 +92,7 @@ func AttachUsage(inv Snapshot, in *usage.Input, now time.Time) Snapshot {
 // attachUsage is AttachUsage with firstSeen: the first-seen time in ms by item id, from the store of
 // Service.Rows. An id it holds is "added" at that time; any other id falls back to the file's mtime. A
 // non-empty registry also fills CLICells, one per entry (loadout.rows passes cliregistry.All(); tests pass
-// others).
+// others), and FirstSeen: that same "added" time, store or mtime, so "added N ago" and the D63 note agree.
 func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[string]float64, registry []cliregistry.CLI) Snapshot {
 	nowMs := float64(now.UnixNano()) / 1e6
 	// groups hold the v5 members only: the two-CLI cells never see a shared skill (plan AR1). allGroups add the
@@ -138,7 +149,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		if row.kind == KindHook {
 			h := perCLI.Hook[row.hash]
 			e := h.Errors
-			r = reading{runs: h.Runs, last: h.Last, errors: &e}
+			r = reading{runs: h.Runs, last: h.Last, errors: &e, week: hookWeek(perCLI.HookDays[row.hash], now)}
 		} else {
 			names := perCLI.Skill
 			if row.kind == KindAgent {
@@ -218,7 +229,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		cell := CLICell{State: CLICellCounted, Last: r.last, Note: r.pending}
 		if row.kind == KindHook {
 			runs := r.runs
-			cell.Runs, cell.Errors = &runs, r.errors
+			cell.Runs, cell.Errors, cell.Week = &runs, r.errors, r.week
 		} else {
 			sessions := r.runs
 			cell.Sessions, cell.Days = &sessions, slices.Clone(r.days)
@@ -250,11 +261,20 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		return out
 	}
 
+	// firstSeenOf is the "added" time the pending rule reads, as wire text; loadout.rows only (a non-empty registry).
+	firstSeenOf := func(id, file string) *string {
+		if len(registry) == 0 {
+			return nil
+		}
+		return isoMs(addedAt(id, file))
+	}
+
 	out := inv
 	out.Items = make([]Item, len(inv.Items))
 	for i, item := range inv.Items {
 		item.Cells = cellsFor(item.Key())
 		item.CLICells = cliCellsFor(item.Key())
+		item.FirstSeen = firstSeenOf(item.ID, item.File)
 		out.Items[i] = item
 	}
 	// A shared skill gets cliCells only: it is in no v5 field, so it has no two-CLI cells.
@@ -262,6 +282,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		out.shared = make([]Item, len(inv.shared))
 		for i, item := range inv.shared {
 			item.CLICells = cliCellsFor(item.Key())
+			item.FirstSeen = firstSeenOf(item.ID, item.File)
 			out.shared[i] = item
 		}
 	}
@@ -269,6 +290,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 	for i, hook := range inv.Hooks {
 		hook.Cells = cellsFor(hook.Key())
 		hook.CLICells = cliCellsFor(hook.Key())
+		hook.FirstSeen = firstSeenOf(hook.ID, hook.File)
 		hook.Usage = nil
 		if hook.CLI == Claude && totals != nil {
 			u := totals.Claude.Hook[hook.Hash]

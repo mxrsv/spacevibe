@@ -90,3 +90,9 @@ struct CoreUndoResult: Codable, Equatable, Sendable {
 struct CoreJournalHistory: Codable, Equatable, Sendable {
     var entries: [CoreJournalEntry]
 }
+
+/// The result of `findings.kept`: the Keep list's finding ids, oldest first, as the shell built them (RB-E5).
+/// `findings.keep` and `findings.unkeep` answer a `CoreEntryResult`.
+struct CoreKeptFindings: Codable, Equatable, Sendable {
+    var kept: [String]
+}

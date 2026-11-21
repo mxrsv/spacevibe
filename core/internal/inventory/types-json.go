@@ -31,11 +31,12 @@ type itemWire struct {
 	CLICells    map[string]CLICell `json:"cliCells,omitempty"`
 	Folder      string             `json:"folder,omitempty"`
 	RealPath    string             `json:"realPath,omitempty"`
+	FirstSeen   *string            `json:"firstSeen,omitempty"`
 }
 
 // MarshalJSON adds key, and override when HasSkillOverride (null when the value is nil).
 func (i Item) MarshalJSON() ([]byte, error) {
-	w := itemWire{i.ID, i.CLI, i.Kind, i.Name, i.Entry, i.Description, i.Owner, i.Path, i.File, i.Removable, i.Scope, i.Project, i.InOther, nil, i.Key(), i.Cells, i.CLICells, i.Folder, i.RealPath}
+	w := itemWire{i.ID, i.CLI, i.Kind, i.Name, i.Entry, i.Description, i.Owner, i.Path, i.File, i.Removable, i.Scope, i.Project, i.InOther, nil, i.Key(), i.Cells, i.CLICells, i.Folder, i.RealPath, i.FirstSeen}
 	if i.HasSkillOverride {
 		w.Override = json.RawMessage("null")
 		if i.SkillOverride != nil {
@@ -56,7 +57,7 @@ func (i *Item) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*i = Item{ID: w.ID, CLI: w.CLI, Kind: w.Kind, Name: w.Name, Entry: w.Entry, Description: w.Description, Owner: w.Owner,
-		Path: w.Path, File: w.File, Removable: w.Removable, Scope: w.Scope, Project: w.Project, InOther: w.InOther, Cells: w.Cells, CLICells: w.CLICells, Folder: w.Folder, RealPath: w.RealPath}
+		Path: w.Path, File: w.File, Removable: w.Removable, Scope: w.Scope, Project: w.Project, InOther: w.InOther, Cells: w.Cells, CLICells: w.CLICells, Folder: w.Folder, RealPath: w.RealPath, FirstSeen: w.FirstSeen}
 	if len(w.Override) > 0 {
 		i.HasSkillOverride = true
 		return json.Unmarshal(w.Override, &i.SkillOverride)
@@ -86,6 +87,7 @@ type hookWire struct {
 	Cells     *Cells             `json:"cells,omitempty"`
 	CLICells  map[string]CLICell `json:"cliCells,omitempty"`
 	Folder    string             `json:"folder,omitempty"`
+	FirstSeen *string            `json:"firstSeen,omitempty"`
 	Usage     *HookUsage         `json:"usage"`
 }
 
@@ -97,7 +99,7 @@ func (h Hook) MarshalJSON() ([]byte, error) {
 		paths = []string{}
 	}
 	return json.Marshal(hookWire{h.ID, h.CLI, KindHook, h.Event, h.Matcher, redact.Command(h.Command), h.Timeout, h.Async, h.Owner, h.Removable,
-		h.Dead, paths, h.Hash, h.File, h.Scope, h.Project, h.Key(), h.Cells, h.CLICells, h.Folder, h.Usage})
+		h.Dead, paths, h.Hash, h.File, h.Scope, h.Project, h.Key(), h.Cells, h.CLICells, h.Folder, h.FirstSeen, h.Usage})
 }
 
 // UnmarshalJSON is the inverse; kind and key are derived, not stored.
@@ -108,6 +110,6 @@ func (h *Hook) UnmarshalJSON(data []byte) error {
 	}
 	*h = Hook{ID: w.ID, CLI: w.CLI, Event: w.Event, Matcher: w.Matcher, Command: w.Command, Timeout: w.Timeout, Async: w.Async,
 		Owner: w.Owner, Removable: w.Removable, Dead: w.Dead, Paths: w.Paths, Hash: w.Hash, File: w.File, Scope: w.Scope,
-		Project: w.Project, Cells: w.Cells, CLICells: w.CLICells, Folder: w.Folder, Usage: w.Usage}
+		Project: w.Project, Cells: w.Cells, CLICells: w.CLICells, Folder: w.Folder, FirstSeen: w.FirstSeen, Usage: w.Usage}
 	return nil
 }

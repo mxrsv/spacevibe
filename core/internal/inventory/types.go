@@ -202,6 +202,10 @@ type Item struct {
 	// is Path with every link followed (readers-map.go). Set by loadout.rows only; "" otherwise.
 	Folder   string `json:"folder,omitempty"`
 	RealPath string `json:"realPath,omitempty"`
+	// FirstSeen is when the item was added as far as SpaceVibe knows: the first time its id was seen
+	// (first-seen.go), else its file's modification time; ISO 8601 UTC. Set by loadout.rows only; nil when neither
+	// is known (then omitted).
+	FirstSeen *string `json:"firstSeen,omitempty"`
 }
 
 // Key is the matrix row this item belongs to: the same name (or hook) in the same project, whichever CLI
@@ -246,6 +250,8 @@ type Hook struct {
 	CLICells map[string]CLICell `json:"cliCells,omitempty"`
 	// Folder is File, as the key of the loadout.rows folder table (readers-map.go). Set by loadout.rows only.
 	Folder string `json:"folder,omitempty"`
+	// FirstSeen is as on Item (the hook's id; the modification time of the file that holds it). loadout.rows only.
+	FirstSeen *string `json:"firstSeen,omitempty"`
 	// Usage is nil when unknown (scan not finished) or not logged (Codex); always written, as null then.
 	Usage *HookUsage `json:"usage"`
 }

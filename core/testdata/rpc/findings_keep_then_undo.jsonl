@@ -1,0 +1,22 @@
+{"dir":"send","json":{"id":0,"jsonrpc":"2.0","method":"initialize","params":{"client":{"name":"contract","version":"0"},"protocolVersion":1}}}
+{"dir":"recv","json":{"id":0,"jsonrpc":"2.0","result":{"core":{"name":"spacevibe","version":"dev"},"identity":{"dataDir":".spacevibe","envPrefix":"SPACEVIBE_"},"methods":["activity.read","activity.stop","activity.subscribe","activity.unsubscribe","clis.registry","findings.keep","findings.kept","findings.unkeep","initialize","inventory.read","journal.history","journal.undo","limits.read","loadout.copyToOther","loadout.removeDeadHooks","loadout.removeItem","loadout.rows","rules.add","rules.changeVerdict","rules.changeVerdicts","rules.check","rules.preview","rules.remove","rules.setCapability","rules.snapshot","usage.scan"],"protocolVersion":1}}}
+{"dir":"send","json":{"id":1,"jsonrpc":"2.0","method":"findings.kept","params":{}}}
+{"dir":"recv","json":{"id":1,"jsonrpc":"2.0","result":{"kept":[]}}}
+{"dir":"send","json":{"id":2,"jsonrpc":"2.0","method":"findings.keep","params":{"id":""}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"A finding id must be 1 to 1024 bytes of text with no control characters.","status":400},"message":"A finding id must be 1 to 1024 bytes of text with no control characters."},"id":2,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":3,"jsonrpc":"2.0","method":"findings.unkeep","params":{"id":"W:claude:five_hour:1794000000"}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"That finding is not kept.","status":409},"message":"That finding is not kept."},"id":3,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":4,"jsonrpc":"2.0","method":"findings.keep","params":{"id":"W:claude:five_hour:1794000000","note":"x"}}}
+{"dir":"recv","json":{"error":{"code":-32602,"message":"Invalid params: \"note\" is not a known member."},"id":4,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":5,"jsonrpc":"2.0","method":"journal.history","params":{}}}
+{"dir":"recv","json":{"id":5,"jsonrpc":"2.0","result":{"entries":[]}}}
+{"dir":"send","json":{"id":6,"jsonrpc":"2.0","method":"findings.keep","params":{"id":"W:claude:five_hour:1794000000"}}}
+{"dir":"recv","json":{"id":6,"jsonrpc":"2.0","result":{"entry":{"at":"$TIME","count":1,"id":"$ENTRY_ID","label":"Kept a finding","undone":false}}}}
+{"dir":"send","json":{"id":7,"jsonrpc":"2.0","method":"findings.kept","params":{}}}
+{"dir":"recv","json":{"id":7,"jsonrpc":"2.0","result":{"kept":["W:claude:five_hour:1794000000"]}}}
+{"dir":"send","json":{"id":8,"jsonrpc":"2.0","method":"findings.keep","params":{"id":"W:claude:five_hour:1794000000"}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"That finding is already kept.","status":409},"message":"That finding is already kept."},"id":8,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":9,"jsonrpc":"2.0","method":"journal.undo","params":{"id":"$ENTRY_ID"}}}
+{"dir":"recv","json":{"id":9,"jsonrpc":"2.0","result":{"label":"Kept a finding"}}}
+{"dir":"send","json":{"id":10,"jsonrpc":"2.0","method":"findings.kept","params":{}}}
+{"dir":"recv","json":{"id":10,"jsonrpc":"2.0","result":{"kept":[]}}}

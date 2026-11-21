@@ -48,4 +48,7 @@ var AllMethods = []string{
 	"rules.changeVerdicts",
 	"rules.check",
 	"limits.read",
+	"findings.kept",
+	"findings.keep",
+	"findings.unkeep",
 }

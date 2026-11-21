@@ -171,6 +171,60 @@ func writeCases(t *testing.T) {
 		c.finish("rules_changeVerdicts_then_undo")
 	})
 
+	t.Run("findings_keep_then_undo", func(t *testing.T) {
+		home := copiedHome(t)
+		c := startOn(t, shippedBin, home)
+		c.initialize()
+		const id = "W:claude:five_hour:1794000000"
+		var list struct{ Kept []string }
+		decodeInto(t, c.ok(c.call("1", "findings.kept", `{}`)), &list)
+		if list.Kept == nil || len(list.Kept) != 0 {
+			t.Fatalf("no list yet: %#v", list.Kept)
+		}
+
+		// Refusals change nothing.
+		if got := c.status(c.call("2", "findings.keep", `{"id":""}`)); got != 400 {
+			t.Errorf("an empty id: status %d", got)
+		}
+		if got := c.status(c.call("3", "findings.unkeep", `{"id":"`+id+`"}`)); got != 409 {
+			t.Errorf("unkeep of an id not kept: status %d", got)
+		}
+		c.wantError(c.call("4", "findings.keep", `{"id":"`+id+`","note":"x"}`), -32602)
+		var hist struct{ Entries []json.RawMessage }
+		decodeInto(t, c.ok(c.call("5", "journal.history", `{}`)), &hist)
+		if len(hist.Entries) != 0 {
+			t.Fatalf("a refused keep left %d journal entries", len(hist.Entries))
+		}
+
+		var keptEntry struct {
+			Entry struct {
+				ID, Label string
+				Count     int
+			}
+		}
+		decodeInto(t, c.ok(c.call("6", "findings.keep", `{"id":"`+id+`"}`)), &keptEntry)
+		c.norm.mask(keptEntry.Entry.ID, "$ENTRY_ID")
+		if keptEntry.Entry.Label != "Kept a finding" || keptEntry.Entry.Count != 1 {
+			t.Fatalf("entry %+v", keptEntry.Entry)
+		}
+		decodeInto(t, c.ok(c.call("7", "findings.kept", `{}`)), &list)
+		if len(list.Kept) != 1 || list.Kept[0] != id {
+			t.Fatalf("kept = %q", list.Kept)
+		}
+		if got := c.status(c.call("8", "findings.keep", `{"id":"`+id+`"}`)); got != 409 {
+			t.Errorf("a second keep: status %d", got)
+		}
+		decodeInto(t, c.ok(c.call("9", "journal.undo", `{"id":"`+keptEntry.Entry.ID+`"}`)), &struct{ Label string }{})
+		decodeInto(t, c.ok(c.call("10", "findings.kept", `{}`)), &list)
+		if len(list.Kept) != 0 {
+			t.Fatalf("after Undo: kept = %q", list.Kept)
+		}
+		if _, err := os.Lstat(filepath.Join(home, ".spacevibe", "kept-findings.json")); err == nil {
+			t.Error("Undo of the first keep left the list file")
+		}
+		c.finish("findings_keep_then_undo")
+	})
+
 	t.Run("write_guard_installed", func(t *testing.T) {
 		real, err := roots.RealHome()
 		if err != nil {

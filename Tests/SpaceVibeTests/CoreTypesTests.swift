@@ -119,6 +119,7 @@ struct CoreTypesTests {
         "rules.snapshot": CoreRulesSnapshot.self, "rules.preview": CoreCapabilityPreview.self, "rules.setCapability": CoreSetCapabilityResult.self,
         "rules.add": CoreEntryResult.self, "rules.remove": CoreEntryResult.self, "rules.changeVerdict": CoreEntryResult.self, "rules.changeVerdicts": CoreEntryResult.self,
         "rules.check": CoreRuleCheck.self, "limits.read": CoreLimitsResult.self,
+        "findings.kept": CoreKeptFindings.self, "findings.keep": CoreEntryResult.self, "findings.unkeep": CoreEntryResult.self,
     ]
 
     private static func unmaskedParams(_ json: [String: Any]) throws -> Any {

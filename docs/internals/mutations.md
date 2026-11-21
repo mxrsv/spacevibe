@@ -1,6 +1,6 @@
 # Mutations
 
-Every change SpaceVibe makes to what Claude Code and Codex are equipped with: copying and removing Skills, Subagents and Hooks, removing dead Hooks, adding, removing and re-grading Rules, the status line capture setup, and Undo of each. The Agents page calls `loadout.copyToOther`, `loadout.removeItem` and `loadout.removeDeadHooks`, the Rules page calls `rules.*`, and every Undo calls `journal.undo`. `spacevibe statusline install` and `uninstall` are command-line subcommands with no RPC route. Wire shapes and error codes are in [core-protocol.md](core-protocol.md); journal retention and the trash sweep are [below](#journal-retention-and-the-trash-sweep). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
+Every change SpaceVibe makes to what Claude Code and Codex are equipped with: copying and removing Skills, Subagents and Hooks, removing dead Hooks, adding, removing and re-grading Rules, the status line capture setup, SpaceVibe's own Keep list of Inbox findings, and Undo of each. The Agents page calls `loadout.copyToOther`, `loadout.removeItem` and `loadout.removeDeadHooks`, the Rules page calls `rules.*`, and every Undo calls `journal.undo`. `spacevibe statusline install` and `uninstall` are command-line subcommands with no RPC route. Wire shapes and error codes are in [core-protocol.md](core-protocol.md); journal retention and the trash sweep are [below](#journal-retention-and-the-trash-sweep). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
 
 Code: [`core/internal/mutate`](../../core/internal/mutate) (item, hook and file edits, the journal, Undo, containment, the trash), [`core/internal/fsx`](../../core/internal/fsx) (atomic write, write lock, write guard), [`core/internal/ojson`](../../core/internal/ojson) (splices bytes) and [`core/internal/toml`](../../core/internal/toml) (only reads). Rules writes come from [`core/internal/rules`](../../core/internal/rules) through the same file edit ([rules.md](rules.md)).
 
@@ -14,8 +14,9 @@ Code: [`core/internal/mutate`](../../core/internal/mutate) (item, hook and file 
 | Copy, remove or remove dead Hooks | Claude Code `settings.json` or Codex `hooks.json`, the global file only; copies go only into Claude Code | `hook-added` or `hook-removed`, each with the exact file edit that made it |
 | Rules change | The scope's settings file (global, project or local), one edit per change | `file-edited`: old bytes in the trash, SHA-256 of what was written |
 | Status line capture | Claude `settings.json` `statusLine`, plus the executable copy at `<data>/bin/spacevibe` (0700, not journaled, kept on Undo) | `file-edited` for the settings only |
+| Keep or stop keeping an Inbox finding (`findings.keep`, `findings.unkeep`) | `<data>/kept-findings.json` (0600), the whole list rewritten; a link in its place is refused | `file-edited`; Undo of the first keep moves the new file to the trash |
 
-Every row also adds one entry to `<data>/journal.json` (0600). Data-folder caches (`first-seen.json`, `usage-cache.json`) use the same atomic write without the lock or a journal entry.
+Every row also adds one entry to `<data>/journal.json` (0600). Data-folder caches (`first-seen.json`, `usage-cache.json`) use the same atomic write without the lock or a journal entry. The Keep list is not a cache: it is the user's choice, so it takes the lock and the journal like a config edit ([`findings`](../../core/internal/findings/keep.go)).
 
 ## Runtime path
 
@@ -63,4 +64,4 @@ A write also ends old history. The journal keeps at most 200 entries no older th
 
 ## Verification
 
-`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/mutate/... ./internal/fsx/... ./internal/ojson/... ./internal/toml/...` (`scripts/test.sh` runs it first). Every test writes under `t.TempDir()`; `TestMain` in [main_test.go](../../core/internal/mutate/main_test.go) arms the real-home guard.
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/mutate/... ./internal/fsx/... ./internal/ojson/... ./internal/toml/... ./internal/findings/...` (`scripts/test.sh` runs it first). Every test writes under `t.TempDir()`; `TestMain` in [main_test.go](../../core/internal/mutate/main_test.go) arms the real-home guard.

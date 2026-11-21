@@ -51,14 +51,31 @@ func decodeTree(t *testing.T, data []byte) any {
 	return v
 }
 
-// Extra (G2.1): the cache is shared by both engines while they coexist (UsageScanCache.swift:3-16). A cache
-// written by Go for the same logs holds the same data as one the Swift engine wrote, in the same layout, and
-// Go reads the Swift one back.
+// goCache is swiftCache as ScanVersion 3 writes it: the same entries and layout, "v":3, and rec.hookDays (RB-E5).
+func goCache() string {
+	text := strings.ReplaceAll(swiftCache, `"v":2`, `"v":3`)
+	for _, add := range []struct{ old, new string }{
+		{`"rec":{"agent":{},"hook":{},"skill":{}}`, `"rec":{"agent":{},"hook":{},"hookDays":{},"skill":{}}`},
+		{`"rec":{"hook":{},"skill":{"cx-skill"`, `"rec":{"hook":{},"hookDays":{},"skill":{"cx-skill"`},
+		{`"agent":{"rev":["2026-10-03"]}}`, `"agent":{"rev":["2026-10-03"]},"hookDays":{"43c00ce9a764":{"2026-10-02":{"runs":1,"errors":1}},"6ee638a9ec1f":{"2026-10-01":{"runs":1,"errors":0}}}}`},
+	} {
+		if !strings.Contains(text, add.old) {
+			panic("swiftCache lacks " + add.old)
+		}
+		text = strings.Replace(text, add.old, add.new, 1)
+	}
+	return text
+}
+
+// Extra (G2.1): the cache was shared by both engines while they coexisted (UsageScanCache.swift:3-16). A cache
+// written by Go for the same logs holds the same data as one the Swift engine wrote, in the same layout, plus the
+// version 3 hookDays; Go reads the Swift one back, and parses its version 2 entries again (RB-E5).
 func TestCacheFormatMatchesSwift(t *testing.T) {
 	h := newTempHome(t)
 	writeSwiftLogs(h)
 	r := h.roots()
-	want := strings.ReplaceAll(swiftCache, "@ROOT@", escapedRoot(h.root))
+	swift := strings.ReplaceAll(swiftCache, "@ROOT@", escapedRoot(h.root))
+	want := strings.ReplaceAll(goCache(), "@ROOT@", escapedRoot(h.root))
 
 	mustScan(t, NewScanner(r))
 	got, err := os.ReadFile(CachePath(r.Data))
@@ -88,7 +105,7 @@ func TestCacheFormatMatchesSwift(t *testing.T) {
 	}
 
 	// Go reads the Swift literal: every entry is valid and carries the Swift values.
-	loaded := loadCacheFromBytes(t, r.Data, want)
+	loaded := loadCacheFromBytes(t, r.Data, swift)
 	if len(loaded) != 3 {
 		t.Fatalf("loaded %d entries from the Swift cache, want 3", len(loaded))
 	}
@@ -102,16 +119,25 @@ func TestCacheFormatMatchesSwift(t *testing.T) {
 	if s2 := loaded[h.path(".claude/projects/p/s2.jsonl")]; s2.First != nil || s2.mtimeMs() != 1791169200000 {
 		t.Errorf("s2 = %+v", s2)
 	}
-	// And a scan trusts it: the same Swift cache with the `foo` skill dropped from s1 (the log still names it)
-	// yields no `foo`, so Go used the entry instead of parsing s1 again.
-	trimmed := strings.Replace(want, `"skill":{"foo":["2026-10-02","2026-10-03"]}`, `"skill":{}`, 1)
-	if trimmed == want {
-		t.Fatal("the literal has no foo skill to drop")
+	// A scan trusts a version 3 entry: the Go cache with the `foo` skill dropped from s1 (the log still names it)
+	// yields no `foo`, so Go used the entry instead of parsing s1 again ...
+	drop := func(text string) string {
+		trimmed := strings.Replace(text, `"skill":{"foo":["2026-10-02","2026-10-03"]}`, `"skill":{}`, 1)
+		if trimmed == text {
+			t.Fatal("the literal has no foo skill to drop")
+		}
+		return trimmed
 	}
-	loadCacheFromBytes(t, r.Data, trimmed)
+	loadCacheFromBytes(t, r.Data, drop(want))
 	res := mustScan(t, NewScanner(r))
 	if _, ok := res.Totals.Claude.Skill["foo"]; ok || res.Files != 3 || res.Totals.Codex.Skill["cx-skill"].Sessions != 1 {
-		t.Errorf("the scan did not trust the Swift entries: %+v", res)
+		t.Errorf("the scan did not trust the version 3 entries: %+v", res)
+	}
+	// ... and parses a Swift (version 2) entry again, so its hooks get their days.
+	loadCacheFromBytes(t, r.Data, drop(swift))
+	res = mustScan(t, NewScanner(r))
+	if _, ok := res.Totals.Claude.Skill["foo"]; !ok || res.Totals.Claude.HookDays["43c00ce9a764"]["2026-10-02"] != (HookDay{Runs: 1, Errors: 1}) {
+		t.Errorf("a version 2 entry was trusted: %+v", res.Totals.Claude)
 	}
 }
 

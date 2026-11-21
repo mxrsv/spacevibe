@@ -46,16 +46,28 @@ type HookTotals struct {
 	Last   *string `json:"last"`
 }
 
-// CLITotals are the totals of one CLI. Skill and Agent are keyed by the bare name; Hook by the hook hash.
+// HookDay is what the logs say about one hook on one day: its runs and how many of them failed.
+type HookDay struct {
+	Runs   int `json:"runs"`
+	Errors int `json:"errors"`
+}
+
+// HookDays are the days of one hook, keyed by the day (YYYY-MM-DD, the date text of the log line, as NameUsage.Days).
+type HookDays map[string]HookDay
+
+// CLITotals are the totals of one CLI. Skill and Agent are keyed by the bare name; Hook and HookDays by the hook hash.
 // The maps are never nil.
 type CLITotals struct {
 	Skill map[string]NameUsage  `json:"skill"`
 	Agent map[string]NameUsage  `json:"agent"`
 	Hook  map[string]HookTotals `json:"hook"`
+	// HookDays splits each hook's runs and errors by day, for "errors in the last 7 days" (RD26). It is not on the
+	// usage.scan wire, which keeps the frozen usage.json shape: loadout.rows reads it from the stored result.
+	HookDays map[string]HookDays `json:"-"`
 }
 
 func emptyTotals() CLITotals {
-	return CLITotals{Skill: map[string]NameUsage{}, Agent: map[string]NameUsage{}, Hook: map[string]HookTotals{}}
+	return CLITotals{Skill: map[string]NameUsage{}, Agent: map[string]NameUsage{}, Hook: map[string]HookTotals{}, HookDays: map[string]HookDays{}}
 }
 
 // Totals holds the totals of both CLIs.

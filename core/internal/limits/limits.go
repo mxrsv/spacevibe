@@ -80,9 +80,18 @@ type Entry struct {
 	Windows []Window `json:"windows"`
 }
 
-// Result is the `limits.read` result: Claude Code, Codex and Gemini CLI, in that order.
+// Result is the `limits.read` result: Claude Code, Codex and Gemini CLI, in that order, and the status line capture.
 type Result struct {
-	Limits []Entry `json:"limits"`
+	Limits     []Entry    `json:"limits"`
+	Statusline Statusline `json:"statusline"`
+}
+
+// Statusline is what the reader knows of the status line capture, for Settings › Limits (RD24).
+type Statusline struct {
+	// At is when the newest status line snapshot of this Claude account was taken (its observedAt, seconds since 1970
+	// like Entry.At), whether or not the Claude entry used it: the usage cache can be newer. Null when there is
+	// none the reader accepts (no capture yet, another account, or the account cannot be identified).
+	At *float64 `json:"at"`
 }
 
 // Read reads the limits of all three CLIs; now decides each window's Current flag and which status line
@@ -90,7 +99,7 @@ type Result struct {
 // UI path.
 func Read(ctx context.Context, cfg config.Config, r roots.Roots, now time.Time) (Result, error) {
 	nowSeconds := float64(now.UnixNano()) / 1e9
-	claude, err := readClaude(ctx, cfg, r, nowSeconds)
+	claude, snapshotAt, err := readClaude(ctx, cfg, r, nowSeconds)
 	if err != nil {
 		return Result{}, err
 	}
@@ -102,7 +111,7 @@ func Read(ctx context.Context, cfg config.Config, r roots.Roots, now time.Time) 
 	for i := range entries {
 		entries[i] = entries[i].settled(nowSeconds)
 	}
-	return Result{Limits: entries}, nil
+	return Result{Limits: entries, Statusline: Statusline{At: snapshotAt}}, nil
 }
 
 // settled marks each window's Current flag and makes Windows a non-nil slice.

@@ -92,7 +92,7 @@ Params and results use the types defined under "Wire types". "Journal entry" is 
 | `clis.registry` | `{}` | `{clis:RegistryCli[]}` in the fixed CLI order | none | none: reads nothing, the registry is part of the binary | none |
 | `inventory.read` | `{}` | `InventorySnapshot`, no `cells`, hook `usage` null | none: unreadable files become `problems` | Refreshes the discovered-project list | none |
 | `usage.scan` | `{}` | `UsageResult`; sends `usage/progress`; stores the result as the process's usage state | 409 a scan is already running; -32800 | Reads logs; writes `<data>/usage-cache.json` | none |
-| `loadout.rows` | `{}` | `LoadoutRows`; `problems` are the raw sentences; every item and hook carries `cells`, `cliCells` and `folder`, every item `realPath`; `folders` is the readers map; `extraItems` and `extraProblems` hold what the v5 fields leave out | none | Reads inventory; attaches the stored usage state; writes `<data>/first-seen.json` when a new item id appears (best effort) | none |
+| `loadout.rows` | `{}` | `LoadoutRows`; `problems` are the raw sentences; every item and hook carries `cells`, `cliCells`, `folder` and `firstSeen` (omitted when unknown), every item `realPath`; `folders` is the readers map; `extraItems` and `extraProblems` hold what the v5 fields leave out | none | Reads inventory; attaches the stored usage state; writes `<data>/first-seen.json` when a new item id appears (best effort) | none |
 | `activity.read` | `{}` | `ActivityReport` | none: the engine reports what it could not read inside the report | none | none |
 | `activity.subscribe` | `{}` | `ActivityReport`; later `activity/report` | none | Starts a 3 s poll | none |
 | `activity.unsubscribe` | `{}` | `{}` | none | Stops the poll | none |
@@ -110,7 +110,10 @@ Params and results use the types defined under "Wire types". "Journal entry" is 
 | `rules.changeVerdict` | `{scope, dir, rule, from, to}` | `{entry:JournalEntryRef}` | 400 same verdict; 404; 409 | Same | label `Changed <rule> from <a> to <b> (<scope>)`; op `file-edited` |
 | `rules.changeVerdicts` | `{scope, dir, to, rules:RuleMove[]}` | `{entry:JournalEntryRef}` | 400 an empty list, a bad verdict, or a `from` equal to `to`; 404; 409 a rule is no longer under its `from` (nothing is written), not valid JSON, or a project or local file that is a link; 500 | One edit of the scope's `settings.json` under the write lock: every rule is checked, then all move together | label `Changed N rules to <to> (<scope>)` (`Changed 1 rule to ...` for one); one op `file-edited`, so one Undo restores all |
 | `rules.check` | `{rule}` | `{valid:boolean, message:string\|null}` | none | none | none |
-| `limits.read` | `{}` | `{limits:LimitsEntry[]}` in order claude, codex, gemini | none | Reads local files only: no request, no credential, no CLI started | none |
+| `limits.read` | `{}` | `LimitsResult`: `{limits:LimitsEntry[], statusline}`, limits in order claude, codex, gemini | none | Reads local files only: no request, no credential, no CLI started | none |
+| `findings.kept` | `{}` | `{kept:string[]}`, oldest first; `[]` when there is no list | 409 `<data>/kept-findings.json` exists but is not the list, or is a link: refused, never read as empty | none | none |
+| `findings.keep` | `{id}` | `{entry:JournalEntryRef}` | 400 an id that is empty, over 1024 bytes, not UTF-8 or holds a control character; 409 already kept, the list or the journal unreadable, a link in place of the list; 500 | One write of `<data>/kept-findings.json`, the id added last; past 2000 ids the oldest drops | label `Kept a finding`; op `file-edited` |
+| `findings.unkeep` | `{id}` | `{entry:JournalEntryRef}` | 400 as `findings.keep`; 409 not kept, or as `findings.keep`; 500 | One write of the list, the id removed | label `Stopped keeping a finding`; op `file-edited` |
 
 Behavior the table cannot say:
 
@@ -122,6 +125,9 @@ Behavior the table cannot say:
 - **`loadout.rows` is three steps in one call**: the inventory read, the usage join and the filter counts (per scope and per row key; [inventory.md](inventory.md#runtime-path)). Grouping rows by `key`, sorting and labels stay in the shell. Problems come back unshortened, with absolute paths; the shell shortens the home folder before showing them.
 - **The CLI registry is the one list of CLIs.** [`cliregistry`](../../core/internal/cliregistry/registry.go) holds each CLI's id, name and `supports`, in the fixed order every page uses; `clis.registry` returns it and the keys of every `cliCells` map are exactly its ids. The ids are the `Cli` values the rest of the protocol already uses (`claude`, `codex`; also the keys of `roots` and `events` and the `cli` of `limits.read`), and the engine reads exactly the CLIs it lists (`TestRegistryIDsMatchTheProtocol`). `limits.read` still adds a `gemini` entry that the registry does not hold: that entry is the v5 Limits page's own. A `supports` member that is false is Not supported, a different fact from Missing or Unmeasurable. The v5 shell does not call `clis.registry`; the redesign's store does, and the method is in the read list of [`CoreConnection`](../../Sources/SpaceVibe/Core/CoreConnection.swift), so a restart sends it again like any read.
 - **Two cell maps on a `loadout.rows` row.** `cells` is the two-CLI shape the v5 shell decodes and does not change. `cliCells` sits beside it, one `CliCell` per registry id, and is written only by `loadout.rows` (`inventory.read` has neither). Both come from one reading of the logs, so they never disagree on a count. Where they differ: a D63 "added recently" pending is a counted zero with a `note`; "No logs scanned for this CLI yet" is `unmeasurable`; the scan not having finished is `scanning`; Missing becomes `unknown` when the CLI's own folder or file for that kind could not be used (the per-kind rules are in [inventory.md](inventory.md#cli-cells)). A skill or subagent counts `sessions` and lists its `days`; a hook counts `runs` and `errors` (GLOSSARY: Runs are hooks only).
+- **Hook errors in the last 7 days are their own count.** A counted hook `CliCell` carries `last7Days`, the seven days ending on the core's today, oldest first and every day present, with the runs and errors of each, and `errorsLast7Days`, their sum. RD26's failing Hook reads `errorsLast7Days`; `errors` (and `usage.errors`) stay lifetime counts inside the scanned logs. A day is the date text of the log line, which both CLIs write in UTC, so "today" is the UTC date of the core's clock, as for every usage day ([usage.md](usage.md#rules-that-are-easy-to-get-wrong)). The days come from the stored scan: the week moves with the clock between scans, but counts only what the last scan read.
+- **`firstSeen` is the "added" time.** Every `loadout.rows` item, extra item and hook carries `firstSeen` (ISO text): the time `first-seen.json` holds for its id, or, when the store has no entry or cannot be used, its file's modification time. It is the time that decides the D63 note, so "added N ago" and "Added in the last 24 hours" agree. Omitted when neither is known, and on `inventory.read`.
+- **The Keep list is the shell's ids, stored.** `findings.keep` and `findings.unkeep` store opaque finding ids (the shell builds them in [`Findings.swift`](../../Sources/SpaceVibe/Shell/Findings.swift)); the core checks only length and characters and never interprets them, so a kept Window comes back with the next Window because its id changes, not because the core looked. Each call is one journal entry with one `file-edited` op, so `journal.undo` restores the list byte for byte; like every `file-edited` Undo it is refused (409) once a later keep or unkeep changed the file, so undo newest first. Only these two methods write the list, `0600` under the write lock, and a file that cannot be read is never treated as empty ([`findings`](../../core/internal/findings/keep.go)).
 - **The readers map is data, not a rule in the shell.** `loadout.rows` lists `folders` (every folder a row lives in, each installed CLI's own global folders and the shared `~/.agents/skills`), each with the registry ids that read it and the CLI that owns it; every item and hook names its `folder` by path, and every item its `realPath`. "Via" (RD31), the files of a row (D53) and who loses an item (RD-R11) are pure functions of these members, defined in [inventory.md](inventory.md#readers-map).
 - **v5 fields exclude `~/.agents/skills` until RB-X1.** The Codex skills read from `~/.agents/skills` (ids `codex:skill:agents:<entry>`, `removable: false`, `cliCells` but no `cells`) are only in `extraItems`, and the problem lines about that folder only in `extraProblems`. `inventory.read` and the members the v5 DTOs decode (`items`, `hooks`, `cells`, `inOther`, `countsByScope`, `rowFlags`, `problems`) are exactly what they would be without that folder, because the v5 shell would split a key with two Codex members into two rows (FE-P9, plan AR1). Every `cliCells` map counts the extra items, so a new-frame caller reads `items` and `extraItems` together; RB-X1 folds them into `items`.
 - **`rules.setCapability` returning null is not an error.** The core reports it; the app turns it into the 409 sentence "Nothing to change: the file already holds that." (`RulesModel.write` does it). `rules.add`, `remove`, `changeVerdict` and `changeVerdicts` never return null: the engine throws that 409 itself.
@@ -162,11 +168,12 @@ type Cell =
 type Cells = { claude: Cell, codex: Cell }
 type CliCell =                                    // loadout.rows only
   | { state: "counted", sessions: number, days: string[], last: string | null, note?: string }   // skill or agent; days YYYY-MM-DD, sorted
-  | { state: "counted", runs: number, errors: number, last: string | null, note?: string }       // hook
+  | { state: "counted", runs: number, errors: number, errorsLast7Days: number, last7Days: HookDay[], last: string | null, note?: string }   // hook; errors is lifetime
   | { state: "unmeasurable", reason: string }    // installed, nothing SpaceVibe can count: never 0
   | { state: "scanning" }                         // installed; no usage scan has finished in this process
   | { state: "missing" } | { state: "unknown" } | { state: "notSupported" }
 // note: omitted unless a counted zero may be too new for the logs (D63: "Added in the last 24 hours", "Added after the newest log")
+type HookDay = { day: string, runs: number, errors: number }   // day YYYY-MM-DD; last7Days lists 7, oldest first, ending today (UTC)
 type CliCells = { [registryId: string]: CliCell }  // one member per clis.registry entry
 
 type InventoryItem = {                            // a skill or a subagent
@@ -177,7 +184,8 @@ type InventoryItem = {                            // a skill or a subagent
   override?: string | null,                       // written on every Claude global skill (null when settings hold no value); omitted on all other items
   cells?: Cells,                                  // omitted until usage is attached
   cliCells?: CliCells,                            // loadout.rows only
-  folder?: string, realPath?: string              // loadout.rows only: the path of its Folder; path with every link followed
+  folder?: string, realPath?: string,             // loadout.rows only: the path of its Folder; path with every link followed
+  firstSeen?: string                              // loadout.rows only: when it was added as far as SpaceVibe knows; omitted when unknown
 }
 type HookUsage = { runs: number, avgMs: number | null, totalMs: number, errors: number, last: string | null }
 type InventoryHook = {
@@ -187,6 +195,7 @@ type InventoryHook = {
   key: string,                                    // "hook:<project or empty>:<hash>"
   cells?: Cells, cliCells?: CliCells,             // cliCells: loadout.rows only
   folder?: string,                                // loadout.rows only: equals file
+  firstSeen?: string,                             // loadout.rows only, as on InventoryItem
   usage: HookUsage | null                         // usage is always present; null when unknown or not logged
 }
 type InventorySnapshot = {
@@ -291,7 +300,7 @@ type RulesSnapshot = {                            // no UI-only fields
 }
 ```
 
-Limits. The shape follows the projection the frozen [`limits.json`](../../core/testdata/fixtures/golden/limits.json) golden uses, which the Go test compares against. The two timestamps are seconds since 1970 as numbers (fractions allowed), the one place this protocol does not use ISO text; do not convert them.
+Limits. The shape follows the projection the frozen [`limits.json`](../../core/testdata/fixtures/golden/limits.json) golden uses, which the Go test compares against; `statusline` sits beside the entries, outside that projection. Its timestamps (`at`, `resetsAt`, `statusline.at`) are seconds since 1970 as numbers (fractions allowed), the one place this protocol does not use ISO text; do not convert them.
 
 ```ts
 // every nullable member (plan, source, at, minutes, scope) is always present, null when unknown
@@ -306,7 +315,13 @@ type LimitsEntry = {
     current: boolean                              // resetsAt is after the core's now
   }[]                                             // [] unless measured, never null
 }
+type LimitsResult = {
+  limits: LimitsEntry[],
+  statusline: { at: number | null }               // the newest status-line snapshot of this Claude account; null when none is accepted
+}
 ```
+
+`statusline.at` is what Settings › Limits ages ("Last snapshot 12 min ago", RD24). It is a different fact from the claude entry's `at`, which dates the reading that entry shows and can come from Claude's usage cache: a newer cache wins the entry, and `statusline.at` still dates the snapshot. A snapshot of another account, one dated after the core's now, or any snapshot while the account cannot be identified is not counted, the filter the claude entry applies too.
 
 A window with `current: false` has passed its reset: its `usedPercent` no longer describes the window and reads as unknown, never as 0. The core returns it as recorded. `current: true` is only true at the read time: the shell also compares `resetsAt` with its display clock before showing a share, countdown or recommendation ([`LimitsWording`](../../Sources/SpaceVibe/Limits/LimitsWording.swift)). `usedPercent` can pass 100, and every percentage on the wire is used, never left: only the shell computes the share left ([limits.md](limits.md#rules-that-are-easy-to-get-wrong)). No field carries file content (S-R3).
 

@@ -21,8 +21,9 @@ const maxCacheBytes = 512 << 20
 // errCacheTooLarge stops the chunked read of an oversized cache.
 var errCacheTooLarge = errors.New("usage cache is too large")
 
-// cachedFile is one scanned log as the cache keeps it. The layout matches Node usage and the Swift engine,
-// so a cache written by any of them is readable by the others (UsageScanCache.swift:3-16).
+// cachedFile is one scanned log as the cache keeps it. The layout is the one of Node usage and the Swift engine
+// (UsageScanCache.swift:3-16) plus rec.hookDays, so their caches still load; their version 2 entries are parsed
+// again because ScanVersion is 3.
 type cachedFile struct {
 	// V is ScanVersion when the log was parsed.
 	V int `json:"v"`
@@ -61,6 +62,8 @@ type (
 		Skill *map[string][]string `json:"skill"`
 		Agent *map[string][]string `json:"agent"`
 		Hook  *map[string]rawHook  `json:"hook"`
+		// HookDays is optional: a version 2 entry (Node, Swift, an older Go) has none and is parsed again anyway.
+		HookDays map[string]HookDays `json:"hookDays"`
 	}
 	rawHook struct {
 		Runs   *int     `json:"runs"`
@@ -80,7 +83,11 @@ func (r rawEntry) valid() (cachedFile, bool) {
 	if cli != Claude && cli != Codex {
 		return cachedFile{}, false
 	}
-	rec := fileRecord{Skill: *r.Rec.Skill, Agent: *r.Rec.Agent, Hook: make(map[string]HookTotals, len(*r.Rec.Hook))}
+	hookDays := r.Rec.HookDays
+	if hookDays == nil {
+		hookDays = map[string]HookDays{}
+	}
+	rec := fileRecord{Skill: *r.Rec.Skill, Agent: *r.Rec.Agent, Hook: make(map[string]HookTotals, len(*r.Rec.Hook)), HookDays: hookDays}
 	for key, h := range *r.Rec.Hook {
 		if h.Runs == nil || h.Ms == nil || h.Timed == nil || h.Errors == nil {
 			return cachedFile{}, false

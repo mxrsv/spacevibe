@@ -135,7 +135,45 @@
     "hook:$HOME/work/spacevibe-bench:ef38d6cf6c4b": {
       "claude": {
         "errors": 0,
+        "errorsLast7Days": 0,
         "last": null,
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 0,
         "state": "counted"
       },
@@ -146,7 +184,45 @@
     "hook::06ec17491e86": {
       "claude": {
         "errors": 0,
+        "errorsLast7Days": 0,
         "last": null,
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 0,
         "state": "counted"
       },
@@ -157,7 +233,45 @@
     "hook::47c885b4654d": {
       "claude": {
         "errors": 0,
+        "errorsLast7Days": 0,
         "last": "2026-11-01",
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 0,
+            "runs": 15
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 0,
+            "runs": 15
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 0,
+            "runs": 15
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 0,
+            "runs": 15
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 0,
+            "runs": 17
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 0,
+            "runs": 17
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 412,
         "state": "counted"
       },
@@ -168,7 +282,45 @@
     "hook::487c8bee3fe1": {
       "claude": {
         "errors": 0,
+        "errorsLast7Days": 0,
         "last": "2026-11-01",
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 0,
+            "runs": 2
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 0,
+            "runs": 2
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 0,
+            "runs": 2
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 0,
+            "runs": 2
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 0,
+            "runs": 3
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 0,
+            "runs": 3
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 58,
         "state": "counted"
       },
@@ -179,7 +331,45 @@
     "hook::6b8d44c09b19": {
       "claude": {
         "errors": 17,
+        "errorsLast7Days": 6,
         "last": "2026-11-01",
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 1,
+            "runs": 43
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 1,
+            "runs": 43
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 1,
+            "runs": 43
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 1,
+            "runs": 43
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 1,
+            "runs": 51
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 1,
+            "runs": 51
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 1204,
         "state": "counted"
       },
@@ -190,7 +380,45 @@
     "hook::9f0dd7d87722": {
       "claude": {
         "errors": 0,
+        "errorsLast7Days": 0,
         "last": null,
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 0,
+            "runs": 0
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 0,
         "state": "counted"
       },
@@ -201,7 +429,45 @@
     "hook::e33ea0a4c951": {
       "claude": {
         "errors": 0,
+        "errorsLast7Days": 0,
         "last": "2026-11-01",
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 0,
+            "runs": 7
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 0,
+            "runs": 8
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 0,
+            "runs": 8
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 0,
+            "runs": 8
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 0,
+            "runs": 9
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 0,
+            "runs": 9
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 203,
         "state": "counted"
       },
@@ -213,7 +479,45 @@
     "hook::e7067f2456fc": {
       "claude": {
         "errors": 3,
+        "errorsLast7Days": 3,
         "last": "2026-11-01",
+        "last7Days": [
+          {
+            "day": "2026-10-27",
+            "errors": 0,
+            "runs": 4
+          },
+          {
+            "day": "2026-10-28",
+            "errors": 0,
+            "runs": 4
+          },
+          {
+            "day": "2026-10-29",
+            "errors": 0,
+            "runs": 4
+          },
+          {
+            "day": "2026-10-30",
+            "errors": 1,
+            "runs": 4
+          },
+          {
+            "day": "2026-10-31",
+            "errors": 1,
+            "runs": 4
+          },
+          {
+            "day": "2026-11-01",
+            "errors": 1,
+            "runs": 4
+          },
+          {
+            "day": "2026-11-02",
+            "errors": 0,
+            "runs": 0
+          }
+        ],
         "runs": 96,
         "state": "counted"
       },

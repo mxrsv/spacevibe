@@ -8,6 +8,7 @@ import (
 	"spacevibe.dev/core/internal/activity"
 	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/coreerr"
+	"spacevibe.dev/core/internal/findings"
 	"spacevibe.dev/core/internal/limits"
 	"spacevibe.dev/core/internal/mutate"
 	"spacevibe.dev/core/internal/rpc"
@@ -67,6 +68,9 @@ func (s *Services) buildHandlers() map[string]rpc.Handler {
 		"rules.changeVerdicts":    typed(s, "rules.changeVerdicts", s.rules.ChangeVerdicts),
 		"rules.check":             typed(s, "rules.check", s.rules.Check),
 		"limits.read":             typed(s, "limits.read", s.limitsRead),
+		"findings.kept":           typed(s, "findings.kept", func(ctx context.Context, _ none) (findings.KeptResult, error) { return s.findings.Kept(ctx) }),
+		"findings.keep":           typed(s, "findings.keep", s.findings.Keep),
+		"findings.unkeep":         typed(s, "findings.unkeep", s.findings.Unkeep),
 	}
 }
 

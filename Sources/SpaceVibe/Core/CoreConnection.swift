@@ -16,7 +16,7 @@ final class CoreConnection: @unchecked Sendable {
     /// does not know, is treated as a write.
     static let readMethods: Set<String> = [
         "clis.registry", "inventory.read", "usage.scan", "loadout.rows", "activity.read", "journal.history",
-        "rules.snapshot", "rules.preview", "rules.check", "limits.read",
+        "rules.snapshot", "rules.preview", "rules.check", "limits.read", "findings.kept",
     ]
     private static let maxBackoff = 5.0
     private static let logger = Logger(subsystem: "dev.spacevibe.app", category: "core")

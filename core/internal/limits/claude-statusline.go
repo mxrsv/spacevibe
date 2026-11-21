@@ -200,17 +200,18 @@ type reading struct {
 }
 
 // readClaude is the Claude Code entry: the usage cache, superseded by the newest status line snapshots of this
-// account when they are newer than the cache's fetch.
-func readClaude(ctx context.Context, cfg config.Config, r roots.Roots, now float64) (Entry, error) {
+// account when they are newer than the cache's fetch. snapshotAt is the time of the newest snapshot it accepted
+// (Statusline.At), nil when there is none.
+func readClaude(ctx context.Context, cfg config.Config, r roots.Roots, now float64) (Entry, *float64, error) {
 	cached := readClaudeCache(r)
 	account, ok := AccountKey(r)
 	if !ok {
-		return cached, nil
+		return cached, nil, nil
 	}
 	var readings []reading
 	for _, path := range limitFiles(SnapshotFiles(cfg, r)) {
 		if err := ctx.Err(); err != nil {
-			return Entry{}, err
+			return Entry{}, nil, err
 		}
 		snapshot, ok := ReadSnapshot(path)
 		if !ok {
@@ -244,11 +245,12 @@ func readClaude(ctx context.Context, cfg config.Config, r roots.Roots, now float
 		return 0
 	})
 	if len(readings) == 0 {
-		return cached, nil
+		return cached, nil, nil
 	}
 	newest := readings[0]
+	newestAt := newest.at
 	if cached.State == Measured && *cached.At > newest.at {
-		return cached, nil
+		return cached, &newestAt, nil
 	}
 	// An idle session can repeat an older percentage after an active session. Within the same reset window, use
 	// the highest recent observation so receiving that old session's status line cannot move usage backwards.
@@ -275,7 +277,7 @@ func readClaude(ctx context.Context, cfg config.Config, r roots.Roots, now float
 	source := ClaudeStatusline
 	entry := measured(Claude, newest.at, merged)
 	entry.Source = &source
-	return entry, nil
+	return entry, &newestAt, nil
 }
 
 func limitFiles(paths []string) []string {

@@ -12,9 +12,10 @@ func aggregate(files map[string]cachedFile, fileCount int) Result {
 	type bucket struct {
 		skill, agent map[string]*names
 		hook         map[string]HookTotals
+		hookDays     map[string]HookDays
 	}
 	newBucket := func() *bucket {
-		return &bucket{skill: map[string]*names{}, agent: map[string]*names{}, hook: map[string]HookTotals{}}
+		return &bucket{skill: map[string]*names{}, agent: map[string]*names{}, hook: map[string]HookTotals{}, hookDays: map[string]HookDays{}}
 	}
 	buckets := map[CLI]*bucket{Claude: newBucket(), Codex: newBucket()}
 	sessions := map[CLI]map[string]struct{}{Claude: {}, Codex: {}}
@@ -69,6 +70,19 @@ func aggregate(files map[string]cachedFile, fileCount int) Result {
 			}
 			b.hook[key] = u
 		}
+		for key, days := range file.Rec.HookDays {
+			into := b.hookDays[key]
+			if into == nil {
+				into = HookDays{}
+				b.hookDays[key] = into
+			}
+			for day, d := range days {
+				sum := into[day]
+				sum.Runs += d.Runs
+				sum.Errors += d.Errors
+				into[day] = sum
+			}
+		}
 	}
 
 	totals := func(cli CLI) CLITotals {
@@ -93,6 +107,9 @@ func aggregate(files map[string]cachedFile, fileCount int) Result {
 		toUsage(b.agent, out.Agent)
 		for key, h := range b.hook {
 			out.Hook[key] = h
+		}
+		for key, days := range b.hookDays {
+			out.HookDays[key] = days
 		}
 		return out
 	}

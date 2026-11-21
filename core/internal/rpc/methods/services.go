@@ -9,6 +9,7 @@ import (
 
 	"spacevibe.dev/core/internal/activity"
 	"spacevibe.dev/core/internal/config"
+	"spacevibe.dev/core/internal/findings"
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/mutate"
 	"spacevibe.dev/core/internal/proc"
@@ -28,6 +29,7 @@ type Services struct {
 	activity  *activity.Service
 	mutate    *mutate.Service
 	rules     *rules.Service
+	findings  *findings.Service
 	// now is the clock; tests may replace it before Register.
 	now func() time.Time
 	log io.Writer
@@ -52,7 +54,7 @@ func New(cfg config.Config, r roots.Roots, adapter proc.Adapter, log io.Writer) 
 	s := &Services{
 		cfg: cfg, roots: r, inventory: inv, usage: scanner,
 		activity: activity.NewService(r, adapter, activity.DefaultOptions(), nil),
-		mutate:   mutate.NewService(r), rules: rs, now: time.Now, log: log,
+		mutate:   mutate.NewService(r), rules: rs, findings: findings.NewService(r), now: time.Now, log: log,
 	}
 	s.handlers = s.buildHandlers()
 	return s

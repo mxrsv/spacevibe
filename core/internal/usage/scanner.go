@@ -15,8 +15,9 @@ import (
 
 const (
 	// ScanVersion is bumped when the parser changes what a log file yields, so cached results are rescanned.
-	// Same number as Node usage and the Swift engine.
-	ScanVersion = 2
+	// 2 was the number of Node usage and the Swift engine; 3 adds the hook runs and errors by day (hookDays), so a
+	// log cached by version 2 is parsed again once.
+	ScanVersion = 3
 	// DefaultMaxLineBytes: lines longer than this are skipped, not parsed.
 	DefaultMaxLineBytes = 32 << 20
 	// ProgressEvery: the progress callback runs after this many files, and once at the end.

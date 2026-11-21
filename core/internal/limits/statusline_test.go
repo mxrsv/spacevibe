@@ -145,6 +145,40 @@ func TestStatuslineNewerCacheWins(t *testing.T) {
 	}
 }
 
+// RB-E5 (RD24): statusline.at is the time of the newest snapshot of this account, also when a newer cache wins the
+// Claude entry; null with no snapshot, with only another account's, or with one from the future.
+func TestStatuslineAt(t *testing.T) {
+	h := newTempHome(t)
+	h.write(".claude/.claude.json", accountState(defaultAcc))
+	if at := h.read(statusNow).Statusline.At; at != nil {
+		t.Fatalf("no snapshot: at = %v", *at)
+	}
+	h.snapshot("other", "another-account", statusNow-5, snapWindow{"seven_day", "5", reset})
+	h.weekly("future", "70", statusNow+100)
+	if at := h.read(statusNow).Statusline.At; at != nil {
+		t.Fatalf("another account's or a future snapshot: at = %v", *at)
+	}
+	h.weekly("older", "60", statusNow-60)
+	h.weekly("newer", "61", statusNow-30)
+	if at := h.read(statusNow).Statusline.At; at == nil || *at != statusNow-30 {
+		t.Fatalf("at = %v, want the newest accepted snapshot", at)
+	}
+	// The usage cache fetched after it wins the entry; the snapshot time is still reported.
+	text := strings.Replace(accountState(defaultAcc), "1793800000000", fmt.Sprintf("%.0f", (statusNow-10)*1000), 1)
+	h.write(".claude/.claude.json", text)
+	result := h.read(statusNow)
+	if e := result.Limits[0]; e.Source == nil || *e.Source != ClaudeCache {
+		t.Fatalf("source = %v, want the newer cache", e.Source)
+	}
+	if at := result.Statusline.At; at == nil || *at != statusNow-30 {
+		t.Fatalf("at = %v with a newer cache", at)
+	}
+	data, _ := json.Marshal(result)
+	if !strings.Contains(string(data), `"statusline":{"at":1793899970}`) {
+		t.Errorf("wire: %s", data)
+	}
+}
+
 // Swift: LimitsStatuslineTests.swift "account switches reject previous snapshots and prevent an old session relabeling its quota"
 // (read side: the snapshots are already on disk).
 func TestStatuslineAccountSwitch(t *testing.T) {

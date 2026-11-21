@@ -172,7 +172,7 @@ func TestResultJSONShape(t *testing.T) {
 	}
 	const entry = `{"cli":"%s","state":"notInstalled","plan":null,"source":null,"at":null,"windows":[]}`
 	want := `{"limits":[` + strings.ReplaceAll(entry, "%s", "claude") + "," + strings.ReplaceAll(entry, "%s", "codex") + "," +
-		strings.ReplaceAll(entry, "%s", "gemini") + `]}`
+		strings.ReplaceAll(entry, "%s", "gemini") + `],"statusline":{"at":null}}`
 	if string(data) != want {
 		t.Fatalf("got  %s\nwant %s", data, want)
 	}

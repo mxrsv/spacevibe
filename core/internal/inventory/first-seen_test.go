@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -203,5 +204,45 @@ func TestFirstSeenCorruptStoreStillAnswersAndIsLeftAlone(t *testing.T) {
 				t.Errorf("the %s store was overwritten: %q", name, kept)
 			}
 		})
+	}
+}
+
+// RB-E5: every loadout.rows item and hook carries, as firstSeen, the same "added" time the pending rule reads. The
+// first run takes it from the file and a new id from the clock; inventory.read and AttachUsage never carry it.
+func TestFirstSeenIsOnEveryLoadoutRow(t *testing.T) {
+	f := newSeenFixture(t)
+	rows := f.rows(t)
+	for _, it := range rows.Items {
+		if it.FirstSeen == nil {
+			t.Errorf("%s has no firstSeen", it.ID)
+		}
+	}
+	for _, hk := range rows.Hooks {
+		if hk.FirstSeen == nil || *hk.FirstSeen != "2026-09-20T00:00:00.000Z" {
+			t.Errorf("hook %s firstSeen = %v, want the settings file's date", hk.ID, hk.FirstSeen)
+		}
+	}
+	solo := item(Snapshot{Items: rows.Items}, "solo", Claude)
+	if solo == nil || solo.FirstSeen == nil || *solo.FirstSeen != "2026-09-20T00:00:00.000Z" {
+		t.Fatalf("solo = %+v, want its file's date on the first run", solo)
+	}
+
+	f.addSkill("fresh", f.now.Add(-90*24*time.Hour))
+	f.now = f.now.Add(90 * time.Minute)
+	fresh := item(Snapshot{Items: f.rows(t).Items}, "fresh", Claude)
+	if fresh == nil || fresh.FirstSeen == nil || *fresh.FirstSeen != "2026-12-01T01:30:00.000Z" {
+		t.Fatalf("fresh = %+v, want the time it was first seen, not its file's date", fresh)
+	}
+	if data, _ := json.Marshal(fresh); !strings.Contains(string(data), `"firstSeen":"2026-12-01T01:30:00.000Z"`) {
+		t.Errorf("fresh on the wire: %s", data)
+	}
+
+	raw := Read(f.h.roots())
+	last, _ := f.scanner.Last()
+	input := usage.Ready(last)
+	for name, v := range map[string]any{"inventory.read": raw, "AttachUsage": AttachUsage(raw, &input, f.now)} {
+		if data, _ := json.Marshal(v); strings.Contains(string(data), `"firstSeen"`) {
+			t.Errorf("%s carries firstSeen", name)
+		}
 	}
 }

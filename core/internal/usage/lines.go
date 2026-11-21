@@ -15,15 +15,16 @@ import (
 
 // fileRecord is what one log file yields, and the only thing the cache keeps of it: names, days, hook
 // hashes and durations. Never log text. Skill and Agent map a bare name to the days (YYYY-MM-DD) on
-// which it appeared in this file.
+// which it appeared in this file. HookDays splits the runs and errors of each hook in Hook by day (ScanVersion 3).
 type fileRecord struct {
-	Skill map[string][]string   `json:"skill"`
-	Agent map[string][]string   `json:"agent"`
-	Hook  map[string]HookTotals `json:"hook"`
+	Skill    map[string][]string   `json:"skill"`
+	Agent    map[string][]string   `json:"agent"`
+	Hook     map[string]HookTotals `json:"hook"`
+	HookDays map[string]HookDays   `json:"hookDays"`
 }
 
 func newFileRecord() fileRecord {
-	return fileRecord{Skill: map[string][]string{}, Agent: map[string][]string{}, Hook: map[string]HookTotals{}}
+	return fileRecord{Skill: map[string][]string{}, Agent: map[string][]string{}, Hook: map[string]HookTotals{}, HookDays: map[string]HookDays{}}
 }
 
 // jsSpace is ICU's \s (Unicode White_Space): RE2's \s lacks \v, U+0085 and the Unicode spaces.
@@ -161,9 +162,18 @@ func hookRecord(text string, rec *fileRecord, day string) {
 		h.Ms += ms
 		h.Timed++
 	}
+	days := rec.HookDays[hash]
+	if days == nil {
+		days = HookDays{}
+		rec.HookDays[hash] = days
+	}
+	onDay := days[day]
+	onDay.Runs++
 	if code, ok := finiteMember(attachment, "exitCode"); strings.Contains(typeValue, "error") || (ok && code != 0) {
 		h.Errors++
+		onDay.Errors++
 	}
+	days[day] = onDay
 	if h.Last == nil || day > *h.Last {
 		d := day
 		h.Last = &d
