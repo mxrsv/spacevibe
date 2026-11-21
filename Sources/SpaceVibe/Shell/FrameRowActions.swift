@@ -34,6 +34,10 @@ struct FrameShortcut: Hashable, Sendable, CustomStringConvertible {
     static let remove = FrameShortcut(KeyEquivalent.delete.character, modifiers: [.command, .shift])
     static let addTo = FrameShortcut("a", modifiers: [.command, .shift])
     static let changeToAsk = FrameShortcut("a", modifiers: [.command, .option])
+    /// A failing Hook's or a failed command's Copy Command (Inbox, Activity).
+    static let copyCommand = FrameShortcut("c", modifiers: [.command, .shift])
+    /// A waiting session's Show Terminal (Inbox). Not ⌥⌘T: the window's toolbar puts Hide Toolbar there.
+    static let showTerminal = FrameShortcut("t", modifiers: [.command, .shift])
 
     /// What the frame's own commands hold (`FrameCommands`): ⌘1 to ⌘8, ⌘I, ⌘R, ⌘,, ⌘F and the two Undo keys, and the plain
     /// letters the frame reads itself (RD39): j and k move the selection, Z undoes, A toggles the focused logo. A row action
@@ -108,6 +112,35 @@ enum FramePlainKeys {
     /// `FrameRowAction.plainKey`'s to judge).
     static func rowLetterMayAct(isModal: Bool, firstResponder: NSResponder?) -> Bool {
         !isModal && !isEditingText(firstResponder)
+    }
+
+    /// Whether an Item menu command may act now. Chosen with the pointer or by moving through the menu it always may; fired
+    /// by its key equivalent (⇧⌘⌫ Remove, ⌘K Keep, ⇧⌘A, ⌥⌘A, ⇧⌘C, ⇧⌘T), only while no text is being edited: a menu key
+    /// equivalent fires even with the toolbar's search field focused, and the keys typed there are the field's, never a write
+    /// on the selected row.
+    static func menuCommandMayAct(isKeyEquivalent: Bool, firstResponder: NSResponder?) -> Bool {
+        !isKeyEquivalent || !isEditingText(firstResponder)
+    }
+
+    /// The event that chose a menu command is `shortcut` pressed, not a click or Return in a menu opened from the keyboard.
+    /// The Delete key types U+007F where `KeyEquivalent.delete` holds U+0008, so both are one key here.
+    static func isKeyEquivalent(_ shortcut: FrameShortcut?, of event: NSEvent?) -> Bool {
+        guard let shortcut, let event, event.type == .keyDown, let typed = event.charactersIgnoringModifiers else { return false }
+        func key(_ text: String) -> String { text == "\u{7F}" ? "\u{08}" : text.lowercased() }
+        guard key(typed) == key(String(shortcut.key)) else { return false }
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let pairs: [(EventModifiers, NSEvent.ModifierFlags)] = [(.command, .command), (.shift, .shift), (.option, .option),
+                                                                (.control, .control)]
+        return pairs.allSatisfy { shortcut.modifiers.contains($0.0) == flags.contains($0.1) }
+    }
+
+    /// The Item menu's command for `action`, chosen by `event`: it runs unless it was fired by its key equivalent while text
+    /// is being edited (`menuCommandMayAct`).
+    @MainActor
+    static func performFromMenu(_ action: FrameRowAction, event: NSEvent?, firstResponder: NSResponder?) {
+        let byKey = isKeyEquivalent(action.menuShortcut, of: event)
+        guard action.isEnabled, menuCommandMayAct(isKeyEquivalent: byKey, firstResponder: firstResponder) else { return }
+        action.perform()
     }
 }
 

@@ -239,6 +239,46 @@ struct EquipWritesTests {
         #expect(core.writes == ["removeFrom claude:skill:sql-explainer [\"claude\"]"])
     }
 
+    @Test("D53: two logos of one row pressed in the same main-actor turn: the row is pending at once, the second starts nothing")
+    func twoPressesInOneTurn() async throws {
+        let (core, model, state, _) = await setUp()
+        let (row, claude) = try #require(toggle(state, "skill::sql-explainer", "claude"))
+        let codex = try #require(row.toggles.first { $0.cli.id == "codex" })
+        // No await between the presses: the first write's task has not run when the second press is judged.
+        let first = state.press(claude, on: row, from: .row)
+        #expect(model.writes.isPending(EquipControl.toggle(row.id, "claude")), "pending before the task runs")
+        #expect(state.isRowBusy(row))
+        let second = state.press(codex, on: row, from: .row)
+        #expect(first != nil && second == nil, "the row has a write running")
+        await first?.value
+        #expect(core.writes == ["removeFrom claude:skill:sql-explainer [\"claude\"]"])
+        #expect(!state.isRowBusy(row), "the pending ends with the write")
+    }
+
+    @Test("an off logo of a CLI with no folder SpaceVibe copies into is not a toggle: faded, says why, writes nothing")
+    func offLogoWithoutCopyTarget() async throws {
+        let (core, model, state, _) = await setUp()
+        // Codex's skills live only in `~/.agents/skills` here: the engine would refuse a copy into Codex with 409.
+        var rows = core.rows
+        rows.folders = rows.folders.map { folder in
+            var copy = folder
+            if copy.ownedBy == "codex" { copy.copyTarget = false }
+            return copy
+        }
+        core.rows = rows
+        await model.store.reread([.loadout])
+        let (row, codex) = try #require(toggle(state, "skill::changelog-writer", "codex"))
+        #expect(codex.presence == .off && codex.hold == .noCopyTarget(folder: "skills"))
+        #expect(!codex.isToggle && codex.fade == .ghost && codex.tileFigure == NumberWording.missing)
+        #expect(codex.tooltip == "Codex: Off, no skills folder of its own to copy into")
+        #expect(state.press(codex, on: row, from: .row) == nil)
+        // A logo drawn before the readers map said so is judged again: no Add either.
+        let stale = CLIToggleState(cli: codex.cli, presence: .off)
+        #expect(EquipToggles.intent(stale, row: row.row, readers: row.readers) == .none)
+        #expect(state.press(stale, on: row, from: .row) == nil)
+        #expect(core.writes.isEmpty)
+    }
+
     @Test("D53: a logo drawn before a write landed is judged on the world after it: the last copy is not removed")
     func staleLogoUsesPostWriteWorld() async throws {
         let (core, _, state, _) = await setUp()

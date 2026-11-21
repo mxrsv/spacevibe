@@ -103,7 +103,7 @@ final class EquipPageState {
     /// While any write on the row runs, no press on it starts another: two logos turned off quickly would each be judged
     /// against the world before either landed, and together take the last copy without `Remove…` (D53). The press is judged
     /// again from the store's world now (a write's re-read lands before its pending ends), never from the row it was drawn
-    /// with.
+    /// with. The write's control is pending before this returns, so two presses in one main-actor turn cannot both pass.
     @discardableResult
     func press(_ drawn: CLIToggleState, on drawnRow: EquipListRow, from anchor: Anchor) -> Task<Void, Never>? {
         guard let model, !isRowBusy(drawnRow), let row = list().row(drawnRow.id),
@@ -217,8 +217,10 @@ final class EquipPageState {
         }
     }
 
+    /// The press's write, its control pending at once (`FrameWrites.start`): the row is busy before this returns, so a second
+    /// press in the same main-actor turn finds it busy (D53).
     private func run(_ write: FrameWrite) -> Task<Void, Never>? {
-        guard let model else { return nil }
-        return Task { @MainActor in await model.writes.perform(write) }
+        guard let task = model?.writes.start(write) else { return nil }
+        return Task { @MainActor in _ = await task.value }
     }
 }

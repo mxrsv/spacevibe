@@ -53,15 +53,17 @@ enum InboxAction: Equatable, Sendable {
     var isDestructive: Bool { if case .remove = self { true } else { false } }
     var isEnabled: Bool { self != .terminalNotFound }
 
-    /// Keep and Stop Keeping share ⌘K (a row has one of them); Remove, Add to and Change to Ask take the frame's shared row
-    /// shortcuts (RD-R16); the rest are menu commands without a key.
+    /// Keep and Stop Keeping share ⌘K (a row has one of them); Remove, Add to, Change to Ask, Copy Command and Show Terminal
+    /// take the frame's shared row shortcuts (RD-R16); Show in Limits is a menu command without a key.
     var shortcut: FrameShortcut? {
         switch self {
         case .keep, .stopKeeping: FrameShortcut("k")
         case .remove: .remove
         case .addTo: .addTo
         case .changeToAsk: .changeToAsk
-        default: nil
+        case .copyCommand: .copyCommand
+        case .showTerminal, .terminalNotFound: .showTerminal
+        case .showInLimits: nil
         }
     }
 }

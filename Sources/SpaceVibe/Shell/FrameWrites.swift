@@ -63,8 +63,27 @@ final class FrameWrites {
     /// Add Rule sheet).
     @discardableResult
     func perform(_ write: FrameWrite, refused: (@MainActor (String) -> Void)? = nil) async -> Bool {
-        guard !pending.contains(write.control) else { return false }
-        pending.insert(write.control)
+        guard claim(write.control) else { return false }
+        return await run(write, refused: refused)
+    }
+
+    /// `perform` from a press: the control is pending before this returns, so a second press in the same main-actor turn
+    /// (two logos of one row clicked before the first write's task ran) sees it and starts nothing (D53). Nil when the control
+    /// is already pending.
+    @discardableResult
+    func start(_ write: FrameWrite, refused: (@MainActor (String) -> Void)? = nil) -> Task<Bool, Never>? {
+        guard claim(write.control) else { return nil }
+        return Task { @MainActor in await self.run(write, refused: refused) }
+    }
+
+    private func claim(_ control: String) -> Bool {
+        guard !pending.contains(control) else { return false }
+        pending.insert(control)
+        return true
+    }
+
+    /// The write itself, its control already pending; the pending ends when it returns.
+    private func run(_ write: FrameWrite, refused: (@MainActor (String) -> Void)?) async -> Bool {
         defer { pending.remove(write.control) }
         let outcome: Result<FrameWriteOutcome, Error>
         do { outcome = .success(try await write.run(core)) } catch { outcome = .failure(error) }

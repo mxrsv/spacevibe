@@ -89,6 +89,7 @@ struct FrameBlockLogicTests {
         #expect(state(.on(.unmeasurable)).isToggle)
         #expect(state(.off).isToggle)
         #expect(!state(.off, .readOnly(owner: "plugin")).isToggle, "a plugin's item cannot be added either")
+        #expect(!state(.off, .noCopyTarget(folder: "skills")).isToggle, "no folder to copy into: Add would be refused")
         #expect(!state(.on(.sessions(3)), .via(["Claude Code"])).isToggle, "RD31")
         #expect(!state(.on(.sessions(3)), .lastCopy).isToggle, "D53")
         #expect(!state(.on(.sessions(3)), .readOnly(owner: "plugin")).isToggle)

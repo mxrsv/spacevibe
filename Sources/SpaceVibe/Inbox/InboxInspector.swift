@@ -118,7 +118,7 @@ struct InboxInspector: View {
             InspectorNote(description)
         }
         InspectorActions(actions: InboxInspectorFacts.itemActions(row).map { action in
-            InspectorAction(id: action.id, title: action.isDestructive ? "Remove…" : action.title,
+            InspectorAction(id: action.id, title: InboxInspectorFacts.itemActionTitle(action),
                             icon: action.isDestructive ? .trash : nil, isLoading: actions.isPending(action, row),
                             isDestructive: action.isDestructive) { actions.perform(action, on: row) }
         })
@@ -136,13 +136,20 @@ struct InboxInspector: View {
 
 /// The inspector's facts per kind, as label and value. Pure, so the tests read them.
 enum InboxInspectorFacts {
-    /// The buttons of a Skill or Subagent finding's inspector: a Clean up row's `Remove…`; a Balance finding's `Add to <CLI>`
-    /// and Keep only, never a removal (it is the most-used item).
+    /// The buttons of a Skill or Subagent finding's inspector: a Clean up row's `Remove` (`Remove…` when it asks); a Balance
+    /// finding's `Add to <CLI>` and Keep only, never a removal (it is the most-used item).
     static func itemActions(_ row: InboxRowModel) -> [InboxAction] {
         switch row.finding.subject {
         case .balance: row.actions.filter { if case .addTo = $0 { true } else { false } } + row.actions.filter { $0 == .keep || $0 == .stopKeeping }
         default: row.actions.filter(\.isDestructive)
         }
+    }
+
+    /// A button's title there: a removal is the short `Remove`, with the ellipsis only when it asks first (a file another CLI
+    /// reads, as the row's `Remove…`); a removal that goes at once with Undo has none. Every other action keeps its title.
+    static func itemActionTitle(_ action: InboxAction) -> String {
+        if case .remove(_, let asks) = action { return asks ? "Remove\u{2026}" : "Remove" }
+        return action.title
     }
 
     static func window(_ pace: WindowPace, entry: CoreLimitsEntry?, now: Date) -> [InspectorFact] {

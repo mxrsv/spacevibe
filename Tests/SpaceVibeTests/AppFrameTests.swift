@@ -236,4 +236,49 @@ struct AppFrameTests {
         #expect(shortcuts.allSatisfy { $0 != FrameShortcut("k") && $0 != FrameShortcut("c", modifiers: [.command, .shift]) })
         #expect(FrameShortcut.remove.description == "⇧⌘⌫" && FrameShortcut.addTo.description == "⇧⌘A" && FrameShortcut.changeToAsk.description == "⌥⌘A")
     }
+
+    @Test("RD-R16: Copy Command and Show Terminal have menu shortcuts that clash with no frame key and no other row action")
+    func copyAndTerminalShortcuts() {
+        let others = [FrameShortcut.remove, FrameShortcut.addTo, FrameShortcut.changeToAsk, FrameShortcut("k")]
+        for shortcut in [FrameShortcut.copyCommand, FrameShortcut.showTerminal] {
+            #expect(!shortcut.isPlainKey && !FrameShortcut.reserved.contains(shortcut) && !others.contains(shortcut))
+        }
+        #expect(FrameShortcut.copyCommand != FrameShortcut.showTerminal)
+        #expect(FrameShortcut.showTerminal != FrameShortcut("t", modifiers: [.command, .option]), "⌥⌘T is the toolbar's Hide Toolbar")
+        #expect(FrameShortcut.copyCommand.description == "⇧⌘C" && FrameShortcut.showTerminal.description == "⇧⌘T")
+    }
+
+    private static func key(_ characters: String, _ flags: NSEvent.ModifierFlags, type: NSEvent.EventType = .keyDown) -> NSEvent? {
+        NSEvent.keyEvent(with: type, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: 0, context: nil,
+                         characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: 0)
+    }
+
+    @Test("Item menu keys that write never act while the search field is edited; a pointer choice and other focus still act")
+    func menuKeysWaitForTextFields() {
+        // The search field's field editor is an NSTextView, the window's first responder while it is edited.
+        let editor = NSTextView()
+        var ran: [String] = []
+        let actions = [
+            FrameRowAction(id: "remove", title: "Remove", shortcut: .remove, isDestructive: true) { ran.append("remove") },
+            FrameRowAction(id: "keep", title: "Keep", shortcut: FrameShortcut("k")) { ran.append("keep") },
+            FrameRowAction(id: "addTo", title: "Add to…", shortcut: .addTo) { ran.append("addTo") },
+            FrameRowAction(id: "changeToAsk", title: "Change to Ask", shortcut: .changeToAsk) { ran.append("changeToAsk") },
+        ]
+        let keys: [NSEvent?] = [Self.key("\u{7F}", [.command, .shift]), Self.key("k", .command), Self.key("A", [.command, .shift]),
+                                Self.key("a", [.command, .option])]
+        for (action, key) in zip(actions, keys) {
+            #expect(FramePlainKeys.isKeyEquivalent(action.menuShortcut, of: key), "\(action.id): the key-down is its shortcut")
+            FramePlainKeys.performFromMenu(action, event: key, firstResponder: editor)
+        }
+        #expect(ran.isEmpty, "⇧⌘⌫, ⌘K, ⇧⌘A and ⌥⌘A typed in the search field write nothing")
+        for (action, key) in zip(actions, keys) { FramePlainKeys.performFromMenu(action, event: key, firstResponder: NSView()) }
+        #expect(ran == ["remove", "keep", "addTo", "changeToAsk"], "with the list focused the keys act")
+        ran = []
+        let click = NSEvent.mouseEvent(with: .leftMouseUp, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil,
+                                       eventNumber: 0, clickCount: 1, pressure: 0)
+        FramePlainKeys.performFromMenu(actions[0], event: click, firstResponder: editor)
+        FramePlainKeys.performFromMenu(actions[1], event: Self.key("\r", []), firstResponder: editor)
+        #expect(ran == ["remove", "keep"], "chosen in the menu (pointer, or Return in a menu opened from the keyboard), it acts")
+        #expect(!FramePlainKeys.isKeyEquivalent(.remove, of: Self.key("\u{7F}", .command)), "⌘⌫ is not ⇧⌘⌫")
+    }
 }

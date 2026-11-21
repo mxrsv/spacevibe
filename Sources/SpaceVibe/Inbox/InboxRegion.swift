@@ -273,7 +273,9 @@ struct InboxActions {
                 rowIDs: [], routeRevision: model.router.revision)
             return nil
         }
-        return Task { await writes.perform(write) }
+        // Pending before this returns (`FrameWrites.start`): a second tile press in the same main-actor turn finds the item busy.
+        guard let task = writes.start(write) else { return nil }
+        return Task { _ = await task.value }
     }
 
     func confirm() {

@@ -36,6 +36,9 @@ struct CLIToggleState: Hashable, Sendable {
         case lastCopy
         /// A plugin or a project owns the item (`owner`: "plugin", "project payments-web"): a lock, read-only.
         case readOnly(owner: String)
+        /// Off, and the CLI owns no folder of the kind SpaceVibe copies into (`folder`: "skills", "agents"; the readers map's
+        /// `copyTarget`), so Add would only be refused: faded like Not supported, not a toggle, and its label says why.
+        case noCopyTarget(folder: String)
     }
 
     let cli: CLIIdentity
@@ -52,7 +55,7 @@ struct CLIToggleState: Hashable, Sendable {
     var isToggle: Bool {
         switch presence {
         case .on(let usage): usage != .pending && hold == .none
-        case .off: !Self.isReadOnly(hold)
+        case .off: hold == .none
         case .notSupported, .unreadable: false
         }
     }
@@ -75,7 +78,7 @@ struct CLIToggleState: Hashable, Sendable {
         switch hold {
         case .readOnly: return .lock
         case .via: return isOn ? .link : nil
-        case .none, .lastCopy: return nil
+        case .none, .lastCopy, .noCopyTarget: return nil
         }
     }
 
@@ -86,18 +89,19 @@ struct CLIToggleState: Hashable, Sendable {
     var showsCheck: Bool {
         guard isOn else { return false }
         switch hold {
-        case .readOnly, .via: return false
+        case .readOnly, .via, .noCopyTarget: return false
         case .none, .lastCopy: return true
         }
     }
 
-    /// How the logo is faded: off at `dim`, Not supported and unreadable at `ghost`, lit at full.
+    /// How the logo is faded: off at `dim`, Not supported, unreadable and an off logo with nowhere to copy into at `ghost`, lit
+    /// at full.
     enum Fade: Hashable, Sendable { case none, dim, ghost }
 
     var fade: Fade {
         switch presence {
         case .on: .none
-        case .off: .dim
+        case .off: Self.cannotAdd(hold) ? .ghost : .dim
         case .notSupported, .unreadable: .ghost
         }
     }
@@ -109,7 +113,12 @@ struct CLIToggleState: Hashable, Sendable {
         switch presence {
         case .notSupported: return "Not supported"
         case .unreadable: return "Unmeasurable, folder could not be read"
-        case .off: return Self.isReadOnly(hold) ? "Off, read-only (\(Self.owner(hold)))" : "Off, click to add"
+        case .off:
+            switch hold {
+            case .readOnly(let owner): return "Off, read-only (\(owner))"
+            case .noCopyTarget(let folder): return "Off, no \(folder) folder of its own to copy into"
+            case .none, .via, .lastCopy: return "Off, click to add"
+            }
         case .on(let usage):
             var parts = ["On", Self.usageText(usage)]
             switch hold {
@@ -117,6 +126,7 @@ struct CLIToggleState: Hashable, Sendable {
             case .lastCopy: parts.append("only copy; remove it with Remove…")
             case .none: if !sharedWith.isEmpty { parts.append("shared file with \(CLINames.sentence(sharedWith))") }
             case .readOnly(let owner): parts.append("read-only (\(owner))")
+            case .noCopyTarget: break
             }
             return parts.joined(separator: ", ")
         }
@@ -135,14 +145,14 @@ struct CLIToggleState: Hashable, Sendable {
     }
 
     /// The figure a tile shows under the name: the session count, `?` when unmeasurable, `…` while pending, "Add" when off,
-    /// a dash when Not supported.
+    /// a dash when Not supported or when it cannot be added.
     var tileFigure: String {
         switch presence {
         case .on(.sessions(let n)): NumberWording.compactCount(n)
         case .on(.neverRan): NumberWording.count(0)
         case .on(.unmeasurable), .unreadable: "?"
         case .on(.pending): "…"
-        case .off: "Add"
+        case .off: Self.cannotAdd(hold) ? NumberWording.missing : "Add"
         case .notSupported: NumberWording.missing
         }
     }
@@ -162,6 +172,5 @@ struct CLIToggleState: Hashable, Sendable {
         }
     }
 
-    private static func isReadOnly(_ hold: Hold) -> Bool { if case .readOnly = hold { true } else { false } }
-    private static func owner(_ hold: Hold) -> String { if case .readOnly(let owner) = hold { owner } else { "" } }
+    private static func cannotAdd(_ hold: Hold) -> Bool { if case .noCopyTarget = hold { true } else { false } }
 }

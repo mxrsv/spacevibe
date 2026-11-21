@@ -17,7 +17,7 @@ struct EquipKind: Hashable, Sendable {
 
 /// What one logo toggle or tile does when pressed (RD-R11, RD31, D53). Pure: the page state runs it.
 enum EquipToggleIntent: Equatable, Sendable {
-    /// Not a toggle (via, last copy, read-only, Not supported, unreadable, pending): nothing.
+    /// Not a toggle (via, last copy, read-only, no folder to copy into, Not supported, unreadable, pending): nothing.
     case none
     /// Off: copy the row into the CLI's own folder (`loadout.copyTo`).
     case add(cli: String)
@@ -52,7 +52,7 @@ enum EquipToggles {
     static func intent(_ state: CLIToggleState, row: FrameRow, readers: RowReaders) -> EquipToggleIntent {
         guard state.isToggle else { return .none }
         let cli = state.cli.id
-        guard state.isOn else { return .add(cli: cli) }
+        guard state.isOn else { return readers.isCopyTarget(cli) ? .add(cli: cli) : .none }
         guard let readerMap = readers.readers, let removed = readers.turningOff(cli), !removed.isEmpty else { return .removeFrom(cli: cli) }
         let others = (readers.fileReaders(removing: removed) ?? []).filter { $0 != cli }
         if others.isEmpty {

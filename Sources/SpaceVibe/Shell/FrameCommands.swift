@@ -95,7 +95,10 @@ struct FrameCommands: Commands {
             } else {
                 let clashes = Set(FrameRowAction.conflicts(in: actions))
                 ForEach(actions) { action in
-                    let button = Button(action.title, role: action.isDestructive ? .destructive : nil) { action.perform() }
+                    // Its key equivalent does nothing while the search field is edited; a pointer choice always acts.
+                    let button = Button(action.title, role: action.isDestructive ? .destructive : nil) {
+                        FramePlainKeys.performFromMenu(action, event: NSApp.currentEvent, firstResponder: NSApp.keyWindow?.firstResponder)
+                    }
                         .disabled(!action.isEnabled)
                     if let shortcut = action.menuShortcut, !clashes.contains(shortcut) {
                         button.keyboardShortcut(shortcut.keyboardShortcut)

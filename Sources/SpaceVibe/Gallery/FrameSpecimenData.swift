@@ -25,6 +25,7 @@ enum FrameSpecimenData {
         ("Never ran (owner)", CLIToggleState(cli: cli(2), presence: .on(.neverRan))),
         ("Never ran (reads)", CLIToggleState(cli: cli(3), presence: .on(.neverRan), ownsFile: false)),
         ("Off", CLIToggleState(cli: cli(4), presence: .off)),
+        ("Off · no folder", CLIToggleState(cli: cli(7), presence: .off, hold: .noCopyTarget(folder: "skills"))),
         ("Via", CLIToggleState(cli: cli(5), presence: .on(.sessions(4)), hold: .via(["Claude Code"]))),
         ("Last copy", CLIToggleState(cli: .claude, presence: .on(.sessions(24)), hold: .lastCopy)),
         ("Unmeasurable", CLIToggleState(cli: cli(6), presence: .on(.unmeasurable))),

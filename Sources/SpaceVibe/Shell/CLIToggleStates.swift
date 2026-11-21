@@ -91,7 +91,11 @@ enum CLIToggleStates {
         }
         if cell == .unknown { return CLIToggleState(cli: identity, presence: .unreadable) }
         guard let usage = usage(cell) else {
-            return CLIToggleState(cli: identity, presence: .off, hold: readOnly ?? .none)
+            // An off logo adds into the CLI's own folder; a CLI with none of the kind (Codex's skills only in
+            // `~/.agents/skills`) would get a 409, so it is not offered.
+            let folder = row.kind == .agent ? "agents" : "skills"
+            let nowhere = readers.isCopyTarget(cli.id) ? nil : CLIToggleState.Hold.noCopyTarget(folder: folder)
+            return CLIToggleState(cli: identity, presence: .off, hold: readOnly ?? nowhere ?? .none)
         }
         let via = readers.readers?.via(cli.id)
         var hold: CLIToggleState.Hold = .none

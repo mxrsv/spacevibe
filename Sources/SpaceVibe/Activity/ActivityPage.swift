@@ -73,7 +73,7 @@ struct ActivityPageContext {
 
     @MainActor
     func actions(for row: ActivityFailureRow, toasts: ToastCenter) -> [FrameRowAction] {
-        [FrameRowAction(id: "copyCommand", title: "Copy Command", shortcut: FrameShortcut("c", modifiers: [.command, .shift])) {
+        [FrameRowAction(id: "copyCommand", title: "Copy Command", shortcut: .copyCommand) {
             state.copyCommand(row, toasts: toasts)
         }]
     }

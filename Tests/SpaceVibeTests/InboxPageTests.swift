@@ -346,6 +346,19 @@ struct InboxBuildReviewTests {
         #expect(InboxInspectorFacts.itemActions(never) == [.remove(title: "Remove from Claude Code and Codex", asks: false)])
     }
 
+    @Test("Clean up inspector: Remove when it removes at once, Remove… only when it asks first (a file another CLI reads)")
+    func inspectorRemoveTitle() throws {
+        let alone = try #require(InboxPage(world: S.world(.normal, clis: 2), figure: .count(0, tone: nil), now: S.now).row("skill::pdf-extract"))
+        let removeAlone = try #require(InboxInspectorFacts.itemActions(alone).first)
+        #expect(removeAlone == .remove(title: "Remove from Claude Code and Codex", asks: false))
+        #expect(InboxInspectorFacts.itemActionTitle(removeAlone) == "Remove", "no question follows: no ellipsis")
+        let shared = try #require(InboxPage(world: S.world(.normal, clis: 10), figure: .count(0, tone: nil), now: S.now).row("skill::pdf-extract"))
+        let removeShared = try #require(InboxInspectorFacts.itemActions(shared).first)
+        #expect(removeShared == .remove(title: "Remove…", asks: true))
+        #expect(InboxInspectorFacts.itemActionTitle(removeShared) == "Remove…")
+        #expect(InboxInspectorFacts.itemActionTitle(.keep) == "Keep")
+    }
+
     @Test("a row another row's link reaches: Remove names the link too, after the confirmation names its readers")
     func removeNamesLinks() async throws {
         let world = Self.linkWorld()
@@ -396,6 +409,22 @@ struct InboxBuildReviewTests {
         #expect(core.count("loadout.removeFrom") == 1)
     }
 
+    @Test("D53: two tiles of one item pressed in the same main-actor turn: the item is busy at once, the second starts nothing")
+    func twoTilesInOneTurn() async throws {
+        let world = S.world(.normal, clis: 2)
+        let item = try #require(world.rows.first { $0.id == "skill::code-review" })
+        let tiles = CLIToggleStates.states(of: item, in: world)
+        let claude = try #require(tiles.first { $0.cli.id == "claude" })
+        let codex = try #require(tiles.first { $0.cli.id == "codex" })
+        #expect(claude.isToggle && codex.isToggle, "two files: neither tile is the last copy before a write")
+        let (core, _, _, actions) = actions(world)
+        let first = actions.toggleTile(claude, row: item)
+        #expect(actions.isItemBusy(item.id), "pending before the task runs")
+        #expect(first != nil && actions.toggleTile(codex, row: item) == nil)
+        await first?.value
+        #expect(core.count("loadout.removeFrom") == 1 && !actions.isItemBusy(item.id))
+    }
+
     @Test("Esc on a running confirmation does nothing: the dialog stays until the core answered")
     func escWhileRunning() async throws {
         let gate = PendingGate()
@@ -433,5 +462,19 @@ struct InboxBuildReviewTests {
         #expect(InboxAction.remove(title: "Remove…", asks: true).shortcut == .remove)
         #expect(InboxAction.addTo(cli: "codex", title: "Add to Codex").shortcut == .addTo)
         #expect(InboxAction.changeToAsk.shortcut == .changeToAsk)
+    }
+
+    @Test("RD-R16: Copy Command and Show Terminal rows have menu shortcuts; no row's actions clash with each other or the frame")
+    func copyAndTerminalShortcuts() {
+        #expect(InboxAction.copyCommand("x").shortcut == .copyCommand)
+        #expect(InboxAction.showTerminal(pid: 4).shortcut == .showTerminal && InboxAction.terminalNotFound.shortcut == .showTerminal)
+        let page = InboxPage(world: S.world(.normal, clis: 10), figure: .count(0, tone: nil), now: S.now)
+        let ids = Set(page.rows.flatMap { $0.actions.map(\.id) })
+        #expect(ids.isSuperset(of: ["copyCommand", "showTerminal"]), "the world has a failing Hook and a waiting session")
+        for row in page.rows {
+            let actions = row.actions.map { FrameRowAction(id: $0.id, title: $0.title, shortcut: $0.shortcut) {} }
+            #expect(FrameRowAction.conflicts(in: actions).isEmpty, "\(row.title)")
+            #expect(actions.allSatisfy { $0.shortcut == nil || $0.menuShortcut != nil }, "menu keys, never a plain letter")
+        }
     }
 }
