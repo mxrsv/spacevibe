@@ -121,7 +121,7 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
   | Ok / attention / critical | `#4CC38A` / `#E8B33A` / `#EF6B5E` | `#17784C` / `#8A6200` / `#C42F1D` |
   | Skills / Subagents / Hooks / Rules (icons only) | `#A38BF5` / `#7BDEE0` / `#CF84E0` / `#9AA3B5` | `#6A4FD8` / `#178082` / `#9A3FB0` / `#586273` |
 
-  Every text and icon pair reaches 4.5:1 on its surface; see `design-notes.md` §4, §12, §21, §23 for the measured values.
+  Every text pair reaches 4.5:1 and every icon or other non-text mark 3:1 on its surface (narrowed 2026-11-21 by the owner, [DS2](2026-11-21-spacevibe-design-system.md)); see `design-notes.md` §4, §12, §21, §23 for the measured values.
 - **RD-R8. Data colour.**
   - **Data:** bars, meters, tile heat and legends use the neutral steps `--data-1`…`--data-4` (ink mixed into the group surface at 8/16/28/38% in dark and 8/16/28/44% in light).
   - **State colours:** only for state.

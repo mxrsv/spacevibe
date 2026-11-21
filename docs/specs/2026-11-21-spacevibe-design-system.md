@@ -18,6 +18,7 @@ Before the redesign is built, one design system exists: every value a screen may
 | ID | Decision | Owner's words | Req |
 | --- | --- | --- | --- |
 | DS1 | The redesign gets a design system before any screen is built. | "chuẩn bị build phần giao diện mới này thì phải có design-system ấy" (2026-11-21) | DS-R1 to DS-R12 |
+| DS2 | Three gaps found when the tokens were ported (RB-S1) close as recommended: the inspector is 336 wide on Skills, Subagents and Inbox and 308 on every other page, as the mock draws it; the 12 pt `quiet` role takes weight 500 on small buttons, sidebar group heads and inspector section heads, as the mock draws it; a pair whose value misses the ratio this spec promises gets the smallest value change that meets it, hue kept, and icons and other non-text marks are measured at 3:1 (WCAG 1.4.11), text at 4.5:1. | "Nhận hết" (2026-11-21, on the three recommendations) | DS-R1, DS-R2, DS-R3 |
 
 Carried, not re-decided here: RD6 (SF Pro Rounded for figures only, "chỉ sử dụng font rounded cho số liệu"), RD9 (Graphite surfaces, no hue cast), RD10 (severity once per group), RD23 (600 for sidebar labels only, SpaceVibe's own page icons), RD29 and D57 (focus is a 3 pt bar, never a ring), RD37 and RD38 (Phosphor Bold content glyphs, Fill state glyphs), D12 (no gradients), RD-R3 to RD-R9 and RD-R16 of the redesign spec.
 
@@ -32,20 +33,22 @@ Carried, not re-decided here: RD6 (SF Pro Rounded for figures only, "chỉ sử 
   | `canvas` | `#111214` | `#F4F4F5` | window |
   | `group` | `#191A1D` | `#FFFFFF` | cards, inspector, menus in Solid |
   | `side` | `#141518` | `#E9E9EB` | Solid sidebar |
-  | `ink` / `ink2` / `ink3` | `#F5F6F8` / `#D6D9DF` / `#A9AEB8` | `#14171D` / `#434955` / `#616775` | text, secondary, quiet (IC: `ink3` `#BCC1CA` / `#4E5462`) |
+  | `ink` / `ink2` / `ink3` | `#F5F6F8` / `#D6D9DF` / `#A9AEB8` | `#14171D` / `#434955` / `#5C6270` (DS2; was `#616775`) | text, secondary, quiet (IC: `ink3` `#BCC1CA` / `#4E5462`) |
   | `faint` | `#3A404C` | `#C9CFDA` | empty track (IC: `#6B717D` / `#8A909C`) |
   | `ok` / `warn` / `crit` | `#4CC38A` / `#E8B33A` / `#EF6B5E` | `#17784C` / `#8A6200` / `#C42F1D` | state text and glyphs |
-  | `warn-bar` / `crit-bar` | `#E8B33A` / `#EF6B5E` | `#B07E00` / `#D9402F` | state fills, 3:1 |
+  | `warn-bar` / `crit-bar` | `#E8B33A` / `#EF6B5E` | `#A37100` (DS2; was `#B07E00`) / `#D9402F` | state fills, 3:1 |
   | `crit-ink` | `#FF8A7D` | `#9E1D0F` | text on the destructive tint |
-  | `primary`, `-h`, `-p`, `on-primary` | `#0B6FE4`, +14% white, +16% black, white | same | the one primary action, checkbox and switch on, link |
+  | `primary`, `-h`, `-p`, `on-primary` | `#0B6FE4`, `#0A66D2` (+8% black, DS2: +14% white gave white text 3.80:1), +16% black, white | same | the one primary action, checkbox and switch on, link |
   | `link` | `#5AA2FF` | `#0A64D0` | links |
   | `clay`, `logo-codex` | `#E08463`, `#E9E9ED` | `#AD4A28`, `#2A2B30` | the two CLI logos only |
   | `c-skills` / `c-subs` / `c-hooks` / `c-rules` | `#A38BF5` / `#7BDEE0` / `#CF84E0` / `#9AA3B5` | `#6A4FD8` / `#178082` / `#9A3FB0` / `#586273` | one identity tone per category, icons only |
   | `s-work` / `s-wait` / `s-done` | `#E1B236` / `#EB871B` / `#6FBE94` | `#9C7802` / `#AF6005` / `#27885D` | session glyph inks (`SessionStateGlyph`, unchanged) |
   | `data-1` to `data-4`, `data-bar` | `ink` at 8 / 16 / 28 / 38 / 55 % over `group` | 8 / 16 / 28 / 44 / 55 % | data, never a state (IC: `#6B717D` `#858B96` `#A3A8B1` `#C4C8CE` `#E3E5E8` / `#8A909C` `#6E7480` `#545A66` `#3B404B` `#22262E`) |
   | `hair`, `alt`, `hover`, `sel` | white at 8 / 3 / 6 / 9 % | black at 9 / 2 / 5 / 7 % | lines, zebra, hover, selection (IC `hair` = IC `faint`) |
-  | `ctl`, `ctl-h`, `ctl-a` | white at 9 / 15 / 20 % | black at 5 / 9 / 13 % | control fills (IC: 20 / 27 % and 15 / 20 %, plus a `hair` outline) |
+  | `ctl`, `ctl-h`, `ctl-a` | white at 9 / 15 / 20 % | black at 5 / 9 / 13 % | control fills (IC, DS2: white 33 / 38 / 36 % and black 42 / 45 / 48 % for rest / hover / pressed, so each reaches 3:1 on `group` and `ink` keeps 4.5:1 on it, plus a `hair` outline; labels on IC fills use `ink`) |
   | `scrim` | black 50 % | black 30 % | behind sheets and alerts |
+
+  DS2 also sets two derived rules: primary hover is one step darker, not lighter (a lighter step that keeps white text at 4.5:1 does not read as hover), which narrows RD-R9; under Increase Contrast, text on a tile heat step is `ink` on step 1 and the `group` colour on steps 2 to 4, so it reaches 4.5:1 on every step.
 
 - **DS-R2. Type roles.** SF Pro for text; SF Pro Rounded only on figures (hero, figure, counts in tables and tiles, sizes, sidebar values); SF Mono only for paths, commands, rule text and Hook labels. Weights 400 and 500; 600 only for sidebar labels. Letter-spacing and line-height are never changed per screen.
 
@@ -56,10 +59,11 @@ Carried, not re-decided here: RD6 (SF Pro Rounded for figures only, "chỉ sử 
   | `title` | 15 / 20 | 500 | page title, empty-state title |
   | `body` | 13 / 18 | 400, 500 | rows, buttons, names |
   | `quiet` | 12 / 16 | 400 | sub-lines, notes, sidebar values |
+  | `quiet` medium | 12 / 16 | 500 | small-button labels, sidebar group heads, inspector section heads, run and session counts in table cells (DS2) |
   | `caption` | 11 / 14 | 400 | chart axes, legends, tile captions only |
   | `mono` | 12 / 16 | 400, SF Mono | paths, commands, rule text, Hook labels |
 
-- **DS-R3. Space.** Steps 2, 4, 6, 8, 10, 12, 16, 20, 24. Layout metrics, named: content clears the toolbar by 68 (Glass) or 64 (Solid) and the title bar by 36; an empty state starts 72 down; the inspector is 308 wide (336 at 1600). Nothing else in a screen is a number.
+- **DS-R3. Space.** Steps 2, 4, 6, 8, 10, 12, 16, 20, 24. Layout metrics, named: content clears the toolbar by 68 (Glass) or 64 (Solid) and the title bar by 36; an empty state starts 72 down; the inspector is 336 wide on Skills, Subagents and Inbox and 308 on every other page (DS2). Nothing else in a screen is a number.
 - **DS-R4. Radius.** Steps 4, 6, 8, 10, 14, 18 and capsule. By look: window 26 / 12, sidebar 18 / 0 (with an 8 inset in Glass), group 14 / 10, controls capsule / 6, popovers 14 / 10. Meters, ticks and dots are capsules.
 - **DS-R5. Sizes.** Controls 32 regular, 26 small, 20 mini; a checkbox, toggle or logo toggle sits in a 28 hit cell; no hit target under 24. Rows 48 in tables (60 when a row's logo toggles wrap to a second line, from 7 CLIs), 44 in lists. Segmented controls come in two sizes only: regular 32 (inner 28) and small 26 (inner 22). Meters: 4 in rows, 6 for the hero and Limits, 3 for progress; the pace tick is 2.
 - **DS-R6. Icons.** Sizes 12, 14, 16, 20, 40; CLI logos 16 and 20. Content glyphs Phosphor Bold, state glyphs Phosphor Fill, page icons SpaceVibe's own set (RD23, RD37). Icons are never boxed.
