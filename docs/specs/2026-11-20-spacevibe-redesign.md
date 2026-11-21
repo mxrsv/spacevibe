@@ -1,7 +1,7 @@
 # SpaceVibe: app-wide redesign (macOS frame, v2)
 
 Date: 2026-11-20
-Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. The owner approved round 5 by eye on 2026-11-21 ("ok chốt"), with fixes made the same day: the window is one solid surface and only the floating sidebar's own rounded shape shows the desktop through its glass, so there is no blurred band or stepped corner around the sidebar. On 2026-11-21 the owner also accepted every pending item of the third readiness review ("ok approve chốt": RD35–RD40, the replaced ledger rows and the PRODUCT.md lines). The [build plan](../plans/2026-11-21-spacevibe-redesign-build.md) gates code on the mock's readiness (G-0, a fourth fresh review) and track approval (G-1); no code yet.
+Status: decided, 2026-11-21: the owner closed the spec and the plan ("chốt spec và plan"); nothing is built. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. The owner approved round 5 by eye on 2026-11-21 ("ok chốt"), with fixes made the same day: the window is one solid surface and only the floating sidebar's own rounded shape shows the desktop through its glass, so there is no blurred band or stepped corner around the sidebar. On 2026-11-21 the owner also accepted every pending item of the third readiness review ("ok approve chốt": RD35–RD40, the replaced ledger rows and the PRODUCT.md lines). Four fresh readiness reviews ran; the last found no high-severity hole in the mock, and its findings in the plan were fixed. The owner accepted the last open items ("nhận hết": RD41, RD42) and closed the spec and the [build plan](../plans/2026-11-21-spacevibe-redesign-build.md) the same day.
 Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: [build plan](../plans/2026-11-21-spacevibe-redesign-build.md).
 
 - **Reference mock (round 5, 2026-11-21):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`; round 4 is kept as `mock-r4.html` (built from `src-r4/`), and the "Trước fix / Sau fix" switch at the top left moves between them with the same state. The rail's `Dữ liệu` axis loads the break-ui datasets (Mẫu, Cực đoan, Một mục, Rất nhiều). It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
@@ -73,6 +73,8 @@ Pending items of the third readiness review, all accepted by the owner on 2026-1
 | RD38 | The icon library stays Phosphor plus SpaceVibe's own set; no SF Symbols. | "ok approve chốt" (2026-11-21) | RD-R3 | every page |
 | RD39 | Keys: ↑↓ and j/k move the selection (D11), A toggles the focused logo (D69), S stops (asks), Z and ⌘Z undo (GLOSSARY Undo), ⌘1–⌘8 open the pages in sidebar order (⌘1 Inbox, ⌘2 Clean, ⌘3 Skills, ⌘4 Subagents, ⌘5 Hooks, ⌘6 Rules, ⌘7 Limits, ⌘8 Activity), which replaces D70's "Limits keeps ⌘3"; every command is also in the menu bar. The v5 status-bar hints retire with the status bar; the Undo hint lives in the toast. | "ok approve chốt" (2026-11-21) | RD-R9 | "not shown" line (keys) |
 | RD40 | Narrows RD20: a list has checkboxes where a bulk action exists (remove, stop); Keep and Dismiss act on one row at a time. | "ok approve chốt" (2026-11-21) | RD-R11 | Inbox Balance, Control and Watch rows; Activity Failures |
+| RD41 | Nothing is pre-selected; row actions sit on the selected row, and a group head holds `Select N Suggested`. This replaces the earlier "every action visible" answer for row buttons; the two rail axes `preselect` and `rowact` are removed (RD17). | "nhận hết" (2026-11-21) | RD-R4 | every list; group heads on Inbox, Skills, Subagents, Hooks |
+| RD42 | Clean covers what Claude Code and Codex leave behind; `.cursor`, `.gemini` and other CLIs' folders wait for a later spec, once the engine supports those CLIs. This narrows CL1 ("bất kỳ cái gì"). | "nhận hết" (2026-11-21) | CL-R4 | Clean at 2 CLIs; 3+ CLI rows are illustration |
 
 Earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
@@ -104,8 +106,7 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
 - **RD-R3. One token and block set.** Every screen is composed only from the shared blocks and tokens shown on the mock's "Tokens + base" page. The existing `StyleBoundaryTests` rule continues to apply.
 - **RD-R4. Inbox first.**
   - **Groups:** findings are grouped by job: Clean up, Balance, Control, Watch. Severity is shown once at the group head. The hero count equals the rows shown.
-  - **Row actions:** the selected row carries the full-verb action and Keep. The group head only selects (`Select N Suggested`); removing goes through the toolbar's `Remove N selected`, so nothing is removed that was not ticked.
-  - **What counts (RD26):** Dead and Never ran items not added in the last day, not plugin-owned and not kept; Hooks with errors in the last 7 days; Claude Code Rules that allow a whole tool; Windows behind pace or over the limit; waiting sessions. Kept findings are listed under `N kept · Show` and leave the count.
+    - **What counts (RD26):** Dead and Never ran items not added in the last day, not plugin-owned and not kept; Hooks with errors in the last 7 days; Claude Code Rules that allow a whole tool; Windows behind pace or over the limit; waiting sessions. Kept findings are listed under `N kept · Show` and leave the count.
   - **Watch:** limit Windows are judged by pace (share left against share of time left), not by a fixed threshold. Proposed data and readings older than 6 hours are shown but never judged; a Window without a length is not judged by pace but still counts at 5% left or less (RD30).
 - **RD-R5. Type.**
   - **Typefaces:** SF Pro for text, SF Pro Rounded for figures only (in SwiftUI, `.fontDesign(.rounded)` on figure `Text`), SF Mono for paths and commands.
@@ -194,7 +195,6 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
 
 Each line comes from the mock or from an agent's choice, not from the owner:
 
-- **Pre-selection:** the default is "nothing pre-selected" (mock axis `preselect`). The alternative is to pre-select dead Hooks only. Since round 4 the group head only selects, so pre-selection is the one way a removal starts without a tick.
 - **Row actions:** the default is the selected row plus a group-head `Select N Suggested` (mock axis `rowact`). The alternative is one button on every row. This conflicts with the earlier "every action visible" answer.
 - **Hero of Clean:** what can be cleaned (equal to the sidebar); the selected amount sits on the button and the bar. Replaces the round-3 "hero = selected".
 - **Show in Settings › CLIs:** hides a CLI from every list only; who reads or loses a file always counts every installed CLI, so removing a shared file still names a hidden reader.
@@ -286,7 +286,6 @@ PRODUCT.md lines this spec changes, updated at the cut-over (RB-X1), owner yes 2
 
 ## Out of scope
 
-- Building code before the owner approves the mock by eye.
 - Restyling the public site `site/`.
 - Support for CLIs other than Claude Code and Codex in the engine. The design must allow them (RD13), but adding them is separate work, each with its own spec.
 
