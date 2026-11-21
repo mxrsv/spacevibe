@@ -162,9 +162,7 @@ func readCases(t *testing.T) {
 			t.Fatalf("order %v", order)
 		}
 		c.wantError(c.call("2", "clis.registry", `{"all":true}`), -32602)
-		// No transcript yet: the Swift suite requires a DTO for every recorded result (CoreWireTests), and the
-		// shell has none for this method until its first caller. The exact bytes are pinned in cliregistry's test.
-		c.end()
+		c.finish("clis_registry")
 	})
 
 	t.Run("usage_scan_busy_and_cancel", func(t *testing.T) {

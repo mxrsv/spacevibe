@@ -10,6 +10,8 @@ import Foundation
 protocol CoreService: Sendable {
     /// `initialize`: the core's name, version, env prefix and data folder (SV12).
     func initialize() async throws -> CoreInitializeResult
+    /// `clis.registry`: every CLI the engine knows, in the fixed order, with its `supports` map. Reads nothing on disk.
+    func clisRegistry() async throws -> CoreRegistryResult
 
     func inventoryRead() async throws -> CoreInventorySnapshot
     /// `progress` is called after every 20 files and once at the end, from a background executor. A second scan while one

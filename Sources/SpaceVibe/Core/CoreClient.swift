@@ -53,6 +53,8 @@ final class CoreClient: CoreService, @unchecked Sendable {
 
     func initialize() async throws -> CoreInitializeResult { try await connection.handshake() }
 
+    func clisRegistry() async throws -> CoreRegistryResult { try await connection.call("clis.registry") }
+
     // MARK: Inventory, usage, loadout
 
     func inventoryRead() async throws -> CoreInventorySnapshot { try await connection.call("inventory.read") }

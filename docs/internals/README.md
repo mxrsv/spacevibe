@@ -12,6 +12,7 @@ Reference pages for the engine (the Go core): where each subsystem's facts come 
 | Mutations: every write to a CLI's configuration, the journal, Undo, restorable copies, the write lock, and the JSON and TOML handling writes depend on | [mutations.md](mutations.md) | `core/internal/mutate`, `core/internal/fsx`, `core/internal/ojson`, `core/internal/toml` |
 | Activity: sessions running now, their titles, failed commands and open tool calls, and Stop | [activity.md](activity.md) | `core/internal/activity`, `core/internal/proc`, `core/internal/textjs`, `core/internal/redact` |
 | Rules: the permission entries of Claude Code's settings, the capability grid, and the read-only summary of Codex permissions | [rules.md](rules.md) | `core/internal/rules` |
+| Shell data flow of the redesign frame: the one store, the pure derivations, the write path and the route | [shell-data-flow.md](shell-data-flow.md) | `Sources/SpaceVibe/Shell` |
 
 A new subsystem gets its page and its row in this table in the same change.
 

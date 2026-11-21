@@ -59,6 +59,7 @@ private final class FakeActivityCore: CoreService, @unchecked Sendable {
 
     private func unused() -> CoreError { CoreError("not served by the Activity fake", status: 500) }
     func initialize() async throws -> CoreInitializeResult { throw unused() }
+    func clisRegistry() async throws -> CoreRegistryResult { throw unused() }
     func inventoryRead() async throws -> CoreInventorySnapshot { throw unused() }
     func usageScan(progress: (@Sendable (CoreUsageProgress) -> Void)?) async throws -> CoreUsageResult { throw unused() }
     func loadoutRows() async throws -> CoreLoadoutRows { throw unused() }

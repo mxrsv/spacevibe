@@ -7,6 +7,7 @@ class UnservedCore: CoreService, @unchecked Sendable {
     func unserved() -> CoreError { CoreError("not served by this fake", status: 500) }
 
     func initialize() async throws -> CoreInitializeResult { throw unserved() }
+    func clisRegistry() async throws -> CoreRegistryResult { throw unserved() }
     func inventoryRead() async throws -> CoreInventorySnapshot { throw unserved() }
     func usageScan(progress: (@Sendable (CoreUsageProgress) -> Void)?) async throws -> CoreUsageResult { throw unserved() }
     func loadoutRows() async throws -> CoreLoadoutRows { throw unserved() }

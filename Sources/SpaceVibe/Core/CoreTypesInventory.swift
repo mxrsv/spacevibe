@@ -94,15 +94,18 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
     var skillOverride: String?
     /// Omitted until usage is attached.
     var cells: CoreCells?
+    /// One cell per registry CLI; written by `loadout.rows` only, and the same on every member of a row key.
+    var cliCells: CoreCLICells?
 
     private enum Keys: String, CodingKey {
-        case id, cli, kind, name, entry, description, owner, path, file, removable, scope, project, inOther, skillOverride = "override", key, cells
+        case id, cli, kind, name, entry, description, owner, path, file, removable, scope, project, inOther, skillOverride = "override", key, cells, cliCells
     }
 
-    init(id: String, cli: CoreCLI, kind: CoreKind, name: String, entry: String, description: String, owner: String, path: String, file: String, removable: Bool, scope: CoreInventoryScope, project: String?, inOther: Bool, key: String, hasSkillOverride: Bool = false, skillOverride: String? = nil, cells: CoreCells? = nil) {
+    init(id: String, cli: CoreCLI, kind: CoreKind, name: String, entry: String, description: String, owner: String, path: String, file: String, removable: Bool, scope: CoreInventoryScope, project: String?, inOther: Bool, key: String, hasSkillOverride: Bool = false, skillOverride: String? = nil, cells: CoreCells? = nil, cliCells: CoreCLICells? = nil) {
         self.id = id; self.cli = cli; self.kind = kind; self.name = name; self.entry = entry; self.description = description
         self.owner = owner; self.path = path; self.file = file; self.removable = removable; self.scope = scope
         self.project = project; self.inOther = inOther; self.key = key; self.hasSkillOverride = hasSkillOverride; self.skillOverride = skillOverride; self.cells = cells
+        self.cliCells = cliCells
     }
 
     init(from decoder: Decoder) throws {
@@ -124,6 +127,7 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
         hasSkillOverride = c.contains(.skillOverride)
         skillOverride = try c.decodeIfPresent(String.self, forKey: .skillOverride)
         cells = try c.decodeIfPresent(CoreCells.self, forKey: .cells)
+        cliCells = try c.decodeIfPresent(CoreCLICells.self, forKey: .cliCells)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -144,6 +148,7 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
         if hasSkillOverride { try c.encode(CoreNullable(wrappedValue: skillOverride), forKey: .skillOverride) }
         try c.encode(key, forKey: .key)
         try c.encodeIfPresent(cells, forKey: .cells)
+        try c.encodeIfPresent(cliCells, forKey: .cliCells)
     }
 }
 
@@ -178,6 +183,8 @@ struct CoreInventoryHook: Codable, Equatable, Sendable, Identifiable {
     /// `hook:<project or empty>:<hash>`.
     var key: String
     var cells: CoreCells?
+    /// As on `CoreInventoryItem`: one cell per registry CLI, `loadout.rows` only.
+    var cliCells: CoreCLICells?
     /// Always written; `null` when unknown or not logged.
     @CoreNullable var usage: CoreHookUsage?
 }

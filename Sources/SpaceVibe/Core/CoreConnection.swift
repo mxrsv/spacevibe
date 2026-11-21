@@ -15,7 +15,7 @@ final class CoreConnection: @unchecked Sendable {
     /// Methods that change nothing and may be sent again after a restart. Every other method, including one this list
     /// does not know, is treated as a write.
     static let readMethods: Set<String> = [
-        "inventory.read", "usage.scan", "loadout.rows", "activity.read", "journal.history",
+        "clis.registry", "inventory.read", "usage.scan", "loadout.rows", "activity.read", "journal.history",
         "rules.snapshot", "rules.preview", "rules.check", "limits.read",
     ]
     private static let maxBackoff = 5.0

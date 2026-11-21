@@ -13,7 +13,7 @@ Requirements: [spec](../specs/2026-11-02-reins.md) and [decision ledger](../spec
 ## Data flow
 
 1. The shell spawns `spacevibe rpc` and sends `initialize`. A protocol-version mismatch is refused and the shell shows a fixed startup-problem text.
-2. A screen asks for data: `inventory.read`, `loadout.rows`, `rules.snapshot`, `limits.read`, `activity.read`. The core reads the disk synchronously and answers with plain DTOs; unreadable files become `problems`, never an empty result.
+2. The shell asks for data: `clis.registry`, `inventory.read`, `loadout.rows`, `rules.snapshot`, `limits.read`, `activity.read`, `journal.history`. In the v5 app each screen reads its own when it opens. With the redesign switch on, one store reads every source for the whole frame and re-reads only what a write touched ([shell-data-flow.md](shell-data-flow.md)). The core reads the disk synchronously and answers with plain DTOs; unreadable files become `problems`, never an empty result.
 3. Usage is the slow read. `usage.scan` streams `usage/progress`, and the core keeps its result so `loadout.rows` can attach counts without the shell sending them back.
 4. Activity is a subscription: one full report, then a full report only when it changed (resync, never deltas).
 5. A write (`loadout.*`, `rules.*`) takes the write lock, edits through the atomic-write path, records one journal entry and returns its reference. Undo is `journal.undo` on that id. The same write ends old history ([journal retention and the trash sweep](mutations.md#journal-retention-and-the-trash-sweep)). Stopping a session is not a journal write and cannot be undone ([what Stop checks first](activity.md#rules-that-are-easy-to-get-wrong)).
