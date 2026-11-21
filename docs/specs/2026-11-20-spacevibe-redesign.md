@@ -70,6 +70,7 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
 | RD19 | Skills, Subagents, Hooks and Rules are separate sidebar pages. | taken as guessed (Q1) | RD-R1 | sidebar group Agents |
 | RD32 | Each page has a click-only `?` beside its title, actions keep full-verb labels, empty states say plainly what is missing; no fixed explainer line. | "b và c" (Q2) | RD-R2 | Toolbar `?` on every page; empty states |
 | RD33 | The limit reset countdown carries over unchanged ([countdown spec](2026-11-19-limit-reset-countdown.md), LC1–LC10): a 5-hour Window counts its last hour, a Weekly one counts inside the lead set in Settings › Limits (24 / 12 / 5 / 1 h, default 1 h), the clock in the row's tone. | "thêm vào đếm ngược trong widget và cả app main" (LC1) | RD-R10 | Limits Claude Code 5-hour row; Settings › Limits |
+| RD34 | The session glance widget carries over unchanged ([widget spec](2026-11-19-session-glance-widget.md), GW1–GW22): a floating strip over every app in 8 drop slots, its own state colours (GW20, GW22); only its surface and text tokens change. Activity uses the widget's session glyph set (`SessionStateGlyph`). | "yes" to the widget intent (GW1) | RD-R3 | not drawn: the mock's "not shown" line; Activity rows |
 | RD20 | Every list supports multi-select, and Clean uses the same mechanism. | "a" (Q3) | RD-R11 | checkboxes on every list; Clean sections |
 
 ## Requirements
@@ -122,6 +123,7 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
   - **Order and support:** CLIs sit in a fixed order. A concept a CLI lacks shows as "Not supported", distinct from Missing and Unmeasurable.
   - **One shape (RD28):** every page uses the same layout at 2 CLIs as at 10.
   - **Toolbar:** an `All CLIs` pop-up with up to 3 pinned CLIs replaces the two-CLI segmented filter. A CLI without the page's concept is listed disabled as Not supported. Balance compares pinned CLIs only.
+  - **Hook events:** the lifecycle strip shows the six common events and any other event (of the 17 Claude Code and 10 Codex events the core reports) that has a Hook, in firing order.
   - **Pages:** Activity is grouped by CLI; Limits lists CLIs in the fixed order and collapses CLIs without limit data into one "Unmeasurable" line; Hooks groups by lifecycle stage at every count, a CLI's own event name shown in the row, and names CLIs with no Hooks and CLIs without Hooks under the table.
   - **Unmeasurable cells:** a CLI that loads an item but keeps no log SpaceVibe can count shows the item as on with Unmeasurable sessions, never 0; Never ran is judged over measured CLIs only. An unreadable CLI folder makes every cell of that CLI unknown, Missing included.
   - **Rules:** a CLI pop-up picks the page; Claude Code's page is editable, every other CLI's page is read-only in its own terms (the owner's 2026-11-04 pick), and the Claude Code page shows each other CLI's one-line summary.
@@ -186,14 +188,18 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Hero of Clean:** what can be cleaned (equal to the sidebar); the selected amount sits on the button and the bar. Replaces the round-3 "hero = selected".
 - **Show in Settings › CLIs:** hides a CLI from every list only; who reads or loses a file always counts every installed CLI, so removing a shared file still names a hidden reader.
 - **Project items:** Skills, Subagents and Hooks under `<project>/.claude` are listed with a "Project · <name>" label, read-only (the engine refuses removal, 403), never an Inbox finding, never selectable in Clean.
-- **Waiting sessions:** no button opens a terminal; the inspector says "Answer in the terminal. SpaceVibe only shows that it is waiting." as the shipped app does. The mock had a "Show Terminal" action with no decision behind it; it was removed on 2026-11-21 pending the owner (it would need a way to find the right terminal and possibly an Automation permission).
+- **Show Terminal (owner decision pending, recommended: keep):** brings the app that runs the session to the front with the shipped `HostAppResolver` (GW5): no process started, no Automation permission. A session in tmux, screen or ssh has no app, so the button is disabled with "Terminal app not found". A waiting session also shows "Answer in the terminal. SpaceVibe only shows that it is waiting."
 - **Content icon weight:** the mock draws content glyphs in Phosphor Bold and state glyphs in Phosphor Fill; D72 has content glyphs in Phosphor Duotone, and RD23 covers only the 8 page icons. Owner decision pending.
 - **Refused Undo and a core that will not start:** declared in the mock's "not shown" with the shipped behaviour (error toast naming the reason; last data kept with "The core could not be started." and Try Again).
 - **Project rules:** Rules › Project reads and writes the chosen project's own file (`<project>/.claude/settings.json` or `settings.local.json`); the mock draws one synthetic rule set per project.
 - **Show guard:** at least one CLI stays shown; a hidden CLI's rows leave every list, its sessions still lock its logs and caches (RD27).
 - **Search (⌘F):** filters the page's list by name, description, command and path; no match shows "No <items> match" with Clear Search. Listed in the mock's "not shown"; D49 relies on it.
 - **Balance finding:** one finding at most, the most-used item missing in a pinned CLI; none when fewer than two CLIs are pinned.
-- **Open at login:** a Settings switch that adds a login item (system permission; W24 applies to the build). Kept from the shipped Settings direction, no owner decision of its own.
+- **Open at login:** a new Settings switch, not in the shipped app, off by default; it adds a login item that the user approves in System Settings (W24 applies to the build). No owner decision of its own.
+- **Icon set (owner decision pending, recommended: keep):** Phosphor plus SpaceVibe's own set (D72, RD23), not SF Symbols.
+- **Keys (owner yes pending):** ↑↓ and j/k move the selection (D11), A toggles the focused logo (D69), S stops (asks), Z and ⌘Z undo (GLOSSARY Undo), ⌘1–⌘8 open the pages (grilling Q5, still open). The v5 status-bar hints are retired with the status bar; the Undo hint lives in the toast.
+- **Checkboxes (narrows RD20, owner yes pending):** a list has checkboxes where a bulk action exists (remove, stop); Keep and Dismiss act on one row at a time.
+- **Limits selection:** a Window row can be selected (highlight only, no inspector); the widget and its popover open Limits with that row selected (LC-R7).
 - **Keep is stored:** kept findings survive a restart, in a list in the app's data folder (`~/.spacevibe`); the build plan's RB-E5.
 - **Page × state cells drawn as Normal on purpose:** listed in the mock's `MOCK.na` with their behaviour (Moving only on Clean, Hooks never ask, Limits writes nothing, no shared file at 2 CLIs, the Settings window has no scan); the mock's `consistency.js` fails on any other such cell.
 - **Settings window states:** empty and error open the Limits pane (no snapshot, Unmeasurable), worst and dialog the CLIs pane, a refused setting shows the error toast.
@@ -243,6 +249,12 @@ From the [2026-11-06 ledger](2026-11-06-reins-linear-identity-decisions.md). Row
 | D60 | No reset tick on bars | Pace tick (RD22) | recorded (RD22) |
 | D66 | Spacing tokens of the mock kit | Spacing of the redesign Tokens page (RD-R3) | owner yes pending |
 | D68 | 2026-11-07 frozen mock as build reference | This spec's reference mock | recorded (RD1, RD-A1) |
+| D24, D41 | Row-end warning icon with a Remove / Open file popover; the fix within one hover or click | Row actions on the selected row and the inspector (RD-R4), logo toggles in the row (RD-R11) | owner yes pending |
+| D58 | Row warning icons keep their state tones | Severity once per group, row icons grey (RD10) | recorded (RD10) |
+| D60 (clause 1) | A number appears once | Sidebar values repeat each page's hero (RD10) | recorded (RD10) |
+| D11 | `j`/`k` navigation | Kept, with ↑↓ ("Inferred, not decided": keys) | owner yes pending |
+
+PRODUCT.md lines this spec changes, updated at the cut-over (RB-X1), owner yes pending: "primary datum … at 20px; everything else 13px or smaller" (the scale is 11–40 pt, RD-R5); "a number shows once … never repeated in another card" (sidebar values repeat the hero, RD10); "a problem shown in a row offers its fix in the same row … (the warning popover with Remove)" (Skills and Subagents rows fix through their logo toggles; removal of the whole item is the inspector's `Remove…`); "Balance the two CLIs" (pinned CLIs, RD-R10).
 
 ## Needs new engine data or contracts
 
