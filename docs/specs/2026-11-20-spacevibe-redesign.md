@@ -1,7 +1,7 @@
 # SpaceVibe: app-wide redesign (macOS frame, v2)
 
 Date: 2026-11-20
-Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. The owner approved round 5 by eye on 2026-11-21 ("ok chốt"), with fixes made the same day: the window is one solid surface and only the floating sidebar's own rounded shape shows the desktop through its glass, so there is no blurred band or stepped corner around the sidebar. No plan and no code yet.
+Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. The owner approved round 5 by eye on 2026-11-21 ("ok chốt"), with fixes made the same day: the window is one solid surface and only the floating sidebar's own rounded shape shows the desktop through its glass, so there is no blurred band or stepped corner around the sidebar. The [build plan](../plans/2026-11-21-spacevibe-redesign-build.md) gates code on the mock's readiness (G-0); no code yet.
 Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: [build plan](../plans/2026-11-21-spacevibe-redesign-build.md).
 
 - **Reference mock (round 5, 2026-11-21):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`; round 4 is kept as `mock-r4.html` (built from `src-r4/`), and the "Trước fix / Sau fix" switch at the top left moves between them with the same state. The rail's `Dữ liệu` axis loads the break-ui datasets (Mẫu, Cực đoan, Một mục, Rất nhiều). It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
@@ -161,7 +161,7 @@ Two earlier owner answers are also carried here. They come from the paused layou
 ## Acceptance
 
 - **RD-A1.** Side by side with the reference mock, for every page and for the Settings window, in dark and light, Glass and Solid, at 1280: the structure (frame, regions, order) matches.
-- **RD-A2.** For each page, the element named as the first glance in `design-notes.md` §1 is the largest or highest-contrast element in a screenshot of the built app.
+- **RD-A2.** For each page, the element named as the first glance in the RD-R2 table is the largest or highest-contrast element in a screenshot of the built app.
 - **RD-A3.** No screen file contains a font, colour, radius or spacing literal (`StyleBoundaryTests` passes). The Tokens + base specimen is implemented as a debug screen.
 - **RD-A4.** In a built screenshot, figures render in SF Pro Rounded and text in SF Pro. Meter heights match RD-R6.
 - **RD-A5.** Contrast measured on built screenshots meets RD-R7, RD-R8 and RD-R9. The primary blue appears only on the uses listed in RD-R9.
@@ -182,6 +182,11 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Pre-selection:** the default is "nothing pre-selected" (mock axis `preselect`). The alternative is to pre-select dead Hooks only. Since round 4 the group head only selects, so pre-selection is the one way a removal starts without a tick.
 - **Row actions:** the default is the selected row plus a group-head `Select N Suggested` (mock axis `rowact`). The alternative is one button on every row. This conflicts with the earlier "every action visible" answer.
 - **Hero of Clean:** what can be cleaned (equal to the sidebar); the selected amount sits on the button and the bar. Replaces the round-3 "hero = selected".
+- **Show in Settings › CLIs:** hides a CLI from every list only; who reads or loses a file always counts every installed CLI, so removing a shared file still names a hidden reader.
+- **Project items:** Skills, Subagents and Hooks under `<project>/.claude` are listed with a "Project · <name>" label, read-only (the engine refuses removal, 403), never an Inbox finding, never selectable in Clean.
+- **Waiting sessions:** no button opens a terminal; the inspector says "Answer in the terminal. SpaceVibe only shows that it is waiting." as the shipped app does. The mock had a "Show Terminal" action with no decision behind it; it was removed on 2026-11-21 pending the owner (it would need a way to find the right terminal and possibly an Automation permission).
+- **Content icon weight:** the mock draws content glyphs in Phosphor Bold and state glyphs in Phosphor Fill; D72 has content glyphs in Phosphor Duotone, and RD23 covers only the 8 page icons. Owner decision pending.
+- **Refused Undo and a core that will not start:** declared in the mock's "not shown" with the shipped behaviour (error toast naming the reason; last data kept with "The core could not be started." and Try Again).
 - **Keep is stored:** kept findings survive a restart, in a list in the app's data folder (`~/.spacevibe`); the build plan's RB-E5.
 - **Page × state cells drawn as Normal on purpose:** listed in the mock's `MOCK.na` with their behaviour (Moving only on Clean, Hooks never ask, Limits writes nothing, no shared file at 2 CLIs, the Settings window has no scan); the mock's `consistency.js` fails on any other such cell.
 - **Settings window states:** empty and error open the Limits pane (no snapshot, Unmeasurable), worst and dialog the CLIs pane, a refused setting shows the error toast.
@@ -198,7 +203,6 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Copy for the error state:** "Unmeasurable" is the one word for anything SpaceVibe cannot know (D65); "Unreadable" is retired from labels.
 - **Pace thresholds:** amber when the share left is more than 3 points below the share of time left, once a tenth of the Window has passed (RD30); red above 15 points, at ≤ 5% left or over the limit.
 - **`Remove N selected`:** counts rows, not copies across CLIs.
-- **Hero numbers:** the Clean hero shows the selected amount, while the sidebar shows the cleanable amount.
 - **Settings:** `Look` (Glass or Solid) follows the system; the theme switch stays (D70, RD21).
 - **SF Pro on future shells:** SV2 plans Windows and Linux shells; SF Pro is licensed for Apple platforms, so those shells need their own face.
 - **Glossary:** "Not supported" is a new GLOSSARY term. "Agents" is used as the sidebar group label.
