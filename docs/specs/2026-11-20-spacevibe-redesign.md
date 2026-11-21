@@ -1,10 +1,10 @@
 # SpaceVibe: app-wide redesign (macOS frame, v2)
 
 Date: 2026-11-20
-Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4. No plan and no code yet.
+Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. No plan and no code yet.
 Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: none yet.
 
-- **Reference mock (round 4, 2026-11-21):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`. It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
+- **Reference mock (round 5, 2026-11-21):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`; round 4 is kept as `mock-r4.html` (built from `src-r4/`), and the "Trước fix / Sau fix" switch at the top left moves between them with the same state. The rail's `Dữ liệu` axis loads the break-ui datasets (Mẫu, Cực đoan, Một mục, Rất nhiều). It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
 - **Design record:** `design-notes.md` in the same folder, sections 1–25 (§25 is round 4). It holds the thesis per page, the token tables with measured contrast, and the needs-new-data list.
 - **Many-CLI research:** `research-many-clis.md` in the same folder.
 - **Absorbs:** the Clean draft [2026-11-18-clean.md](2026-11-18-clean.md). Its decisions CL1–CL4 and its requirements CL-R1–CL-R8 stay in force and are not copied here.
@@ -54,6 +54,14 @@ Decisions of 2026-11-21. Each was a recommendation after the four-agent mock rev
 | RD26 | Inbox can reach zero: each finding has Keep; a Hook counts as failing only for errors in the last 7 days; an item added in the last day is not a finding; a Rule that allows a whole tool is a Control finding. | "nhận hết fix mock đi" | RD-R4 | RD-A9 |
 | RD27 | Clean locks a CLI's logs and caches only while that CLI has a running session (running or waiting), as CL2 says. | "nhận hết fix mock đi" | CL-R5 | Clean spec |
 | RD28 | Two CLIs use the same layout as many: installing a third CLI changes no page's shape. | "nhận hết fix mock đi" | RD-R10 | RD-A6 |
+
+Decisions of 2026-11-21, after the three Opus reviews. Each was the recommendation offered; the owner's answer was "tôi muốn fix đủ nhưng cần button before after để xem sau khi fix như nào".
+
+| ID | Decision | Owner's words | Req | Acceptance |
+| --- | --- | --- | --- | --- |
+| RD29 | Keyboard focus is a 3 pt ink bar inside the focused row, field or control: not a ring, so D57 stands, and it reaches 3:1 and differs from hover and selection. | "tôi muốn fix đủ" | RD-R9, RD-R16 | RD-A10 |
+| RD30 | A Window always counts as needing you at 5% left or less; pace ("faster than time") is judged only once a tenth of the Window has passed. | "tôi muốn fix đủ" | RD-R4 | RD-A9 |
+| RD31 | A CLI that reads an item only through another CLI's folder (Cursor reading `~/.claude/skills`) shows it as "via" that CLI and is not a toggle; removing it is `Remove…`. | "tôi muốn fix đủ" | RD-R11 | RD-A6 |
 
 Two earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
@@ -106,7 +114,7 @@ Two earlier owner answers are also carried here. They come from the paused layou
   - **CLI identity:** only through logos.
 - **RD-R9. Primary.**
   - **Fill:** `#0B6FE4` with white text (4.76:1), flat, no gradient, no shadow. Hover is one step lighter, pressed one step darker.
-  - **Used for:** the one non-destructive primary action, checkbox and switch on-states and links (`#5AA2FF` dark / `#0A64D0` light). No focus ring anywhere (D57): keyboard focus is a fill change, on text inputs too.
+  - **Used for:** the one non-destructive primary action, checkbox and switch on-states and links (`#5AA2FF` dark / `#0A64D0` light). No focus ring anywhere (D57): keyboard focus is the 3 pt ink bar of RD29, on text inputs too.
   - **Not used for:** selection, which stays neutral, and destructive actions, which use a red tint and are never primary (HIG `buttons.md:53`).
 - **RD-R10. N CLIs.** Every surface works at 2, 3, 6 and 10 CLIs.
   - **Order and support:** CLIs sit in a fixed order. A concept a CLI lacks shows as "Not supported", distinct from Missing and Unmeasurable.
@@ -136,6 +144,19 @@ Two earlier owner answers are also carried here. They come from the paused layou
 - **RD-R13. States.** Every page draws normal, empty, scanning, error, worst-case data, just-written (Undo), refused write and confirmation states, as in the mock. The layout never shifts (FE-L1). During the first usage scan Skills and Subagents list their rows with pending counts. Below 1100 pt the inspector opens as an overlay from the toolbar button or a row click.
 - **RD-R14. Retired from the mock (RD21):** the toolbar `More` button (nothing was designed for it), the Activity Files tab, the Limits Refresh and Gemini card, `Remove from Both`, the static Clean inspector and its live-session banner, summary bars that repeat the hero.
 - **RD-R15. Writes the app does not do (RD24, RD25):** install or remove the status-line capture, empty SpaceVibe's trash.
+- **RD-R16. Accessibility (WCAG 2.2 AA, from the 2026-11-21 review).**
+  - **Keyboard:** arrow keys move the selection and show the RD29 bar; Return or ⌘I opens the overlay inspector below 1100 pt, arrows never do; every row action (Keep, Remove, Add to…, Stop…, Copy Command) is also a menu command with a shortcut, a context-menu item and an accessibility action on the row.
+  - **Severity:** shown by glyph and colour (`x-circle-fill` critical, `warning-fill` attention), never by a coloured dot alone; small amber marks in light use the 3:1 amber.
+  - **Names and state:** every checkbox, switch, segmented control, logo toggle and Hooks node has a label and its state (on, off, via, only copy, Unmeasurable, Not supported); the sidebar Inbox item reads "N need you, M critical".
+  - **Dialogs:** at most 5 listed rows with "and N more"; buttons always in reach; Cancel is the default; Stop is destructive and never the default; Esc closes every overlay; focus moves in and returns.
+  - **Announcements:** writes and refusals are announced (refusals at high priority); progress bars carry a label and value.
+  - **Targets:** at least 24 pt; a checkbox's whole 28 pt cell toggles it.
+  - **Increase Contrast and Reduce Motion:** tracks, control fills and data steps rise to 3:1; tile lift, press scale, count-ups and filling bars are skipped.
+- **RD-R17. Robust data (from the 2026-11-21 break-ui review).**
+  - **Names:** long names, paths and commands are cut in the middle with the full text in a tooltip; titles keep their own text direction; a Hook is named by the script it runs (`hookLabel`), the same on every surface.
+  - **Numbers:** bytes, money and counts use the system formatters (TB above 1,000 GB, two decimals for money, plurals, thousands separators, `4.8M` in narrow cells).
+  - **Layout:** the toolbar's destructive or primary button keeps one width; one-line cells end in an ellipsis; toasts wrap and keep Undo in the window; a refused-write toast shows 3 lines with Details.
+  - **Honesty:** a session with no project reads "No project"; a bare MCP tool name is not a "whole tool" rule (only tools that take a specifier: Bash, Read, Edit, Write, MultiEdit, NotebookEdit, WebFetch, WebSearch); empty log rows are not offered; the Clean bar's scale is what can be cleaned, and bytes in use are text only.
 
 ## Acceptance
 
@@ -150,7 +171,9 @@ Two earlier owner answers are also carried here. They come from the paused layou
   - the grid never exceeds 3 rows.
 - **RD-A7.** `build-review` passes before the owner is asked to look (W24), because the build removes and copies user files.
 - **RD-A8.** No screen offers a control listed in RD-R14 or RD-R15; Settings has the theme switch; a lone lit logo cannot be clicked off.
-- **RD-A9.** With a fixture where every finding is fixed or kept, Inbox shows `Clear` and the sidebar shows 0; a kept finding comes back with Stop Keeping.
+- **RD-A9.** With a fixture where every finding is fixed or kept, Inbox shows `Clear` and the sidebar shows 0; a kept finding comes back with Stop Keeping. A Window at 5% left or less is the Limits hero whatever its pace.
+- **RD-A10.** With Full Keyboard Access on, every action on every page is reachable without a pointer, and the focus bar is visible at 3:1 in dark and light.
+- **RD-A11.** The break-ui datasets (`extreme`, `one`, `huge`) render on every page at 1000 and 1280 with no overflow, no text over another, no `null` or `NaN`, and every dialog's buttons inside the window.
 
 ## Inferred, not decided
 
@@ -159,6 +182,9 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Pre-selection:** the default is "nothing pre-selected" (mock axis `preselect`). The alternative is to pre-select dead Hooks only. Since round 4 the group head only selects, so pre-selection is the one way a removal starts without a tick.
 - **Row actions:** the default is the selected row plus a group-head `Select N Suggested` (mock axis `rowact`). The alternative is one button on every row. This conflicts with the earlier "every action visible" answer.
 - **Hero of Clean:** what can be cleaned (equal to the sidebar); the selected amount sits on the button and the bar. Replaces the round-3 "hero = selected".
+- **Inbox Remove:** a Skill or Subagent that is not a shared file is removed at once with Undo (`Remove`); a shared one asks with its readers (`Remove…`).
+- **Capability write:** follows the engine (rules.md): Read, Edit, Run, Network change the cell's wide rules or add one bare rule; Push and deploy and Secrets change their own rules; the preview says when the cell will still read Mixed; a same-value change is "Nothing to change" and writes nothing.
+- **Pinning:** Balance pins live in Settings › CLIs only, two to three, and only for CLIs that hold Skills or Subagents; the All CLIs menu no longer pins.
 - **Plugin-owned Never ran items:** counted in the Skills hero (a fact), listed read-only in Clean (CL-R1), never an Inbox finding.
 - **Row state icons:** grey inside rows (severity once per group, RD10) except Activity's waiting hand, which stays amber; FE-C3 asks for coloured state icons everywhere.
 - **Session state glyphs:** the mock draws play / hand / pause / check / question; the shipped `SessionStateGlyph` uses another set. The build keeps one set; which one is open.
@@ -167,14 +193,13 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Keep on watch findings:** a kept Window or waiting session comes back when its state changes (a new Window, a new wait).
 - **Unknown in a row:** a CLI whose folder cannot be read draws a dim logo with a `?` badge, distinct from Missing; the Sessions total gets `+?`.
 - **Copy for the error state:** "Unmeasurable" is the one word for anything SpaceVibe cannot know (D65); "Unreadable" is retired from labels.
-- **Pace thresholds:** amber when the share left is more than 3 points below the share of time left; red above 15 points, at ≤ 5% left or over the limit. 3 points is 9 minutes of a 5-hour Window but 5 hours of a Weekly one.
+- **Pace thresholds:** amber when the share left is more than 3 points below the share of time left, once a tenth of the Window has passed (RD30); red above 15 points, at ≤ 5% left or over the limit.
 - **`Remove N selected`:** counts rows, not copies across CLIs.
 - **Hero numbers:** the Clean hero shows the selected amount, while the sidebar shows the cleanable amount.
 - **Settings:** `Look` (Glass or Solid) follows the system; the theme switch stays (D70, RD21).
 - **SF Pro on future shells:** SV2 plans Windows and Linux shells; SF Pro is licensed for Apple platforms, so those shells need their own face.
 - **Glossary:** "Not supported" is a new GLOSSARY term. "Agents" is used as the sidebar group label.
 - **Subagents tone:** `#178082` in light is 28° from ok green, under the 30° target.
-- **Focus:** no focus ring except on text inputs (FE-K5). WCAG 2.2 AA asks for a visible focus indicator; the row highlight must serve as it.
 - **Many-CLI open questions** from `research-many-clis.md`, each with the research's recommendation:
   - CLI registry first (yes).
   - Pinned Balance; PRODUCT.md "Balance the two CLIs" changes to "pinned CLIs" (owner wording needed).
