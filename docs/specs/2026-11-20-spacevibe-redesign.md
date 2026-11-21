@@ -1,11 +1,11 @@
 # SpaceVibe: app-wide redesign (macOS frame, v2)
 
 Date: 2026-11-20
-Status: draft, 2026-11-20. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. No plan and no code yet.
+Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4. No plan and no code yet.
 Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: none yet.
 
-- **Reference mock (checkpoint 2026-11-20):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`. It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
-- **Design record:** `design-notes.md` in the same folder, sections 1–24. It holds the thesis per page, the token tables with measured contrast, and the needs-new-data list.
+- **Reference mock (round 4, 2026-11-21):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`. It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
+- **Design record:** `design-notes.md` in the same folder, sections 1–25 (§25 is round 4). It holds the thesis per page, the token tables with measured contrast, and the needs-new-data list.
 - **Many-CLI research:** `research-many-clis.md` in the same folder.
 - **Absorbs:** the Clean draft [2026-11-18-clean.md](2026-11-18-clean.md). Its decisions CL1–CL4 and its requirements CL-R1–CL-R8 stay in force and are not copied here.
 - **Rules applied:** the owner's UI rulebook (skill `kyant-ui-rules`, FE-*), and the Apple HIG distilled corpus (github.com/justinwetch/HIGAgentSkills, snapshot 2026-09-12).
@@ -42,6 +42,19 @@ Owner words are quoted; dates are 2026-11-18 to 2026-11-20.
 | RD17 | Options the owner did not pick are removed from the mock. | "clean những cái option không đc chọn đi đã" | n/a | n/a |
 | RD18 | Clean covers anything AI CLIs leave behind and is one feature group of the app. | "dọn bất kỳ cái gì liên quan đến agent, ai"; "Clean chỉ là một nhóm tính năng nhỏ trong đó" | CL-R1–CL-R8 | Clean spec |
 
+Decisions of 2026-11-21. Each was a recommendation after the four-agent mock review; the owner's answer to all of them was "nhận hết fix mock đi".
+
+| ID | Decision | Owner's words | Req | Acceptance |
+| --- | --- | --- | --- | --- |
+| RD21 | Earlier decisions D53, D57, D69 and D70 stay: the last lit CLI logo is not a toggle (D53); no ring on any input or button, focus is a fill change (D57); Limits has no Refresh and no Gemini card (D69); Activity has no Files tab and Settings keeps the theme switch (D70). | "nhận hết fix mock đi" | RD-R9, RD-R11, RD-R14 | RD-A8 |
+| RD22 | The redesign supersedes D60 (pace tick on Window bars), D20 (category tone on the sidebar and row icons, RD12), D7 (SF Pro instead of Inter, RD6) and D27, D33–D37 (Filter menu, chips, Group by and Order by give way to `All / Never ran`, the `All CLIs` menu and a Sessions sort, most first, as D33's default). D21 and D31 (badge on a lit logo) give way to RD-R11: a lit logo is the full logo, the tile carries the check. | "nhận hết fix mock đi" | RD-R2, RD-R6, RD-R11 | RD-A1 |
+| RD23 | SpaceVibe's own Bold icon set for the 8 page and category icons, sidebar icons at 20 pt, sidebar labels at weight 600 in every state, selection told apart by fill and ink only. Supersedes D72 and D32 for those icons. Picked 2026-11-20 ("chốt", "ok ổn", "ok chốt"), recorded here on 2026-11-21. | "chốt"; "ok chốt"; "nhận hết fix mock đi" | RD-R5 | RD-A4 |
+| RD24 | Status-line capture stays under S-R4: the app copies the install and remove commands, the owner runs them. | "nhận hết fix mock đi" | RD-R15 | RD-A8 |
+| RD25 | Settings has no "Empty" for SpaceVibe's trash: emptying it would end every pending Undo. | "nhận hết fix mock đi" | RD-R15 | RD-A8 |
+| RD26 | Inbox can reach zero: each finding has Keep; a Hook counts as failing only for errors in the last 7 days; an item added in the last day is not a finding; a Rule that allows a whole tool is a Control finding. | "nhận hết fix mock đi" | RD-R4 | RD-A9 |
+| RD27 | Clean locks a CLI's logs and caches only while that CLI has a running session (running or waiting), as CL2 says. | "nhận hết fix mock đi" | CL-R5 | Clean spec |
+| RD28 | Two CLIs use the same layout as many: installing a third CLI changes no page's shape. | "nhận hết fix mock đi" | RD-R10 | RD-A6 |
+
 Two earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
 | ID | Decision | Owner's words | Req |
@@ -54,12 +67,24 @@ Two earlier owner answers are also carried here. They come from the paused layou
 - **RD-R1. Frame.** macOS window with a Liquid Glass sidebar and toolbar (macOS 26); solid surfaces as the macOS 15 and Reduce Transparency fallback.
   - **Sidebar groups:** Triage (Inbox, Clean), Agents (Skills, Subagents, Hooks, Rules), Watch (Limits, Activity), plus Settings, which opens as a separate macOS Settings window.
   - **Content:** native lists and tables on a solid surface, with a trailing inspector. Liquid Glass is never used in the content layer (HIG `materials.md:26`).
-- **RD-R2. Eye order per page.** Each page answers one question. The first and second glance are fixed as in `design-notes.md` §1, and corrected in §11–§12: Inbox, then Skills/Subagents, Hooks, Rules, Clean, Limits, Activity, Settings. Each page opens with one large figure that means something, and the one primary action sits in the toolbar carrying the real number (FE-D3).
+- **RD-R2. Eye order per page.** Each page answers one question and opens with one large figure that means something; the one primary action sits in the toolbar carrying the real number (FE-D3). This table replaces `design-notes.md` §1:
+
+  | Page | First glance | Second glance |
+  | --- | --- | --- |
+  | Inbox | `11 need you` (or `Clear · Nothing needs you`) | The first group head and its first row |
+  | Skills / Subagents | `4 never ran` | The `Never ran` group head with `Select N Suggested`, then rows sorted by Sessions |
+  | Hooks | `3 dead or never ran` | The lifecycle strip (red and amber nodes) |
+  | Rules | `1 rule allows a whole tool` (Claude Code); the riskiest setting word for a read-only CLI | The other CLIs' one-line summaries beside the figure |
+  | Clean | `1.02 GB can be cleaned` (the sidebar figure) | The bar: selected, can be cleaned, locked |
+  | Limits | The Window that needs you: over the limit, then furthest behind pace, else the lowest left | The same Window's row and its tick |
+  | Activity | `1 waiting for you` (or the running count) | The waiting row |
+  | Settings | The first row of the pane | – |
 - **RD-R3. One token and block set.** Every screen is composed only from the shared blocks and tokens shown on the mock's "Tokens + base" page. The existing `StyleBoundaryTests` rule continues to apply.
 - **RD-R4. Inbox first.**
-  - **Groups:** findings are grouped by job: Clean up, Balance, Control, Watch. Severity is shown once at the group head.
-  - **Row actions:** the selected row and the group head carry the full-verb action.
-  - **Watch:** limit Windows are judged by pace (share left against share of time left), not by a fixed threshold.
+  - **Groups:** findings are grouped by job: Clean up, Balance, Control, Watch. Severity is shown once at the group head. The hero count equals the rows shown.
+  - **Row actions:** the selected row carries the full-verb action and Keep. The group head only selects (`Select N Suggested`); removing goes through the toolbar's `Remove N selected`, so nothing is removed that was not ticked.
+  - **What counts (RD26):** Dead and Never ran items not added in the last day, not plugin-owned and not kept; Hooks with errors in the last 7 days; Claude Code Rules that allow a whole tool; Windows behind pace or over the limit; waiting sessions. Kept findings are listed under `N kept · Show` and leave the count.
+  - **Watch:** limit Windows are judged by pace (share left against share of time left), not by a fixed threshold. Proposed data, readings older than 6 hours and Windows without a length are shown but never judged.
 - **RD-R5. Type.**
   - **Typefaces:** SF Pro for text, SF Pro Rounded for figures only (in SwiftUI, `.fontDesign(.rounded)` on figure `Text`), SF Mono for paths and commands.
   - **Scale:** 11/12/13/15/22/40 pt, weights 400 and 500 only.
@@ -81,12 +106,15 @@ Two earlier owner answers are also carried here. They come from the paused layou
   - **CLI identity:** only through logos.
 - **RD-R9. Primary.**
   - **Fill:** `#0B6FE4` with white text (4.76:1), flat, no gradient, no shadow. Hover is one step lighter, pressed one step darker.
-  - **Used for:** the one non-destructive primary action, checkbox and switch on-states, links (`#5AA2FF` dark / `#0A64D0` light) and the text-input focus ring.
+  - **Used for:** the one non-destructive primary action, checkbox and switch on-states and links (`#5AA2FF` dark / `#0A64D0` light). No focus ring anywhere (D57): keyboard focus is a fill change, on text inputs too.
   - **Not used for:** selection, which stays neutral, and destructive actions, which use a red tint and are never primary (HIG `buttons.md:53`).
 - **RD-R10. N CLIs.** Every surface works at 2, 3, 6 and 10 CLIs.
   - **Order and support:** CLIs sit in a fixed order. A concept a CLI lacks shows as "Not supported", distinct from Missing and Unmeasurable.
-  - **Toolbar:** an `All CLIs` pop-up with up to 3 pinned CLIs replaces the two-CLI segmented filter. Balance compares pinned CLIs only.
-  - **Pages:** Limits, Clean and Activity are grouped by CLI. CLIs without limit data collapse into one "Unmeasurable" line.
+  - **One shape (RD28):** every page uses the same layout at 2 CLIs as at 10.
+  - **Toolbar:** an `All CLIs` pop-up with up to 3 pinned CLIs replaces the two-CLI segmented filter. A CLI without the page's concept is listed disabled as Not supported. Balance compares pinned CLIs only.
+  - **Pages:** Activity is grouped by CLI; Limits lists CLIs in the fixed order and collapses CLIs without limit data into one "Unmeasurable" line; Hooks groups by lifecycle stage at every count, a CLI's own event name shown in the row, and names CLIs with no Hooks and CLIs without Hooks under the table.
+  - **Unmeasurable cells:** a CLI that loads an item but keeps no log SpaceVibe can count shows the item as on with Unmeasurable sessions, never 0; Never ran is judged over measured CLIs only. An unreadable CLI folder makes every cell of that CLI unknown, Missing included.
+  - **Rules:** a CLI pop-up picks the page; Claude Code's page is editable, every other CLI's page is read-only in its own terms (the owner's 2026-11-04 pick), and the Claude Code page shows each other CLI's one-line summary.
 - **RD-R11. Row toggles.** A Skill or Subagent row shows one logo toggle per supporting CLI, wrapping at 5 per line.
 
   | State | Drawn as |
@@ -97,15 +125,17 @@ Two earlier owner answers are also carried here. They come from the paused layou
   | Plugin | lock |
   | Never ran | amber dot on the owning CLI only |
 
-  - **On / off:** turning on copies the item into that CLI's folder. Turning off moves it to SpaceVibe's trash. Every toggle shows Undo.
-  - **Shared files:** a file read by several CLIs through a shared folder opens an anchored confirmation that names every reader before removal.
-  - **Bulk:** "Add to…" and "Remove from…" open a per-CLI sheet.
+  - **On / off:** turning on copies the item into that CLI's folder. Turning off moves it to SpaceVibe's trash. Every toggle shows Undo. A logo whose turning off would delete the item's last copy is not a toggle (D53, counted by files, not by lit logos: several CLIs can read one file); `Remove…` is the explicit action. Turning off a CLI removes every file it reads the item from, and the confirmation offers to keep it only for readers whose own folder is not among those files.
+  - **Shared files:** a file read by several CLIs through a shared folder opens an anchored confirmation that names every reader before removal. Every other removal path (the per-CLI sheet, Inbox, Clean) names the readers too before it writes.
+  - **Bulk and Remove…:** "Add to…", "Remove from…" and an item's `Remove…` open a per-CLI sheet. Nothing is ticked at first; each CLI line names the real source folder and who else reads it, and the button counts every CLI that loses the item.
 - **RD-R12. Inspector tiles.** The Skill/Subagent inspector shows a "CLIs" tile grid of at most 3 rows, with `max(3, ceil(N/3))` columns and tiles of about 72×60 pt.
   - **Tile content:** the logo, the name and the session count.
   - **Fill:** neutral heat in 4 steps relative to the item's top CLI.
   - **Toggle:** the tile is the same toggle as in the row, in sync with it. It shows a green success check when enabled, on a disc so it stays legible.
   - **Contrast:** text on every step reaches 4.5:1.
-- **RD-R13. States.** Every page draws normal, empty, scanning, error, worst-case data, just-written (Undo) and confirmation states, as in the mock. The layout never shifts (FE-L1).
+- **RD-R13. States.** Every page draws normal, empty, scanning, error, worst-case data, just-written (Undo), refused write and confirmation states, as in the mock. The layout never shifts (FE-L1). During the first usage scan Skills and Subagents list their rows with pending counts. Below 1100 pt the inspector opens as an overlay from the toolbar button or a row click.
+- **RD-R14. Retired from the mock (RD21):** the toolbar `More` button (nothing was designed for it), the Activity Files tab, the Limits Refresh and Gemini card, `Remove from Both`, the static Clean inspector and its live-session banner, summary bars that repeat the hero.
+- **RD-R15. Writes the app does not do (RD24, RD25):** install or remove the status-line capture, empty SpaceVibe's trash.
 
 ## Acceptance
 
@@ -119,17 +149,29 @@ Two earlier owner answers are also carried here. They come from the paused layou
   - a shared file names its readers;
   - the grid never exceeds 3 rows.
 - **RD-A7.** `build-review` passes before the owner is asked to look (W24), because the build removes and copies user files.
+- **RD-A8.** No screen offers a control listed in RD-R14 or RD-R15; Settings has the theme switch; a lone lit logo cannot be clicked off.
+- **RD-A9.** With a fixture where every finding is fixed or kept, Inbox shows `Clear` and the sidebar shows 0; a kept finding comes back with Stop Keeping.
 
 ## Inferred, not decided
 
 Each line comes from the mock or from an agent's choice, not from the owner:
 
-- **Pre-selection:** the default is "nothing pre-selected" (mock axis `preselect`). The alternative is to pre-select dead Hooks only.
-- **Row actions:** the default is a group-head button plus the selected row (mock axis `rowact`). The alternative is one button on every row. This conflicts with the earlier "every action visible" answer.
-- **Pace thresholds:** amber when the share left is more than 3 points below the share of time left; red above 15 points or at ≤ 5% left.
+- **Pre-selection:** the default is "nothing pre-selected" (mock axis `preselect`). The alternative is to pre-select dead Hooks only. Since round 4 the group head only selects, so pre-selection is the one way a removal starts without a tick.
+- **Row actions:** the default is the selected row plus a group-head `Select N Suggested` (mock axis `rowact`). The alternative is one button on every row. This conflicts with the earlier "every action visible" answer.
+- **Hero of Clean:** what can be cleaned (equal to the sidebar); the selected amount sits on the button and the bar. Replaces the round-3 "hero = selected".
+- **Plugin-owned Never ran items:** counted in the Skills hero (a fact), listed read-only in Clean (CL-R1), never an Inbox finding.
+- **Row state icons:** grey inside rows (severity once per group, RD10) except Activity's waiting hand, which stays amber; FE-C3 asks for coloured state icons everywhere.
+- **Session state glyphs:** the mock draws play / hand / pause / check / question; the shipped `SessionStateGlyph` uses another set. The build keeps one set; which one is open.
+- **Sidebar Activity figure:** the waiting count when a session waits, otherwise the running count.
+- **Dead Hook runs:** a dead Hook shows the runs the logs hold (they can be above 0 if the script was deleted after running); unverified against the engine.
+- **Keep on watch findings:** a kept Window or waiting session comes back when its state changes (a new Window, a new wait).
+- **Unknown in a row:** a CLI whose folder cannot be read draws a dim logo with a `?` badge, distinct from Missing; the Sessions total gets `+?`.
+- **Copy for the error state:** "Unmeasurable" is the one word for anything SpaceVibe cannot know (D65); "Unreadable" is retired from labels.
+- **Pace thresholds:** amber when the share left is more than 3 points below the share of time left; red above 15 points, at ≤ 5% left or over the limit. 3 points is 9 minutes of a 5-hour Window but 5 hours of a Weekly one.
 - **`Remove N selected`:** counts rows, not copies across CLIs.
 - **Hero numbers:** the Clean hero shows the selected amount, while the sidebar shows the cleanable amount.
-- **Settings:** the `Look` setting is dropped and the app follows the system (HIG `dark-mode.md:24`).
+- **Settings:** `Look` (Glass or Solid) follows the system; the theme switch stays (D70, RD21).
+- **SF Pro on future shells:** SV2 plans Windows and Linux shells; SF Pro is licensed for Apple platforms, so those shells need their own face.
 - **Glossary:** "Not supported" is a new GLOSSARY term. "Agents" is used as the sidebar group label.
 - **Subagents tone:** `#178082` in light is 28° from ok green, under the 30° target.
 - **Focus:** no focus ring except on text inputs (FE-K5). WCAG 2.2 AA asks for a visible focus indicator; the row highlight must serve as it.
@@ -150,7 +192,11 @@ Each line comes from the mock or from an agent's choice, not from the owner:
   - a "which CLIs read which file" map for shared folders such as `~/.agents/skills`;
   - `copyTo {targets[]}` and per-CLI remove, in place of `copyToOther`;
   - limit data for any CLI beyond Claude Code and Codex.
-- **Rules:** a `wide` flag for unbounded rules.
+- **Rules:** a `wide` flag for unbounded rules; a batch remove (`rules.removeMany`) with one Journal entry; read-only permission summaries for CLIs other than Claude Code and Codex.
+- **Batch removal:** one method and one Journal entry for a selection that mixes Skills, Subagents and Hooks (Inbox, Skills, Hooks), so one Undo restores it.
+- **Hook errors by day:** `HookTotals` holds lifetime errors only; RD26 needs errors in the last 7 days.
+- **Clean move progress:** a progress notification for `clean.move` (files and bytes), and a cancel that stops before the next file.
+- **Status-line snapshot age:** the time of the last capture, for Settings › Limits.
 
 ## Out of scope
 
