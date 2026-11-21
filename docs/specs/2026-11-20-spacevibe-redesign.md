@@ -103,7 +103,7 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
   | Limits | The Window that needs you: over the limit, then furthest behind pace, else the lowest left | The same Window's row and its tick |
   | Activity | `1 waiting for you` (or the running count) | The waiting row |
   | Settings | The first row of the pane | – |
-- **RD-R3. One token and block set.** Every screen is composed only from the shared blocks and tokens shown on the mock's "Tokens + base" page. The existing `StyleBoundaryTests` rule continues to apply.
+- **RD-R3. One token and block set.** Every screen is composed only from the shared blocks and tokens shown on the mock's "Tokens + base" page; the [design-system spec](2026-11-21-spacevibe-design-system.md) names every token and block (DS-R1 to DS-R12). The existing `StyleBoundaryTests` rule continues to apply.
 - **RD-R4. Inbox first.**
   - **Groups:** findings are grouped by job: Clean up, Balance, Control, Watch. Severity is shown once at the group head. The hero count equals the rows shown.
     - **What counts (RD26):** Dead and Never ran items not added in the last day, not plugin-owned and not kept; Hooks with errors in the last 7 days; Claude Code Rules that allow a whole tool; Windows behind pace or over the limit; waiting sessions. Kept findings are listed under `N kept · Show` and leave the count.
