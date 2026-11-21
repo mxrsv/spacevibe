@@ -10,8 +10,9 @@ enum GlyphBox {
     static let side: CGFloat = 24
 }
 
-/// One glyph of a generated icon set (`CategoryIconData.swift`, `ContentIconData.swift`, `StateIconData.swift`): its shapes in
-/// the 24 x 24 box and how the set is drawn. `SpaceVibeIcon` draws any of them.
+/// One glyph of a generated icon set (`CategoryIconData.swift`, `ContentIconData.swift`, `StateIconData.swift`, and for the new
+/// frame `PageIconData.swift`, `InterfaceIconData.swift`, `SeverityIconData.swift`): its shapes in the 24 x 24 box and how the
+/// set is drawn. `SpaceVibeIcon` draws any of them.
 protocol GlyphSource: Sendable {
     /// The icon of the set this glyph is drawn from, for example `flash-line`.
     var iconName: String { get }
@@ -21,8 +22,18 @@ protocol GlyphSource: Sendable {
     var layerOpacity: Double { get }
     /// A stroke in the glyph's colour added around every shape, in the 24 box (Phosphor's, as the mock draws it); 0 for none.
     var outlineWidth: CGFloat { get }
+    /// The width of the glyph's stroked lines in the 24 box, drawn with round caps and joins over the solid layer; 0 for a set
+    /// that only fills. Only SpaceVibe's own page set (`PageGlyph`) has lines.
+    var lineWidth: CGFloat { get }
     func evenOdd(_ layer: GlyphLayer) -> Bool
     func draw(_ layer: GlyphLayer, into p: inout GlyphPen)
+    /// The stroked lines, in the 24 box.
+    func drawLines(into p: inout GlyphPen)
+}
+
+extension GlyphSource {
+    var lineWidth: CGFloat { 0 }
+    func drawLines(into p: inout GlyphPen) {}
 }
 
 /// Writes one layer of a generated glyph into a `Path`, in the glyph's 24 x 24 box.
@@ -44,6 +55,22 @@ extension GlyphSource {
         draw(layer, into: &pen)
         return pen.path
     }
+
+    /// The stroked lines as one path in the 24 x 24 box (the centre lines, before the stroke is applied).
+    func linePath() -> Path {
+        var pen = GlyphPen()
+        drawLines(into: &pen)
+        return pen.path
+    }
+}
+
+extension GlyphBox {
+    /// Scales the 24 pt box to `rect` (square, centred).
+    static func transform(into rect: CGRect) -> CGAffineTransform {
+        let side = min(rect.width, rect.height)
+        let scale = side / Self.side
+        return CGAffineTransform(translationX: rect.midX - side / 2, y: rect.midY - side / 2).scaledBy(x: scale, y: scale)
+    }
 }
 
 /// One layer of a glyph, scaled from its 24 pt box to the rect it is given (square, centred).
@@ -52,10 +79,16 @@ struct GlyphShape: Shape {
     let layer: GlyphLayer
 
     func path(in rect: CGRect) -> Path {
-        let side = min(rect.width, rect.height)
-        let scale = side / GlyphBox.side
-        let transform = CGAffineTransform(translationX: rect.midX - side / 2, y: rect.midY - side / 2).scaledBy(x: scale, y: scale)
-        return glyph.path(layer).applying(transform)
+        glyph.path(layer).applying(GlyphBox.transform(into: rect))
+    }
+}
+
+/// The stroked lines of a glyph, scaled like `GlyphShape`; the caller strokes them.
+struct GlyphLineShape: Shape {
+    let glyph: any GlyphSource
+
+    func path(in rect: CGRect) -> Path {
+        glyph.linePath().applying(GlyphBox.transform(into: rect))
     }
 }
 
@@ -90,7 +123,9 @@ enum IconSize: CaseIterable {
 /// banner). Hidden from VoiceOver unless it has a `label`, for an icon that carries meaning on its own.
 ///
 /// Each set has its own label, so a name that exists in two sets never reads two ways: `SpaceVibeIcon(category: .skill)`
-/// (MingCute), `SpaceVibeIcon(content: .stack)` (Phosphor Duotone) and `SpaceVibeIcon(state: .checkCircle)` (Phosphor Bold).
+/// (MingCute), `SpaceVibeIcon(content: .stack)` (Phosphor Duotone) and `SpaceVibeIcon(state: .checkCircle)` (Phosphor Bold). The
+/// new frame picks by the mock's name instead: `SpaceVibeIcon(frame: .skills)` (own set), `SpaceVibeIcon(frame: .trash)`
+/// (Phosphor Bold), `SpaceVibeIcon(frame: .warningFill)` (Phosphor Fill).
 struct SpaceVibeIcon: View {
     let source: any GlyphSource
     var size: IconSize = .control
@@ -116,6 +151,11 @@ struct SpaceVibeIcon: View {
         self.init(source: glyph, size: size, ink: ink, label: label)
     }
 
+    /// An icon of the new frame, by the reference mock's name for it (`FrameIcon`).
+    init(frame icon: FrameIcon, size: IconSize = .control, ink: Color? = nil, label: String? = nil) {
+        self.init(source: icon.glyph, size: size, ink: ink, label: label)
+    }
+
     var body: some View {
         let drawn = ZStack {
             if source.hasLightLayer {
@@ -131,7 +171,9 @@ struct SpaceVibeIcon: View {
     }
 }
 
-/// A layer's fill, with the set's outline over it where it has one. One group, so the layer's opacity applies once.
+/// A layer's fill, with the set's outline over it where it has one, and the solid layer's stroked lines in a set that has them
+/// (round caps and joins, as the mock's SVG strokes them). One group, so the layer's opacity applies once and a line crossing a
+/// dot never draws darker.
 private struct GlyphLayerView: View {
     let source: any GlyphSource
     let layer: GlyphLayer
@@ -143,6 +185,10 @@ private struct GlyphLayerView: View {
             shape.fill(style: FillStyle(eoFill: source.evenOdd(layer)))
             if source.outlineWidth > 0 {
                 shape.stroke(style: StrokeStyle(lineWidth: source.outlineWidth * side / GlyphBox.side, lineJoin: .round))
+            }
+            if layer == .solid, source.lineWidth > 0 {
+                GlyphLineShape(glyph: source)
+                    .stroke(style: StrokeStyle(lineWidth: source.lineWidth * side / GlyphBox.side, lineCap: .round, lineJoin: .round))
             }
         }
         .compositingGroup()
