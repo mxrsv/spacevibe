@@ -5,6 +5,7 @@ import SwiftUI
 /// focus is taken and no Screen Recording permission is needed. Then the process exits.
 ///
 /// `SPACEVIBE_SHOT_SCREEN` selects shell, skills, subagents, hooks, rules, activity, limits, settings or glance.
+/// With `SPACEVIBE_REDESIGN=1` the keys that draw the window draw the redesign's frame instead (`framePages`).
 /// Real-screen runs require SPACEVIBE_TEST=1 and a synthetic home. Settings uses demo data. Glance draws in-memory reports
 /// only, and still runs under the test guard: in the app the widget is fed by the core.
 @MainActor
@@ -18,6 +19,11 @@ enum ShotRenderer {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let environment = ProcessInfo.processInfo.environment
             let screen = environment[CoreEnvironment.variable("SHOT_SCREEN")] ?? "shell"
+            if LaunchMode.surface(environment: environment) == .redesign, let pages = try framePages(forScreen: screen) {
+                try requireSyntheticHome(environment)
+                try writeFrame(on: pages, into: directory)
+                exit(0)
+            }
             switch screen {
             case "shell":
                 try requireSyntheticHome(environment)
@@ -39,6 +45,28 @@ enum ShotRenderer {
             exit(1)
         }
         exit(0)
+    }
+
+    /// The pages a shot key draws in the redesign's frame: `shell` every page, a page's own key (`FramePage.rawValue`, so
+    /// `inbox` and `clean` too) that page. Nil for a key that does not draw the window (`glance`: the widget keeps its run)
+    /// or is unknown, which the v5 run then answers. `settings` fails: the redesign's Settings is its own window (AR8) and is
+    /// not built yet, and the v5 Settings overlay is not a redesign surface.
+    nonisolated static func framePages(forScreen screen: String) throws -> [FramePage]? {
+        if screen == "shell" { return FramePage.allCases }
+        if screen == "settings" {
+            throw ShotHarness.Failure("the redesign has no Settings window yet: unset SPACEVIBE_REDESIGN for the v5 Settings shots")
+        }
+        return FramePage(rawValue: screen).map { [$0] }
+    }
+
+    /// `frame-<page>-<appearance>.png` for each page, in both appearances.
+    private static func writeFrame(on pages: [FramePage], into directory: URL) throws {
+        for choice in [AppearanceChoice.dark, .light] {
+            for page in pages {
+                let view = ShotHarness.frame(on: page, choice: choice, env: AppEnvironment.shared)
+                try write(view, name: "frame-\(page.rawValue)", choice: choice, to: directory)
+            }
+        }
     }
 
     /// The real screens read config folders, so they run only where the core refuses a root under the real home.

@@ -9,6 +9,9 @@ struct SpaceVibeApp: App {
     @State private var shell: ShellModel
     @State private var env = AppEnvironment.shared
     private let mode = LaunchMode.current()
+    /// The v5 window or the redesign's frame (`SPACEVIBE_REDESIGN=1`, development builds only). The redesign's Settings
+    /// `Window` scene (plan AR8, RB-R8) is declared in `body` on this value, so a v5 launch never has it.
+    private let surface = LaunchMode.surface()
 
     init() {
         // The app's own store applies the theme to `NSApp.appearance` and the font size to every text role.
@@ -24,6 +27,8 @@ struct SpaceVibeApp: App {
             Group {
                 if case .gallery = mode {
                     ComponentGalleryWindow()
+                } else if surface == .redesign {
+                    AppFrame()
                 } else {
                     AppShell()
                 }

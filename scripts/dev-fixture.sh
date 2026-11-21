@@ -7,7 +7,8 @@
 #
 # SPACEVIBE_BUILD_PATH overrides the build scratch path. SPACEVIBE_SHOT_SCREEN selects
 # shell (default), skills, subagents, hooks, rules, activity, limits, settings or glance.
-# All screens render the current UI without a feature switch. The shell run also renders the gallery.
+# All screens render the shipped v5 UI; the v5 shell run also renders the gallery. With SPACEVIBE_REDESIGN=1 the
+# window keys (shell, inbox, clean and the page keys) draw the redesign's frame instead, glance stays, settings is refused.
 # SPACEVIBE_FIXTURE_ACTIVITY=empty|loading and SPACEVIBE_FIXTURE_LIMITS=typical|edge select synthetic states.
 # Screenshot runs verify the displayed data and guarded writes against the synthetic home.
 #
