@@ -13,6 +13,12 @@ enum TableColumnWidth {
     static let status: CGFloat = 168
     /// The selected row's action buttons; every row keeps the room, so selecting a row moves nothing.
     static let action: CGFloat = 172
+    /// Sessions on Skills and Subagents: a thin bar and its count (the mock's `pageEquip` grid, `96px`).
+    static let sessions: CGFloat = 96
+    /// The bar inside the Sessions cell (`.rch.tt`, `48px`); the count takes the rest.
+    static let sessionsBar: CGFloat = 48
+    /// Last ran on Skills and Subagents: a day (`today`, `12 days ago`; `76px`).
+    static let lastRan: CGFloat = 76
     /// A table's header line (the mock's `.th`, 30 px).
     static let headerHeight: CGFloat = 30
     /// Below this list width the Status column folds into the row's sub-line (the mock's `ctx.wide`, `mw >= 940`).

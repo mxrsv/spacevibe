@@ -38,6 +38,10 @@ struct PerCLISheetModel: Hashable, Sendable {
     var lines: [PerCLISheetLine]
     /// Nothing is ticked at first (RD-R11, RD41).
     var ticked: Set<String> = []
+    /// Remove only: every CLI that loses an item when the ticked lines go together, when the caller knows it (the mock's
+    /// `losersOf` over all ticked folders). Two lines can each leave a reader its other copy and together take both, so the
+    /// per-line `losers` alone can undercount; when set, `affected` is this.
+    var removalLosers: [CLIIdentity]?
 
     // MARK: Derived
 
@@ -50,6 +54,7 @@ struct PerCLISheetModel: Hashable, Sendable {
         switch mode {
         case .add: return selected.map(\.cli)
         case .remove:
+            if let removalLosers, canConfirm { return removalLosers }
             var seen = Set<String>(), result: [CLIIdentity] = []
             for line in selected {
                 for cli in (line.losers.isEmpty ? [line.cli] : line.losers) where seen.insert(cli.id).inserted { result.append(cli) }

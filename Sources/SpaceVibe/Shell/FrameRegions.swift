@@ -5,6 +5,8 @@ extension FramePageContent {
     static func region(_ page: FramePage, model: FrameModel) -> FramePageContent {
         switch page {
         case .inbox: .inbox(model: model)
+        case .skills: SkillsFrame.content(model: model)
+        case .subagents: SubagentsFrame.content(model: model)
         case .hooks: HooksFrame.content(model: model)
         case .limits: LimitsRegion.content(model)
         case .activity: ActivityPage.content(model)
