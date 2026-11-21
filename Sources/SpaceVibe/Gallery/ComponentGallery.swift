@@ -2,8 +2,9 @@ import SwiftUI
 
 /// Development-only specimens, split to stay below ImageRenderer's maximum image height.
 struct ComponentGalleryContent: View {
-    /// `designSystem` is the redesign's Tokens + base specimen (RB-S1), on its own so its shot sits beside the mock's page.
-    enum Part { case all, first, second, third, fourth, fifth, designSystem }
+    /// `designSystem` is the redesign's Tokens + base specimen (RB-S1), on its own so its shot sits beside the mock's page;
+    /// `frameBlocks` and `frameOverlays` are its blocks in every state (RB-S4), split to stay under the image height limit.
+    enum Part { case all, first, second, third, fourth, fifth, designSystem, frameBlocks, frameOverlays }
     var part: Part = .all
 
     var body: some View {
@@ -29,6 +30,8 @@ struct ComponentGalleryContent: View {
             if part == .all || part == .designSystem {
                 section("Redesign: Tokens + base") { DesignSystemSpecimen() }
             }
+            if part == .all || part == .frameBlocks { section("Redesign: blocks") { FrameBlockSpecimens() } }
+            if part == .all || part == .frameOverlays { section("Redesign: feedback and overlays") { FrameOverlaySpecimens() } }
         }
     }
 

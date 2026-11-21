@@ -49,7 +49,7 @@ struct IconPolicyTests {
         ("image", #"\bImage\("#),
     ]
     static let brandMarkFile = "Components/CLIMark.swift"
-    static let imageFiles: Set = [brandMarkFile, "Components/PointerCursor.swift"]
+    static let imageFiles: Set = [brandMarkFile, "Components/PointerCursor.swift", "Components/CLILogo.swift"]
 
     static func source(_ relative: String) throws -> String {
         try String(contentsOf: appSources.appendingPathComponent(relative), encoding: .utf8)
