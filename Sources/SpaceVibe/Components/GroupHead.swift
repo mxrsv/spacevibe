@@ -39,12 +39,16 @@ struct GroupHead<Action: View>: View {
     let title: String
     var count: Int?
     var severity: GroupSeverity = .none
+    /// A group of one CLI's rows (Activity, RD-R10) leads with that CLI's logo.
+    var cli: CLIIdentity?
     @ViewBuilder var action: Action
 
-    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none, @ViewBuilder action: () -> Action) {
+    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none, cli: CLIIdentity? = nil,
+         @ViewBuilder action: () -> Action) {
         self.title = title
         self.count = count
         self.severity = severity
+        self.cli = cli
         self.action = action()
     }
 
@@ -54,6 +58,7 @@ struct GroupHead<Action: View>: View {
                 if let icon = severity.icon {
                     FrameGlyph(icon, side: SizeRole.icon14, ink: severity.ink)
                 }
+                if let cli { CLILogo(cli, size: SizeRole.logo16) }
                 Text(title)
                     .typeRole(.bodyMedium)
                     .foregroundStyle(ColorRole.ink2)
@@ -83,8 +88,8 @@ struct GroupHead<Action: View>: View {
 }
 
 extension GroupHead where Action == EmptyView {
-    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none) {
-        self.init(title, count: count, severity: severity) { EmptyView() }
+    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none, cli: CLIIdentity? = nil) {
+        self.init(title, count: count, severity: severity, cli: cli) { EmptyView() }
     }
 }
 

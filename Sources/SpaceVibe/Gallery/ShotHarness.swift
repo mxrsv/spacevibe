@@ -45,10 +45,14 @@ enum ShotHarness {
 
     /// The redesign's frame on `page` in `look` as one 1440x900 frame (`SPACEVIBE_REDESIGN=1`), with the services of `env`
     /// in the environment. The demo tabs only fill `spaceVibeRoot`'s shell slot: the frame does not read them.
-    static func frame(on page: FramePage, look: MaterialLook, choice: AppearanceChoice, env: AppEnvironment) -> some View {
-        AppFrame(page: page, env: env, look: look)
+    /// A page state shot passes its own `content`, the matching `sidebarValues` and the `toasts` it has shown.
+    static func frame(on page: FramePage, look: MaterialLook, choice: AppearanceChoice, env: AppEnvironment,
+                      content: AppFrame.PageContent? = nil, sidebarValues: FrameSidebarValues? = nil,
+                      toasts: ToastCenter? = nil) -> some View {
+        AppFrame(page: page, env: env, look: look, sidebarValues: sidebarValues,
+                 content: content ?? { page, model in .region(page, model: model) })
             .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)),
-                           toasts: ToastCenter(announce: false), env: env)
+                           toasts: toasts ?? ToastCenter(announce: false), env: env)
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
     }
 

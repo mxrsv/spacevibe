@@ -6,7 +6,8 @@ import SwiftUI
 ///
 /// `SPACEVIBE_SHOT_SCREEN` selects shell, skills, subagents, hooks, rules, activity, limits, settings or glance.
 /// With `SPACEVIBE_REDESIGN=1` the keys that draw the window draw the redesign's frame instead (`framePages`), `shell` adds
-/// the redesign's specimens, and `gallery` draws only those (`frameGalleryParts`).
+/// the redesign's specimens, and `gallery` draws only those (`frameGalleryParts`). `activity` with `SPACEVIBE_SHOT_STATE`
+/// draws that page's states from synthetic data (`ActivityShotState`).
 /// Real-screen runs require SPACEVIBE_TEST=1 and a synthetic home. Settings uses demo data. Glance draws in-memory reports
 /// only, and still runs under the test guard: in the app the widget is fed by the core.
 @MainActor
@@ -33,6 +34,11 @@ enum ShotRenderer {
                 if screen == FramePage.hooks.rawValue {
                     try requireSyntheticHome(environment)
                     try HooksFrameShots.run(into: directory)
+                    exit(0)
+                }
+                if let state = environment[CoreEnvironment.variable("SHOT_STATE")], screen == FramePage.activity.rawValue {
+                    try requireSyntheticHome(environment)
+                    try writeActivityStates(state, into: directory)
                     exit(0)
                 }
                 if let pages = framePages(forScreen: screen) {
@@ -92,6 +98,29 @@ enum ShotRenderer {
                 for page in pages {
                     let view = ShotHarness.frame(on: page, look: look, choice: choice, env: AppEnvironment.shared)
                     try write(view, name: "frame-\(page.rawValue)-\(look)", choice: choice, to: directory)
+                }
+            }
+        }
+    }
+
+    /// Activity's states (RD-R13) from synthetic data (`ActivityShotState`): `SPACEVIBE_SHOT_STATE=<state>` or `all`, drawn as
+    /// `frame-activity-<state>-<look>-<appearance>.png`.
+    private static func writeActivityStates(_ key: String, into directory: URL) throws {
+        guard key == "all" || ActivityShotState(rawValue: key) != nil else {
+            throw ShotHarness.Failure("unknown SPACEVIBE_SHOT_STATE \(key) (all, \(ActivityShotState.allCases.map(\.rawValue).joined(separator: ", ")))")
+        }
+        let states = ActivityShotState(rawValue: key).map { [$0] } ?? ActivityShotState.allCases
+        for choice in [AppearanceChoice.dark, .light] {
+            for look in frameLooks {
+                for state in states {
+                    let toasts = ToastCenter(announce: false)
+                    if let toast = state.toast { toasts.show(toast.message, tone: toast.tone) }
+                    let preview = state.preview()
+                    let view = ShotHarness.frame(
+                        on: .activity, look: look, choice: choice, env: AppEnvironment.shared,
+                        content: { page, model in page == .activity ? ActivityPage.content(model, preview: preview) : .region(page, model: model) },
+                        sidebarValues: state.sidebarValues(), toasts: toasts)
+                    try write(view, name: "frame-activity-\(state.rawValue)-\(look)", choice: choice, to: directory)
                 }
             }
         }

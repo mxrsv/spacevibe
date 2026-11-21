@@ -6,6 +6,7 @@ extension FramePageContent {
         switch page {
         case .hooks: HooksFrame.content(model: model)
         case .limits: LimitsRegion.content(model)
+        case .activity: ActivityPage.content(model)
         default: .notBuilt(page)
         }
     }
