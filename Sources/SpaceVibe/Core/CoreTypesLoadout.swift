@@ -40,6 +40,29 @@ struct CoreLoadoutRows: Codable, Equatable, Sendable {
     var countsByScope: [String: CoreFilterCounts]
     /// Keyed by row key.
     var rowFlags: [String: CoreRowFlags]
+    /// The readers map, sorted by path: every folder a row lives in, each installed CLI's own folders and the shared
+    /// `~/.agents/skills` (inventory.md "Readers map"). The v5 shell does not read it.
+    var folders: [CoreReadersFolder] = []
+    /// Members every v5 field above leaves out until RB-X1: the Codex skills of `~/.agents/skills` (ids
+    /// `codex:skill:agents:<entry>`, not removable, `cliCells` but no `cells`). The new frame reads them with `items`.
+    var extraItems: [CoreInventoryItem] = []
+    /// The problem lines about `~/.agents/skills`, left out of `problems`.
+    var extraProblems: [String] = []
+}
+
+/// One entry of the readers map: a skills or agents folder, or for Hooks the file that holds them.
+struct CoreReadersFolder: Codable, Equatable, Hashable, Sendable {
+    /// The reader's spelling; a member's `folder` repeats it exactly.
+    var path: String
+    /// The path with every link followed: folders with one `realPath` are one folder, and their readers add up.
+    var realPath: String
+    var kind: CoreKind
+    /// Registry ids, registry order, never empty.
+    var readBy: [String]
+    /// The CLI whose folder it is: a CLI that reads a row only from others' folders reads it "via" them (RD31).
+    var ownedBy: String
+    /// `loadout.copyToOther` writes into `ownedBy` here; false for `~/.agents/skills`, plugin and project folders.
+    var copyTarget: Bool
 }
 
 /// What a write returns for the entry it recorded. The ops hold absolute paths and trash names, so only their count

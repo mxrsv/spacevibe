@@ -33,6 +33,10 @@ struct CoreRule: Codable, Equatable, Sendable, Identifiable {
     var rule: String
     @CoreNullable var tool: String?
     @CoreNullable var specifier: String?
+    /// The rule covers a whole tool (rules.md, RD-R17): bare, `Tool()` or `*`, only for tools that take a specifier; never an
+    /// MCP name. Any verdict. `rules.snapshot` always writes it; the frozen rules golden (`ruleObject`) does not, so it is
+    /// optional here. The v5 Rules page keeps its own test (`RedundantRules.isWide`).
+    var wide: Bool?
 }
 
 struct CoreVerdictRule: Codable, Equatable, Hashable, Sendable {

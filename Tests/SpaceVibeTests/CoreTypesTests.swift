@@ -240,13 +240,15 @@ struct CoreTypesTests {
      "hooks":[{"id":"claude:hook:abc","cli":"claude","kind":"hook","event":"Stop","matcher":null,"command":"x.sh","timeout":5.5,"async":false,"owner":"user","removable":true,"dead":true,"paths":["/h/x.sh"],"hash":"abc","file":"/h/.claude/settings.json","scope":"project","project":"/p","key":"hook:/p:abc","cells":{"claude":{"state":"counted","runs":1,"errors":1,"last":null},"codex":{"state":"unmeasurable","reason":"Codex does not log hook runs"}},"usage":{"runs":1,"avgMs":null,"totalMs":0,"errors":1,"last":null}}],
      "problems":["/h/.claude/settings.json is not valid JSON."],"events":{"claude":["Stop"],"codex":["Stop"]},"roots":{"claude":"/h/.claude","codex":"/h/.codex"},
      "countsByScope":{"global":{"all":1,"only":{"claude":1,"codex":0},"neverRan":0,"dead":0},"/p":{"all":1,"only":{"claude":1,"codex":0},"neverRan":0,"dead":1}},
-     "rowFlags":{"skill::a":{"one":true,"neverRan":false,"dead":false},"hook:/p:abc":{"one":true,"neverRan":false,"dead":true}}}
+     "rowFlags":{"skill::a":{"one":true,"neverRan":false,"dead":false},"hook:/p:abc":{"one":true,"neverRan":false,"dead":true}},
+     "folders":[{"path":"/h/.claude/skills","realPath":"/h/.claude/skills","kind":"skill","readBy":["claude"],"ownedBy":"claude","copyTarget":true}],
+     "extraItems":[],"extraProblems":["/h/.agents/skills could not be read."]}
     """
 
     private static let rulesSnapshot = """
     {"projectDirs":["/p"],"globalRuleCount":2,"scope":"project","dir":"/p","fileLabel":".claude/settings.json","exists":true,"problems":[],
-     "rules":[{"id":"project:ask:Bash","scope":"project","dir":"/p","file":"/p/.claude/settings.json","verdict":"ask","rule":"Bash","tool":"Bash","specifier":null}],
-     "grid":[{"capability":"run","label":"Run commands","state":"ask","editable":true,"rules":[{"id":"project:ask:Bash","scope":"project","dir":"/p","file":"/p/.claude/settings.json","verdict":"ask","rule":"Bash","tool":"Bash","specifier":null}]}],
+     "rules":[{"id":"project:ask:Bash","scope":"project","dir":"/p","file":"/p/.claude/settings.json","verdict":"ask","rule":"Bash","tool":"Bash","specifier":null,"wide":true}],
+     "grid":[{"capability":"run","label":"Run commands","state":"ask","editable":true,"rules":[{"id":"project:ask:Bash","scope":"project","dir":"/p","file":"/p/.claude/settings.json","verdict":"ask","rule":"Bash","tool":"Bash","specifier":null,"wide":true}]}],
      "codex":{"present":true,"model":"profiles","unrestricted":false,"warnings":["w"],"approvalPolicy":{"granular":[{"key":"rules","value":true}]},"sandboxMode":null,
        "sandboxWorkspaceWrite":{"networkAccess":null,"writableRoots":["/w"]},"defaultPermissions":"strict","approvalsReviewer":null,
        "profiles":[{"name":"strict","filesystemEntries":2,"networkEntries":1,"networkFlags":[{"key":"enabled","value":true},{"key":"mode","value":"proxy"},{"key":"port","value":8080},{"key":"ratio","value":0.5}]}],

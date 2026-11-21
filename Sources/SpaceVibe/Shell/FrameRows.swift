@@ -95,12 +95,13 @@ struct FrameRow: Identifiable, Equatable, Sendable {
 }
 
 extension FrameRow {
-    /// Groups `loadout.rows` by row key, in the order the core sent the members (items, then Hooks).
+    /// Groups `loadout.rows` by row key, in the order the core sent the members (items, extra items, then Hooks). The extra
+    /// items (Codex skills in `~/.agents/skills`) belong to the same rows; only the v5 shell must not see them.
     static func rows(from loadout: CoreLoadoutRows) -> [FrameRow] {
         var order: [String] = []
         var items: [String: [CoreInventoryItem]] = [:]
         var hooks: [String: [CoreInventoryHook]] = [:]
-        for item in loadout.items {
+        for item in loadout.items + loadout.extraItems {
             if items[item.key] == nil { order.append(item.key) }
             items[item.key, default: []].append(item)
         }

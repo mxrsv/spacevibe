@@ -15,8 +15,6 @@ struct FrameSnapshot: Equatable, Sendable {
 /// What the derivations need that the engine does not report yet, plus the user's settings. Every member starts empty:
 /// an empty input gives no finding and no figure, never an invented one (FE-D3). Each names the task that fills it.
 struct FrameFacts: Equatable, Sendable {
-    /// RB-E2: per row key, the folder each member lives in and who reads it. Nil: via and losers are unknown.
-    var readers: [String: ItemReaders]?
     /// RB-E5 (hook errors in 7 days, the Keep list) and RB-R8 (Balance pins).
     var findings = FindingFacts()
     /// RB-E7: `clean.scan`.
@@ -111,9 +109,10 @@ struct FrameWorld: Sendable {
         shown.filter { selected.contains($0.id) && !$0.isPlugin && !$0.isProject && !$0.removableMembers.isEmpty }
     }
 
-    // MARK: Readers (RB-E2)
+    // MARK: Readers
 
-    func readers(of row: FrameRow) -> ItemReaders? { facts.readers?[row.id] }
+    /// From `loadout.rows`' readers map; nil when a member names no folder of it.
+    func readers(of row: FrameRow) -> ItemReaders? { ItemReaders(row: row, folders: snapshot.loadout?.folders ?? []) }
 
     /// Every installed CLI that ends up without the row once `members` are removed, hidden ones included.
     func losers(of row: FrameRow, removing members: Set<String>) -> ReadersAnswer<[String]> {
@@ -125,6 +124,18 @@ struct FrameWorld: Sendable {
     func via(of row: FrameRow, cli: String) -> ReadersAnswer<[String]?> {
         guard let readers = readers(of: row) else { return .unknown }
         return .known(readers.via(cli))
+    }
+
+    /// Turning `cli` off would delete the row's last file (D53): its logo is not a toggle.
+    func isLastCopy(of row: FrameRow, turningOff cli: String) -> ReadersAnswer<Bool> {
+        guard let readers = readers(of: row) else { return .unknown }
+        return .known(readers.isLastCopy(turningOff: cli))
+    }
+
+    /// The number of files the row has: distinct real paths, not lit logos (D53).
+    func fileCount(of row: FrameRow) -> ReadersAnswer<Int> {
+        guard let readers = readers(of: row) else { return .unknown }
+        return .known(readers.files().count)
     }
 
     // MARK: Figures

@@ -1,44 +1,76 @@
 import Foundation
 
-/// The folder one member of a row lives in and which CLIs read that folder: the input RB-E2's readers map will fill (the
-/// `folders` table of `loadout.rows` and each member's `folder` and `realPath`). Not on the wire yet, so the store leaves
-/// every row without one, and each question below answers "unknown" rather than a guess (plan RB-E2: the core never guesses,
-/// the shell derives).
-struct MemberFolder: Equatable, Sendable {
-    /// The folder (for a Hook, its file).
-    let path: String
-    /// The member's entry with links resolved: two members with the same `realPath` are one file (D53 counts files).
-    let realPath: String
-    /// The CLI whose own folder this is.
-    let ownedBy: String
-    /// Every registry CLI that reads this folder.
-    let readBy: [String]
-    /// The member is a link (owner `link`): removing it removes only the link, never the file behind it.
-    let isLink: Bool
-}
-
-/// The readers of one row, keyed by member id. Port of the reference mock's `keysOf`, `losersOf`, `isVia` and `viaOf`
-/// (`src/m-model.js`), over members instead of folder keys.
+/// Who reads one row and from where, from `loadout.rows`' readers map (`folders`, each member's `folder` and `realPath`;
+/// inventory.md "Readers map"). The core never guesses and the shell only derives: via (RD31), the files of a row (D53)
+/// and who loses the item (RD-R11). Port of the core's own proof of the rules (`readersOf`, `losersOf`, `filesOf`, `viaOf`
+/// in `core/internal/inventory/readers-map_test.go`).
 struct ItemReaders: Equatable, Sendable {
-    let members: [String: MemberFolder]
+    struct Member: Equatable, Sendable {
+        let id: String
+        /// The path of the member's folder (for a Hook, its file).
+        let folder: String
+        /// The member's path with every link followed. A Hook is its own unit: its file holds other Hooks too.
+        let realPath: String
+        /// The member is a link (owner `link`): removing it takes only the link.
+        let isLink: Bool
+        /// The CLIs that read the member: its folder's readers plus those of every folder with the same real path.
+        let readBy: [String]
+        /// The readers of the member's own folder entry and its owner, for via: a link folder is judged as spelled.
+        let folderReadBy: [String]
+        let folderOwner: String
+    }
+
+    /// In the row's order.
+    let members: [Member]
+
+    init(members: [Member]) {
+        self.members = members
+    }
+
+    /// Nil when a member names no folder of the table: a core before the readers map, or a folder it did not list. The
+    /// answers are then unknown, never a guess.
+    init?(row: FrameRow, folders: [CoreReadersFolder]) {
+        let byPath = Dictionary(folders.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
+        func readers(of folder: CoreReadersFolder) -> [String] {
+            var out: [String] = []
+            for other in folders where other.path == folder.path || other.realPath == folder.realPath {
+                for cli in other.readBy where !out.contains(cli) { out.append(cli) }
+            }
+            return out
+        }
+        var built: [Member] = []
+        for item in row.items {
+            guard let path = item.folder, let realPath = item.realPath, let folder = byPath[path] else { return nil }
+            built.append(Member(id: item.id, folder: path, realPath: realPath, isLink: item.owner == "link", readBy: readers(of: folder),
+                                folderReadBy: folder.readBy, folderOwner: folder.ownedBy))
+        }
+        for hook in row.hooks {
+            guard let path = hook.folder, let folder = byPath[path] else { return nil }
+            built.append(Member(id: hook.id, folder: path, realPath: "hook:\(hook.id)", isLink: false, readBy: readers(of: folder),
+                                folderReadBy: folder.readBy, folderOwner: folder.ownedBy))
+        }
+        guard !built.isEmpty else { return nil }
+        members = built
+    }
 
     /// The members a CLI reads the row from. A CLI can read it from several folders: turning it off removes every one.
     func members(readBy cli: String) -> Set<String> {
-        Set(members.filter { $0.value.readBy.contains(cli) }.keys)
+        Set(members.filter { $0.readBy.contains(cli) }.map(\.id))
     }
 
-    /// What removing `chosen` takes away: a link member only itself; any other member every member with the same file.
+    /// What removing `chosen` takes away: a link only itself; any other member its file, so every member with the same real
+    /// path goes too, links included (they would dangle).
     func expand(_ chosen: Set<String>) -> Set<String> {
         var out = chosen
-        for id in chosen {
-            guard let folder = members[id], !folder.isLink else { continue }
-            out.formUnion(members.filter { !$0.value.isLink && $0.value.realPath == folder.realPath }.keys)
+        for member in members where chosen.contains(member.id) && !member.isLink {
+            out.formUnion(members.filter { $0.realPath == member.realPath }.map(\.id))
         }
         return out
     }
 
-    /// Every CLI of `clis` that reads the row and ends up without it once `removed` is gone (RD-R11: the button counts every
-    /// CLI that loses the item; a hidden CLI still counts, "Show guard").
+    /// Every CLI of `clis` that reads the row and ends up without it once `removed` is gone (RD-R11: the button counts
+    /// every CLI that loses the item; a hidden CLI still counts, "Show guard"). `removed` is taken as given: pass it
+    /// through `expand` first.
     func losers(removing removed: Set<String>, among clis: [String]) -> [String] {
         clis.filter { cli in
             let read = members(readBy: cli)
@@ -46,33 +78,34 @@ struct ItemReaders: Equatable, Sendable {
         }
     }
 
-    /// The CLIs whose own folder gives `cli` the row, when `cli` reads it only through another CLI's folder (RD31): such a
+    /// The CLIs whose folders give `cli` the row, when none of the folders it reads the row from is its own (RD31): such a
     /// logo is not a toggle and shows "via". Nil when `cli` has its own copy or does not read the row.
     func via(_ cli: String) -> [String]? {
-        let read = members.values.filter { $0.readBy.contains(cli) }
-        guard !read.isEmpty, !read.contains(where: { $0.ownedBy == cli }) else { return nil }
         var owners: [String] = []
-        for folder in read.sorted(by: { $0.path < $1.path }) where !owners.contains(folder.ownedBy) { owners.append(folder.ownedBy) }
-        return owners
+        for member in members where member.folderReadBy.contains(cli) {
+            if member.folderOwner == cli { return nil }
+            if !owners.contains(member.folderOwner) { owners.append(member.folderOwner) }
+        }
+        return owners.isEmpty ? nil : owners
     }
 
-    /// The files of the row: distinct real paths of the members that are not links.
+    /// The files of the row: the distinct real paths of the members not removed. D53 counts these, not lit logos.
     func files(excluding removed: Set<String> = []) -> Set<String> {
-        Set(members.filter { !removed.contains($0.key) && !$0.value.isLink }.map(\.value.realPath))
+        Set(members.filter { !removed.contains($0.id) }.map(\.realPath))
     }
 
-    /// Turning a CLI off removes every member it reads the row from, expanded to the members that share their file.
+    /// Turning a CLI off removes every member it reads the row from, with the members that share their file.
     func turningOff(_ cli: String) -> Set<String> { expand(members(readBy: cli)) }
 
     /// Turning `cli` off would delete the row's last file, so its logo is not a toggle and `Remove…` is the explicit action
-    /// (D53, counted by files, not by lit logos).
+    /// (D53).
     func isLastCopy(turningOff cli: String) -> Bool {
         let removed = turningOff(cli)
         return !removed.isEmpty && files(excluding: removed).isEmpty
     }
 }
 
-/// An answer that needs the readers map: known, or not known until RB-E2 lands for this row.
+/// An answer that needs the readers map: known, or not known because the core sent no map for this row.
 enum ReadersAnswer<Value: Equatable & Sendable>: Equatable, Sendable {
     case known(Value)
     case unknown

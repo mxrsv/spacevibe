@@ -23,16 +23,22 @@ enum FrameTestData {
     static func sessions(_ n: Int, note: String? = nil) -> CoreCLICell { .sessions(count: n, days: n > 0 ? ["2026-11-01"] : [], last: n > 0 ? "2026-11-01" : nil, note: note) }
     static func runs(_ n: Int, errors: Int = 0) -> CoreCLICell { .runs(count: n, errors: errors, last: nil, note: nil) }
 
+    /// `folder` and `realPath` are the readers-map members; `id` defaults to `<cli>:<kind>:<name>`.
     static func item(
         _ name: String, kind: CoreKind = .skill, cli: CoreCLI = .claude, owner: String = "user", project: String? = nil,
-        cells: CoreCLICells, removable: Bool = true
+        cells: CoreCLICells, removable: Bool = true, id: String? = nil, folder: String? = nil, realPath: String? = nil
     ) -> CoreInventoryItem {
         let key = "\(kind.rawValue):\(project ?? ""):\(name)"
         return CoreInventoryItem(
-            id: "\(cli.rawValue):\(kind.rawValue):\(name)", cli: cli, kind: kind, name: name, entry: name, description: "", owner: owner,
+            id: id ?? "\(cli.rawValue):\(kind.rawValue):\(name)", cli: cli, kind: kind, name: name, entry: name, description: "", owner: owner,
             path: "/h/.\(cli.rawValue)/skills/\(name)", file: "/h/.\(cli.rawValue)/skills/\(name)/SKILL.md", removable: removable,
-            scope: project == nil ? .global : .project, project: project, inOther: false, key: key, cliCells: cells
+            scope: project == nil ? .global : .project, project: project, inOther: false, key: key, cliCells: cells, folder: folder, realPath: realPath
         )
+    }
+
+    /// One readers-map entry; `realPath` defaults to `path`.
+    static func folder(_ path: String, readBy: [String], ownedBy: String, realPath: String? = nil, kind: CoreKind = .skill) -> CoreReadersFolder {
+        CoreReadersFolder(path: path, realPath: realPath ?? path, kind: kind, readBy: readBy, ownedBy: ownedBy, copyTarget: true)
     }
 
     static func hook(_ hash: String, command: String = "~/.claude/hooks/\("guard").sh", dead: Bool = false, owner: String = "user", cells: CoreCLICells) -> CoreInventoryHook {
@@ -47,13 +53,14 @@ enum FrameTestData {
         CoreLoadoutRows(usage: usage, items: items, hooks: hooks, problems: [], events: [:], roots: [:], countsByScope: [:], rowFlags: [:])
     }
 
-    static func rule(_ text: String, verdict: CoreVerdict = .allow, file: FrameScope = .global) -> CoreRule {
+    /// `wide` is what the core sets (rules.md): the fixture says it, the shell never derives it.
+    static func rule(_ text: String, verdict: CoreVerdict = .allow, file: FrameScope = .global, wide: Bool = false) -> CoreRule {
         let open = text.firstIndex(of: "(")
         let tool = open.map { String(text[..<$0]) } ?? text
         let specifier = open.map { String(text[text.index(after: $0)..<text.index(before: text.endIndex)]) }
         return CoreRule(
             id: "\(file.scope.rawValue):\(verdict.rawValue):\(text)", scope: file.scope, dir: file.dir, file: "settings.json", verdict: verdict,
-            rule: text, tool: tool, specifier: specifier
+            rule: text, tool: tool, specifier: specifier, wide: wide
         )
     }
 

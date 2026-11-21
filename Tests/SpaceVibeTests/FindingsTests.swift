@@ -16,23 +16,27 @@ struct FindingsTests {
 
     // MARK: Rules
 
-    @Test("a whole-tool rule: bare, empty or `*`, only for tools that take a specifier, never a bare MCP tool (RD-R17)")
+    /// The rules of the frozen `rules-wide.json` (fixture `rules-home/main` and the shared HOME), with the `wide` the core
+    /// gives each: only those flagged wide and allowed are Control findings, whatever their text looks like.
+    @Test("a whole-tool rule is the core's `wide` flag on an allow rule (RD-R17); the shell never re-derives it")
     func wholeTool() {
-        #expect(WholeToolRule.isWide(D.rule("Bash")))
-        #expect(WholeToolRule.isWide(D.rule("Read(*)")))
-        #expect(WholeToolRule.isWide(D.rule("WebFetch()")))
-        #expect(!WholeToolRule.isWide(D.rule("Bash(git status:*)")))
-        #expect(!WholeToolRule.isWide(D.rule("mcp__github__create_issue")))
-        #expect(!WholeToolRule.isWide(D.rule("Task")))
+        let file = D.rules([
+            D.rule("Read", wide: true), D.rule("Read(*)", wide: true), D.rule("WebSearch", wide: true),
+            D.rule("Bash(git status:*)"), D.rule("mcp__demo__lookup"), D.rule("not a rule!"),
+            D.rule("WebFetch(domain:github.com)"), D.rule("Bash(git push *)", verdict: .ask),
+            D.rule("Edit", verdict: .ask, wide: true), D.rule("Read(.env*)", verdict: .deny),
+        ])
+        #expect(WholeToolRule.allows(in: file, file: .global).map(\.rule) == ["Read", "Read(*)", "WebSearch"])
+        #expect(WholeToolRule.isWide(D.rule("Edit", verdict: .ask, wide: true)), "wide is independent of the verdict")
     }
 
     @Test("allow rules that allow a whole tool count in every file read, global and each project's Shared and Local")
     func projectFiles() {
         var snapshot = D.snapshot(D.loadout())
         snapshot.rules = [
-            .global: D.rules([D.rule("Bash"), D.rule("Bash", verdict: .deny), D.rule("Read(./src/**)")], projects: ["/p"]),
-            .shared("/p"): D.rules([D.rule("Bash", file: .shared("/p"))], file: .shared("/p")),
-            .local("/p"): D.rules([D.rule("Edit", file: .local("/p"))], file: .local("/p")),
+            .global: D.rules([D.rule("Bash", wide: true), D.rule("Bash", verdict: .deny, wide: true), D.rule("Read(./src/**)")], projects: ["/p"]),
+            .shared("/p"): D.rules([D.rule("Bash", file: .shared("/p"), wide: true)], file: .shared("/p")),
+            .local("/p"): D.rules([D.rule("Edit", file: .local("/p"), wide: true)], file: .local("/p")),
         ]
         let w = world(snapshot)
         #expect(w.wideAllows.map(\.file) == [.global, .shared("/p"), .local("/p")])
@@ -42,7 +46,7 @@ struct FindingsTests {
 
     @Test("a reading of another file than the one asked (an unknown project read as global) adds nothing")
     func misreadFile() {
-        let read = D.rules([D.rule("Bash")])
+        let read = D.rules([D.rule("Bash", wide: true)])
         #expect(WholeToolRule.allows(in: read, file: .shared("/gone")).isEmpty)
         #expect(WholeToolRule.allows(in: read, file: .global).count == 1)
     }
@@ -134,7 +138,7 @@ struct FindingsTests {
     @Test("the groups follow page order and carry their highest severity once")
     func groups() {
         var snapshot = D.snapshot(D.loadout([D.item("old", cells: never)], hooks: [D.hook("dd", dead: true, cells: ["claude": D.runs(0)])]))
-        snapshot.rules = [.global: D.rules([D.rule("Bash")])]
+        snapshot.rules = [.global: D.rules([D.rule("Bash", wide: true)])]
         snapshot.activity = D.activity([D.session("w", state: .waiting)])
         let groups = world(snapshot).groups
         #expect(groups.map(\.job) == [.cleanUp, .control, .watch])

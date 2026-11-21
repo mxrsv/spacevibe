@@ -96,16 +96,23 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
     var cells: CoreCells?
     /// One cell per registry CLI; written by `loadout.rows` only, and the same on every member of a row key.
     var cliCells: CoreCLICells?
+    /// `loadout.rows` only: the path of the readers-map folder the item was read from (`CoreLoadoutRows.folders`).
+    var folder: String?
+    /// `loadout.rows` only: the item's path with every link followed. Members with one `realPath` are one file (D53).
+    var realPath: String?
 
     private enum Keys: String, CodingKey {
         case id, cli, kind, name, entry, description, owner, path, file, removable, scope, project, inOther, skillOverride = "override", key, cells, cliCells
+        case folder, realPath
     }
 
-    init(id: String, cli: CoreCLI, kind: CoreKind, name: String, entry: String, description: String, owner: String, path: String, file: String, removable: Bool, scope: CoreInventoryScope, project: String?, inOther: Bool, key: String, hasSkillOverride: Bool = false, skillOverride: String? = nil, cells: CoreCells? = nil, cliCells: CoreCLICells? = nil) {
+    init(id: String, cli: CoreCLI, kind: CoreKind, name: String, entry: String, description: String, owner: String, path: String, file: String, removable: Bool, scope: CoreInventoryScope, project: String?, inOther: Bool, key: String, hasSkillOverride: Bool = false, skillOverride: String? = nil, cells: CoreCells? = nil, cliCells: CoreCLICells? = nil, folder: String? = nil, realPath: String? = nil) {
         self.id = id; self.cli = cli; self.kind = kind; self.name = name; self.entry = entry; self.description = description
         self.owner = owner; self.path = path; self.file = file; self.removable = removable; self.scope = scope
         self.project = project; self.inOther = inOther; self.key = key; self.hasSkillOverride = hasSkillOverride; self.skillOverride = skillOverride; self.cells = cells
         self.cliCells = cliCells
+        self.folder = folder
+        self.realPath = realPath
     }
 
     init(from decoder: Decoder) throws {
@@ -128,6 +135,8 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
         skillOverride = try c.decodeIfPresent(String.self, forKey: .skillOverride)
         cells = try c.decodeIfPresent(CoreCells.self, forKey: .cells)
         cliCells = try c.decodeIfPresent(CoreCLICells.self, forKey: .cliCells)
+        folder = try c.decodeIfPresent(String.self, forKey: .folder)
+        realPath = try c.decodeIfPresent(String.self, forKey: .realPath)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -149,6 +158,8 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
         try c.encode(key, forKey: .key)
         try c.encodeIfPresent(cells, forKey: .cells)
         try c.encodeIfPresent(cliCells, forKey: .cliCells)
+        try c.encodeIfPresent(folder, forKey: .folder)
+        try c.encodeIfPresent(realPath, forKey: .realPath)
     }
 }
 
@@ -185,6 +196,8 @@ struct CoreInventoryHook: Codable, Equatable, Sendable, Identifiable {
     var cells: CoreCells?
     /// As on `CoreInventoryItem`: one cell per registry CLI, `loadout.rows` only.
     var cliCells: CoreCLICells?
+    /// `loadout.rows` only: the readers-map entry of the file that holds the hook (equals `file`).
+    var folder: String?
     /// Always written; `null` when unknown or not logged.
     @CoreNullable var usage: CoreHookUsage?
 }

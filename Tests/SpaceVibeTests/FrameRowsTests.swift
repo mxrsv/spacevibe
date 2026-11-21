@@ -3,7 +3,8 @@ import Testing
 @testable import SpaceVibe
 
 /// Rows, their status over measured CLIs, the readers map (via, losers, last copy) and the cell wire shape (RD-R10, RD-R11,
-/// RD-R12, RD31). Port of the reference mock's `itemStatus`, `losersOf`, `isVia` and the tile rules of `consistency.js`.
+/// RD-R12, RD31). Port of the reference mock's `itemStatus` and the tile rules of `consistency.js`, and of the core's
+/// readers-map rules.
 @Suite("Frame rows and readers")
 struct FrameRowsTests {
     typealias D = FrameTestData
@@ -83,57 +84,109 @@ struct FrameRowsTests {
         }
     }
 
-    // MARK: Readers (RB-E2 input)
+    // MARK: Readers map (ports of TestReadersMapLosers and TestReadersMapVia, core/internal/inventory/readers-map_test.go)
 
-    /// pdf-extract of the mock at 6 CLIs: Claude's copy in ~/.claude/skills (read by claude, cursor, opencode, amp), Codex's in
-    /// ~/.agents/skills (read by codex, cursor, amp).
-    private let shared = ItemReaders(members: [
-        "claude:a": MemberFolder(path: "~/.claude/skills", realPath: "/r/claude/a", ownedBy: "claude", readBy: ["claude", "cursor", "opencode", "amp"], isLink: false),
-        "codex:a": MemberFolder(path: "~/.agents/skills", realPath: "/r/agents/a", ownedBy: "codex", readBy: ["codex", "cursor", "amp"], isLink: false),
-    ])
+    private static let claudeSkills = D.folder("/h/.claude/skills", readBy: ["claude"], ownedBy: "claude")
+    private static let codexSkills = D.folder("/h/.codex/skills", readBy: ["codex"], ownedBy: "codex")
+    private static let agentsSkills = D.folder("/h/.agents/skills", readBy: ["codex"], ownedBy: "codex")
+    private static let never: CoreCLICells = ["claude": D.sessions(0), "codex": D.sessions(0)]
 
-    @Test("via: a CLI that reads the item only through another CLI's folder (RD31)")
-    func via() {
-        #expect(shared.via("claude") == nil)
-        #expect(shared.via("opencode") == ["claude"])
-        #expect(shared.via("cursor") == ["codex", "claude"])
-        #expect(shared.via("copilot") == nil)
+    private func claudeCopy(realPath: String = "/h/.claude/skills/s") -> CoreInventoryItem {
+        D.item("s", cells: Self.never, folder: "/h/.claude/skills", realPath: realPath)
     }
 
-    @Test("losers: every CLI that reads the item and keeps no member once the removal is done")
-    func losers() {
-        let all = ["claude", "codex", "cursor", "opencode", "amp", "copilot"]
-        #expect(shared.losers(removing: ["claude:a"], among: all) == ["claude", "opencode"])
-        #expect(shared.losers(removing: ["claude:a", "codex:a"], among: all) == ["claude", "codex", "cursor", "opencode", "amp"])
-        #expect(shared.turningOff("cursor") == ["claude:a", "codex:a"])
+    private func agentsCopy(realPath: String = "/h/.agents/skills/s") -> CoreInventoryItem {
+        D.item("s", cli: .codex, cells: Self.never, removable: false, id: "codex:skill:agents:s", folder: "/h/.agents/skills", realPath: realPath)
     }
 
-    @Test("two members with one real file go together; a link goes alone; the last file is not a toggle (D53)")
-    func filesAndLinks() {
-        let one = ItemReaders(members: [
-            "claude:a": MemberFolder(path: "~/.claude/skills", realPath: "/r/a", ownedBy: "claude", readBy: ["claude"], isLink: false),
-            "codex:a": MemberFolder(path: "~/.codex/skills", realPath: "/r/a", ownedBy: "codex", readBy: ["codex"], isLink: false),
-            "link:a": MemberFolder(path: "~/.claude/skills", realPath: "/r/a", ownedBy: "claude", readBy: ["claude"], isLink: true),
-        ])
-        #expect(one.expand(["claude:a"]) == ["claude:a", "codex:a"])
-        #expect(one.expand(["link:a"]) == ["link:a"])
-        #expect(one.isLastCopy(turningOff: "codex"))
-        #expect(!shared.isLastCopy(turningOff: "codex"))
+    /// The world over one row `skill::s`, the extra items read with the v5 ones.
+    private func world(_ items: [CoreInventoryItem], extra: [CoreInventoryItem] = [], folders: [CoreReadersFolder]) -> (FrameWorld, FrameRow) {
+        var loadout = D.loadout(items)
+        loadout.extraItems = extra
+        loadout.folders = folders
+        let world = FrameWorld(snapshot: D.snapshot(loadout), now: D.now)
+        return (world, world.rows[0])
     }
 
-    @Test("without the readers map the world answers unknown, never a guess")
+    @Test("a copy in ~/.claude/skills and one in ~/.agents/skills: two files, each removal loses its own reader")
+    func claudeAndAgents() {
+        let (w, row) = world([claudeCopy()], extra: [agentsCopy()], folders: [Self.agentsSkills, Self.claudeSkills, Self.codexSkills])
+        #expect(w.rows.count == 1 && row.items.count == 2, "items and extraItems are one row")
+        #expect(w.fileCount(of: row) == .known(2))
+        #expect(w.losers(of: row, removing: ["claude:skill:s"]) == .known(["claude"]))
+        #expect(w.losers(of: row, removing: ["codex:skill:agents:s"]) == .known(["codex"]))
+        #expect(w.isLastCopy(of: row, turningOff: "codex") == .known(false))
+    }
+
+    @Test("Codex reads it from two folders: one removal alone loses nobody, both lose Codex, and that is the last file")
+    func codexTwoFolders() {
+        let own = D.item("s", cli: .codex, cells: Self.never, folder: "/h/.codex/skills", realPath: "/h/.codex/skills/s")
+        let (w, row) = world([own], extra: [agentsCopy()], folders: [Self.agentsSkills, Self.claudeSkills, Self.codexSkills])
+        #expect(own.id != "codex:skill:agents:s")
+        #expect(w.losers(of: row, removing: [own.id]) == .known([]))
+        #expect(w.losers(of: row, removing: [own.id, "codex:skill:agents:s"]) == .known(["codex"]))
+        #expect(w.isLastCopy(of: row, turningOff: "codex") == .known(true))
+        #expect(w.via(of: row, cli: "codex") == .known(nil))
+    }
+
+    @Test("~/.agents/skills is a link to ~/.claude/skills: one file both CLIs read, so either removal loses both")
+    func agentsLinkedToClaude() {
+        let linked = D.folder("/h/.agents/skills", readBy: ["codex"], ownedBy: "codex", realPath: "/h/.claude/skills")
+        let (w, row) = world([claudeCopy()], extra: [agentsCopy(realPath: "/h/.claude/skills/s")], folders: [linked, Self.claudeSkills, Self.codexSkills])
+        #expect(w.fileCount(of: row) == .known(1))
+        #expect(w.losers(of: row, removing: ["claude:skill:s"]) == .known(["claude", "codex"]))
+        #expect(w.losers(of: row, removing: ["codex:skill:agents:s"]) == .known(["claude", "codex"]))
+        #expect(w.isLastCopy(of: row, turningOff: "claude") == .known(true))
+    }
+
+    @Test("Codex's copy is a link to Claude's: removing the link loses Codex only, removing the file loses both")
+    func codexLinkToClaude() {
+        let link = D.item("s", cli: .codex, owner: "link", cells: Self.never, folder: "/h/.codex/skills", realPath: "/h/.claude/skills/s")
+        let (w, row) = world([claudeCopy(), link], folders: [Self.agentsSkills, Self.claudeSkills, Self.codexSkills])
+        #expect(w.fileCount(of: row) == .known(1))
+        #expect(w.losers(of: row, removing: [link.id]) == .known(["codex"]))
+        #expect(w.losers(of: row, removing: ["claude:skill:s"]) == .known(["claude", "codex"]), "the link would dangle")
+        #expect(w.isLastCopy(of: row, turningOff: "codex") == .known(false))
+        #expect(w.isLastCopy(of: row, turningOff: "claude") == .known(true))
+    }
+
+    @Test("via is a pure function of the table: with Claude Code and Codex nobody is via; another CLI's reader is (RD31)")
+    func via() throws {
+        let (w, row) = world([claudeCopy()], extra: [agentsCopy()], folders: [Self.agentsSkills, Self.claudeSkills, Self.codexSkills])
+        #expect(w.via(of: row, cli: "claude") == .known(nil) && w.via(of: row, cli: "codex") == .known(nil))
+        let table = [
+            D.folder("/h/.claude/skills", readBy: ["claude", "cursor"], ownedBy: "claude"),
+            D.folder("/h/.agents/skills", readBy: ["codex", "cursor"], ownedBy: "codex"),
+            D.folder("/h/.cursor/skills", readBy: ["cursor"], ownedBy: "cursor"),
+        ]
+        let shared = try #require(ItemReaders(row: row, folders: table))
+        #expect(shared.via("cursor") == ["claude", "codex"])
+        let cursorCopy = D.item("s", cli: .codex, cells: Self.never, id: "cursor:skill:s", folder: "/h/.cursor/skills", realPath: "/h/.cursor/skills/s")
+        let own = try #require(ItemReaders(row: FrameRow.rows(from: D.loadout([claudeCopy(), cursorCopy]))[0], folders: table))
+        #expect(own.via("cursor") == nil, "a CLI with its own copy is not via")
+        #expect(shared.losers(removing: shared.expand(["claude:skill:s"]), among: ["claude", "codex", "cursor"]) == ["claude"])
+    }
+
+    @Test("a member the table does not name, or a core without the map, answers unknown, never a guess")
     func unknownWithoutMap() {
-        let world = FrameWorld(snapshot: D.snapshot(D.loadout([D.item("a", cells: ["claude": D.sessions(1), "codex": .missing])])), now: D.now)
-        let r = world.rows[0]
-        #expect(world.losers(of: r, removing: ["claude:skill:a"]) == .unknown)
-        #expect(world.via(of: r, cli: "codex") == .unknown)
+        let (w, row) = world([claudeCopy()], folders: [])
+        #expect(w.losers(of: row, removing: ["claude:skill:s"]) == .unknown)
+        #expect(w.via(of: row, cli: "codex") == .unknown)
+        #expect(w.isLastCopy(of: row, turningOff: "claude") == .unknown)
+        let (partial, partialRow) = world([claudeCopy(), D.item("s", cli: .codex, cells: Self.never)], folders: [Self.claudeSkills])
+        #expect(partial.fileCount(of: partialRow) == .unknown)
+    }
+
+    @Test("a hidden CLI's rows leave the list, but it still loses the file (Show guard)")
+    func hiddenStillLoses() {
+        var loadout = D.loadout([D.item("a", cells: ["claude": D.sessions(1), "codex": .missing], folder: "/h/.claude/skills", realPath: "/h/.claude/skills/a")])
+        loadout.folders = [Self.claudeSkills]
         var facts = FrameFacts()
-        facts.readers = ["skill::a": ItemReaders(members: ["claude:skill:a": MemberFolder(path: "p", realPath: "/r", ownedBy: "claude", readBy: ["claude"], isLink: false)])]
         facts.hidden = ["claude"]
-        let hidden = FrameWorld(snapshot: world.snapshot, facts: facts, now: D.now)
-        // Claude Code is hidden, so the row leaves the list; it still loses the file ("Show guard").
+        let hidden = FrameWorld(snapshot: D.snapshot(loadout), facts: facts, now: D.now)
         #expect(hidden.rows.isEmpty)
-        #expect(hidden.losers(of: r, removing: ["claude:skill:a"]) == .known(["claude"]))
+        let row = FrameRow.rows(from: loadout)[0]
+        #expect(hidden.losers(of: row, removing: ["claude:skill:a"]) == .known(["claude"]))
     }
 
     // MARK: Wire

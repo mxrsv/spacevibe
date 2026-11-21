@@ -38,16 +38,11 @@ struct FrameScope: Hashable, Sendable {
     static func local(_ dir: String) -> FrameScope { FrameScope(scope: .local, dir: dir) }
 }
 
-/// A rule that allows a whole tool (RD26, RD-R17): a bare, `Tool()` or `Tool(*)` rule, only for the tools that take a
-/// specifier. A bare MCP tool name is never wide. RB-E6 moves this flag into the core; until then the shell reads it from the
-/// rule's `tool` and `specifier`, which the core already splits.
+/// A rule that allows a whole tool (RD26, RD-R17). Whether a rule covers a whole tool is the core's `wide` flag (rules.md):
+/// the shell never re-derives it, it only keeps the allow ones.
 enum WholeToolRule {
-    static let specifierTools: Set<String> = ["Bash", "Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "WebFetch", "WebSearch"]
-
-    static func isWide(_ rule: CoreRule) -> Bool {
-        guard let tool = rule.tool, specifierTools.contains(tool) else { return false }
-        return RedundantRules.isWide(rule.specifier)
-    }
+    /// A rule without the flag (a core before RB-E6) is never wide: nothing is re-derived in the shell.
+    static func isWide(_ rule: CoreRule) -> Bool { rule.wide == true }
 
     /// The allow rules of one reading that allow a whole tool, from the file that was read only. A reading of another file
     /// than the one asked (the core reads an unknown project as global) holds none.

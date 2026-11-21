@@ -56,6 +56,13 @@ struct FrameRouteTests {
         #expect(!world.rows.isEmpty)
         #expect(world.rows.allSatisfy { row in store.snapshot.registry.allSatisfy { row.cells[$0.id] != nil } })
         #expect(store.snapshot.rules[.global] != nil)
+        // The readers map names every member's folder, so no row's via or losers is unknown.
+        #expect(!loadout.folders.isEmpty)
+        #expect(world.rows.allSatisfy { world.readers(of: $0) != nil })
+        #expect(world.rows.filter { $0.kind != .hook }.allSatisfy { row in ["claude", "codex"].allSatisfy { world.via(of: row, cli: $0) == .known(nil) } })
+        // The core's `wide` flag: the shared HOME allows `Read(*)` (wide) and `Bash(git status:*)` (not), per rules-wide.json.
+        #expect(world.wideAllows.map(\.rule.id).contains("global:allow:Read(*)"))
+        #expect(!world.wideAllows.map(\.rule.id).contains("global:allow:Bash(git status:*)"))
         for page in FramePage.allCases where page != .activity {
             let figure = world.figure(for: page, loading: store.loading, failed: store.failedEmpty)
             #expect(figure != .pending && figure != .failed, "\(page): \(figure)")
