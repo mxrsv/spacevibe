@@ -196,6 +196,8 @@ type Item struct {
 	SkillOverride    *string
 	// Cells is set by AttachUsage.
 	Cells *Cells `json:"cells,omitempty"`
+	// CLICells holds one cell per registry CLI, keyed by its id (cli-cells.go). Set by loadout.rows only.
+	CLICells map[string]CLICell `json:"cliCells,omitempty"`
 }
 
 // Key is the matrix row this item belongs to: the same name (or hook) in the same project, whichever CLI
@@ -236,6 +238,8 @@ type Hook struct {
 	Scope   Scope   `json:"scope"`
 	Project *string `json:"project"`
 	Cells   *Cells  `json:"cells,omitempty"`
+	// CLICells is as on Item: one cell per registry CLI, set by loadout.rows only.
+	CLICells map[string]CLICell `json:"cliCells,omitempty"`
 	// Usage is nil when unknown (scan not finished) or not logged (Codex); always written, as null then.
 	Usage *HookUsage `json:"usage"`
 }
@@ -252,6 +256,9 @@ type Snapshot struct {
 	Events map[string][]string `json:"events"`
 	// Roots is the config root of each CLI, keyed claude and codex.
 	Roots map[string]string `json:"roots"`
+	// unreadable is what the reader could not look at, per CLI and kind; it turns a Missing cliCell into
+	// unknown. Not on the wire: Problems says the same in words.
+	unreadable unreadableKinds
 }
 
 // FilterCounts are the counts for the filter chips, deduplicated by row key.

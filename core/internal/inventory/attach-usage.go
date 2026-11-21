@@ -2,8 +2,10 @@ package inventory
 
 import (
 	"math"
+	"slices"
 	"time"
 
+	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/usage"
 )
@@ -15,6 +17,8 @@ import (
 //	pending       installed, but no scanned log can have covered it yet (see pendingReason)
 //	unmeasurable  the CLI does not log it (Codex hooks); Reason says why
 //	missing       not installed in that CLI
+//
+// loadout.rows also writes cliCells, one per registry CLI, from the same readings (cli-cells.go).
 
 // pendingGrace: a zero-run item that changed inside this window is "pending", not "never ran".
 const pendingGraceMs = 24 * 3600 * 1000
@@ -27,7 +31,7 @@ const pendingGraceMs = 24 * 3600 * 1000
 //  3. it changed after the newest scanned log, so no session could have used it yet.
 func pendingReason(addedMs *float64, window *usage.LogWindow, nowMs float64) string {
 	if window != nil && window.Files == 0 {
-		return "No logs scanned for this CLI yet"
+		return NoLogsScanned
 	}
 	if addedMs != nil && nowMs-*addedMs < pendingGraceMs {
 		return "Added in the last 24 hours"
@@ -47,30 +51,51 @@ type matrixRow struct {
 	file  string
 }
 
+// rowGroup is the members of one row key, one per CLI (the last member of a CLI wins), plus what every member
+// shares: the kind, and whether the row is user-level configuration.
+type rowGroup struct {
+	members map[CLI]matrixRow
+	kind    Kind
+	global  bool
+}
+
+// reading is what the scanned logs say about one member: runs (hooks) or sessions (skills, agents), the days
+// of use (skills and agents), the last day, hook errors, and the pending reason when the count is zero.
+type reading struct {
+	runs    int
+	days    []string
+	last    *string
+	errors  *int
+	pending string
+}
+
 // AttachUsage returns a copy of the snapshot with Cells on every item and hook, and Usage on every Claude hook
 // (nil when the scan has not finished or the CLI does not log it). Pure apart from reading file mtimes. Hook
 // runs are keyed by event plus command, so the same hook in a global and a project file shares one count: the
-// log does not say which file it came from. A nil usage reads like the scanning state.
+// log does not say which file it came from. A nil usage reads like the scanning state. It never sets
+// CLICells: only loadout.rows carries them.
 func AttachUsage(inv Snapshot, in *usage.Input, now time.Time) Snapshot {
-	return attachUsage(inv, in, now, nil)
+	return attachUsage(inv, in, now, nil, nil)
 }
 
 // attachUsage is AttachUsage with firstSeen: the first-seen time in ms by item id, from the store of
-// Service.Rows. An id it holds is "added" at that time; any other id falls back to the file's mtime.
-func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[string]float64) Snapshot {
+// Service.Rows. An id it holds is "added" at that time; any other id falls back to the file's mtime. A
+// non-empty registry also fills CLICells, one per entry (loadout.rows passes cliregistry.All(); tests pass
+// others).
+func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[string]float64, registry []cliregistry.CLI) Snapshot {
 	nowMs := float64(now.UnixNano()) / 1e6
-	groups := map[string]map[CLI]matrixRow{}
-	add := func(key string, cli CLI, row matrixRow) {
+	groups := map[string]*rowGroup{}
+	add := func(key string, cli CLI, row matrixRow, global bool) {
 		if groups[key] == nil {
-			groups[key] = map[CLI]matrixRow{}
+			groups[key] = &rowGroup{members: map[CLI]matrixRow{}, kind: row.kind, global: global}
 		}
-		groups[key][cli] = row
+		groups[key].members[cli] = row
 	}
 	for _, item := range inv.Items {
-		add(item.Key(), item.CLI, matrixRow{id: item.ID, kind: item.Kind, name: item.Name, entry: item.Entry, file: item.File})
+		add(item.Key(), item.CLI, matrixRow{id: item.ID, kind: item.Kind, name: item.Name, entry: item.Entry, file: item.File}, item.Project == nil)
 	}
 	for _, hook := range inv.Hooks {
-		add(hook.Key(), hook.CLI, matrixRow{id: hook.ID, kind: KindHook, hash: hook.Hash, file: hook.File})
+		add(hook.Key(), hook.CLI, matrixRow{id: hook.ID, kind: KindHook, hash: hook.Hash, file: hook.File}, hook.Project == nil)
 	}
 	type mtime struct {
 		ms *float64
@@ -95,25 +120,14 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 	if in != nil {
 		totals, windows = in.Totals, in.Windows
 	}
-	cellFor := func(row *matrixRow, cli CLI) Cell {
-		if row == nil {
-			return Missing()
-		}
-		if row.kind == KindHook && cli == Codex {
-			return Unmeasurable(CodexHooksReason)
-		}
-		if totals == nil {
-			return Pending(ScanNotFinished)
-		}
+	// read is the logs' answer for one member; only called once totals are known.
+	read := func(row matrixRow, cli CLI) reading {
 		perCLI := totals.For(cli)
-		var runs int
-		var last *string
-		var errors *int
+		var r reading
 		if row.kind == KindHook {
 			h := perCLI.Hook[row.hash]
-			runs, last = h.Runs, h.Last
 			e := h.Errors
-			errors = &e
+			r = reading{runs: h.Runs, last: h.Last, errors: &e}
 		} else {
 			names := perCLI.Skill
 			if row.kind == KindAgent {
@@ -134,40 +148,108 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 				}
 				n.Last = last
 			}
-			runs, last = n.Sessions, n.Last
+			r = reading{runs: n.Sessions, days: n.Days, last: n.Last}
 		}
-		if runs == 0 {
+		if r.runs == 0 {
 			var window *usage.LogWindow
 			if windows != nil {
 				w := windows.For(cli)
 				window = &w
 			}
-			if reason := pendingReason(addedAt(row.id, row.file), window, nowMs); reason != "" {
-				return Pending(reason)
+			r.pending = pendingReason(addedAt(row.id, row.file), window, nowMs)
+		}
+		return r
+	}
+	cellFor := func(row *matrixRow, cli CLI) Cell {
+		if row == nil {
+			return Missing()
+		}
+		if row.kind == KindHook && cli == Codex {
+			return Unmeasurable(CodexHooksReason)
+		}
+		if totals == nil {
+			return Pending(ScanNotFinished)
+		}
+		r := read(*row, cli)
+		if r.pending != "" {
+			return Pending(r.pending)
+		}
+		return Counted(r.runs, r.last, r.errors)
+	}
+	cliCellFor := func(group *rowGroup, entry cliregistry.CLI) CLICell {
+		if !supportsKind(entry.Supports, group.kind) {
+			return CLICell{State: CLICellNotSupported}
+		}
+		if !readsCLI(entry.ID) {
+			return CLICell{State: CLICellUnknown}
+		}
+		cli := CLI(entry.ID)
+		row, ok := group.members[cli]
+		if !ok {
+			if group.global && inv.unreadable.has(cli, group.kind) {
+				return CLICell{State: CLICellUnknown}
+			}
+			return CLICell{State: CLICellMissing}
+		}
+		if row.kind == KindHook && cli == Codex {
+			return CLICell{State: CLICellUnmeasurable, Reason: CodexHooksReason}
+		}
+		if !entry.Supports.Logs {
+			return CLICell{State: CLICellUnmeasurable, Reason: NoCountableLog}
+		}
+		if totals == nil {
+			return CLICell{State: CLICellScanning}
+		}
+		r := read(row, cli)
+		if r.pending == NoLogsScanned {
+			return CLICell{State: CLICellUnmeasurable, Reason: NoLogsScanned}
+		}
+		cell := CLICell{State: CLICellCounted, Last: r.last, Note: r.pending}
+		if row.kind == KindHook {
+			runs := r.runs
+			cell.Runs, cell.Errors = &runs, r.errors
+		} else {
+			sessions := r.runs
+			cell.Sessions, cell.Days = &sessions, slices.Clone(r.days)
+			if cell.Days == nil {
+				cell.Days = []string{}
 			}
 		}
-		return Counted(runs, last, errors)
+		return cell
 	}
 	cellsFor := func(key string) *Cells {
 		group := groups[key]
 		get := func(cli CLI) *matrixRow {
-			if row, ok := group[cli]; ok {
+			if row, ok := group.members[cli]; ok {
 				return &row
 			}
 			return nil
 		}
 		return &Cells{Claude: cellFor(get(Claude), Claude), Codex: cellFor(get(Codex), Codex)}
 	}
+	cliCellsFor := func(key string) map[string]CLICell {
+		if len(registry) == 0 {
+			return nil
+		}
+		group := groups[key]
+		out := make(map[string]CLICell, len(registry))
+		for _, entry := range registry {
+			out[string(entry.ID)] = cliCellFor(group, entry)
+		}
+		return out
+	}
 
 	out := inv
 	out.Items = make([]Item, len(inv.Items))
 	for i, item := range inv.Items {
 		item.Cells = cellsFor(item.Key())
+		item.CLICells = cliCellsFor(item.Key())
 		out.Items[i] = item
 	}
 	out.Hooks = make([]Hook, len(inv.Hooks))
 	for i, hook := range inv.Hooks {
 		hook.Cells = cellsFor(hook.Key())
+		hook.CLICells = cliCellsFor(hook.Key())
 		hook.Usage = nil
 		if hook.CLI == Claude && totals != nil {
 			u := totals.Claude.Hook[hook.Hash]

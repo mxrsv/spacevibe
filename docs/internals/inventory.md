@@ -52,6 +52,22 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 - **Kept ids.** An id missing from one read stays in the store, so a Remove and its Undo keep the original time. An entry is dropped only when the id has been absent for 90 days. "Last seen" is written again at most once a day, so a read that changes nothing does not write the file.
 - **Never fails the read.** A corrupt, oversized, unreadable or newer-version file is left as it is and `loadout.rows` answers from modification times (delete the file to start over). A data folder that cannot be created or written does the same. The write goes through the guarded atomic write, file 0600 in a 0700 folder.
 
+## CLI cells
+
+`loadout.rows` also gives every row a `cliCells` map, one cell per CLI of the [registry](../../core/internal/cliregistry/registry.go), built in [`attachUsage`](../../core/internal/inventory/attach-usage.go) from the same reading as the cells above ([cli-cells.go](../../core/internal/inventory/cli-cells.go); wire shape in [core-protocol.md](core-protocol.md#wire-types)). The first rule that holds decides the cell:
+
+1. **Not supported**: the registry says the CLI has no such kind.
+2. **Unknown** or **Missing**: the CLI has no member in the row. It is unknown when the reader could not use what would have listed one: the CLI root (every kind), its `skills` or `agents` folder, its hook file (not valid JSON, too large or unreadable), and for Claude also `plugins/installed_plugins.json`, the `settings.json` that enables listed plugins, or a plugin's own skills, agents or `hooks.json`, since a plugin item joins a row by its bare name. Otherwise missing.
+3. **Unmeasurable**: a Codex hook (Codex logs no hook runs), or a CLI whose registry entry has no `logs`.
+4. **Scanning**: no usage scan has finished in this process.
+5. **Unmeasurable** with "No logs scanned for this CLI yet": the CLI has no scanned log at all, so a zero would be a guess (RD-R10: Never ran is judged over measured CLIs only).
+6. **Counted**: sessions and days for a skill or subagent, runs and errors for a hook. A zero carries D63's note when `pendingReason` gives an "Added…" sentence.
+
+What a maintainer would get wrong:
+
+- **Unknown is per kind and user-level only.** A denied `~/.claude/skills` makes the Claude skill cells unknown and leaves Claude agent cells missing. Project rows hold Claude members only (Codex project folders are not read), so a project row's Codex cell stays missing. A single `SKILL.md` or agent file that cannot be read is a problem line but not unknown: its name, and so its row, cannot be known.
+- **The two-CLI `cells` never take these states.** They stay as the v5 shell decodes them: an unreadable folder still reads missing there.
+
 ## Verification
 
-`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/inventory/... ./internal/roots/... ./internal/hashes/...` runs against temporary homes or the fixture home, never the real config; `scripts/test.sh` runs it first. The goldens are frozen (SV5).
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/inventory/... ./internal/cliregistry/... ./internal/roots/... ./internal/hashes/...` runs against temporary homes or the fixture home, never the real config; `scripts/test.sh` runs it first. The goldens are frozen (SV5).

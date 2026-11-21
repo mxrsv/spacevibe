@@ -89,9 +89,10 @@ Params and results use the types defined under "Wire types". "Journal entry" is 
 | Method | Params | Result | Errors (status) | Side effects | Journal entry |
 | --- | --- | --- | --- | --- | --- |
 | `initialize` | `{protocolVersion, client?:{name, version}}` | `{protocolVersion, core:{name, version}, identity:{envPrefix, dataDir}, methods:string[]}` | -32001, -32600 | Starts the session | none |
+| `clis.registry` | `{}` | `{clis:RegistryCli[]}` in the fixed CLI order | none | none: reads nothing, the registry is part of the binary | none |
 | `inventory.read` | `{}` | `InventorySnapshot`, no `cells`, hook `usage` null | none: unreadable files become `problems` | Refreshes the discovered-project list | none |
 | `usage.scan` | `{}` | `UsageResult`; sends `usage/progress`; stores the result as the process's usage state | 409 a scan is already running; -32800 | Reads logs; writes `<data>/usage-cache.json` | none |
-| `loadout.rows` | `{}` | `LoadoutRows`; `problems` are the raw sentences | none | Reads inventory; attaches the stored usage state; writes `<data>/first-seen.json` when a new item id appears (best effort) | none |
+| `loadout.rows` | `{}` | `LoadoutRows`; `problems` are the raw sentences; every item and hook carries `cells` and `cliCells` | none | Reads inventory; attaches the stored usage state; writes `<data>/first-seen.json` when a new item id appears (best effort) | none |
 | `activity.read` | `{}` | `ActivityReport` | none: the engine reports what it could not read inside the report | none | none |
 | `activity.subscribe` | `{}` | `ActivityReport`; later `activity/report` | none | Starts a 3 s poll | none |
 | `activity.unsubscribe` | `{}` | `{}` | none | Stops the poll | none |
@@ -119,6 +120,8 @@ Behavior the table cannot say:
 - **`usage.scan` owns the usage state.** The core keeps the last `UsageResult` of the process. `loadout.rows` attaches it, or reports `usage: "scanning"` and `pending` cells when no scan has finished in this process. The shell does not send totals back. A core restart forgets the state; `usage-cache.json` makes the next scan fast.
 - **`loadout.rows` writes one file.** `<data>/first-seen.json` holds the time each item id was first seen; "Added in the last 24 hours" reads it instead of the file's modification time ([inventory.md](inventory.md)). It is written only when an id is new, dropped or its last-seen time is a day old. A file or folder that cannot be used or written never fails the call: the answer then comes from modification times.
 - **`loadout.rows` is three steps in one call**: the inventory read, the usage join and the filter counts (per scope and per row key; [inventory.md](inventory.md#runtime-path)). Grouping rows by `key`, sorting and labels stay in the shell. Problems come back unshortened, with absolute paths; the shell shortens the home folder before showing them.
+- **The CLI registry is the one list of CLIs.** [`cliregistry`](../../core/internal/cliregistry/registry.go) holds each CLI's id, name and `supports`, in the fixed order every page uses; `clis.registry` returns it and the keys of every `cliCells` map are exactly its ids. The ids are the `Cli` values the rest of the protocol already uses (`claude`, `codex`; also the keys of `roots` and `events` and the `cli` of `limits.read`), and the engine reads exactly the CLIs it lists (`TestRegistryIDsMatchTheProtocol`). `limits.read` still adds a `gemini` entry that the registry does not hold: that entry is the v5 Limits page's own. A `supports` member that is false is Not supported, a different fact from Missing or Unmeasurable. The v5 shell does not call `clis.registry`; a Swift caller must add it to the read list in [`CoreConnection`](../../Sources/SpaceVibe/Core/CoreConnection.swift), or a restart treats it as a write and never re-sends it.
+- **Two cell maps on a `loadout.rows` row.** `cells` is the two-CLI shape the v5 shell decodes and does not change. `cliCells` sits beside it, one `CliCell` per registry id, and is written only by `loadout.rows` (`inventory.read` has neither). Both come from one reading of the logs, so they never disagree on a count. Where they differ: a D63 "added recently" pending is a counted zero with a `note`; "No logs scanned for this CLI yet" is `unmeasurable`; the scan not having finished is `scanning`; Missing becomes `unknown` when the CLI's own folder or file for that kind could not be used (the per-kind rules are in [inventory.md](inventory.md#cli-cells)). A skill or subagent counts `sessions` and lists its `days`; a hook counts `runs` and `errors` (GLOSSARY: Runs are hooks only).
 - **`rules.setCapability` returning null is not an error.** The core reports it; the app turns it into the 409 sentence "Nothing to change: the file already holds that." (`RulesModel.write` does it). `rules.add`, `remove`, `changeVerdict` and `changeVerdicts` never return null: the engine throws that 409 itself.
 - **`rules.check`** is the live check of a rule's shape (the Rules model calls it before every add), built on `Rules.checkedRule`: empty text, over 1000 UTF-16 units, a newline, or no `Tool` or `Tool(pattern)` shape. `message` is the same sentence the write would refuse with. The write path checks again; this method is advice.
 - **Journal ops are not exposed.** `JournalEntryRef` carries `count` only: ops hold absolute paths and trash names, and the shell uses only the id and the label. The journal file is `<data>/journal.json`, newest first ([retention](mutations.md#journal-retention-and-the-trash-sweep)), and a journal that exists but is not a JSON array of entries (every element needs a string `id`) makes every write 409; an element without an id is never dropped silently.
@@ -139,6 +142,11 @@ type RuleMove = { rule: string, from: Verdict }  // from: the verdict the caller
 
 type JournalEntryRef = { id: string, at: string, label: string, undone: boolean, count: number }
 // ops are left out.
+
+type RegistryCli = {                              // clis.registry; an id is lowercase and stable, a Cli value for the two CLIs read today
+  id: string, name: string,                       // name: "Claude Code", "Codex"
+  supports: { skill: boolean, agent: boolean, hook: boolean, rule: boolean, logs: boolean, limits: boolean }
+}                                                 // skill, agent, hook are the wire kinds; false = Not supported
 ```
 
 Inventory and usage (Go: [inventory/types.go](../../core/internal/inventory/types.go), [usage/types.go](../../core/internal/usage/types.go); Swift DTOs: [CoreTypesInventory.swift](../../Sources/SpaceVibe/Core/CoreTypesInventory.swift), [CoreTypesUsage.swift](../../Sources/SpaceVibe/Core/CoreTypesUsage.swift)):
@@ -150,6 +158,14 @@ type Cell =
   | { state: "unmeasurable", reason: string }
   | { state: "missing" }
 type Cells = { claude: Cell, codex: Cell }
+type CliCell =                                    // loadout.rows only
+  | { state: "counted", sessions: number, days: string[], last: string | null, note?: string }   // skill or agent; days YYYY-MM-DD, sorted
+  | { state: "counted", runs: number, errors: number, last: string | null, note?: string }       // hook
+  | { state: "unmeasurable", reason: string }    // installed, nothing SpaceVibe can count: never 0
+  | { state: "scanning" }                         // installed; no usage scan has finished in this process
+  | { state: "missing" } | { state: "unknown" } | { state: "notSupported" }
+// note: omitted unless a counted zero may be too new for the logs (D63: "Added in the last 24 hours", "Added after the newest log")
+type CliCells = { [registryId: string]: CliCell }  // one member per clis.registry entry
 
 type InventoryItem = {                            // a skill or a subagent
   id: string, cli: Cli, kind: "skill" | "agent", name: string, entry: string, description: string,
@@ -157,7 +173,8 @@ type InventoryItem = {                            // a skill or a subagent
   path: string, file: string, removable: boolean, scope: "global" | "project", project: string | null,
   inOther: boolean, key: string,                  // key = "<kind>:<project or empty>:<bare name>"
   override?: string | null,                       // written on every Claude global skill (null when settings hold no value); omitted on all other items
-  cells?: Cells                                   // omitted until usage is attached
+  cells?: Cells,                                  // omitted until usage is attached
+  cliCells?: CliCells                             // loadout.rows only
 }
 type HookUsage = { runs: number, avgMs: number | null, totalMs: number, errors: number, last: string | null }
 type InventoryHook = {
@@ -165,7 +182,8 @@ type InventoryHook = {
   async: boolean, owner: string, removable: boolean, dead: boolean, paths: string[], hash: string, file: string,
   scope: "global" | "project", project: string | null,
   key: string,                                    // "hook:<project or empty>:<hash>"
-  cells?: Cells, usage: HookUsage | null          // usage is always present; null when unknown or not logged
+  cells?: Cells, cliCells?: CliCells,             // cliCells: loadout.rows only
+  usage: HookUsage | null                         // usage is always present; null when unknown or not logged
 }
 type InventorySnapshot = {
   items: InventoryItem[], hooks: InventoryHook[], problems: string[],
@@ -292,6 +310,6 @@ Rules around it:
 - **Never use `encoding/json` output as expected text.** It sorts differently, escapes `<>&` and U+2028, and prints floats its own way.
 - **`$HOME` token.** `HomeToken` replaces the fixture root with `$HOME` in keys and values, on both sides, before comparing.
 - **Assert the case count.** `AssertCaseCount` fails a golden test that ran zero cases, so an unloaded golden cannot pass.
-- **Goldens are frozen.** `SHA256SUMS` covers `golden/*.json`, `manifest.json` and `zst/*`, and `VerifyChecksums` also fails on a file added to a covered folder. A wrong golden is fixed together with its test in one commit (SV5), and its line in `SHA256SUMS` changes in that commit.
+- **Goldens are frozen.** `SHA256SUMS` covers `golden/*.json`, `manifest.json` and `zst/*`, and `VerifyChecksums` also fails on a file added to a covered folder. A wrong golden is fixed together with its test in one commit (SV5), and its line in `SHA256SUMS` changes in that commit. `cli-cells.json` (the `cliCells` of every fixture row, after a scan and before one) has no Node or Swift origin: `go test ./internal/inventory -run TestGoldenCLICells -update-cli-cells` writes it, under the same freeze.
 - **Leak guard.** `FindLeaks` scans every file under `core/testdata`, and the decompressed `.zst`, for the real home path, user name and temp root (S-R2). It reports file names, never the matched content.
 - **On failure, print a unified diff of the canonical text**; on success, log the canonical SHA-256.

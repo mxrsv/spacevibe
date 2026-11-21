@@ -15,7 +15,7 @@ Reference pages for the engine (the Go core): where each subsystem's facts come 
 
 A new subsystem gets its page and its row in this table in the same change.
 
-Packages with no page of their own: `core/cmd/spacevibe` (the entry point; its methods are in [core-protocol.md](core-protocol.md)), [`config`](../../core/internal/config/config.go) (the only place the core reads the environment), [`coreerr`](../../core/internal/coreerr/coreerr.go) (errors whose message is safe to show, see [core-protocol.md](core-protocol.md)) and [`identity`](../../core/internal/identity/identity.go) (the product's names, one constant each).
+Packages with no page of their own: `core/cmd/spacevibe` (the entry point; its methods are in [core-protocol.md](core-protocol.md)), [`cliregistry`](../../core/internal/cliregistry/registry.go) (the CLI ids, their fixed order and what each supports; `clis.registry` in [core-protocol.md](core-protocol.md), its cells in [inventory.md](inventory.md#cli-cells)), [`config`](../../core/internal/config/config.go) (the only place the core reads the environment), [`coreerr`](../../core/internal/coreerr/coreerr.go) (errors whose message is safe to show, see [core-protocol.md](core-protocol.md)) and [`identity`](../../core/internal/identity/identity.go) (the product's names, one constant each).
 
 ## Maintain a page
 

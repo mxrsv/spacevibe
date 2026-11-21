@@ -29,6 +29,8 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 		problems []string
 		// otherHooks counts hooks of a type other than command (http, mcp_tool, prompt, agent), which are not listed.
 		otherHooks int
+		// unreadable is what could not be looked at, per CLI and kind (cli-cells.go).
+		unreadable unreadableKinds
 	)
 	clis := []struct {
 		cli CLI
@@ -43,11 +45,15 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 			continue
 		case unknown:
 			problems = append(problems, c.r.Root+" cannot be read, so its skills, agents and hooks cannot be shown.")
+			unreadable = unreadable.mark(c.cli, KindSkill, KindAgent, KindHook)
 			continue
 		}
-		items = append(items, readSkills(c.r.Skills, c.cli, nil, nil, &problems)...)
-		items = append(items, readAgents(c.r.Agents, c.cli, nil, nil, &problems)...)
+		skills, skillsUnreadable := readSkills(c.r.Skills, c.cli, nil, nil, &problems)
+		agents, agentsUnreadable := readAgents(c.r.Agents, c.cli, nil, nil, &problems)
+		items = append(append(items, skills...), agents...)
+		unreadable = unreadable.markIf(skillsUnreadable, c.cli, KindSkill).markIf(agentsUnreadable, c.cli, KindAgent)
 		config, status := readJSON(c.r.HookFile)
+		unreadable = unreadable.markIf(unusableReason(status) != "", c.cli, KindHook)
 		switch status {
 		case jsonValue:
 			hooks = append(hooks, parseHooks(config, c.cli, nil, c.r.HookFile, nil, &problems, &otherHooks)...)
@@ -66,16 +72,21 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 		// The hooks loop above already says the file cannot be used for hooks; this is what else depends on it.
 		problems = append(problems, r.Claude.HookFile+" "+reason+", so enabled plugins and skill overrides are not known.")
 	}
-	for _, plugin := range plugins(r, claudeSettings, haveSettings, &problems) {
+	enabledPlugins, pluginsKnown := plugins(r, claudeSettings, settingsStatus, &problems)
+	unreadable = unreadable.markIf(!pluginsKnown, Claude, KindSkill, KindAgent, KindHook)
+	for _, plugin := range enabledPlugins {
 		if err := ctx.Err(); err != nil {
 			return Snapshot{}, nil, err
 		}
 		owner := plugin.name
 		base := absolute(plugin.path)
-		items = append(items, readSkills(join(base, "skills"), Claude, &owner, nil, &problems)...)
-		items = append(items, readAgents(join(base, "agents"), Claude, &owner, nil, &problems)...)
+		skills, skillsUnreadable := readSkills(join(base, "skills"), Claude, &owner, nil, &problems)
+		agents, agentsUnreadable := readAgents(join(base, "agents"), Claude, &owner, nil, &problems)
+		items = append(append(items, skills...), agents...)
+		unreadable = unreadable.markIf(skillsUnreadable, Claude, KindSkill).markIf(agentsUnreadable, Claude, KindAgent)
 		hookFile := join(base, "hooks", "hooks.json")
 		config, status := readJSON(hookFile)
+		unreadable = unreadable.markIf(unusableReason(status) != "", Claude, KindHook)
 		if status == jsonValue {
 			hooks = append(hooks, parseHooks(config, Claude, &owner, hookFile, nil, &problems, &otherHooks)...)
 		} else if reason := unusableReason(status); reason != "" {
@@ -94,8 +105,11 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 			problems = append(problems, path+" cannot be read, so its skills, agents and hooks cannot be shown.")
 			continue
 		}
-		items = append(items, readSkills(join(dir, "skills"), Claude, nil, &project, &problems)...)
-		items = append(items, readAgents(join(dir, "agents"), Claude, nil, &project, &problems)...)
+		// A project row holds Claude items only, so an unreadable project folder leaves no row whose Claude cell
+		// could read unknown: the problem line is all there is to say.
+		skills, _ := readSkills(join(dir, "skills"), Claude, nil, &project, &problems)
+		agents, _ := readAgents(join(dir, "agents"), Claude, nil, &project, &problems)
+		items = append(append(items, skills...), agents...)
 		for _, name := range []string{"settings.json", "settings.local.json"} {
 			file := join(dir, name)
 			config, status := readJSON(file)
@@ -161,7 +175,8 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 	}
 	return Snapshot{
 		Items: items, Hooks: hooks, Problems: problems, Events: Events(),
-		Roots: map[string]string{string(Claude): r.Claude.Root, string(Codex): r.Codex.Root},
+		Roots:      map[string]string{string(Claude): r.Claude.Root, string(Codex): r.Codex.Root},
+		unreadable: unreadable,
 	}, projects, nil
 }
 
@@ -198,11 +213,13 @@ func absolute(path string) string {
 
 // Skills and agents.
 
-func readSkills(dir string, cli CLI, owner, project *string, problems *[]string) []Item {
-	if isUnreadableFolder(dir) {
+// readSkills lists the skills of one folder. folderUnreadable is true when the folder itself cannot be listed
+// (a problem line says so), which makes a skill absent from it unknown rather than missing.
+func readSkills(dir string, cli CLI, owner, project *string, problems *[]string) (out []Item, folderUnreadable bool) {
+	folderUnreadable = isUnreadableFolder(dir)
+	if folderUnreadable {
 		*problems = append(*problems, dir+" cannot be read, so its skills cannot be shown.")
 	}
-	var out []Item
 	for _, entry := range listDir(dir) {
 		if isSystemName(entry) {
 			continue
@@ -224,14 +241,15 @@ func readSkills(dir string, cli CLI, owner, project *string, problems *[]string)
 			Scope: scopeOf(project), Project: project,
 		})
 	}
-	return out
+	return out, folderUnreadable
 }
 
-func readAgents(dir string, cli CLI, owner, project *string, problems *[]string) []Item {
-	if isUnreadableFolder(dir) {
+// readAgents is readSkills for subagents.
+func readAgents(dir string, cli CLI, owner, project *string, problems *[]string) (out []Item, folderUnreadable bool) {
+	folderUnreadable = isUnreadableFolder(dir)
+	if folderUnreadable {
 		*problems = append(*problems, dir+" cannot be read, so its agents cannot be shown.")
 	}
-	var out []Item
 	for _, entry := range listDir(dir) {
 		if isSystemName(entry) {
 			continue
@@ -261,7 +279,7 @@ func readAgents(dir string, cli CLI, owner, project *string, problems *[]string)
 			Scope: scopeOf(project), Project: project,
 		})
 	}
-	return out
+	return out, folderUnreadable
 }
 
 // tomlFields are the name and description of a Codex agent .toml: the first assignment of each key, in any

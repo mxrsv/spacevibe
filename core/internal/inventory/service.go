@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/roots"
 	"spacevibe.dev/core/internal/usage"
 )
@@ -66,7 +67,7 @@ func (s *Service) Rows(ctx context.Context) (LoadoutRows, error) {
 		}
 	}
 	now := s.Now()
-	return buildLoadoutRows(snapshot, in, now, s.firstSeenMs(snapshot, now)), nil
+	return buildLoadoutRows(snapshot, in, now, s.firstSeenMs(snapshot, now), cliregistry.All()), nil
 }
 
 // Projects is the project list of this process. Discovery runs once if it is empty; Read refreshes it.

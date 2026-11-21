@@ -1,0 +1,753 @@
+{
+  "now": 1793620800000,
+  "ready": {
+    "agent:$HOME/work/spacevibe-bench:migration-reviewer": {
+      "claude": {
+        "days": [],
+        "last": null,
+        "sessions": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::architect": {
+      "claude": {
+        "days": [],
+        "last": null,
+        "sessions": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::database-reviewer": {
+      "claude": {
+        "days": [
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 6,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::react-reviewer": {
+      "claude": {
+        "days": [
+          "2026-10-14",
+          "2026-10-15",
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 19,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::security-reviewer": {
+      "claude": {
+        "days": [
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 3,
+        "state": "counted"
+      },
+      "codex": {
+        "days": [
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 1,
+        "state": "counted"
+      }
+    },
+    "agent::typescript-reviewer": {
+      "claude": {
+        "days": [
+          "2026-10-05",
+          "2026-10-06",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-09",
+          "2026-10-10",
+          "2026-10-11",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-15",
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 34,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook:$HOME/work/spacevibe-bench:ef38d6cf6c4b": {
+      "claude": {
+        "errors": 0,
+        "last": null,
+        "runs": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::06ec17491e86": {
+      "claude": {
+        "errors": 0,
+        "last": null,
+        "runs": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::47c885b4654d": {
+      "claude": {
+        "errors": 0,
+        "last": "2026-11-01",
+        "runs": 412,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::487c8bee3fe1": {
+      "claude": {
+        "errors": 0,
+        "last": "2026-11-01",
+        "runs": 58,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::6b8d44c09b19": {
+      "claude": {
+        "errors": 17,
+        "last": "2026-11-01",
+        "runs": 1204,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::9f0dd7d87722": {
+      "claude": {
+        "errors": 0,
+        "last": null,
+        "runs": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::e33ea0a4c951": {
+      "claude": {
+        "errors": 0,
+        "last": "2026-11-01",
+        "runs": 203,
+        "state": "counted"
+      },
+      "codex": {
+        "reason": "Codex does not log hook runs",
+        "state": "unmeasurable"
+      }
+    },
+    "hook::e7067f2456fc": {
+      "claude": {
+        "errors": 3,
+        "last": "2026-11-01",
+        "runs": 96,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill:$HOME/work/spacevibe-bench:bench-checklist": {
+      "claude": {
+        "days": [],
+        "last": null,
+        "sessions": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::diagnosing-bugs": {
+      "claude": {
+        "days": [
+          "2026-10-10",
+          "2026-10-11",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-15",
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 23,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::explain": {
+      "claude": {
+        "days": [
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 17,
+        "state": "counted"
+      },
+      "codex": {
+        "days": [
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 6,
+        "state": "counted"
+      }
+    },
+    "skill::impeccable": {
+      "claude": {
+        "days": [
+          "2026-10-05",
+          "2026-10-06",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-09",
+          "2026-10-10",
+          "2026-10-11",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-15",
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 87,
+        "state": "counted"
+      },
+      "codex": {
+        "days": [
+          "2026-10-08",
+          "2026-10-09",
+          "2026-10-10",
+          "2026-10-11",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-15",
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 31,
+        "state": "counted"
+      }
+    },
+    "skill::kyant-kanban": {
+      "claude": {
+        "days": [
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 9,
+        "state": "counted"
+      },
+      "codex": {
+        "days": [
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 2,
+        "state": "counted"
+      }
+    },
+    "skill::neon-postgres": {
+      "claude": {
+        "days": [
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 11,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::ponytail": {
+      "claude": {
+        "days": [
+          "2026-10-05",
+          "2026-10-06",
+          "2026-10-07",
+          "2026-10-08",
+          "2026-10-09",
+          "2026-10-10",
+          "2026-10-11",
+          "2026-10-12",
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-15",
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 142,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::review-change": {
+      "claude": {
+        "days": [],
+        "last": null,
+        "sessions": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::skill-creator": {
+      "claude": {
+        "days": [],
+        "last": null,
+        "note": "Added in the last 24 hours",
+        "sessions": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::tdd": {
+      "claude": {
+        "days": [
+          "2026-10-29",
+          "2026-10-30",
+          "2026-10-31",
+          "2026-11-01"
+        ],
+        "last": "2026-11-01",
+        "sessions": 4,
+        "state": "counted"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::webapp-testing": {
+      "claude": {
+        "days": [],
+        "last": null,
+        "sessions": 0,
+        "state": "counted"
+      },
+      "codex": {
+        "days": [],
+        "last": null,
+        "sessions": 0,
+        "state": "counted"
+      }
+    }
+  },
+  "registry": {
+    "clis": [
+      {
+        "id": "claude",
+        "name": "Claude Code",
+        "supports": {
+          "agent": true,
+          "hook": true,
+          "limits": true,
+          "logs": true,
+          "rule": true,
+          "skill": true
+        }
+      },
+      {
+        "id": "codex",
+        "name": "Codex",
+        "supports": {
+          "agent": true,
+          "hook": true,
+          "limits": true,
+          "logs": true,
+          "rule": true,
+          "skill": true
+        }
+      }
+    ]
+  },
+  "scanning": {
+    "agent:$HOME/work/spacevibe-bench:migration-reviewer": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::architect": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::database-reviewer": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::react-reviewer": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "agent::security-reviewer": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "scanning"
+      }
+    },
+    "agent::typescript-reviewer": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook:$HOME/work/spacevibe-bench:ef38d6cf6c4b": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::06ec17491e86": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::47c885b4654d": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::487c8bee3fe1": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::6b8d44c09b19": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::9f0dd7d87722": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "hook::e33ea0a4c951": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "reason": "Codex does not log hook runs",
+        "state": "unmeasurable"
+      }
+    },
+    "hook::e7067f2456fc": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill:$HOME/work/spacevibe-bench:bench-checklist": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::diagnosing-bugs": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::explain": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "scanning"
+      }
+    },
+    "skill::impeccable": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "scanning"
+      }
+    },
+    "skill::kyant-kanban": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "scanning"
+      }
+    },
+    "skill::neon-postgres": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::ponytail": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::review-change": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::skill-creator": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::tdd": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "missing"
+      }
+    },
+    "skill::webapp-testing": {
+      "claude": {
+        "state": "scanning"
+      },
+      "codex": {
+        "state": "scanning"
+      }
+    }
+  }
+}

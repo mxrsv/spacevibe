@@ -134,30 +134,32 @@ func timeoutOf(hook ojson.Value) *float64 {
 type plugin struct{ name, path string }
 
 // plugins are the enabled Claude plugins whose install folder still exists. Read-only: SpaceVibe never changes a
-// plugin.
-func plugins(r roots.Roots, settings ojson.Value, haveSettings bool, problems *[]string) []plugin {
+// plugin. known is false when the set cannot be told: installed_plugins.json is there but unusable, or it lists
+// plugins while the settings file that enables them (read with settingsStatus) is unusable.
+func plugins(r roots.Roots, settings ojson.Value, settingsStatus jsonStatus, problems *[]string) (out []plugin, known bool) {
 	file := join(r.Claude.Root, "plugins", "installed_plugins.json")
 	installed, status := readJSON(file)
 	if status != jsonValue {
 		if reason := unusableReason(status); reason != "" {
 			*problems = append(*problems, file+" "+reason+", so plugin skills, agents and hooks are not shown.")
+			return nil, false
 		}
-		return nil
+		return nil, true
 	}
 	pluginsValue, ok := installed.Member("plugins")
 	if !ok {
-		return nil
+		return nil, true
 	}
 	entries, ok := pluginsValue.ObjectValue()
 	if !ok {
-		return nil
+		return nil, true
 	}
+	known = len(entries) == 0 || unusableReason(settingsStatus) == ""
 	var enabled ojson.Value
 	haveEnabled := false
-	if haveSettings {
+	if settingsStatus == jsonValue {
 		enabled, haveEnabled = settings.Member("enabledPlugins")
 	}
-	var out []plugin
 	seen := map[string]struct{}{}
 	for _, entry := range entries {
 		if _, dup := seen[entry.Key]; dup {
@@ -187,5 +189,5 @@ func plugins(r roots.Roots, settings ojson.Value, haveSettings bool, problems *[
 		name, _, _ := strings.Cut(entry.Key, "@")
 		out = append(out, plugin{name, path})
 	}
-	return out
+	return out, known
 }

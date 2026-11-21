@@ -111,12 +111,60 @@ func readCases(t *testing.T) {
 			n++
 		}
 		// The result is the process's usage state now.
-		var rows struct{ Usage string }
+		type row struct {
+			ID       string                            `json:"id"`
+			Cells    map[string]json.RawMessage        `json:"cells"`
+			CLICells map[string]struct{ State string } `json:"cliCells"`
+		}
+		var rows struct {
+			Usage string
+			Items []row `json:"items"`
+			Hooks []row `json:"hooks"`
+		}
 		decodeInto(t, c.ok(c.call("8", "loadout.rows", `{}`)), &rows)
 		if rows.Usage != "ready" {
 			t.Fatalf("usage state %q after a scan", rows.Usage)
 		}
+		// AR1: every row keeps the two-CLI cells the v5 shell reads, and adds one cliCell per registry id.
+		for _, r := range append(rows.Items, rows.Hooks...) {
+			if len(r.Cells) != 2 || r.Cells["claude"] == nil || r.Cells["codex"] == nil {
+				t.Fatalf("%s: cells %v", r.ID, r.Cells)
+			}
+			if len(r.CLICells) != 2 || r.CLICells["claude"].State == "" || r.CLICells["codex"].State == "" {
+				t.Fatalf("%s: cliCells %v, want one per registry id", r.ID, r.CLICells)
+			}
+		}
+		if len(rows.Items) == 0 || len(rows.Hooks) == 0 {
+			t.Fatalf("the fixture home gave %d items and %d hooks", len(rows.Items), len(rows.Hooks))
+		}
 		c.finish("usage_scan_progress")
+	})
+
+	t.Run("clis_registry", func(t *testing.T) {
+		c := startCore(t, shippedBin)
+		c.initialize()
+		var res struct {
+			CLIs []struct {
+				ID       string          `json:"id"`
+				Name     string          `json:"name"`
+				Supports map[string]bool `json:"supports"`
+			} `json:"clis"`
+		}
+		decodeInto(t, c.ok(c.call("1", "clis.registry", `{}`)), &res)
+		var order []string
+		for _, cli := range res.CLIs {
+			order = append(order, cli.ID)
+			if len(cli.Supports) != 6 {
+				t.Errorf("%s supports %v, want the six concepts", cli.ID, cli.Supports)
+			}
+		}
+		if !slices.Equal(order, []string{"claude", "codex"}) {
+			t.Fatalf("order %v", order)
+		}
+		c.wantError(c.call("2", "clis.registry", `{"all":true}`), -32602)
+		// No transcript yet: the Swift suite requires a DTO for every recorded result (CoreWireTests), and the
+		// shell has none for this method until its first caller. The exact bytes are pinned in cliregistry's test.
+		c.end()
 	})
 
 	t.Run("usage_scan_busy_and_cancel", func(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"spacevibe.dev/core/internal/activity"
+	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/limits"
 	"spacevibe.dev/core/internal/mutate"
@@ -44,6 +45,7 @@ func (s *Services) noteFailure(name string, err error) {
 
 func (s *Services) buildHandlers() map[string]rpc.Handler {
 	return map[string]rpc.Handler{
+		"clis.registry":           typed(s, "clis.registry", func(context.Context, none) (cliregistry.Result, error) { return cliregistry.Read(), nil }),
 		"inventory.read":          typed(s, "inventory.read", s.inventoryRead),
 		"usage.scan":              s.usageScan,
 		"loadout.rows":            typed(s, "loadout.rows", s.loadoutRows),

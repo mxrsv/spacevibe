@@ -4,6 +4,7 @@ import (
 	"slices"
 	"time"
 
+	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/usage"
 )
 
@@ -18,9 +19,9 @@ type RowFlags struct {
 	Dead     bool `json:"dead"`
 }
 
-// LoadoutRows is the loadout.rows result: one inventory read with the usage state attached, the filter
-// counts of every scope, and the flags of every row key. Grouping rows by key, sorting and labels stay in the
-// shell. Problems are the raw sentences; the shell shortens the home folder in them.
+// LoadoutRows is the loadout.rows result: one inventory read with the usage state attached (the two-CLI cells
+// and the cliCells keyed by registry id), the filter counts of every scope, and the flags of every row key.
+// Grouping rows by key, sorting and labels stay in the shell. Problems are the raw sentences; the shell shortens the home folder in them.
 type LoadoutRows struct {
 	// Usage is "scanning" until a scan has finished in this process, then "ready".
 	Usage         string                  `json:"usage"`
@@ -34,14 +35,15 @@ type LoadoutRows struct {
 }
 
 // BuildLoadoutRows is LoadoutData.build and the per-row flags of LoadoutRows.build, from one raw snapshot and
-// one usage state. Pure apart from file mtimes.
+// one usage state, with the cliCells of the CLI registry on every row. Pure apart from file mtimes.
 func BuildLoadoutRows(raw Snapshot, in usage.Input, now time.Time) LoadoutRows {
-	return buildLoadoutRows(raw, in, now, nil)
+	return buildLoadoutRows(raw, in, now, nil, cliregistry.All())
 }
 
-// buildLoadoutRows is BuildLoadoutRows with the first-seen times of the store (ms by item id; see attachUsage).
-func buildLoadoutRows(raw Snapshot, in usage.Input, now time.Time, firstSeen map[string]float64) LoadoutRows {
-	attached := attachUsage(raw, &in, now, firstSeen)
+// buildLoadoutRows is BuildLoadoutRows with the first-seen times of the store (ms by item id; see attachUsage)
+// and the registry whose CLIs get a cliCell.
+func buildLoadoutRows(raw Snapshot, in usage.Input, now time.Time, firstSeen map[string]float64, registry []cliregistry.CLI) LoadoutRows {
+	attached := attachUsage(raw, &in, now, firstSeen, registry)
 
 	scopes := []string{GlobalScope}
 	var projects []string
