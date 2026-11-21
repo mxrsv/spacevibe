@@ -13,4 +13,4 @@
 {"dir":"recv","json":{"jsonrpc":"2.0","method":"usage/progress","params":{"done":180,"id":7,"total":180}}}
 {"dir":"recv","text":"(4417 bytes)"}
 {"dir":"send","json":{"id":8,"jsonrpc":"2.0","method":"loadout.rows","params":{}}}
-{"dir":"recv","text":"(26374 bytes)"}
+{"dir":"recv","text":"(30399 bytes)"}

@@ -8,7 +8,7 @@ Code: [`core/internal/inventory`](../../core/internal/inventory), [`core/interna
 
 | Fact | Read from |
 | --- | --- |
-| Skills | `<cli root>/skills/<name>/SKILL.md`; plugin skills under the plugin's install folder |
+| Skills | `<cli root>/skills/<name>/SKILL.md`; for Codex also `~/.agents/skills/<name>/SKILL.md` ([readers map](#readers-map)); plugin skills under the plugin's install folder |
 | Subagents | `<cli root>/agents/*.md` (Claude) and `*.toml` (Codex; `name` and `description` only) |
 | Hooks | Claude `settings.json`, Codex `hooks.json`, a plugin's `hooks/hooks.json`, a project's `settings.json` and `settings.local.json` |
 | Plugins | `plugins/installed_plugins.json` joined to `enabledPlugins` in `settings.json`; a plugin whose install folder is gone is skipped |
@@ -19,7 +19,7 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 
 ## Runtime path
 
-1. [`roots.Resolve`](../../core/internal/roots/roots.go) fixes the folders from `HOME`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME` and `SPACEVIBE_HOME`.
+1. [`roots.Resolve`](../../core/internal/roots/roots.go) fixes the folders from `HOME`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME` and `SPACEVIBE_HOME`. The shared `~/.agents/skills` follows `HOME`, not `CODEX_HOME`, and the real-home guard covers it like every other root.
 2. [`inventory.Read`](../../core/internal/inventory/reader.go) lists each CLI, then enabled plugins, then each discovered project. It reads the disk synchronously.
 3. [`AttachUsage`](../../core/internal/inventory/attach-usage.go) takes a `usage.Input` from the usage scan ([usage.md](usage.md)) and fills `cells` on every row and `usage` on every Claude hook.
 4. [`FilterCountsOf`](../../core/internal/inventory/filter-counts.go) turns rows into chip counts.
@@ -34,7 +34,7 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 - **Project discovery is bounded.** At most `MaxProjects` (300, [types.go](../../core/internal/inventory/types.go)) folders, newest first, 3 logs per folder, 64 KB per log. A project never opened with either CLI is not found, and a `cwd` that falls outside the first 64 KB is missed. The home folder and paths under `.claude/worktrees/` are skipped.
 - **Frontmatter is not YAML.** Only flat `key: value` lines are read, for the `name` and `description` of a `SKILL.md` or a subagent `.md` ([frontmatter.go](../../core/internal/inventory/frontmatter.go)).
 - **Unreadable is not empty.** An unreadable CLI root, folder or settings file adds a sentence to `problems` and keeps going; it never reads as "nothing installed". The UI shows `problems`.
-- **Item ownership.** `owner` is `user`, `link` (a symlink) or the plugin name. Only user-level items outside any project are `removable`; plugin items are read-only.
+- **Item ownership.** `owner` is `user`, `link` (a symlink) or the plugin name. Only user-level items outside any project are `removable`; plugin items are read-only, and so are the Codex skills read from `~/.agents/skills`, which only `loadout.rows`' `extraItems` carries ([readers map](#readers-map)).
 - **Hook events.** `Events` in [types.go](../../core/internal/inventory/types.go) lists the events each CLI documents. Claude's list comes from its docs, Codex's from observation only.
 
 ## Usage cell states
@@ -57,7 +57,7 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 `loadout.rows` also gives every row a `cliCells` map, one cell per CLI of the [registry](../../core/internal/cliregistry/registry.go), built in [`attachUsage`](../../core/internal/inventory/attach-usage.go) from the same reading as the cells above ([cli-cells.go](../../core/internal/inventory/cli-cells.go); wire shape in [core-protocol.md](core-protocol.md#wire-types)). The first rule that holds decides the cell:
 
 1. **Not supported**: the registry says the CLI has no such kind.
-2. **Unknown** or **Missing**: the CLI has no member in the row. It is unknown when the reader could not use what would have listed one: the CLI root (every kind), its `skills` or `agents` folder, its hook file (not valid JSON, too large or unreadable), and for Claude also `plugins/installed_plugins.json`, the `settings.json` that enables listed plugins, or a plugin's own skills, agents or `hooks.json`, since a plugin item joins a row by its bare name. Otherwise missing.
+2. **Unknown** or **Missing**: the CLI has no member in the row. It is unknown when the reader could not use what would have listed one: the CLI root (every kind), its `skills` or `agents` folder (for Codex skills also `~/.agents/skills`), its hook file (not valid JSON, too large or unreadable), and for Claude also `plugins/installed_plugins.json`, the `settings.json` that enables listed plugins, or a plugin's own skills, agents or `hooks.json`, since a plugin item joins a row by its bare name. Otherwise missing.
 3. **Unmeasurable**: a Codex hook (Codex logs no hook runs), or a CLI whose registry entry has no `logs`.
 4. **Scanning**: no usage scan has finished in this process.
 5. **Unmeasurable** with "No logs scanned for this CLI yet": the CLI has no scanned log at all, so a zero would be a guess (RD-R10: Never ran is judged over measured CLIs only).
@@ -67,6 +67,26 @@ What a maintainer would get wrong:
 
 - **Unknown is per kind and user-level only.** A denied `~/.claude/skills` makes the Claude skill cells unknown and leaves Claude agent cells missing. Project rows hold Claude members only (Codex project folders are not read), so a project row's Codex cell stays missing. A single `SKILL.md` or agent file that cannot be read is a problem line but not unknown: its name, and so its row, cannot be known.
 - **The two-CLI `cells` never take these states.** They stay as the v5 shell decodes them: an unreadable folder still reads missing there.
+
+## Readers map
+
+`loadout.rows` says, per item and hook, which folder it was read from and which CLIs read that folder, so the shell derives "via" (RD31), the number of files of a row (D53) and who loses an item (RD-R11) without guessing ([readers-map.go](../../core/internal/inventory/readers-map.go); wire shape in [core-protocol.md](core-protocol.md#wire-types)). The table `folders` lists each installed CLI's own skills folder, agents folder and hook file, the shared `~/.agents/skills`, and every plugin or project folder a row lives in. A reader is listed only for what was checked: Codex 0.170.0 lists skills from `$CODEX_HOME/skills` and `~/.agents/skills` (plan RB-T0a); Claude Code is taken to read `~/.claude/skills` only.
+
+What the shell computes, all from the wire:
+
+- **Readers of a member**: the `readBy` of its `folder`, together with the `readBy` of every folder with the same `realPath` (a folder that is a link to another is the same folder on disk).
+- **Files of a row**: the distinct `realPath` of its items. D53's last copy is the last file, not the last lit logo.
+- **What a removal takes**: removing a member whose `owner` is `link` takes only that link; removing any other member takes its file, so every member with the same `realPath` goes with it (a link to it would dangle).
+- **Losers**: a CLI loses the item when it reads at least one member and every member it reads is gone. Every registry CLI counts, shown or hidden.
+- **Via**: a CLI reads a row "via" others when none of the folders it reads the row from has `ownedBy` equal to it; the owners of those folders are the "via" names. With Claude Code and Codex nobody is via: each reads only folders it owns.
+
+What a maintainer would get wrong:
+
+- **v5 fields exclude `~/.agents/skills` until RB-X1.** The v5 shell splits a key with two members of one CLI into two rows, so a skill in both Codex folders would show twice, and a skill only in `~/.agents/skills` would appear as a new row (FE-P9, plan AR1). So `inventory.read` and the v5 members of `loadout.rows` (`items`, `hooks`, `cells`, `inOther`, `countsByScope`, `rowFlags`, `problems`) are exactly what they were without that folder (`TestV5FieldsIgnoreAgentsSkills`). Its skills go to `extraItems`, the lines about it to `extraProblems`, and they count in every row's `cliCells`: the Codex cliCell of a Claude skill whose only Codex copy is there reads present while its v5 `cells.codex` stays missing. The new frame reads `items` and `extraItems` together.
+- **`~/.agents/skills` is Codex's second skills folder, read only while the Codex root exists.** Without `~/.codex` nothing says Codex is installed, so the folder is not read. Its skills are Codex items with the id tag `agents` (`codex:skill:agents:<entry>`), so a skill in both Codex folders has two ids in one row; an extra item carries `cliCells` but no `cells`. A denied `~/.agents/skills` makes absent Codex skills unknown in `cliCells`, like a denied `~/.codex/skills`. They are not `removable`, and the write methods look ids up through `inventory.Read`, which leaves them out, so `loadout.removeItem` and `loadout.copyToOther` answer 404 for them; writes to a shared folder are RB-E3's. `copyTarget` is false there: `loadout.copyToOther` writes into `~/.codex/skills`.
+- **`.system` is not listed.** `$CODEX_HOME/skills/.system` holds the skills Codex ships and manages; like every dot-named entry it is skipped, so it is neither a row nor a folder of the table.
+- **Project folders other than `.claude` are not read.** Codex also lists `<repo>/.codex/skills` and `<repo>/.agents/skills`; project reading stays as it was, so those folders and their readers are not in the map.
+- **`inventory.read` has none of this.** `folder`, `realPath`, `folders`, `extraItems` and `extraProblems` are written by `loadout.rows` only, so the v5 decode and the frozen inventory golden are unchanged; the readers map has its own golden, `readers-map.json`.
 
 ## Verification
 

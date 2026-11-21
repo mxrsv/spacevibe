@@ -32,10 +32,19 @@ type LoadoutRows struct {
 	Roots         map[string]string       `json:"roots"`
 	CountsByScope map[string]FilterCounts `json:"countsByScope"`
 	RowFlags      map[string]RowFlags     `json:"rowFlags"`
+	// Folders is the readers map: every folder a row lives in and every installed CLI's own global folders, with the
+	// CLIs that read each one, sorted by path. Each item and hook names its entry by Folder (readers-map.go).
+	Folders []Folder `json:"folders"`
+	// ExtraItems and ExtraProblems are what the v5 fields leave out until RB-X1 (plan AR1): today the Codex skills of
+	// ~/.agents/skills and the lines about that folder. Items, cells, CountsByScope, RowFlags and Problems are exactly
+	// what they were without that folder; cliCells count the extra items. Never null.
+	ExtraItems    []Item   `json:"extraItems"`
+	ExtraProblems []string `json:"extraProblems"`
 }
 
 // BuildLoadoutRows is LoadoutData.build and the per-row flags of LoadoutRows.build, from one raw snapshot and
-// one usage state, with the cliCells of the CLI registry on every row. Pure apart from file mtimes.
+// one usage state, with the cliCells of the CLI registry and the readers map on every row. Pure apart from file
+// mtimes and the real paths of folders and items.
 func BuildLoadoutRows(raw Snapshot, in usage.Input, now time.Time) LoadoutRows {
 	return buildLoadoutRows(raw, in, now, nil, cliregistry.All())
 }
@@ -44,6 +53,12 @@ func BuildLoadoutRows(raw Snapshot, in usage.Input, now time.Time) LoadoutRows {
 // and the registry whose CLIs get a cliCell.
 func buildLoadoutRows(raw Snapshot, in usage.Input, now time.Time, firstSeen map[string]float64, registry []cliregistry.CLI) LoadoutRows {
 	attached := attachUsage(raw, &in, now, firstSeen, registry)
+	readers := readersMap(raw.folders, attached.Items, attached.shared, attached.Hooks, registry)
+	attached.Items, attached.Hooks = readers.items, readers.hooks
+	extraProblems := slices.Clone(raw.sharedProblems)
+	if extraProblems == nil {
+		extraProblems = []string{}
+	}
 
 	scopes := []string{GlobalScope}
 	var projects []string
@@ -96,7 +111,8 @@ func buildLoadoutRows(raw Snapshot, in usage.Input, now time.Time, firstSeen map
 
 	return LoadoutRows{
 		Usage: in.State, Items: attached.Items, Hooks: attached.Hooks, Problems: attached.Problems,
-		Events: attached.Events, Roots: attached.Roots, CountsByScope: counts, RowFlags: flags,
+		Events: attached.Events, Roots: attached.Roots, CountsByScope: counts, RowFlags: flags, Folders: readers.folders,
+		ExtraItems: readers.extra, ExtraProblems: extraProblems,
 	}
 }
 

@@ -31,6 +31,12 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 		otherHooks int
 		// unreadable is what could not be looked at, per CLI and kind (cli-cells.go).
 		unreadable unreadableKinds
+		// folders are the global folders and hook files of each CLI that is there (readers-map.go).
+		folders []Folder
+		// shared and sharedProblems are the Codex skills of ~/.agents/skills and the lines about that folder: only
+		// loadout.rows' extra fields carry them (readers-map.go).
+		shared         []Item
+		sharedProblems []string
 	)
 	clis := []struct {
 		cli CLI
@@ -52,6 +58,15 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 		agents, agentsUnreadable := readAgents(c.r.Agents, c.cli, nil, nil, &problems)
 		items = append(append(items, skills...), agents...)
 		unreadable = unreadable.markIf(skillsUnreadable, c.cli, KindSkill).markIf(agentsUnreadable, c.cli, KindAgent)
+		folders = append(folders, ownFolders(c.cli, c.r)...)
+		if c.cli == Codex {
+			// Codex also reads the shared ~/.agents/skills (readers-map.go); only while its own folder is there. Its
+			// skills and problem lines stay out of every field the v5 shell decodes until RB-X1 (plan AR1).
+			found, foundUnreadable := readSkills(r.AgentsSkills, Codex, nil, nil, &sharedProblems)
+			shared = sharedSkills(found)
+			unreadable = unreadable.markIf(foundUnreadable, Codex, KindSkill)
+			folders = append(folders, agentsSkillsFolder(r.AgentsSkills))
+		}
 		config, status := readJSON(c.r.HookFile)
 		unreadable = unreadable.markIf(unusableReason(status) != "", c.cli, KindHook)
 		switch status {
@@ -154,6 +169,10 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 	for i := range items {
 		_, items[i].InOther = names[string(items[i].CLI.Other())+":"+items[i].Key()]
 	}
+	// The v5 items above never count a shared skill; a shared skill's inOther looks at the v5 items (all Claude's).
+	for i := range shared {
+		_, shared[i].InOther = names[string(shared[i].CLI.Other())+":"+shared[i].Key()]
+	}
 
 	if otherHooks == 1 {
 		problems = append(problems, "1 hook of another type is not shown.")
@@ -176,7 +195,7 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 	return Snapshot{
 		Items: items, Hooks: hooks, Problems: problems, Events: Events(),
 		Roots:      map[string]string{string(Claude): r.Claude.Root, string(Codex): r.Codex.Root},
-		unreadable: unreadable,
+		unreadable: unreadable, folders: folders, shared: shared, sharedProblems: sharedProblems,
 	}, projects, nil
 }
 

@@ -429,7 +429,11 @@ func TestCodableRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(data, &decoded); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(decoded, inv) {
+	// The global folders and the shared skills the reader recorded are not on the inventory.read wire (loadout.rows
+	// carries them).
+	wire := inv
+	wire.folders, wire.shared, wire.sharedProblems = nil, nil, nil
+	if !reflect.DeepEqual(decoded, wire) {
 		t.Error("decoded snapshot differs from the original")
 	}
 	if len(inv.Items) == 0 || len(inv.Hooks) == 0 {

@@ -118,12 +118,12 @@ func TestLoadoutRowsJSONShape(t *testing.T) {
 	for k := range top {
 		keys = append(keys, k)
 	}
-	for _, want := range []string{"usage", "items", "hooks", "problems", "events", "roots", "countsByScope", "rowFlags"} {
+	for _, want := range []string{"usage", "items", "hooks", "problems", "events", "roots", "countsByScope", "rowFlags", "folders", "extraItems", "extraProblems"} {
 		if _, ok := top[want]; !ok {
 			t.Errorf("missing %q in %v", want, keys)
 		}
 	}
-	if len(top) != 8 {
+	if len(top) != 11 {
 		t.Errorf("keys = %v", keys)
 	}
 	flags := top["rowFlags"].(map[string]any)["skill::solo"].(map[string]any)

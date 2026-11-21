@@ -258,3 +258,66 @@ func TestResolveKeepsSymlinkedHomeAsGiven(t *testing.T) {
 		}
 	}
 }
+
+// The shared skills folder Codex also reads (plan RB-T0a) sits in HOME, not in CODEX_HOME.
+func TestAgentsSkillsFollowsHome(t *testing.T) {
+	fakeReal, scratch := newTempHome(t), newTempHome(t)
+	cfg := scratch.cfg()
+	cfg.CodexHome = scratch.url("elsewhere/codex")
+	r, err := Resolve(cfg, fakeReal.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := scratch.url(".agents/skills"); r.AgentsSkills != want {
+		t.Errorf("agentsSkills = %q, want %q", r.AgentsSkills, want)
+	}
+	if got, err := Resolve(config.Config{}, "/real/me"); err != nil || got.AgentsSkills != "/real/me/.agents/skills" {
+		t.Errorf("without HOME: %q, %v", got.AgentsSkills, err)
+	}
+}
+
+// S-R1 covers the shared skills folder like every other root: with SPACEVIBE_TEST=1 a temporary HOME whose .agents,
+// or whose .agents/skills, is a link into the real home is refused. It is the guard every root uses, with the same
+// limit: a dangling link (its target missing) is judged by its own spelling, as for CLAUDE_CONFIG_DIR.
+func TestRefusesAgentsSkillsThroughSymlinks(t *testing.T) {
+	cases := []struct {
+		name string
+		// link is created in the scratch home and points at target inside the fake real home.
+		link, target string
+	}{
+		{"the .agents folder is a link", ".agents", ".agents"},
+		{"the skills folder is a link", ".agents/skills", "dotfiles/skills"},
+		{"the link leads to a folder without a skills folder yet", ".agents", "dotfiles"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			fakeReal, scratch := newTempHome(t), newTempHome(t)
+			target := fakeReal.url(c.target)
+			if err := os.MkdirAll(target, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			link := scratch.url(c.link)
+			if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(target, link); err != nil {
+				t.Skipf("symlinks unavailable: %v", err)
+			}
+			_, err := Resolve(scratch.cfg(), fakeReal.root)
+			e := underRealHome(t, err)
+			if e.Label != "agents skills" || e.Path != scratch.url(".agents/skills") {
+				t.Fatalf("got %+v, want the agents skills root", e)
+			}
+		})
+	}
+	// Without the flag nothing is checked, as for the other roots.
+	fakeReal, scratch := newTempHome(t), newTempHome(t)
+	if err := os.Symlink(fakeReal.root, scratch.url(".agents")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	cfg := scratch.cfg()
+	cfg.Test = false
+	if _, err := Resolve(cfg, fakeReal.root); err != nil {
+		t.Fatalf("no guard without the flag: %v", err)
+	}
+}

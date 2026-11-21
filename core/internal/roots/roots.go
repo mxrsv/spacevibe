@@ -34,11 +34,15 @@ type Roots struct {
 	ClaudeState string
 	// Gemini is Gemini CLI's folder. Only whether it exists is checked.
 	Gemini string
+	// AgentsSkills is $HOME/.agents/skills, the skills folder several CLIs share. Codex reads it beside
+	// $CODEX_HOME/skills (codex-cli 0.170.0, plan RB-T0a); Claude Code does not. Inventory reads it as a second
+	// Codex skills folder; no write targets it (docs/internals/inventory.md#readers-map).
+	AgentsSkills string
 }
 
 // UnderRealHomeError means SPACEVIBE_TEST=1 and a root sits under the real home.
 type UnderRealHomeError struct {
-	// Label is claude, codex, spacevibe, "claude state" or gemini.
+	// Label is claude, codex, spacevibe, "claude state", gemini or "agents skills".
 	Label string
 	// Path is the offending root, as configured.
 	Path string
@@ -65,10 +69,11 @@ func Resolve(cfg config.Config, realHome string) (Roots, error) {
 	dataRoot := orDefault(cfg.Home, filepath.Join(home, identity.DataDir))
 	claudeState := filepath.Join(orDefault(cfg.ClaudeConfigDir, home), ".claude.json")
 	geminiRoot := filepath.Join(home, ".gemini")
+	agentsSkills := filepath.Join(home, ".agents", "skills")
 	if cfg.Test {
 		err := assertNotUnderRealHome(realHome, []labelled{
 			{"claude", claudeRoot}, {"codex", codexRoot}, {"spacevibe", dataRoot},
-			{"claude state", claudeState}, {"gemini", geminiRoot},
+			{"claude state", claudeState}, {"gemini", geminiRoot}, {"agents skills", agentsSkills},
 		})
 		if err != nil {
 			return Roots{}, err
@@ -84,11 +89,12 @@ func Resolve(cfg config.Config, realHome string) (Roots, error) {
 		}
 	}
 	return Roots{
-		Claude:      cli(claudeRoot, "settings.json", "projects"),
-		Codex:       cli(codexRoot, "hooks.json", "sessions"),
-		Data:        dataRoot,
-		ClaudeState: claudeState,
-		Gemini:      geminiRoot,
+		Claude:       cli(claudeRoot, "settings.json", "projects"),
+		Codex:        cli(codexRoot, "hooks.json", "sessions"),
+		Data:         dataRoot,
+		ClaudeState:  claudeState,
+		Gemini:       geminiRoot,
+		AgentsSkills: agentsSkills,
 	}, nil
 }
 

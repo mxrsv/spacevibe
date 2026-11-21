@@ -84,18 +84,29 @@ func AttachUsage(inv Snapshot, in *usage.Input, now time.Time) Snapshot {
 // others).
 func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[string]float64, registry []cliregistry.CLI) Snapshot {
 	nowMs := float64(now.UnixNano()) / 1e6
-	groups := map[string]*rowGroup{}
-	add := func(key string, cli CLI, row matrixRow, global bool) {
-		if groups[key] == nil {
-			groups[key] = &rowGroup{members: map[CLI]matrixRow{}, kind: row.kind, global: global}
+	// groups hold the v5 members only: the two-CLI cells never see a shared skill (plan AR1). allGroups add the
+	// shared Codex skills of ~/.agents/skills first, so a v5 member of the same CLI wins, and feed the cliCells.
+	groups, allGroups := map[string]*rowGroup{}, map[string]*rowGroup{}
+	add := func(into map[string]*rowGroup, key string, cli CLI, row matrixRow, global bool) {
+		if into[key] == nil {
+			into[key] = &rowGroup{members: map[CLI]matrixRow{}, kind: row.kind, global: global}
 		}
-		groups[key].members[cli] = row
+		into[key].members[cli] = row
+	}
+	itemRow := func(item Item) matrixRow {
+		return matrixRow{id: item.ID, kind: item.Kind, name: item.Name, entry: item.Entry, file: item.File}
+	}
+	for _, item := range inv.shared {
+		add(allGroups, item.Key(), item.CLI, itemRow(item), item.Project == nil)
 	}
 	for _, item := range inv.Items {
-		add(item.Key(), item.CLI, matrixRow{id: item.ID, kind: item.Kind, name: item.Name, entry: item.Entry, file: item.File}, item.Project == nil)
+		add(groups, item.Key(), item.CLI, itemRow(item), item.Project == nil)
+		add(allGroups, item.Key(), item.CLI, itemRow(item), item.Project == nil)
 	}
 	for _, hook := range inv.Hooks {
-		add(hook.Key(), hook.CLI, matrixRow{id: hook.ID, kind: KindHook, hash: hook.Hash, file: hook.File}, hook.Project == nil)
+		row := matrixRow{id: hook.ID, kind: KindHook, hash: hook.Hash, file: hook.File}
+		add(groups, hook.Key(), hook.CLI, row, hook.Project == nil)
+		add(allGroups, hook.Key(), hook.CLI, row, hook.Project == nil)
 	}
 	type mtime struct {
 		ms *float64
@@ -231,7 +242,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		if len(registry) == 0 {
 			return nil
 		}
-		group := groups[key]
+		group := allGroups[key]
 		out := make(map[string]CLICell, len(registry))
 		for _, entry := range registry {
 			out[string(entry.ID)] = cliCellFor(group, entry)
@@ -245,6 +256,14 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 		item.Cells = cellsFor(item.Key())
 		item.CLICells = cliCellsFor(item.Key())
 		out.Items[i] = item
+	}
+	// A shared skill gets cliCells only: it is in no v5 field, so it has no two-CLI cells.
+	if inv.shared != nil {
+		out.shared = make([]Item, len(inv.shared))
+		for i, item := range inv.shared {
+			item.CLICells = cliCellsFor(item.Key())
+			out.shared[i] = item
+		}
 	}
 	out.Hooks = make([]Hook, len(inv.Hooks))
 	for i, hook := range inv.Hooks {

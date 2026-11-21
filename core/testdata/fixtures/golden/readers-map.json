@@ -1,0 +1,231 @@
+{
+  "folders": [
+    {
+      "copyTarget": false,
+      "kind": "skill",
+      "ownedBy": "codex",
+      "path": "$HOME/.agents/skills",
+      "readBy": [
+        "codex"
+      ],
+      "realPath": "$HOME/.agents/skills"
+    },
+    {
+      "copyTarget": true,
+      "kind": "agent",
+      "ownedBy": "claude",
+      "path": "$HOME/.claude/agents",
+      "readBy": [
+        "claude"
+      ],
+      "realPath": "$HOME/.claude/agents"
+    },
+    {
+      "copyTarget": false,
+      "kind": "skill",
+      "ownedBy": "claude",
+      "path": "$HOME/.claude/plugins/cache/neon/skills",
+      "readBy": [
+        "claude"
+      ],
+      "realPath": "$HOME/.claude/plugins/cache/neon/skills"
+    },
+    {
+      "copyTarget": true,
+      "kind": "hook",
+      "ownedBy": "claude",
+      "path": "$HOME/.claude/settings.json",
+      "readBy": [
+        "claude"
+      ],
+      "realPath": "$HOME/.claude/settings.json"
+    },
+    {
+      "copyTarget": true,
+      "kind": "skill",
+      "ownedBy": "claude",
+      "path": "$HOME/.claude/skills",
+      "readBy": [
+        "claude"
+      ],
+      "realPath": "$HOME/.claude/skills"
+    },
+    {
+      "copyTarget": true,
+      "kind": "agent",
+      "ownedBy": "codex",
+      "path": "$HOME/.codex/agents",
+      "readBy": [
+        "codex"
+      ],
+      "realPath": "$HOME/.codex/agents"
+    },
+    {
+      "copyTarget": true,
+      "kind": "hook",
+      "ownedBy": "codex",
+      "path": "$HOME/.codex/hooks.json",
+      "readBy": [
+        "codex"
+      ],
+      "realPath": "$HOME/.codex/hooks.json"
+    },
+    {
+      "copyTarget": true,
+      "kind": "skill",
+      "ownedBy": "codex",
+      "path": "$HOME/.codex/skills",
+      "readBy": [
+        "codex"
+      ],
+      "realPath": "$HOME/.codex/skills"
+    },
+    {
+      "copyTarget": false,
+      "kind": "agent",
+      "ownedBy": "claude",
+      "path": "$HOME/work/spacevibe-bench/.claude/agents",
+      "readBy": [
+        "claude"
+      ],
+      "realPath": "$HOME/work/spacevibe-bench/.claude/agents"
+    },
+    {
+      "copyTarget": false,
+      "kind": "hook",
+      "ownedBy": "claude",
+      "path": "$HOME/work/spacevibe-bench/.claude/settings.local.json",
+      "readBy": [
+        "claude"
+      ],
+      "realPath": "$HOME/work/spacevibe-bench/.claude/settings.local.json"
+    },
+    {
+      "copyTarget": false,
+      "kind": "skill",
+      "ownedBy": "claude",
+      "path": "$HOME/work/spacevibe-bench/.claude/skills",
+      "readBy": [
+        "claude"
+      ],
+      "realPath": "$HOME/work/spacevibe-bench/.claude/skills"
+    }
+  ],
+  "members": {
+    "claude:agent:local:architect.md": {
+      "folder": "$HOME/.claude/agents",
+      "realPath": "$HOME/.claude/agents/architect.md"
+    },
+    "claude:agent:local:database-reviewer.md": {
+      "folder": "$HOME/.claude/agents",
+      "realPath": "$HOME/.claude/agents/database-reviewer.md"
+    },
+    "claude:agent:local:react-reviewer.md": {
+      "folder": "$HOME/.claude/agents",
+      "realPath": "$HOME/.claude/agents/react-reviewer.md"
+    },
+    "claude:agent:local:security-reviewer.md": {
+      "folder": "$HOME/.claude/agents",
+      "realPath": "$HOME/.claude/agents/security-reviewer.md"
+    },
+    "claude:agent:local:typescript-reviewer.md": {
+      "folder": "$HOME/.claude/agents",
+      "realPath": "$HOME/.claude/agents/typescript-reviewer.md"
+    },
+    "claude:agent:project:231074454cfd:migration-reviewer.md": {
+      "folder": "$HOME/work/spacevibe-bench/.claude/agents",
+      "realPath": "$HOME/work/spacevibe-bench/.claude/agents/migration-reviewer.md"
+    },
+    "claude:hook:0a18bd821ef5": {
+      "folder": "$HOME/.claude/settings.json"
+    },
+    "claude:hook:0b3f174c44c9": {
+      "folder": "$HOME/.claude/settings.json"
+    },
+    "claude:hook:520be5fccf31": {
+      "folder": "$HOME/.claude/settings.json"
+    },
+    "claude:hook:542caf91b7c8": {
+      "folder": "$HOME/.claude/settings.json"
+    },
+    "claude:hook:7a927295033e": {
+      "folder": "$HOME/.claude/settings.json"
+    },
+    "claude:hook:b9f92a37d758": {
+      "folder": "$HOME/.claude/settings.json"
+    },
+    "claude:hook:be21b7d68101": {
+      "folder": "$HOME/work/spacevibe-bench/.claude/settings.local.json"
+    },
+    "claude:hook:ef9fdb35fcba": {
+      "folder": "$HOME/.claude/settings.json"
+    },
+    "claude:skill:local:diagnosing-bugs": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/diagnosing-bugs"
+    },
+    "claude:skill:local:explain": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/explain"
+    },
+    "claude:skill:local:impeccable": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/impeccable"
+    },
+    "claude:skill:local:kyant-kanban": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/kyant-kanban"
+    },
+    "claude:skill:local:ponytail": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/ponytail"
+    },
+    "claude:skill:local:review-change": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/review-change"
+    },
+    "claude:skill:local:skill-creator": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/skill-creator"
+    },
+    "claude:skill:local:tdd": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/tdd"
+    },
+    "claude:skill:local:webapp-testing": {
+      "folder": "$HOME/.claude/skills",
+      "realPath": "$HOME/.claude/skills/webapp-testing"
+    },
+    "claude:skill:neon:neon-postgres": {
+      "folder": "$HOME/.claude/plugins/cache/neon/skills",
+      "realPath": "$HOME/.claude/plugins/cache/neon/skills/neon-postgres"
+    },
+    "claude:skill:project:231074454cfd:bench-checklist": {
+      "folder": "$HOME/work/spacevibe-bench/.claude/skills",
+      "realPath": "$HOME/work/spacevibe-bench/.claude/skills/bench-checklist"
+    },
+    "codex:agent:local:security-reviewer.toml": {
+      "folder": "$HOME/.codex/agents",
+      "realPath": "$HOME/.codex/agents/security-reviewer.toml"
+    },
+    "codex:hook:7a927295033e": {
+      "folder": "$HOME/.codex/hooks.json"
+    },
+    "codex:skill:local:explain": {
+      "folder": "$HOME/.codex/skills",
+      "realPath": "$HOME/.codex/skills/explain"
+    },
+    "codex:skill:local:impeccable": {
+      "folder": "$HOME/.codex/skills",
+      "realPath": "$HOME/.codex/skills/impeccable"
+    },
+    "codex:skill:local:kyant-kanban": {
+      "folder": "$HOME/.codex/skills",
+      "realPath": "$HOME/.codex/skills/kyant-kanban"
+    },
+    "codex:skill:local:webapp-testing": {
+      "folder": "$HOME/.codex/skills",
+      "realPath": "$HOME/.codex/skills/webapp-testing"
+    }
+  }
+}

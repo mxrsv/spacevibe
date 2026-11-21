@@ -92,13 +92,13 @@ Params and results use the types defined under "Wire types". "Journal entry" is 
 | `clis.registry` | `{}` | `{clis:RegistryCli[]}` in the fixed CLI order | none | none: reads nothing, the registry is part of the binary | none |
 | `inventory.read` | `{}` | `InventorySnapshot`, no `cells`, hook `usage` null | none: unreadable files become `problems` | Refreshes the discovered-project list | none |
 | `usage.scan` | `{}` | `UsageResult`; sends `usage/progress`; stores the result as the process's usage state | 409 a scan is already running; -32800 | Reads logs; writes `<data>/usage-cache.json` | none |
-| `loadout.rows` | `{}` | `LoadoutRows`; `problems` are the raw sentences; every item and hook carries `cells` and `cliCells` | none | Reads inventory; attaches the stored usage state; writes `<data>/first-seen.json` when a new item id appears (best effort) | none |
+| `loadout.rows` | `{}` | `LoadoutRows`; `problems` are the raw sentences; every item and hook carries `cells`, `cliCells` and `folder`, every item `realPath`; `folders` is the readers map; `extraItems` and `extraProblems` hold what the v5 fields leave out | none | Reads inventory; attaches the stored usage state; writes `<data>/first-seen.json` when a new item id appears (best effort) | none |
 | `activity.read` | `{}` | `ActivityReport` | none: the engine reports what it could not read inside the report | none | none |
 | `activity.subscribe` | `{}` | `ActivityReport`; later `activity/report` | none | Starts a 3 s poll | none |
 | `activity.unsubscribe` | `{}` | `{}` | none | Stops the poll | none |
 | `activity.stop` | `{cli, id}` | `{exited:boolean}` | 404 not running; 409 could not be verified (ps, lsof or the sessions folder unreadable, or the start time unknown, or the status file's recorded `procStart` is missing or unreadable as a start time while the pid is alive: nothing is sent; a recorded start that parses and differs is a reused pid, 404); 403 other user; 500 | SIGTERM to the pid found now; waits up to 3 s | none: not undoable, the shell confirms first |
 | `loadout.copyToOther` | `{id}` | `{entry:JournalEntryRef}` | 400 a hook Codex cannot take or an event it lacks; 403 a path outside the CLI folder; 404; 409 the other CLI's folder is missing ("<CLI> is not installed on this Mac, so nothing was copied."; nothing is created), a skill folder or agent name that is not lowercase letters, numbers and dashes (the message names the item), the name exists in the other CLI, a source that cannot be read or is not a plain file, an agent with no instructions; 413 a skill file over 16 MiB, a skill over 64 MiB, an agent over 1 MiB; 500 | Creates the skill folder (named after the source folder, not the `name:` in `SKILL.md`), agent file (named after the agent's `name`) or Claude hook in the other CLI; never creates the CLI's own folder | label `Copied skill\|agent <name> to <CLI>` or `Added <event> hook to Claude Code`; ops `created`, `hook-added` |
-| `loadout.removeItem` | `{id}` | `{entry:JournalEntryRef}` | 403 plugin or project item; 404; 409; 500 | Moves the item to the data-folder trash; a link keeps its target text | label `Removed skill\|agent <name> from <CLI>` or `Removed <event> hook from <CLI>`; ops `moved`, `link-removed`, `hook-removed` |
+| `loadout.removeItem` | `{id}` | `{entry:JournalEntryRef}` | 403 plugin or project item; 404 (also an `extraItems` id: writes look ids up in `inventory.read`; RB-E3 owns shared folders); 409; 500 | Moves the item to the data-folder trash; a link keeps its target text | label `Removed skill\|agent <name> from <CLI>` or `Removed <event> hook from <CLI>`; ops `moved`, `link-removed`, `hook-removed` |
 | `loadout.removeDeadHooks` | `{cli}` | `{entry:JournalEntryRef}` | 409 none dead; 500 | One write to the CLI's hook file | label `Removed N dead hooks from <CLI>`; ops `hook-removed` |
 | `journal.undo` | `{id}` | `{label:string}` | 404 gone; 409 already undone, or a target changed or exists again; 400 an entry this version cannot undo or a path outside the managed folders; 500 the undo was rolled back or stopped part way | Reverses all ops last first, all or nothing; marks the entry undone | none: the entry is marked `undone` |
 | `journal.history` | `{}` | `{entries:JournalEntryRef[]}`, newest first, at most 200 | 409 the journal exists but is not a JSON array of entries (an element without a string `id` counts): it is refused, never read as empty or with elements dropped | none | none |
@@ -122,6 +122,8 @@ Behavior the table cannot say:
 - **`loadout.rows` is three steps in one call**: the inventory read, the usage join and the filter counts (per scope and per row key; [inventory.md](inventory.md#runtime-path)). Grouping rows by `key`, sorting and labels stay in the shell. Problems come back unshortened, with absolute paths; the shell shortens the home folder before showing them.
 - **The CLI registry is the one list of CLIs.** [`cliregistry`](../../core/internal/cliregistry/registry.go) holds each CLI's id, name and `supports`, in the fixed order every page uses; `clis.registry` returns it and the keys of every `cliCells` map are exactly its ids. The ids are the `Cli` values the rest of the protocol already uses (`claude`, `codex`; also the keys of `roots` and `events` and the `cli` of `limits.read`), and the engine reads exactly the CLIs it lists (`TestRegistryIDsMatchTheProtocol`). `limits.read` still adds a `gemini` entry that the registry does not hold: that entry is the v5 Limits page's own. A `supports` member that is false is Not supported, a different fact from Missing or Unmeasurable. The v5 shell does not call `clis.registry`; the redesign's store does, and the method is in the read list of [`CoreConnection`](../../Sources/SpaceVibe/Core/CoreConnection.swift), so a restart sends it again like any read.
 - **Two cell maps on a `loadout.rows` row.** `cells` is the two-CLI shape the v5 shell decodes and does not change. `cliCells` sits beside it, one `CliCell` per registry id, and is written only by `loadout.rows` (`inventory.read` has neither). Both come from one reading of the logs, so they never disagree on a count. Where they differ: a D63 "added recently" pending is a counted zero with a `note`; "No logs scanned for this CLI yet" is `unmeasurable`; the scan not having finished is `scanning`; Missing becomes `unknown` when the CLI's own folder or file for that kind could not be used (the per-kind rules are in [inventory.md](inventory.md#cli-cells)). A skill or subagent counts `sessions` and lists its `days`; a hook counts `runs` and `errors` (GLOSSARY: Runs are hooks only).
+- **The readers map is data, not a rule in the shell.** `loadout.rows` lists `folders` (every folder a row lives in, each installed CLI's own global folders and the shared `~/.agents/skills`), each with the registry ids that read it and the CLI that owns it; every item and hook names its `folder` by path, and every item its `realPath`. "Via" (RD31), the files of a row (D53) and who loses an item (RD-R11) are pure functions of these members, defined in [inventory.md](inventory.md#readers-map).
+- **v5 fields exclude `~/.agents/skills` until RB-X1.** The Codex skills read from `~/.agents/skills` (ids `codex:skill:agents:<entry>`, `removable: false`, `cliCells` but no `cells`) are only in `extraItems`, and the problem lines about that folder only in `extraProblems`. `inventory.read` and the members the v5 DTOs decode (`items`, `hooks`, `cells`, `inOther`, `countsByScope`, `rowFlags`, `problems`) are exactly what they would be without that folder, because the v5 shell would split a key with two Codex members into two rows (FE-P9, plan AR1). Every `cliCells` map counts the extra items, so a new-frame caller reads `items` and `extraItems` together; RB-X1 folds them into `items`.
 - **`rules.setCapability` returning null is not an error.** The core reports it; the app turns it into the 409 sentence "Nothing to change: the file already holds that." (`RulesModel.write` does it). `rules.add`, `remove`, `changeVerdict` and `changeVerdicts` never return null: the engine throws that 409 itself.
 - **`rules.check`** is the live check of a rule's shape (the Rules model calls it before every add), built on `Rules.checkedRule`: empty text, over 1000 UTF-16 units, a newline, or no `Tool` or `Tool(pattern)` shape. `message` is the same sentence the write would refuse with. The write path checks again; this method is advice.
 - **Journal ops are not exposed.** `JournalEntryRef` carries `count` only: ops hold absolute paths and trash names, and the shell uses only the id and the label. The journal file is `<data>/journal.json`, newest first ([retention](mutations.md#journal-retention-and-the-trash-sweep)), and a journal that exists but is not a JSON array of entries (every element needs a string `id`) makes every write 409; an element without an id is never dropped silently.
@@ -174,7 +176,8 @@ type InventoryItem = {                            // a skill or a subagent
   inOther: boolean, key: string,                  // key = "<kind>:<project or empty>:<bare name>"
   override?: string | null,                       // written on every Claude global skill (null when settings hold no value); omitted on all other items
   cells?: Cells,                                  // omitted until usage is attached
-  cliCells?: CliCells                             // loadout.rows only
+  cliCells?: CliCells,                            // loadout.rows only
+  folder?: string, realPath?: string              // loadout.rows only: the path of its Folder; path with every link followed
 }
 type HookUsage = { runs: number, avgMs: number | null, totalMs: number, errors: number, last: string | null }
 type InventoryHook = {
@@ -183,6 +186,7 @@ type InventoryHook = {
   scope: "global" | "project", project: string | null,
   key: string,                                    // "hook:<project or empty>:<hash>"
   cells?: Cells, cliCells?: CliCells,             // cliCells: loadout.rows only
+  folder?: string,                                // loadout.rows only: equals file
   usage: HookUsage | null                         // usage is always present; null when unknown or not logged
 }
 type InventorySnapshot = {
@@ -205,7 +209,18 @@ type LoadoutRows = {                              // what the shell's LoadoutDat
   items: InventoryItem[], hooks: InventoryHook[],  // cells attached, hook usage attached
   problems: string[], events: { claude: string[], codex: string[] }, roots: { claude: string, codex: string },
   countsByScope: { [scope: string]: FilterCounts },   // key "global", or an absolute project folder
-  rowFlags: { [rowKey: string]: { one: boolean, neverRan: boolean, dead: boolean } }
+  rowFlags: { [rowKey: string]: { one: boolean, neverRan: boolean, dead: boolean } },
+  folders: Folder[],                              // the readers map, sorted by path
+  extraItems: InventoryItem[],                    // left out of every v5 member until RB-X1: the Codex skills of ~/.agents/skills; cliCells, folder, realPath, no cells
+  extraProblems: string[]                         // the problem lines about ~/.agents/skills, left out of problems
+}
+type Folder = {                                   // a skills or agents folder, or for hooks the file that holds them
+  path: string,                                   // the reader's spelling; an item's or hook's folder repeats it exactly
+  realPath: string,                               // path with every link followed; folders with one realPath are one folder
+  kind: "skill" | "agent" | "hook",
+  readBy: string[],                               // registry ids, registry order, never empty
+  ownedBy: string,                                // the CLI whose folder it is; reading only others' folders = "via" (RD31)
+  copyTarget: boolean                             // loadout.copyToOther writes into ownedBy here; false for ~/.agents/skills, plugin and project folders
 }
 // rowFlags[key].one = (only.claude + only.codex > 0) of filterCounts over that row's members; neverRan and dead are counts > 0.
 ```

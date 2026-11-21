@@ -4,6 +4,7 @@ package inventory
 
 import (
 	"os"
+	"slices"
 	"testing"
 
 	"spacevibe.dev/core/internal/config"
@@ -74,5 +75,40 @@ func TestCLICellsUnknownOnlyForTheUnreadableKind(t *testing.T) {
 	}
 	if got := agent.CLICells["claude"].State; got != CLICellMissing {
 		t.Errorf("agent claude = %s, want missing: ~/.claude/agents was read", got)
+	}
+}
+
+// Codex reads skills from ~/.agents/skills too (RB-T0a), so a denied ~/.agents/skills makes an absent Codex skill
+// unknown in cliCells, says so in extraProblems, and leaves Codex agents missing. The v5 problems and cells do not
+// change (AR1).
+func TestCLICellsUnknownWhenAgentsSkillsCannotBeRead(t *testing.T) {
+	requireNotRoot(t)
+	h := newTempHome(t)
+	h.write(".claude/skills/solo/SKILL.md", skillFile("solo"))
+	h.write(".claude/agents/reviewer.md", "---\nname: reviewer\n---\n")
+	h.write(".codex/config.toml", "")
+	h.write(".agents/skills/hidden/SKILL.md", skillFile("hidden"))
+	denyFolder(t, h.path(".agents/skills"))
+	rows := BuildLoadoutRows(Read(h.roots()), usage.Scanning, mustTime(t, "2026-11-02T00:00:00Z"))
+	skill := item(Snapshot{Items: rows.Items}, "solo")
+	agent := item(Snapshot{Items: rows.Items}, "reviewer")
+	if skill == nil || agent == nil || len(rows.Items) != 2 {
+		t.Fatalf("items: %+v", rows.Items)
+	}
+	if got := skill.CLICells["codex"].State; got != CLICellUnknown {
+		t.Errorf("skill codex = %s, want unknown: ~/.agents/skills cannot be listed", got)
+	}
+	if !skill.Cells.Codex.IsMissing() {
+		t.Errorf("the v5 cell changed to %+v", skill.Cells.Codex)
+	}
+	if got := agent.CLICells["codex"].State; got != CLICellMissing {
+		t.Errorf("agent codex = %s, want missing", got)
+	}
+	want := h.path(".agents/skills") + " cannot be read, so its skills cannot be shown."
+	if !slices.Equal(rows.ExtraProblems, []string{want}) {
+		t.Errorf("extraProblems = %v, want %q", rows.ExtraProblems, want)
+	}
+	if len(rows.Problems) != 0 {
+		t.Errorf("the v5 problems changed: %v", rows.Problems)
 	}
 }

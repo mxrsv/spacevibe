@@ -198,6 +198,10 @@ type Item struct {
 	Cells *Cells `json:"cells,omitempty"`
 	// CLICells holds one cell per registry CLI, keyed by its id (cli-cells.go). Set by loadout.rows only.
 	CLICells map[string]CLICell `json:"cliCells,omitempty"`
+	// Folder is the path of the folder this item was read from, a key of the loadout.rows folder table, and RealPath
+	// is Path with every link followed (readers-map.go). Set by loadout.rows only; "" otherwise.
+	Folder   string `json:"folder,omitempty"`
+	RealPath string `json:"realPath,omitempty"`
 }
 
 // Key is the matrix row this item belongs to: the same name (or hook) in the same project, whichever CLI
@@ -240,6 +244,8 @@ type Hook struct {
 	Cells   *Cells  `json:"cells,omitempty"`
 	// CLICells is as on Item: one cell per registry CLI, set by loadout.rows only.
 	CLICells map[string]CLICell `json:"cliCells,omitempty"`
+	// Folder is File, as the key of the loadout.rows folder table (readers-map.go). Set by loadout.rows only.
+	Folder string `json:"folder,omitempty"`
 	// Usage is nil when unknown (scan not finished) or not logged (Codex); always written, as null then.
 	Usage *HookUsage `json:"usage"`
 }
@@ -259,6 +265,14 @@ type Snapshot struct {
 	// unreadable is what the reader could not look at, per CLI and kind; it turns a Missing cliCell into
 	// unknown. Not on the wire: Problems says the same in words.
 	unreadable unreadableKinds
+	// folders are the global folders and hook files of each CLI whose root is there, with their readers. Not on
+	// the inventory.read wire: loadout.rows turns them into its folder table (readers-map.go).
+	folders []Folder
+	// shared are the Codex skills of ~/.agents/skills and sharedProblems the lines about that folder. They are in no
+	// field the v5 shell decodes (Items, Problems, cells, counts, flags) until RB-X1: loadout.rows writes them as
+	// extraItems and extraProblems, and they count in cliCells (readers-map.go).
+	shared         []Item
+	sharedProblems []string
 }
 
 // FilterCounts are the counts for the filter chips, deduplicated by row key.

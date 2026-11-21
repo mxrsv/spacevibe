@@ -4,7 +4,8 @@
 // (docs/internals/core-protocol.md).
 //
 // The engine reads Claude Code and Codex only, so the registry lists those two. Another CLI joins by adding
-// an entry here together with its readers (spec 2026-11-20-spacevibe-redesign "Out of scope"); the shape of
+// an entry here together with its readers (the folders it reads, inventory/readers-map.go; spec
+// 2026-11-20-spacevibe-redesign "Out of scope"); the shape of
 // the wire already allows any number of entries and any string id. The package has no imports, so every
 // other package can use it.
 package cliregistry
