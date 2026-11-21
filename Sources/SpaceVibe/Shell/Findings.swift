@@ -57,7 +57,11 @@ enum WholeToolRule {
 /// - Clean up: the row key; Balance: `bal:<row key>`; failing Hook: `<row key>:fail`;
 /// - Control rule: `R:<dir or empty>:<rule id>` (a rule id alone repeats across projects);
 /// - Watch Window: `W:<cli>:<window id>:<resetsAt>`, so a kept Window comes back with the next Window ("Inferred, not
-///   decided": Keep on watch findings); waiting session: `S:<cli>:<session id>`.
+///   decided": Keep on watch findings); waiting session: `S:<cli>:<session id>`. The activity report carries no start of a
+///   wait, so a kept waiting session stays kept through its later waits until it ends.
+///
+/// The core stores these ids as given (`findings.keep`) and never reads them, so changing a shape here un-keeps what was
+/// kept under the old one.
 struct InboxFinding: Identifiable, Equatable, Sendable {
     enum Subject: Equatable, Sendable {
         case row(FrameRow)
@@ -85,15 +89,28 @@ struct InboxGroup: Identifiable, Equatable, Sendable {
     var severity: FindingSeverity { findings.map(\.severity).max() ?? .info }
 }
 
-/// The inputs a finding needs that the engine does not report yet. Each one left nil means "no such finding", never a
-/// made-up count (FE-D3).
+/// The inputs a finding needs beside the rows. Each one left nil or empty means "no such finding", never a made-up count
+/// (FE-D3).
 struct FindingFacts: Equatable, Sendable {
-    /// Hook errors in the last 7 days, by row key (RB-E5). Lifetime errors never stand in (RD26).
+    /// Hook errors in the last 7 days, by row key: `errorsLast7Days` of the row's `cliCells`, summed over CLIs
+    /// (`hookErrorsLastWeek(in:)`, filled by the store from each `loadout.rows`). A row with no 7-day count on any cell is
+    /// absent: unknown, never 0. Lifetime errors never stand in (RD26).
     var hookErrorsLastWeek: [String: Int]?
-    /// The Keep list, finding ids (RB-E5 stores it in `~/.spacevibe`).
+    /// The Keep list, finding ids: the store fills it from `findings.kept` (`<data>/kept-findings.json`).
     var kept: Set<String> = []
     /// Balance pins from Settings › CLIs (RB-R8), registry ids. Fewer than two pins: no Balance finding.
     var pinned: [String] = []
+
+    /// Each Hook row's errors in the last 7 days over every CLI that reports them; rows whose cells carry no week are left
+    /// out. Every member of a row key holds the same `cliCells`, so the first one stands for the row.
+    static func hookErrorsLastWeek(in loadout: CoreLoadoutRows) -> [String: Int] {
+        var out: [String: Int] = [:]
+        for hook in loadout.hooks where out[hook.key] == nil {
+            let week = (hook.cliCells ?? [:]).values.compactMap(\.errorsLast7Days)
+            if !week.isEmpty { out[hook.key] = week.reduce(0, +) }
+        }
+        return out
+    }
 }
 
 enum Findings {

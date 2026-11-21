@@ -100,19 +100,23 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
     var folder: String?
     /// `loadout.rows` only: the item's path with every link followed. Members with one `realPath` are one file (D53).
     var realPath: String?
+    /// `loadout.rows` only (RB-E5): when SpaceVibe first saw this id, ISO text; omitted when unknown. The same time decides
+    /// the D63 note, so the two agree.
+    var firstSeen: String?
 
     private enum Keys: String, CodingKey {
         case id, cli, kind, name, entry, description, owner, path, file, removable, scope, project, inOther, skillOverride = "override", key, cells, cliCells
-        case folder, realPath
+        case folder, realPath, firstSeen
     }
 
-    init(id: String, cli: CoreCLI, kind: CoreKind, name: String, entry: String, description: String, owner: String, path: String, file: String, removable: Bool, scope: CoreInventoryScope, project: String?, inOther: Bool, key: String, hasSkillOverride: Bool = false, skillOverride: String? = nil, cells: CoreCells? = nil, cliCells: CoreCLICells? = nil, folder: String? = nil, realPath: String? = nil) {
+    init(id: String, cli: CoreCLI, kind: CoreKind, name: String, entry: String, description: String, owner: String, path: String, file: String, removable: Bool, scope: CoreInventoryScope, project: String?, inOther: Bool, key: String, hasSkillOverride: Bool = false, skillOverride: String? = nil, cells: CoreCells? = nil, cliCells: CoreCLICells? = nil, folder: String? = nil, realPath: String? = nil, firstSeen: String? = nil) {
         self.id = id; self.cli = cli; self.kind = kind; self.name = name; self.entry = entry; self.description = description
         self.owner = owner; self.path = path; self.file = file; self.removable = removable; self.scope = scope
         self.project = project; self.inOther = inOther; self.key = key; self.hasSkillOverride = hasSkillOverride; self.skillOverride = skillOverride; self.cells = cells
         self.cliCells = cliCells
         self.folder = folder
         self.realPath = realPath
+        self.firstSeen = firstSeen
     }
 
     init(from decoder: Decoder) throws {
@@ -137,6 +141,7 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
         cliCells = try c.decodeIfPresent(CoreCLICells.self, forKey: .cliCells)
         folder = try c.decodeIfPresent(String.self, forKey: .folder)
         realPath = try c.decodeIfPresent(String.self, forKey: .realPath)
+        firstSeen = try c.decodeIfPresent(String.self, forKey: .firstSeen)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -160,6 +165,7 @@ struct CoreInventoryItem: Codable, Equatable, Sendable, Identifiable {
         try c.encodeIfPresent(cliCells, forKey: .cliCells)
         try c.encodeIfPresent(folder, forKey: .folder)
         try c.encodeIfPresent(realPath, forKey: .realPath)
+        try c.encodeIfPresent(firstSeen, forKey: .firstSeen)
     }
 }
 
@@ -200,6 +206,8 @@ struct CoreInventoryHook: Codable, Equatable, Sendable, Identifiable {
     var folder: String?
     /// Always written; `null` when unknown or not logged.
     @CoreNullable var usage: CoreHookUsage?
+    /// As on `CoreInventoryItem`: `loadout.rows` only, omitted when unknown.
+    var firstSeen: String? = nil
 }
 
 /// The `inventory.read` result: no `cells`, hook `usage` null.

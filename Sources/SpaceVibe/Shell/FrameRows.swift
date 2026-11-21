@@ -34,6 +34,13 @@ struct FrameRow: Identifiable, Equatable, Sendable {
     let items: [CoreInventoryItem]
     let hooks: [CoreInventoryHook]
     let cells: CoreCLICells
+    /// The newest `firstSeen` of the members (RB-E5): when SpaceVibe first saw the newest copy. Nil when no member carries it.
+    var firstSeen: Date? = nil
+    /// `firstSeen` is less than `addedGrace` before the clock the rows were built with (`rows(from:now:)`).
+    var isNewByClock = false
+
+    /// The core's grace for "Added in the last 24 hours" (`pendingGraceMs` in core/internal/inventory/attach-usage.go).
+    static let addedGrace: TimeInterval = 24 * 60 * 60
 
     var project: String? { items.first?.project ?? hooks.first?.project }
     /// Skills, Subagents and Hooks under `<project>/.claude`: listed, read-only, never an Inbox finding ("Inferred, not
@@ -43,10 +50,23 @@ struct FrameRow: Identifiable, Equatable, Sendable {
     var isPlugin: Bool { items.contains { Self.isPluginOwner($0.owner) } || hooks.contains { Self.isPluginOwner($0.owner) } }
     /// Every script the Hook names is gone.
     var isDead: Bool { hooks.contains(where: \.dead) }
-    /// A counted zero the core marks as too new for the logs (D63): an item added in the last day is not a finding (RD26).
-    var isRecentlyAdded: Bool { cells.values.contains(where: \.isRecentlyAdded) }
+    /// Added in the last day, so not a finding (RD26). One rule: a counted zero carries the core's D63 note ("Added in the
+    /// last 24 hours", "Added after the newest log"), or, where no cell carries one (a dead Hook that ran, unmeasurable or
+    /// scanning cells), the newest `firstSeen` is under 24 hours old. The note is decided by that same time, so the two
+    /// agree where both exist.
+    var isRecentlyAdded: Bool { isNewByClock || cells.values.contains(where: \.isRecentlyAdded) }
     /// The members whose file is the user's own, so a write may touch them.
     var removableMembers: [String] { items.filter(\.removable).map(\.id) + hooks.filter(\.removable).map(\.id) }
+    /// The members the new frame's writes (`removeFrom`, `removeMany`) may take: user-level files outside any project. The
+    /// Codex skills of `~/.agents/skills` count: `loadout.rows` marks them not `removable` only for the v5 methods
+    /// (inventory.md "Readers map").
+    var writableMembers: [String] {
+        let user = { (owner: String, scope: CoreInventoryScope, project: String?) in !Self.isPluginOwner(owner) && scope == .global && project == nil }
+        return items.filter { $0.removable || user($0.owner, $0.scope, $0.project) }.map(\.id)
+            + hooks.filter { $0.removable || user($0.owner, $0.scope, $0.project) }.map(\.id)
+    }
+    /// Every member id, items then Hooks: what `Remove N selected` passes for each row (`loadout.removeMany`).
+    var memberIDs: [String] { items.map(\.id) + hooks.map(\.id) }
     /// Sessions (or runs) over every CLI that counted.
     var total: Int { cells.values.compactMap(\.count).reduce(0, +) }
 
@@ -94,8 +114,9 @@ struct FrameRow: Identifiable, Equatable, Sendable {
 
 extension FrameRow {
     /// Groups `loadout.rows` by row key, in the order the core sent the members (items, extra items, then Hooks). The extra
-    /// items (Codex skills in `~/.agents/skills`) belong to the same rows; only the v5 shell must not see them.
-    static func rows(from loadout: CoreLoadoutRows) -> [FrameRow] {
+    /// items (Codex skills in `~/.agents/skills`) belong to the same rows; only the v5 shell must not see them. With `now`,
+    /// a row whose newest `firstSeen` is under `addedGrace` old is recently added; without it only the D63 note says so.
+    static func rows(from loadout: CoreLoadoutRows, now: Date? = nil) -> [FrameRow] {
         var order: [String] = []
         var items: [String: [CoreInventoryItem]] = [:]
         var hooks: [String: [CoreInventoryHook]] = [:]
@@ -113,7 +134,9 @@ extension FrameRow {
             let kind = members.first?.kind ?? .hook
             let name = members.first.map { Self.bareName($0.name) } ?? rowHooks.first.map { HookLabel.of($0.command) } ?? key
             let cells = members.first?.cliCells ?? rowHooks.first?.cliCells ?? [:]
-            return FrameRow(id: key, kind: kind, name: name, items: members, hooks: rowHooks, cells: cells)
+            let seen = (members.map(\.firstSeen) + rowHooks.map(\.firstSeen)).compactMap(ActivityFormat.date).max()
+            let isNew = now.flatMap { now in seen.map { now.timeIntervalSince($0) < addedGrace } } ?? false
+            return FrameRow(id: key, kind: kind, name: name, items: members, hooks: rowHooks, cells: cells, firstSeen: seen, isNewByClock: isNew)
         }
     }
 

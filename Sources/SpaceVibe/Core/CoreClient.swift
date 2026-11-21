@@ -29,6 +29,9 @@ final class CoreClient: CoreService, @unchecked Sendable {
     private struct CLI: Encodable { let cli: CoreCLI }
     private struct Stop: Encodable { let cli: CoreCLI, id: String }
     private struct Check: Encodable { let rule: String }
+    private struct CopyTo: Encodable { let id: String, targets: [String] }
+    private struct RemoveFrom: Encodable { let id: String, clis: [String] }
+    private struct IDs: Encodable { let ids: [String] }
 
     /// The members of every `rules.*` call; a member a call does not take stays nil and is left out (params are strict).
     /// `dir` is `null` for the global scope.
@@ -42,6 +45,7 @@ final class CoreClient: CoreService, @unchecked Sendable {
         var from: CoreVerdict?
         var to: CoreVerdict?
         var rules: [CoreRuleMove]?
+        var ids: [String]?
 
         init(_ scope: CoreRuleScope, _ dir: String?) {
             self.scope = scope
@@ -105,6 +109,14 @@ final class CoreClient: CoreService, @unchecked Sendable {
     func loadoutRemoveItem(id: String) async throws -> CoreEntryResult { try await connection.call("loadout.removeItem", ID(id: id)) }
     func loadoutRemoveDeadHooks(cli: CoreCLI) async throws -> CoreEntryResult { try await connection.call("loadout.removeDeadHooks", CLI(cli: cli)) }
 
+    func loadoutCopyTo(id: String, targets: [String]) async throws -> CoreCopyToResult {
+        try await connection.call("loadout.copyTo", CopyTo(id: id, targets: targets))
+    }
+    func loadoutRemoveFrom(id: String, clis: [String]) async throws -> CoreRemoveFromResult {
+        try await connection.call("loadout.removeFrom", RemoveFrom(id: id, clis: clis))
+    }
+    func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult { try await connection.call("loadout.removeMany", IDs(ids: ids)) }
+
     func journalUndo(id: String) async throws -> CoreUndoResult { try await connection.call("journal.undo", ID(id: id)) }
     func journalHistory() async throws -> CoreJournalHistory { try await connection.call("journal.history") }
 
@@ -161,7 +173,19 @@ final class CoreClient: CoreService, @unchecked Sendable {
 
     func rulesCheck(rule: String) async throws -> CoreRuleCheck { try await connection.call("rules.check", Check(rule: rule)) }
 
+    func rulesRemoveMany(scope: CoreRuleScope, dir: String?, ids: [String]) async throws -> CoreEntryResult {
+        var params = Rules(scope, dir)
+        params.ids = ids
+        return try await connection.call("rules.removeMany", params)
+    }
+
     // MARK: Limits
 
     func limitsRead() async throws -> CoreLimitsResult { try await connection.call("limits.read") }
+
+    // MARK: Keep list
+
+    func findingsKept() async throws -> CoreKeptFindings { try await connection.call("findings.kept") }
+    func findingsKeep(id: String) async throws -> CoreEntryResult { try await connection.call("findings.keep", ID(id: id)) }
+    func findingsUnkeep(id: String) async throws -> CoreEntryResult { try await connection.call("findings.unkeep", ID(id: id)) }
 }

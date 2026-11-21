@@ -5,6 +5,9 @@ import Observation
 enum FrameWriteOutcome: Equatable, Sendable {
     /// The Journal entry the write recorded: its id is what Undo runs.
     case entry(CoreJournalEntry)
+    /// As `entry`, with the toast built from the core's answer (who lost the item, who reads the folder too), which the
+    /// write cannot know before the call.
+    case entryToast(CoreJournalEntry, label: String)
     /// `rules.setCapability` answered null: the file already holds that.
     case nothingToChange
     /// A change that is not journaled (Stop): no Undo.
@@ -59,7 +62,9 @@ final class FrameWrites {
         do { outcome = .success(try await write.run(core)) } catch { outcome = .failure(error) }
         switch outcome {
         case .success(.entry(let entry)):
-            toasts.show(write.label, asyncUndo: { [weak self] in await self?.undo(entry, of: write) })
+            toasts.show(write.label, asyncUndo: { [weak self] in await self?.undo(entry, label: write.label, touches: write.touches) })
+        case .success(.entryToast(let entry, let label)):
+            toasts.show(label, asyncUndo: { [weak self] in await self?.undo(entry, label: label, touches: write.touches) })
         case .success(.nothingToChange):
             toasts.show(Self.nothingToChange)
         case .success(.done):
@@ -73,23 +78,23 @@ final class FrameWrites {
         return false
     }
 
-    private func undo(_ entry: CoreJournalEntry, of write: FrameWrite) async {
+    private func undo(_ entry: CoreJournalEntry, label: String, touches: Set<FrameSource>) async {
         do {
             let undone = try await core.journalUndo(id: entry.id)
-            toasts.show("Undid \(undone.label.isEmpty ? write.label : undone.label)")
+            toasts.show("Undid \(undone.label.isEmpty ? label : undone.label)")
         } catch {
             toasts.show(AppEnvironment.message(error), tone: .danger)
         }
-        await store.reread(write.touches.union([.journal]))
+        await store.reread(touches.union([.journal]))
     }
 }
 
 // MARK: The engine's writes today
 
-/// The writes the core has now, each with the sources it touches. RB-E3 (`copyTo`, `removeFrom`) and RB-E4
-/// (`removeMany`, `rules.removeMany`) add theirs here as they land.
+/// The writes the core has now, each with the sources it touches (AR2): the v5 ones first, then the new frame's per-CLI,
+/// batch and Keep writes (RB-E3, RB-E4, RB-E5).
 extension FrameWrite {
-    private static let loadoutSources: Set<FrameSource> = [.inventory, .loadout]
+    static let loadoutSources: Set<FrameSource> = [.inventory, .loadout]
 
     static func copyToOther(id: String, label: String) -> FrameWrite {
         FrameWrite(control: "copy:\(id)", label: label, touches: loadoutSources) { .entry(try await $0.loadoutCopyToOther(id: id).entry) }
@@ -136,5 +141,94 @@ extension FrameWrite {
             _ = try await core.activityStop(cli: cli, id: sessionID)
             return .done
         }
+    }
+}
+
+// MARK: Per-CLI, batch and Keep writes
+
+extension FrameWrite {
+    /// Turns CLIs on for a row: copies its Skill or Subagent into each target's own folder (`loadout.copyTo`). The toast
+    /// names the CLIs that read a folder the copy went into ("… read the same folder, so they have it too").
+    static func copyTo(_ row: FrameRow, targets: [String], registry: [CoreRegistryCLI], control: String? = nil) -> FrameWrite {
+        let source = row.writableMembers.first { id in row.items.contains { $0.id == id } } ?? row.items.first?.id ?? row.id
+        let added = "Added \(row.name) to \(names(targets, registry))"
+        return FrameWrite(control: control ?? "copyTo:\(row.id)", label: added, touches: loadoutSources) { core in
+            let result = try await core.loadoutCopyTo(id: source, targets: targets)
+            return .entryToast(result.entry, label: added + alsoReaders(result.alsoReaders, registry))
+        }
+    }
+
+    /// Turns CLIs off for a row: every file those CLIs read it from goes (`loadout.removeFrom`). The core refuses when a
+    /// CLI not named reads one of those files; the toast names who lost it and who still has it.
+    static func removeFrom(_ row: FrameRow, clis: [String], registry: [CoreRegistryCLI], control: String? = nil) -> FrameWrite {
+        let member = row.writableMembers.first ?? row.items.first?.id ?? row.id
+        return FrameWrite(control: control ?? "removeFrom:\(row.id)", label: "Removed \(row.name)", touches: loadoutSources) { core in
+            let result = try await core.loadoutRemoveFrom(id: member, clis: clis)
+            return .entryToast(result.entry, label: removedLabel(row.name, lost: result.lost, stillHave: result.stillHave, registry))
+        }
+    }
+
+    /// `Remove N selected`: the rows shown and ticked (`FrameWorld.removalSet`), removed as one change with one Undo
+    /// (`loadout.removeMany`). The label counts rows, not copies; the call passes every member id of each row, or only
+    /// those in `members` when given.
+    static func removeMany(_ rows: [FrameRow], members: Set<String>? = nil, registry: [CoreRegistryCLI], control: String = "removeMany") -> FrameWrite {
+        let ids = rows.flatMap(\.memberIDs).filter { members?.contains($0) ?? true }
+        let what = selection(rows)
+        return FrameWrite(control: control, label: "Removed \(what)", touches: loadoutSources) { core in
+            let result = try await core.loadoutRemoveMany(ids: ids)
+            let label = result.lost.isEmpty ? "Removed \(what)" : "Removed \(what) from \(names(result.lost, registry))"
+            return .entryToast(result.entry, label: label)
+        }
+    }
+
+    /// Removes these rules of one file in one edit (`rules.removeMany`); a selection over several files is one write per
+    /// file.
+    static func removeRules(_ rules: [CoreRule], in file: FrameScope, label: String? = nil) -> FrameWrite {
+        let text = label ?? (rules.count == 1 ? "Removed Rule \(rules[0].rule)" : "Removed \(NumberWording.plural(rules.count, "Rule"))")
+        return FrameWrite(control: "removeRules:\(file.scope.rawValue):\(file.dir ?? "")", label: text, touches: [.rules(file)]) {
+            .entry(try await $0.rulesRemoveMany(scope: file.scope, dir: file.dir, ids: rules.map(\.id)).entry)
+        }
+    }
+
+    /// Keep (RD26): the finding leaves the count and moves under `N kept · Show`. Journaled, so Undo stops keeping it.
+    static func keep(findingID: String, label: String = "Kept. It no longer counts in Inbox; Show Kept lists it.") -> FrameWrite {
+        FrameWrite(control: "keep:\(findingID)", label: label, touches: [.kept]) { .entry(try await $0.findingsKeep(id: findingID).entry) }
+    }
+
+    static func unkeep(findingID: String, label: String = "Counted in Inbox again.") -> FrameWrite {
+        FrameWrite(control: "unkeep:\(findingID)", label: label, touches: [.kept]) { .entry(try await $0.findingsUnkeep(id: findingID).entry) }
+    }
+
+    // MARK: Wording
+
+    /// Registry names in a sentence ("Claude Code and Codex"); an id the registry does not list shows as itself.
+    static func names(_ ids: [String], _ registry: [CoreRegistryCLI]) -> String {
+        CLINames.sentence(ids.map { id in registry.first { $0.id == id }?.name ?? id })
+    }
+
+    /// ". Codex reads the same folder, so it has it too", or nothing.
+    static func alsoReaders(_ ids: [String], _ registry: [CoreRegistryCLI]) -> String {
+        guard !ids.isEmpty else { return "" }
+        let one = ids.count == 1
+        return ". \(names(ids, registry)) \(one ? "reads" : "read") the same folder, so \(one ? "it has" : "they have") it too"
+    }
+
+    /// "Removed s from Codex. Claude Code still has it"; "Removed a copy of s" when nobody lost it.
+    static func removedLabel(_ name: String, lost: [String], stillHave: [String], _ registry: [CoreRegistryCLI]) -> String {
+        let head = lost.isEmpty ? "Removed a copy of \(name)" : "Removed \(name) from \(names(lost, registry))"
+        guard !stillHave.isEmpty else { return head }
+        return head + ". \(names(stillHave, registry)) still \(stillHave.count == 1 ? "has" : "have") it"
+    }
+
+    /// One row by name; otherwise each kind counted, in page order ("2 Skills, Subagent review and 3 Hooks").
+    static func selection(_ rows: [FrameRow]) -> String {
+        if rows.count == 1 { return rows[0].name }
+        let kinds: [(CoreKind, String)] = [(.skill, "Skill"), (.agent, "Subagent"), (.hook, "Hook")]
+        let parts = kinds.compactMap { kind, word -> String? in
+            let of = rows.filter { $0.kind == kind }
+            if of.isEmpty { return nil }
+            return of.count == 1 ? "\(word) \(of[0].name)" : NumberWording.plural(of.count, word)
+        }
+        return CLINames.sentence(parts)
     }
 }

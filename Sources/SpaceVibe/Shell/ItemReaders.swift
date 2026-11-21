@@ -22,14 +22,21 @@ struct ItemReaders: Equatable, Sendable {
 
     /// In the row's order.
     let members: [Member]
+    /// Members of other rows that reach the file of a row member that is not a link: a link under another name (its
+    /// `SKILL.md` has no name, so it is named after its folder) or the same folder spelled another way. Removing that file
+    /// leaves them dangling, so the engine takes them along and refuses unless their readers are named (`expandRemoval`
+    /// over every member in core/internal/mutate/member-removal.go). They never count as the row's own copies.
+    let elsewhere: [Member]
 
-    init(members: [Member]) {
+    init(members: [Member], elsewhere: [Member] = []) {
         self.members = members
+        self.elsewhere = elsewhere
     }
 
     /// Nil when a member names no folder of the table: a core before the readers map, or a folder it did not list. The
-    /// answers are then unknown, never a guess.
-    init?(row: FrameRow, folders: [CoreReadersFolder]) {
+    /// answers are then unknown, never a guess. `loadoutItems` are every item of `loadout.rows` (`items` and `extraItems`),
+    /// where the members of other rows that share a file with this one are found.
+    init?(row: FrameRow, folders: [CoreReadersFolder], loadoutItems: [CoreInventoryItem] = []) {
         let byPath = Dictionary(folders.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
         func readers(of folder: CoreReadersFolder) -> [String] {
             var out: [String] = []
@@ -50,7 +57,17 @@ struct ItemReaders: Equatable, Sendable {
                                 folderReadBy: folder.readBy, folderOwner: folder.ownedBy))
         }
         guard !built.isEmpty else { return nil }
+        let rowIDs = Set(row.items.map(\.id))
+        let files = Set(row.items.filter { $0.owner != "link" }.compactMap(\.realPath))
+        var others: [Member] = []
+        for item in loadoutItems where !rowIDs.contains(item.id) {
+            guard let realPath = item.realPath, files.contains(realPath) else { continue }
+            guard let path = item.folder, let folder = byPath[path] else { return nil }
+            others.append(Member(id: item.id, folder: path, realPath: realPath, isLink: item.owner == "link", readBy: readers(of: folder),
+                                 folderReadBy: folder.readBy, folderOwner: folder.ownedBy))
+        }
         members = built
+        elsewhere = others
     }
 
     /// The members a CLI reads the row from. A CLI can read it from several folders: turning it off removes every one.
@@ -59,24 +76,37 @@ struct ItemReaders: Equatable, Sendable {
     }
 
     /// What removing `chosen` takes away: a link only itself; any other member its file, so every member with the same real
-    /// path goes too, links included (they would dangle).
+    /// path goes too, links included (they would dangle), in this row or `elsewhere`, as the engine does.
     func expand(_ chosen: Set<String>) -> Set<String> {
+        let all = members + elsewhere
         var out = chosen
-        for member in members where chosen.contains(member.id) && !member.isLink {
-            out.formUnion(members.filter { $0.realPath == member.realPath }.map(\.id))
+        for member in all where chosen.contains(member.id) && !member.isLink {
+            out.formUnion(all.filter { $0.realPath == member.realPath }.map(\.id))
         }
         return out
     }
 
-    /// Every CLI of `clis` that reads the row and ends up without it once `removed` is gone (RD-R11: the button counts
-    /// every CLI that loses the item; a hidden CLI still counts, "Show guard"). `removed` is taken as given: pass it
-    /// through `expand` first.
+    /// Every CLI of `clis` that reads the row, or a link `elsewhere` to its file, and ends up with nothing of it once
+    /// `removed` is gone (RD-R11: the button counts every CLI that loses the item; a hidden CLI still counts, "Show
+    /// guard"). A CLI left with a dangling link loses, as the engine says when it refuses. `removed` is taken as given:
+    /// pass it through `expand` first.
     func losers(removing removed: Set<String>, among clis: [String]) -> [String] {
         clis.filter { cli in
-            let read = members(readBy: cli)
+            let read = members(readBy: cli).union(elsewhere.filter { $0.readBy.contains(cli) }.map(\.id))
             return !read.isEmpty && read.isSubset(of: removed)
         }
     }
+
+    /// Every CLI of `clis` that reads one of the files `removed` takes, the members `elsewhere` included: the readers the
+    /// engine names when it refuses a removal that does not name them all (`loadout.removeFrom` 409). A Hook is its own file.
+    func fileReaders(removing removed: Set<String>, among clis: [String]) -> [String] {
+        let read = Set((members + elsewhere).filter { removed.contains($0.id) }.flatMap(\.readBy))
+        return clis.filter(read.contains)
+    }
+
+    /// The removal reaches members of other rows: `loadout.removeFrom` names CLIs of this row only, so such a removal is
+    /// refused unless it goes through `loadout.removeMany` with those member ids too.
+    func reachesOtherRows(_ removed: Set<String>) -> Bool { elsewhere.contains { removed.contains($0.id) } }
 
     /// The CLIs whose folders give `cli` the row, when none of the folders it reads the row from is its own (RD31): such a
     /// logo is not a toggle and shows "via". Nil when `cli` has its own copy or does not read the row.

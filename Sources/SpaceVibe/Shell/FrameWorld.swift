@@ -12,10 +12,12 @@ struct FrameSnapshot: Equatable, Sendable {
     var journal: CoreJournalHistory?
 }
 
-/// What the derivations need that the engine does not report yet, plus the user's settings. Every member starts empty:
-/// an empty input gives no finding and no figure, never an invented one (FE-D3). Each names the task that fills it.
+/// What the derivations need beside the snapshot: engine answers the store keeps in the derivations' terms, inputs the
+/// engine does not report yet, and the user's settings. Every member starts empty: an empty input gives no finding and no
+/// figure, never an invented one (FE-D3). Each names who fills it.
 struct FrameFacts: Equatable, Sendable {
-    /// RB-E5 (hook errors in 7 days, the Keep list) and RB-R8 (Balance pins).
+    /// The store fills hook errors in 7 days (from `loadout.rows`) and the Keep list (from `findings.kept`); RB-R8 the
+    /// Balance pins.
     var findings = FindingFacts()
     /// RB-E7: `clean.scan`.
     var clean: CleanScan?
@@ -64,7 +66,7 @@ struct FrameWorld: Sendable {
         let shown = snapshot.registry.filter { !facts.hidden.contains($0.id) }
         clis = shown.isEmpty ? Array(snapshot.registry.prefix(1)) : shown
         let ids = clis.map(\.id)
-        rows = (snapshot.loadout.map(FrameRow.rows(from:)) ?? []).filter { row in
+        rows = (snapshot.loadout.map { FrameRow.rows(from: $0, now: now) } ?? []).filter { row in
             ids.contains { row.presence($0) == .on || row.presence($0) == .unknown }
         }
         candidates = rows.filter(\.isCandidate)
@@ -106,18 +108,33 @@ struct FrameWorld: Sendable {
     /// The rows a bulk removal takes: the ticked rows among those shown, that the app may write (`Remove N selected` counts
     /// rows, not copies). A tick on a row the filter hides never removes it.
     func removalSet(selected: Set<String>, shown: [FrameRow]) -> [FrameRow] {
-        shown.filter { selected.contains($0.id) && !$0.isPlugin && !$0.isProject && !$0.removableMembers.isEmpty }
+        shown.filter { selected.contains($0.id) && !$0.isPlugin && !$0.isProject && !$0.writableMembers.isEmpty }
     }
+
+    /// When the newest status line snapshot of this Claude account was taken (`limits.read` `statusline.at`, RD24): what
+    /// Settings › Limits ages. Not the Claude entry's `at`, which may date Claude's usage cache. Nil when there is none.
+    var statuslineAt: Date? { snapshot.limits?.statusline?.at.map(Date.init(timeIntervalSince1970:)) }
 
     // MARK: Readers
 
-    /// From `loadout.rows`' readers map; nil when a member names no folder of it.
-    func readers(of row: FrameRow) -> ItemReaders? { ItemReaders(row: row, folders: snapshot.loadout?.folders ?? []) }
+    /// From `loadout.rows`' readers map; nil when a member names no folder of it. Members of other rows that share a file
+    /// with this one are `elsewhere`.
+    func readers(of row: FrameRow) -> ItemReaders? {
+        guard let loadout = snapshot.loadout else { return nil }
+        return ItemReaders(row: row, folders: loadout.folders, loadoutItems: loadout.items + loadout.extraItems)
+    }
 
     /// Every installed CLI that ends up without the row once `members` are removed, hidden ones included.
     func losers(of row: FrameRow, removing members: Set<String>) -> ReadersAnswer<[String]> {
         guard let readers = readers(of: row) else { return .unknown }
         return .known(readers.losers(removing: readers.expand(members), among: snapshot.registry.filter { $0.supports.supports(row.kind) }.map(\.id)))
+    }
+
+    /// Every installed CLI that reads a file removing `members` takes, hidden ones included: the readers the engine names
+    /// when it refuses a removal that does not name them all.
+    func fileReaders(of row: FrameRow, removing members: Set<String>) -> ReadersAnswer<[String]> {
+        guard let readers = readers(of: row) else { return .unknown }
+        return .known(readers.fileReaders(removing: readers.expand(members), among: snapshot.registry.map(\.id)))
     }
 
     /// The CLIs whose folder gives `cli` the row (RD31); `.known(nil)` when `cli` has its own copy.
@@ -152,7 +169,8 @@ struct FrameWorld: Sendable {
         }
         switch page {
         case .inbox:
-            if let early = gate(usage.union([.rules(.global), .limits, .activity]), usageToo: true) { return early }
+            // The Keep list decides the count: until it is read, kept findings would be counted.
+            if let early = gate(usage.union([.rules(.global), .limits, .activity, .kept]), usageToo: true) { return early }
             let tone: FindingSeverity? = findings.isEmpty ? nil : findings.contains { $0.severity == .critical } ? .critical : .attention
             return .count(findings.count, tone: tone)
         case .skills, .subagents:

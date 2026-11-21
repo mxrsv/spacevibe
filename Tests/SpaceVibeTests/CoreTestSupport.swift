@@ -28,4 +28,11 @@ class UnservedCore: CoreService, @unchecked Sendable {
     func rulesChangeVerdicts(scope: CoreRuleScope, dir: String?, to: CoreVerdict, rules: [CoreRuleMove]) async throws -> CoreEntryResult { throw unserved() }
     func rulesCheck(rule: String) async throws -> CoreRuleCheck { throw unserved() }
     func limitsRead() async throws -> CoreLimitsResult { throw unserved() }
+    func loadoutCopyTo(id: String, targets: [String]) async throws -> CoreCopyToResult { throw unserved() }
+    func loadoutRemoveFrom(id: String, clis: [String]) async throws -> CoreRemoveFromResult { throw unserved() }
+    func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult { throw unserved() }
+    func rulesRemoveMany(scope: CoreRuleScope, dir: String?, ids: [String]) async throws -> CoreEntryResult { throw unserved() }
+    func findingsKept() async throws -> CoreKeptFindings { throw unserved() }
+    func findingsKeep(id: String) async throws -> CoreEntryResult { throw unserved() }
+    func findingsUnkeep(id: String) async throws -> CoreEntryResult { throw unserved() }
 }

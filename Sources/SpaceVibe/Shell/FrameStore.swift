@@ -5,6 +5,8 @@ import Observation
 enum FrameSource: Hashable, Sendable {
     case registry, inventory, loadout, limits, activity, journal
     case rules(FrameScope)
+    /// `findings.kept`: the Keep list, kept in `facts.findings.kept`.
+    case kept
 }
 
 /// Where one source stands. A failure keeps the last reading: `failed` with data is a refresh that failed, without data a
@@ -15,8 +17,9 @@ enum FrameSourceState: Equatable, Sendable {
 }
 
 /// The redesign's one app-wide data store (plan AR2). It holds the latest `clis.registry`, `inventory.read`, `loadout.rows`,
-/// `rules.snapshot` (global and both files of every known project), `limits.read`, the `activity.subscribe` reports and
-/// `journal.history`, and it is the only object of the new frame that talks to `CoreService`. Pages read `world(now:)`.
+/// `rules.snapshot` (global and both files of every known project), `limits.read`, the `activity.subscribe` reports,
+/// `journal.history` and `findings.kept`, and it is the only object of the new frame that talks to `CoreService`. Pages
+/// read `world(now:)`.
 ///
 /// - Reads everything at `start()`, again on app activation (`refresh()`, skipped inside `refreshInterval`) and on ⌘R
 ///   (`refresh(force: true)`); a write re-reads only the sources it touched (`reread`).
@@ -38,7 +41,8 @@ final class FrameStore {
     private(set) var isScanning = false
     /// The core's sentence when the last usage scan failed.
     private(set) var scanFailure: String?
-    /// Inputs the engine does not report yet (`FrameFacts`); empty until their tasks land.
+    /// The derivations' other inputs (`FrameFacts`). The store fills `findings.kept` from each `findings.kept` and
+    /// `findings.hookErrorsLastWeek` from each `loadout.rows`; the rest are set by their owners (Settings) or still empty.
     var facts = FrameFacts()
 
     @ObservationIgnored private let core: any CoreService
@@ -46,6 +50,7 @@ final class FrameStore {
     @ObservationIgnored private var lastRefresh: Date?
     @ObservationIgnored private var subscription: Task<Void, Never>?
     @ObservationIgnored private(set) var isStarted = false
+    @ObservationIgnored private var hasKept = false
 
     init(core: any CoreService) {
         self.core = core
@@ -95,7 +100,7 @@ final class FrameStore {
     }
 
     private func readEverything(refreshProjects: Bool) async {
-        var sources: Set<FrameSource> = [.registry, .inventory, .loadout, .limits, .journal]
+        var sources: Set<FrameSource> = [.registry, .inventory, .loadout, .limits, .journal, .kept]
         if subscription == nil { sources.insert(.activity) }
         sources.formUnion(snapshot.rules.keys.filter { $0 != .global }.map(FrameSource.rules))
         await withTaskGroup(of: Void.self) { group in
@@ -114,6 +119,7 @@ final class FrameStore {
         case .activity: snapshot.activity != nil
         case .journal: snapshot.journal != nil
         case .rules(let file): snapshot.rules[file] != nil
+        case .kept: hasKept
         }
     }
 
@@ -142,6 +148,7 @@ final class FrameStore {
                 let value = try await core.loadoutRows()
                 guard isLatest(source, generation) else { return }
                 snapshot.loadout = value
+                facts.findings.hookErrorsLastWeek = FindingFacts.hookErrorsLastWeek(in: value)
                 // A restarted core has no scan result: it answers `scanning` until someone scans.
                 if mayRestartScan, value.usage == .scanning, !isScanning, scanFailure == nil {
                     states[source] = .ready
@@ -159,6 +166,13 @@ final class FrameStore {
             case .journal:
                 let value = try await core.journalHistory()
                 if isLatest(source, generation) { snapshot.journal = value }
+            case .kept:
+                // A list the core cannot read is refused, never read as empty: the last one read stays.
+                let value = try await core.findingsKept()
+                if isLatest(source, generation) {
+                    facts.findings.kept = Set(value.kept)
+                    hasKept = true
+                }
             case .rules(let file):
                 let value = try await core.rulesSnapshot(scope: file.scope, dir: file.dir, refreshProjects: refreshProjects && file == .global)
                 guard isLatest(source, generation) else { return }

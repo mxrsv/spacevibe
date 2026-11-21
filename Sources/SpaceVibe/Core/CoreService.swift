@@ -31,6 +31,16 @@ protocol CoreService: Sendable {
     func loadoutRemoveItem(id: String) async throws -> CoreEntryResult
     func loadoutRemoveDeadHooks(cli: CoreCLI) async throws -> CoreEntryResult
 
+    // The new frame's writes (RB-E3, RB-E4), beside the v5 ones until RB-X1 (plan AR1). Ids are `loadout.rows` member ids
+    // (`items` and `extraItems`); CLIs and targets are registry ids.
+
+    /// Copies a Skill or Subagent into each target's own folder; `alsoReaders` read a folder the copy went into.
+    func loadoutCopyTo(id: String, targets: [String]) async throws -> CoreCopyToResult
+    /// Removes every file each named CLI reads the item from; refused (409) when a CLI not named reads one of them.
+    func loadoutRemoveFrom(id: String, clis: [String]) async throws -> CoreRemoveFromResult
+    /// Removes exactly these members (items and Hooks, mixed) as one Journal entry, all or nothing.
+    func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult
+
     func journalUndo(id: String) async throws -> CoreUndoResult
     func journalHistory() async throws -> CoreJournalHistory
 
@@ -43,6 +53,13 @@ protocol CoreService: Sendable {
     func rulesChangeVerdict(scope: CoreRuleScope, dir: String?, rule: String, from: CoreVerdict, to: CoreVerdict) async throws -> CoreEntryResult
     func rulesChangeVerdicts(scope: CoreRuleScope, dir: String?, to: CoreVerdict, rules: [CoreRuleMove]) async throws -> CoreEntryResult
     func rulesCheck(rule: String) async throws -> CoreRuleCheck
+    /// Removes these rules (ids `<scope>:<verdict>:<rule>` of this scope) in one edit of the scope's file.
+    func rulesRemoveMany(scope: CoreRuleScope, dir: String?, ids: [String]) async throws -> CoreEntryResult
 
     func limitsRead() async throws -> CoreLimitsResult
+
+    /// The Keep list (RB-E5): finding ids the shell built, oldest first. Refused (409) when the file is not the list.
+    func findingsKept() async throws -> CoreKeptFindings
+    func findingsKeep(id: String) async throws -> CoreEntryResult
+    func findingsUnkeep(id: String) async throws -> CoreEntryResult
 }

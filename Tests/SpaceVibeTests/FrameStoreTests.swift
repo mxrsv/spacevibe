@@ -15,57 +15,104 @@ final class FrameFakeCore: UnservedCore, @unchecked Sendable {
     var writeResult: Result<CoreJournalEntry, CoreError> = .success(FrameTestData.entry("e1"))
     var undoResult: Result<CoreUndoResult, CoreError> = .success(CoreUndoResult(label: "Removed a"))
 
+    /// The Keep list `findings.kept` answers; `findings.keep` and `unkeep` change it.
+    var kept: [String] = []
+    /// The core's answer to the per-CLI and batch writes (`lost`, `stillHave`, `alsoReaders`); `writeResult` gives the entry
+    /// or the refusal.
+    var alsoReaders: [String] = []
+    var lost: [String] = ["claude"]
+    var stillHave: [String] = []
+    /// Called inside every recorded call, before it answers: a test looks at the write path's state at that moment.
+    var onCall: (@Sendable (String) async -> Void)?
+    private var _sent: [String: String] = [:]
+
     var calls: [String] { lock.withLock { _calls } }
+    /// The params each write was last sent, as text.
+    var sent: [String: String] { lock.withLock { _sent } }
     func count(_ method: String) -> Int { calls.filter { $0 == method }.count }
     func reset() { lock.withLock { _calls = [] } }
     func push(_ report: CoreActivityReport) { lock.withLock { continuation }?.yield(report) }
     func failStream() { lock.withLock { continuation }?.finish(throwing: CoreError("The core restarted.", status: 500)) }
 
-    private func record(_ name: String) throws {
-        lock.withLock { _calls.append(name) }
+    private func record(_ name: String, sent params: String? = nil) async throws {
+        lock.withLock {
+            _calls.append(name)
+            if let params { _sent[name] = params }
+        }
+        if let onCall { await onCall(name) }
         if failing.contains(name) { throw CoreError("could not read \(name)", status: 500) }
     }
 
-    override func clisRegistry() async throws -> CoreRegistryResult { try record("clis.registry"); return CoreRegistryResult(clis: FrameTestData.registry) }
+    override func findingsKept() async throws -> CoreKeptFindings { try await record("findings.kept"); return CoreKeptFindings(kept: lock.withLock { kept }) }
+    override func findingsKeep(id: String) async throws -> CoreEntryResult {
+        try await record("findings.keep", sent: id)
+        let entry = try writeResult.get()
+        lock.withLock { kept.append(id) }
+        return CoreEntryResult(entry: entry)
+    }
+    override func findingsUnkeep(id: String) async throws -> CoreEntryResult {
+        try await record("findings.unkeep", sent: id)
+        let entry = try writeResult.get()
+        lock.withLock { kept.removeAll { $0 == id } }
+        return CoreEntryResult(entry: entry)
+    }
+    override func loadoutCopyTo(id: String, targets: [String]) async throws -> CoreCopyToResult {
+        try await record("loadout.copyTo", sent: "\(id) \(targets)")
+        return CoreCopyToResult(entry: try writeResult.get(), alsoReaders: alsoReaders)
+    }
+    override func loadoutRemoveFrom(id: String, clis: [String]) async throws -> CoreRemoveFromResult {
+        try await record("loadout.removeFrom", sent: "\(id) \(clis)")
+        return CoreRemoveFromResult(entry: try writeResult.get(), lost: lost, stillHave: stillHave)
+    }
+    override func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult {
+        try await record("loadout.removeMany", sent: "\(ids)")
+        return CoreRemoveManyResult(entry: try writeResult.get(), lost: lost)
+    }
+    override func rulesRemoveMany(scope: CoreRuleScope, dir: String?, ids: [String]) async throws -> CoreEntryResult {
+        try await record("rules.removeMany", sent: "\(scope.rawValue) \(dir ?? "") \(ids)")
+        return CoreEntryResult(entry: try writeResult.get())
+    }
+
+    override func clisRegistry() async throws -> CoreRegistryResult { try await record("clis.registry"); return CoreRegistryResult(clis: FrameTestData.registry) }
     override func inventoryRead() async throws -> CoreInventorySnapshot {
-        try record("inventory.read")
+        try await record("inventory.read")
         return CoreInventorySnapshot(items: [], hooks: [], problems: [], events: [:], roots: [:])
     }
     override func loadoutRows() async throws -> CoreLoadoutRows {
-        try record("loadout.rows")
+        try await record("loadout.rows")
         var rows = loadout
         rows.usage = lock.withLock { usage }
         return rows
     }
     override func usageScan(progress: (@Sendable (CoreUsageProgress) -> Void)?) async throws -> CoreUsageResult {
-        try record("usage.scan")
+        try await record("usage.scan")
         lock.withLock { usage = .ready }
         let cli = CoreCLITotals(skill: [:], agent: [:], hook: [:])
         let window = CoreLogWindow(files: 0, oldest: nil, newest: nil)
         return CoreUsageResult(totals: CoreUsageTotals(claude: cli, codex: cli), sessions: CoreUsageSessions(claude: 0, codex: 0), windows: CoreUsageWindows(claude: window, codex: window), files: 0)
     }
     override func rulesSnapshot(scope: CoreRuleScope, dir: String?, refreshProjects: Bool) async throws -> CoreRulesSnapshot {
-        try record("rules.snapshot:\(scope.rawValue):\(dir ?? "")")
+        try await record("rules.snapshot:\(scope.rawValue):\(dir ?? "")")
         let file = FrameScope(scope: scope, dir: dir)
         return FrameTestData.rules([FrameTestData.rule("Bash", file: file)], file: file, projects: lock.withLock { projects })
     }
-    override func limitsRead() async throws -> CoreLimitsResult { try record("limits.read"); return CoreLimitsResult(limits: []) }
-    override func journalHistory() async throws -> CoreJournalHistory { try record("journal.history"); return CoreJournalHistory(entries: []) }
-    override func activityRead() async throws -> CoreActivityReport { try record("activity.read"); return FrameTestData.activity([]) }
+    override func limitsRead() async throws -> CoreLimitsResult { try await record("limits.read"); return CoreLimitsResult(limits: []) }
+    override func journalHistory() async throws -> CoreJournalHistory { try await record("journal.history"); return CoreJournalHistory(entries: []) }
+    override func activityRead() async throws -> CoreActivityReport { try await record("activity.read"); return FrameTestData.activity([]) }
     override func activitySubscribe() -> AsyncThrowingStream<CoreActivityReport, Error> {
         lock.withLock { _calls.append("activity.subscribe") }
         return AsyncThrowingStream { continuation in lock.withLock { self.continuation = continuation } }
     }
     override func loadoutRemoveItem(id: String) async throws -> CoreEntryResult {
-        try record("loadout.removeItem")
+        try await record("loadout.removeItem")
         return CoreEntryResult(entry: try writeResult.get())
     }
     override func rulesSetCapability(scope: CoreRuleScope, dir: String?, capability: CoreCapability, verdict: CoreVerdict) async throws -> CoreSetCapabilityResult {
-        try record("rules.setCapability")
+        try await record("rules.setCapability")
         return CoreSetCapabilityResult(entry: nil)
     }
     override func journalUndo(id: String) async throws -> CoreUndoResult {
-        try record("journal.undo:\(id)")
+        try await record("journal.undo:\(id)")
         return try undoResult.get()
     }
 }
@@ -76,7 +123,7 @@ final class FrameFakeCore: UnservedCore, @unchecked Sendable {
 @MainActor
 struct FrameStoreTests {
     private let everything: Set<String> = [
-        "clis.registry", "inventory.read", "loadout.rows", "limits.read", "journal.history", "usage.scan",
+        "clis.registry", "inventory.read", "loadout.rows", "limits.read", "journal.history", "findings.kept", "usage.scan",
         "rules.snapshot:global:", "rules.snapshot:project:/p", "rules.snapshot:local:/p",
     ]
 

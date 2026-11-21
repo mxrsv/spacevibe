@@ -77,6 +77,13 @@ private final class FakeActivityCore: CoreService, @unchecked Sendable {
     func rulesChangeVerdicts(scope: CoreRuleScope, dir: String?, to: CoreVerdict, rules: [CoreRuleMove]) async throws -> CoreEntryResult { throw unused() }
     func rulesCheck(rule: String) async throws -> CoreRuleCheck { throw unused() }
     func limitsRead() async throws -> CoreLimitsResult { throw unused() }
+    func loadoutCopyTo(id: String, targets: [String]) async throws -> CoreCopyToResult { throw unused() }
+    func loadoutRemoveFrom(id: String, clis: [String]) async throws -> CoreRemoveFromResult { throw unused() }
+    func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult { throw unused() }
+    func rulesRemoveMany(scope: CoreRuleScope, dir: String?, ids: [String]) async throws -> CoreEntryResult { throw unused() }
+    func findingsKept() async throws -> CoreKeptFindings { throw unused() }
+    func findingsKeep(id: String) async throws -> CoreEntryResult { throw unused() }
+    func findingsUnkeep(id: String) async throws -> CoreEntryResult { throw unused() }
 }
 
 /// The Activity model reads and stops through `env.goCore`, the Go core (plan S.3).
