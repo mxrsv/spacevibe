@@ -13,8 +13,8 @@ struct AppFrame: View {
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                Spacer().frame(height: Metrics.AppSidebar.windowButtonsHeight)
-                VStack(spacing: Metrics.AppSidebar.itemSpacing) {
+                Spacer().frame(height: SpaceRole.titleBarClearance)
+                VStack(spacing: SpaceRole.step4) {
                     ForEach(FramePage.allCases) { item in
                         SidebarPageItem(title: item.title, glyph: Self.glyph(of: item), isCurrent: item == page) { page = item }
                     }
