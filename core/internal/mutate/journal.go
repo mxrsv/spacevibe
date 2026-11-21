@@ -140,6 +140,7 @@ func (tx *Tx) writeJournal(entries []Entry) error {
 	// After the journal is on disk: a crash before this point leaves slots no entry needs, never an entry whose
 	// copy is gone. Pruning is best effort; what it misses the next write sweeps.
 	pruneTrash(tx.r, entries, cut, time.Now())
+	tx.pruneCleanLists(entries, cut, time.Now())
 	return nil
 }
 

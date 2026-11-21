@@ -9,7 +9,7 @@ import (
 )
 
 // The write guard (G-fix.2). Every primitive in this package that changes the disk (AtomicWrite,
-// CreateFileExclusive, Move, MoveWith, RenameSameVolume, RemoveFile, RemoveTree, RemoveEmptyDir, Symlink,
+// CreateFileExclusive, Move, MoveWith, RenameSameVolume, RenameSameVolumeNoSync, RemoveFile, RemoveTree, RemoveEmptyDir, Symlink,
 // MkdirAll, MkdirExclusive, WithWriteLock) asks the
 // guard about each path it is about to change, before it touches anything. No caller has to
 // remember a check.

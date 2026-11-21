@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"spacevibe.dev/core/internal/activity"
 	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/logs"
 	"spacevibe.dev/core/internal/roots"
@@ -18,10 +19,17 @@ import (
 // The paths a move takes, found the same way by clean.scan and by clean.move, so the sizes the scan shows are the
 // sizes of the exact paths the move renames (CL-R6).
 
-// logFile is one session log under a CLI root.
+// logFile is one session log under a CLI root, with the compressed twins that go with it (M3).
 type logFile struct {
 	rel   string
 	mtime time.Time
+	bytes int64
+	twins []twin
+}
+
+// twin is a .jsonl.zst or .jsonl.zstd beside a plain .jsonl of the same session: logs.Walk lists only the plain one.
+type twin struct {
+	rel   string
 	bytes int64
 }
 
@@ -48,7 +56,63 @@ func cliRoots(r roots.Roots, cli string) (roots.CLIRoots, bool) {
 // with its journal files (CL-R2). logs.Walk lists neither; this is the second line.
 func keptOut(rel string) bool {
 	for _, part := range strings.Split(rel, string(filepath.Separator)) {
-		if part == "memory" || strings.Contains(part, ".sqlite") {
+		if keptOutName(part) {
+			return true
+		}
+	}
+	return false
+}
+
+func keptOutName(name string) bool { return name == "memory" || strings.Contains(name, ".sqlite") }
+
+// holdsKeptOut is true when anything at or below path (no link followed) is a memory folder or a SQLite file, or the
+// tree cannot be read whole: such an entry is never offered nor moved (L3).
+func holdsKeptOut(path string) bool {
+	found := false
+	err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if keptOutName(d.Name()) {
+			found = true
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	return found || err != nil
+}
+
+// liveRows are the Activity rows that still have a process (every state but ended), by CLI: their logs are never
+// picked, an idle one included (L4).
+func liveRows(report activity.Report) map[string]map[string]bool {
+	out := map[string]map[string]bool{}
+	for _, s := range report.Sessions {
+		if s.State == activity.StateEnded || s.ID == "" {
+			continue
+		}
+		cli := string(s.CLI)
+		if out[cli] == nil {
+			out[cli] = map[string]bool{}
+		}
+		out[cli][s.ID] = true
+	}
+	return out
+}
+
+// ofLiveRow is true for a log of a live row: a Claude transcript <id>.jsonl or anything under a folder named <id> (its
+// subagents), a Codex rollout whose name ends in -<thread id>.
+func ofLiveRow(rel string, live map[string]bool) bool {
+	if len(live) == 0 {
+		return false
+	}
+	base := logs.BaseName(rel)
+	for id := range live {
+		if base == id || strings.HasSuffix(base, "-"+id) {
+			return true
+		}
+	}
+	for _, part := range strings.Split(filepath.Dir(rel), string(filepath.Separator)) {
+		if live[part] {
 			return true
 		}
 	}
@@ -58,7 +122,7 @@ func keptOut(rel string) bool {
 // sessionLogs lists the session logs of one CLI through logs.Walk only (CL-R2: .jsonl.zst included, nothing twice),
 // keeping a log only when it is a regular file under the CLI root with no link on the way (CL-R7). state says whether
 // the logs folder could be read at all.
-func sessionLogs(ctx context.Context, cli roots.CLIRoots) ([]logFile, string, error) {
+func sessionLogs(ctx context.Context, cli roots.CLIRoots, live map[string]bool) ([]logFile, string, error) {
 	if _, err := os.Lstat(cli.Logs); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, LogsMissing, nil
@@ -76,7 +140,7 @@ func sessionLogs(ctx context.Context, cli roots.CLIRoots) ([]logFile, string, er
 			}
 		}
 		rel, err := filepath.Rel(cli.Root, path)
-		if err != nil || rel == "." || strings.HasPrefix(rel, "..") || keptOut(rel) {
+		if err != nil || rel == "." || strings.HasPrefix(rel, "..") || keptOut(rel) || ofLiveRow(rel, live) {
 			continue
 		}
 		if fsx.PlainFoldersBelow(cli.Root, rel) != nil {
@@ -86,7 +150,15 @@ func sessionLogs(ctx context.Context, cli roots.CLIRoots) ([]logFile, string, er
 		if err != nil || !info.Mode().IsRegular() {
 			continue
 		}
-		out = append(out, logFile{rel: rel, mtime: info.ModTime(), bytes: fsx.AllocatedBytes(info)})
+		f := logFile{rel: rel, mtime: info.ModTime(), bytes: fsx.AllocatedBytes(info)}
+		if plain, ok := strings.CutSuffix(rel, ".jsonl"); ok {
+			for _, suffix := range []string{".jsonl.zst", ".jsonl.zstd"} {
+				if ti, err := os.Lstat(filepath.Join(cli.Root, plain+suffix)); err == nil && ti.Mode().IsRegular() {
+					f.twins = append(f.twins, twin{rel: plain + suffix, bytes: fsx.AllocatedBytes(ti)})
+				}
+			}
+		}
+		out = append(out, f)
 	}
 	return out, LogsMeasured, nil
 }
@@ -125,7 +197,7 @@ func cacheEntries(ctx context.Context, root string, c Cache) ([]cacheEntry, erro
 			return nil, err
 		}
 		rel := filepath.Join(c.Rel, name)
-		if keptOut(rel) {
+		if keptOut(rel) || holdsKeptOut(filepath.Join(root, rel)) {
 			continue
 		}
 		u, err := fsx.DiskUsage(filepath.Join(root, rel))

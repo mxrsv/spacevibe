@@ -2,8 +2,6 @@ package mutate
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"io/fs"
 	"os"
@@ -26,6 +24,9 @@ import (
 // under the CLI root (<staging>/<cli>/<rel>), and the whole folder is renamed into the Trash at the end as one item,
 // "SpaceVibe Clean <date>", under a name picked free by Lstat. Undo renames that folder back to the staging path, then
 // each file back to where it was. Only proven operations touch the Trash: one rename in, one rename out.
+//
+// The list of what a move takes lives in <data>/clean/<slot>.json (clean-list.go), written before the first rename, so
+// the journal entry stays small and a core that dies part way leaves enough on disk to put every file back.
 
 const (
 	cleanStagingName   = "clean"
@@ -35,7 +36,8 @@ const (
 	opUsageArchived    = "usage-archived"
 )
 
-// TrashFile is one path clean.move takes: a session log, or one entry directly inside an allowlisted cache folder.
+// TrashFile is one path clean.move takes: a session log (or its compressed twin), or one entry directly inside an
+// allowlisted cache folder.
 type TrashFile struct {
 	// Group is the selection row it belongs to: "logs:<cli>" or a cache id.
 	Group string
@@ -46,7 +48,7 @@ type TrashFile struct {
 	// Log is true for a session log: it must still be a regular file, and when Archive is set its stamp must still be
 	// the one that record was read at.
 	Log bool
-	// Archive is the usage record of a log (CL-R3); nil for a cache entry or a log that could not be read.
+	// Archive is the usage record of a log (CL-R3); nil for a cache entry, a twin or a log that could not be read.
 	Archive *usage.ArchivedLog
 }
 
@@ -127,9 +129,23 @@ func mkdirBelow(root, rel string) error {
 	return nil
 }
 
-// MoveToSystemTrash is clean.move's write: lock, every check that can refuse the whole call, the archive, the moves one
-// by one (ctx is looked at before each path, so a cancel stops before the next file), the rename of the staging folder
-// into the Trash, and one journal entry. A cancel before the first path moved changes nothing and returns ctx's error.
+// move is the state of one MoveToSystemTrash, kept so a failure at the end can put everything back.
+type move struct {
+	tx      *Tx
+	slot    string
+	staging string
+	list    string
+	// added are the archive keys this call wrote, the only ones it may remove again (H1: another core may have
+	// archived the same paths).
+	added map[string]bool
+	moved map[string][]string
+	dirs  map[string]bool
+}
+
+// MoveToSystemTrash is clean.move's write: lock, every check that can refuse the whole call, the list of what will
+// move, the archive records this call adds, the moves one by one (ctx is looked at before each path, so a cancel stops
+// before the next file), the rename of the staging folder into the Trash, and one journal entry. A cancel before the
+// first path moved changes nothing and returns ctx's error.
 func MoveToSystemTrash(ctx context.Context, tx *Tx, plan TrashPlan, progress func(TrashProgress)) (TrashOutcome, error) {
 	out := TrashOutcome{Moved: map[string]TrashAmount{}, Stayed: map[string]int{}, Reasons: map[string]string{}}
 	if err := tx.PrepareMutation(); err != nil {
@@ -159,23 +175,42 @@ func MoveToSystemTrash(ctx context.Context, tx *Tx, plan TrashPlan, progress fun
 	if !same {
 		return out, fail("The CLI folder, the SpaceVibe data folder and the Trash are not on one volume, so nothing was moved.", coreerr.StatusConflict)
 	}
-	staging, err := tx.newStaging()
+
+	// Owner check (H1): a record already in the archive belongs to whoever wrote it; this call adds only the others.
+	present, err := usage.ArchivedPaths(tx.r.Data)
 	if err != nil {
 		return out, err
 	}
+	have := make(map[string]bool, len(present))
+	for _, p := range present {
+		have[p] = true
+	}
+	m := &move{tx: tx, added: map[string]bool{}, moved: map[string][]string{}, dirs: map[string]bool{}}
 	records := map[string]usage.ArchivedLog{}
 	for _, f := range plan.Files {
-		if f.Archive != nil {
-			records[filepath.Join(tx.cliRoot(f.CLI), f.Rel)] = *f.Archive
+		path := filepath.Join(tx.cliRoot(f.CLI), f.Rel)
+		if f.Archive != nil && !have[path] {
+			records[path] = *f.Archive
+			m.added[path] = true
 		}
 	}
-	if err := usage.AddToArchive(tx.r.Data, records); err != nil {
-		tx.dropStaging(staging)
+	if m.slot, err = tx.newSlotName(); err != nil {
 		return out, err
 	}
+	m.staging = filepath.Join(tx.stagingRoot(), m.slot)
+	m.list = m.staging + cleanListSuffix
+	// The intent comes first: a core that dies from here on leaves the list beside the staging folder (M1).
+	if err := tx.writeCleanList(m.list, plannedGroups(tx, plan.Files), keysInOrder(m.added)); err != nil {
+		return out, err
+	}
+	if err := usage.AddToArchive(tx.r.Data, records); err != nil {
+		_ = fsx.RemoveFile(m.list)
+		return out, err
+	}
+	if err := fsx.MkdirExclusive(m.staging, 0o700); err != nil {
+		return out, m.undoStart(err)
+	}
 
-	moved := map[string][]string{}
-	var archived []string
 	var bytes int64
 	var firstErr error
 	for i, f := range plan.Files {
@@ -186,19 +221,14 @@ func MoveToSystemTrash(ctx context.Context, tx *Tx, plan TrashPlan, progress fun
 			}
 			break
 		}
-		root := tx.cliRoot(f.CLI)
-		from := filepath.Join(root, f.Rel)
-		size, err := tx.moveOne(f, root, from, filepath.Join(staging, f.CLI, f.Rel))
+		size, err := m.moveOne(f)
 		if err != nil {
 			if firstErr == nil {
 				firstErr = err
 			}
 			out.stay(f.Group, safeMessage(err))
 		} else {
-			moved[f.CLI] = append(moved[f.CLI], f.Rel)
-			if f.Archive != nil {
-				archived = append(archived, from)
-			}
+			m.moved[f.CLI] = append(m.moved[f.CLI], f.Rel)
 			amount := out.Moved[f.Group]
 			amount.Files++
 			amount.Bytes += size
@@ -209,41 +239,53 @@ func MoveToSystemTrash(ctx context.Context, tx *Tx, plan TrashPlan, progress fun
 			progress(TrashProgress{Done: i + 1, Total: len(plan.Files), Bytes: bytes})
 		}
 	}
-	// Records of logs that stayed go again: a live log wins anyway, but the archive keeps only what moved.
-	gone := make(map[string]bool, len(archived))
-	for _, path := range archived {
-		gone[path] = true
+	fsx.SyncDirs(m.dirs)
+
+	if len(m.moved) == 0 {
+		cause := firstErr
+		if out.Cancelled {
+			cause = ctx.Err()
+		}
+		return out, m.undoStart(cause)
 	}
-	var unmoved []string
-	for path := range records {
-		if !gone[path] {
+	// The records of logs that stayed go again: only the ones this call added.
+	gone := map[string]bool{}
+	for cli, rels := range m.moved {
+		for _, rel := range rels {
+			gone[filepath.Join(tx.cliRoot(cli), rel)] = true
+		}
+	}
+	var unmoved, kept []string
+	for path := range m.added {
+		if gone[path] {
+			kept = append(kept, path)
+		} else {
 			unmoved = append(unmoved, path)
 		}
 	}
 	slices.Sort(unmoved)
-	if len(moved) == 0 {
-		_, _ = usage.RemoveFromArchive(tx.r.Data, unmoved)
-		tx.dropStaging(staging)
-		if out.Cancelled {
-			return out, ctx.Err()
-		}
-		return out, firstErr
-	}
+	slices.Sort(kept)
 	if _, err := usage.RemoveFromArchive(tx.r.Data, unmoved); err != nil {
-		return out, tx.unstage(staging, moved, archived, err)
+		return out, m.unstage(err)
+	}
+	for _, p := range unmoved {
+		delete(m.added, p)
+	}
+	if err := tx.writeCleanList(m.list, movedGroups(tx, m.moved), kept); err != nil {
+		return out, m.unstage(err)
 	}
 	trash, err := tx.freeTrashName(time.Now())
 	if err == nil {
-		err = fsx.RenameSameVolume(staging, trash)
+		err = fsx.RenameSameVolume(m.staging, trash)
 	}
 	if err != nil {
-		return out, tx.unstage(staging, moved, archived, err)
+		return out, m.unstage(err)
 	}
 	ops := []Op{}
-	if len(archived) > 0 {
-		ops = append(ops, usageArchived(usage.ArchivePath(tx.r.Data), archived))
+	if len(kept) > 0 {
+		ops = append(ops, usageArchived(usage.ArchivePath(tx.r.Data), m.list))
 	}
-	ops = append(ops, systemTrashMoved(trash, staging, tx, moved))
+	ops = append(ops, systemTrashMoved(trash, m.staging, m.list))
 	entry, err := tx.RecordMutation(plan.Label(out.Moved), ops)
 	if err != nil {
 		return out, err
@@ -256,7 +298,9 @@ func MoveToSystemTrash(ctx context.Context, tx *Tx, plan TrashPlan, progress fun
 
 // moveOne checks one path again right before it moves and renames it into the staging folder. It returns the allocated
 // bytes that left the CLI folder.
-func (tx *Tx) moveOne(f TrashFile, root, from, to string) (int64, error) {
+func (m *move) moveOne(f TrashFile) (int64, error) {
+	root := m.tx.cliRoot(f.CLI)
+	from, to := filepath.Join(root, f.Rel), filepath.Join(m.staging, f.CLI, f.Rel)
 	if err := fsx.PlainFoldersBelow(root, f.Rel); err != nil {
 		return 0, err
 	}
@@ -285,10 +329,51 @@ func (tx *Tx) moveOne(f TrashFile, root, from, to string) (int64, error) {
 	if err := fsx.MkdirAll(filepath.Dir(to), 0o700); err != nil {
 		return 0, err
 	}
-	if err := fsx.RenameSameVolume(from, to); err != nil {
+	if err := fsx.RenameSameVolumeNoSync(from, to); err != nil {
 		return 0, err
 	}
+	m.dirs[filepath.Dir(from)] = true
+	m.dirs[filepath.Dir(to)] = true
 	return size, nil
+}
+
+// undoStart ends a move that moved nothing: the records it added and the list go, the empty staging folder goes.
+func (m *move) undoStart(cause error) error {
+	added := keysInOrder(m.added)
+	if _, err := usage.RemoveFromArchive(m.tx.r.Data, added); err != nil {
+		return chain(coreerr.NewStatus(RollbackFailureMessage, coreerr.StatusInternalFailure), errors.Join(cause, err))
+	}
+	m.tx.dropStaging(m.staging)
+	_ = fsx.RemoveFile(m.list)
+	return cause
+}
+
+// unstage puts every staged file back (its missing folders made again, never through a link) and drops the archive
+// records this call added, after a step that ends the move failed. cause is returned, or the rollback sentence when a
+// put-back failed too.
+func (m *move) unstage(cause error) error {
+	var failures []error
+	for _, cli := range keysInOrder(m.moved) {
+		root := m.tx.cliRoot(cli)
+		for _, rel := range m.moved[cli] {
+			err := mkdirBelow(root, rel)
+			if err == nil {
+				err = fsx.RenameSameVolume(filepath.Join(m.staging, cli, rel), filepath.Join(root, rel))
+			}
+			if err != nil {
+				failures = append(failures, err)
+			}
+		}
+	}
+	if _, err := usage.RemoveFromArchive(m.tx.r.Data, keysInOrder(m.added)); err != nil {
+		failures = append(failures, err)
+	}
+	m.tx.dropStaging(m.staging)
+	if len(failures) > 0 {
+		return chain(coreerr.NewStatus(RollbackFailureMessage, coreerr.StatusInternalFailure), errors.Join(append([]error{cause}, failures...)...))
+	}
+	_ = fsx.RemoveFile(m.list)
+	return cause
 }
 
 // ensureSystemTrash checks that the Trash folder exists and is a folder. The stand-in under SPACEVIBE_TEST=1 lives in
@@ -302,24 +387,6 @@ func (tx *Tx) ensureSystemTrash() error {
 		return fsx.MkdirAll(tx.r.Trash, 0o700)
 	}
 	return fail("The Trash folder "+tx.r.Trash+" was not found, so nothing was moved.", coreerr.StatusConflict)
-}
-
-func (tx *Tx) stagingRoot() string { return filepath.Join(tx.r.Data, cleanStagingName) }
-
-// newStaging makes a fresh, empty staging folder for one move.
-func (tx *Tx) newStaging() (string, error) {
-	if err := fsx.MkdirAll(tx.stagingRoot(), 0o700); err != nil {
-		return "", err
-	}
-	var b [4]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", fail("Could not create the staging folder.", coreerr.StatusInternalFailure)
-	}
-	path := filepath.Join(tx.stagingRoot(), strconv.FormatInt(time.Now().UnixMilli(), 10)+"-"+hex.EncodeToString(b[:]))
-	if err := fsx.MkdirExclusive(path, 0o700); err != nil {
-		return "", err
-	}
-	return path, nil
 }
 
 // dropStaging removes the folders of a staging tree that hold nothing; any file left inside keeps its folder.
@@ -351,27 +418,6 @@ func (tx *Tx) freeTrashName(now time.Time) (string, error) {
 		}
 	}
 	return "", fail("No free name was found in the Trash, so nothing was moved.", coreerr.StatusConflict)
-}
-
-// unstage puts every staged file back and drops the archive records of the move, after a step that ends the move
-// failed. cause is returned, or the rollback sentence when a put-back failed too.
-func (tx *Tx) unstage(staging string, moved map[string][]string, archived []string, cause error) error {
-	var failures []error
-	for _, cli := range keysInOrder(moved) {
-		for _, rel := range moved[cli] {
-			if err := fsx.RenameSameVolume(filepath.Join(staging, cli, rel), filepath.Join(tx.cliRoot(cli), rel)); err != nil {
-				failures = append(failures, err)
-			}
-		}
-	}
-	if _, err := usage.RemoveFromArchive(tx.r.Data, archived); err != nil {
-		failures = append(failures, err)
-	}
-	tx.dropStaging(staging)
-	if len(failures) > 0 {
-		return chain(coreerr.NewStatus(RollbackFailureMessage, coreerr.StatusInternalFailure), errors.Join(append([]error{cause}, failures...)...))
-	}
-	return cause
 }
 
 // safeMessage is the coreerr sentence of err, or a fixed one.

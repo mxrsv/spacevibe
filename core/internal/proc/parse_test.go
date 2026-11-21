@@ -1,7 +1,10 @@
 package proc
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -186,5 +189,47 @@ func TestPsLineVerticalTabAndFormFeed(t *testing.T) {
 				t.Fatalf("CodexPids(%q) = %v, want %v", c.line, got, c.want)
 			}
 		})
+	}
+}
+
+// Clean's cache lock (RD35) counts every live process of a CLI, the helpers Activity gives no row included.
+func TestCLIProcessPidsVectors(t *testing.T) {
+	ps := strings.Join([]string{
+		"  100 codex",
+		"  101 /opt/homebrew/bin/codex app-server --listen stdio",
+		"  102 codex mcp-server",
+		"  200 claude",
+		"  201 /Users/me/.local/bin/claude --resume",
+		"  202 node /usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js",
+		"  203 /Applications/Claude.app/Contents/MacOS/Claude",
+		"  204 claude-desktop-helper",
+		"  205 /usr/bin/vim claude.md",
+		"  206 node server.js",
+		"  207 codexbar",
+	}, "\n")
+	got := CLIProcessPids(ps)
+	if want := []int{100, 101, 102}; !reflect.DeepEqual(got["codex"], want) {
+		t.Errorf("codex %v, want %v", got["codex"], want)
+	}
+	if want := []int{200, 201, 202}; !reflect.DeepEqual(got["claude"], want) {
+		t.Errorf("claude %v, want %v", got["claude"], want)
+	}
+}
+
+func TestFixtureListsEveryCLIProcess(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "proc.json")
+	if err := os.WriteFile(path, []byte(`{"alive":[41001],"threads":[{"pid":52001,"threadId":null}],"others":{"codex":[53001]}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f, err := LoadFixture(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := f.CLIProcesses(context.Background())
+	if err != nil || !reflect.DeepEqual(got["claude"], []int{41001}) || !reflect.DeepEqual(got["codex"], []int{52001, 53001}) {
+		t.Fatalf("%v %v", got, err)
+	}
+	if _, ok := Adapter(f).(ProcessLister); !ok {
+		t.Fatal("the fixture is not a ProcessLister")
 	}
 }

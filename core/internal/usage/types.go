@@ -119,6 +119,9 @@ type Result struct {
 	Windows  Windows  `json:"windows"`
 	// Files counts the log files found, including any that could not be read.
 	Files int `json:"files"`
+	// Problems are fixed sentences about what the scan could not count, such as an unreadable usage archive (the logs
+	// Clean moved are then not counted). Omitted when empty, so the frozen usage.json shape is unchanged.
+	Problems []string `json:"problems,omitempty"`
 }
 
 // Input is the usage state inventory.AttachUsage reads. State is "ready" once Totals and Windows exist.

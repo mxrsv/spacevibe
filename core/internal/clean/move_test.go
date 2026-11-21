@@ -148,8 +148,14 @@ func TestMoveLogsKeepsMemoryAndSQLite(t *testing.T) {
 		t.Errorf("the Trash still holds %v after Undo", items)
 	}
 	if _, err := os.Lstat(filepath.Join(h.r.Data, "clean")); err == nil {
-		if entries, _ := os.ReadDir(filepath.Join(h.r.Data, "clean")); len(entries) != 0 {
-			t.Errorf("staging left behind: %v", entries)
+		entries, _ := os.ReadDir(filepath.Join(h.r.Data, "clean"))
+		for _, e := range entries {
+			if e.IsDir() {
+				t.Errorf("staging left behind: %v", e.Name())
+			}
+		}
+		if len(entries) > 1 {
+			t.Errorf("more than the entry's list left: %v", entries)
 		}
 	}
 }

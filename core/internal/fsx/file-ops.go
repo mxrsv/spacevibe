@@ -275,6 +275,24 @@ func syncDirectory(dir string) error {
 // the bytes where they are, so a move across volumes (EXDEV) is refused with 409 and nothing changes. It fails with
 // 409 when anything exists at to, a link included. Both paths are guarded; a link at from is renamed, never followed.
 func RenameSameVolume(from, to string) error {
+	if err := RenameSameVolumeNoSync(from, to); err != nil {
+		return err
+	}
+	syncDir(filepath.Dir(to))
+	syncDir(filepath.Dir(from))
+	return nil
+}
+
+// SyncDirs flushes the entries of each folder once (best effort), after a batch of RenameSameVolumeNoSync calls.
+func SyncDirs(dirs map[string]bool) {
+	for d := range dirs {
+		syncDir(d)
+	}
+}
+
+// RenameSameVolumeNoSync is RenameSameVolume without the two folder fsyncs: a batch of thousands of renames syncs each
+// folder it touched once at the end with SyncDirs instead of twice per file.
+func RenameSameVolumeNoSync(from, to string) error {
 	if err := checkWrite(from, to); err != nil {
 		return err
 	}
@@ -292,8 +310,6 @@ func RenameSameVolume(from, to string) error {
 		}
 		return coreerr.NewStatus("Could not move "+from+" ("+reason(err)+").", coreerr.StatusInternalFailure)
 	}
-	syncDir(filepath.Dir(to))
-	syncDir(filepath.Dir(from))
 	return nil
 }
 

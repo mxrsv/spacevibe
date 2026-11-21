@@ -2,10 +2,12 @@ package clean
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"spacevibe.dev/core/internal/activity"
@@ -20,6 +22,9 @@ import (
 // progressEvery is how many paths go between two clean/progress notifications (one more is sent at the end).
 const progressEvery = 20
 
+// errNoProcessList is the answer when no process lister was given: unknown, so the caches lock.
+var errNoProcessList = errors.New("no process list")
+
 // clis are the CLIs Clean covers, in registry order (RD42).
 var clis = []string{"claude", "codex"}
 
@@ -30,32 +35,54 @@ type Service struct {
 	// activity reads the Activity report the locks come from; measurable is the process adapter's Measurable.
 	activity   func(context.Context) (activity.Report, error)
 	measurable bool
+	// processes lists the live processes of each CLI by registry id, every one the adapter sees (RD35); an error
+	// means the list is unknown, which locks the caches.
+	processes func(context.Context) (map[string][]int, error)
 	// Now is the clock the ages are measured against; tests may replace it.
 	Now func() time.Time
+
+	// moving is set while a clean.move of this core runs; a second one is refused (H1).
+	mu     sync.Mutex
+	moving bool
 }
 
-// NewService builds the service. report is activity.Service.Read; measurable is false where no process can be seen,
-// which locks every log and cache.
-func NewService(r roots.Roots, scanner *usage.Scanner, report func(context.Context) (activity.Report, error), measurable bool) *Service {
-	return &Service{roots: r, usage: scanner, activity: report, measurable: measurable, Now: time.Now}
+// NewService builds the service. report is activity.Service.Read; processes lists every live process of each CLI
+// (proc.ProcessLister); measurable is false where no process can be seen, which locks every log and cache.
+func NewService(r roots.Roots, scanner *usage.Scanner, report func(context.Context) (activity.Report, error),
+	processes func(context.Context) (map[string][]int, error), measurable bool) *Service {
+	return &Service{roots: r, usage: scanner, activity: report, processes: processes, measurable: measurable, Now: time.Now}
 }
 
-func (s *Service) locks(ctx context.Context) (map[string]Locks, error) {
+// lockState is one reading of the locks, and the live Activity rows whose logs are never picked (L4).
+type lockState struct {
+	locks map[string]Locks
+	live  map[string]map[string]bool
+}
+
+func (s *Service) locks(ctx context.Context) (lockState, error) {
 	report, err := s.activity(ctx)
 	if cerr := ctx.Err(); cerr != nil {
-		return nil, cerr
+		return lockState{}, cerr
 	}
 	input := lockInput{report: report, readFailed: err != nil, measurable: s.measurable}
-	out := map[string]Locks{}
+	if s.processes == nil {
+		input.processErr = errNoProcessList
+	} else {
+		input.processes, input.processErr = s.processes(ctx)
+		if cerr := ctx.Err(); cerr != nil {
+			return lockState{}, cerr
+		}
+	}
+	out := lockState{locks: map[string]Locks{}, live: liveRows(report)}
 	for _, cli := range clis {
-		out[cli] = lockFor(input, s.roots, cli)
+		out.locks[cli] = lockFor(input, s.roots, cli)
 	}
 	return out, nil
 }
 
 // Scan is clean.scan. It reads and writes nothing but the Activity read behind the locks.
 func (s *Service) Scan(ctx context.Context) (ScanResult, error) {
-	locks, err := s.locks(ctx)
+	state, err := s.locks(ctx)
 	if err != nil {
 		return ScanResult{}, err
 	}
@@ -63,16 +90,19 @@ func (s *Service) Scan(ctx context.Context) (ScanResult, error) {
 	result := ScanResult{CLIs: []CLIScan{}, Items: []ItemSize{}}
 	for _, cli := range clis {
 		r, _ := cliRoots(s.roots, cli)
-		files, state, err := sessionLogs(ctx, r)
+		files, logState, err := sessionLogs(ctx, r, state.live[cli])
 		if err != nil {
 			return ScanResult{}, err
 		}
-		scan := CLIScan{CLI: cli, Logs: LogScan{State: state, Buckets: []LogBucket{}}, Caches: []CacheScan{}, Locks: locks[cli]}
+		scan := CLIScan{CLI: cli, Logs: LogScan{State: logState, Buckets: []LogBucket{}}, Caches: []CacheScan{}, Locks: state.locks[cli]}
 		for _, age := range Ages {
 			bucket := LogBucket{OlderThanDays: age}
 			for _, f := range olderThan(files, age, now) {
-				bucket.Files++
+				bucket.Files += 1 + len(f.twins)
 				bucket.Bytes += f.bytes
+				for _, tw := range f.twins {
+					bucket.Bytes += tw.bytes
+				}
 			}
 			if bucket.Files > 0 {
 				scan.Logs.Buckets = append(scan.Logs.Buckets, bucket)
@@ -155,6 +185,8 @@ type group struct {
 	cli   string
 	isLog bool
 	files []mutate.TrashFile
+	// twins are the rels of compressed twins that go with their rollout: never archived, the rollout's record counts.
+	twins map[string]bool
 	// stayed and reason are set when the whole group is held back (a lock).
 	stayed int
 	reason string
@@ -163,7 +195,7 @@ type group struct {
 func badParams(message string) error { return coreerr.New(message) }
 
 // plan turns the params into groups, every check that refuses the whole call first.
-func (s *Service) plan(ctx context.Context, p MoveParams) ([]*group, error) {
+func (s *Service) plan(ctx context.Context, p MoveParams, live map[string]map[string]bool) ([]*group, error) {
 	if len(p.Logs) == 0 && len(p.Caches) == 0 {
 		return nil, badParams("Pick at least one log group or cache to move.")
 	}
@@ -183,13 +215,18 @@ func (s *Service) plan(ctx context.Context, p MoveParams) ([]*group, error) {
 			return nil, badParams("Each CLI's logs can be picked once.")
 		}
 		seen[id] = true
-		files, _, err := sessionLogs(ctx, r)
+		files, _, err := sessionLogs(ctx, r, live[pick.CLI])
 		if err != nil {
 			return nil, err
 		}
-		g := &group{id: id, cli: pick.CLI, isLog: true}
+		g := &group{id: id, cli: pick.CLI, isLog: true, twins: map[string]bool{}}
 		for _, f := range olderThan(files, pick.OlderThanDays, now) {
 			g.files = append(g.files, mutate.TrashFile{Group: id, CLI: pick.CLI, Rel: f.rel, Log: true})
+			// M3: a .jsonl.zst twin goes with its rollout, so it never shows up as a log of its own.
+			for _, tw := range f.twins {
+				g.files = append(g.files, mutate.TrashFile{Group: id, CLI: pick.CLI, Rel: tw.rel, Log: true})
+				g.twins[tw.rel] = true
+			}
 		}
 		groups = append(groups, g)
 	}
@@ -236,15 +273,31 @@ func holdLocked(groups []*group, locks map[string]Locks) {
 // the locks read again, and the move itself under the write lock (phase moving). A cancel before the first file moved
 // changes nothing and answers ctx's error; a later cancel stops before the next file and answers what moved.
 func (s *Service) Move(ctx context.Context, p MoveParams, progress func(ProgressParams)) (MoveResult, error) {
-	groups, err := s.plan(ctx, p)
+	s.mu.Lock()
+	if s.moving {
+		s.mu.Unlock()
+		return MoveResult{}, coreerr.NewStatus("A Clean move is already running.", coreerr.StatusConflict)
+	}
+	s.moving = true
+	s.mu.Unlock()
+	defer func() {
+		s.mu.Lock()
+		s.moving = false
+		s.mu.Unlock()
+	}()
+	state, err := s.locks(ctx)
 	if err != nil {
 		return MoveResult{}, err
 	}
-	locks, err := s.locks(ctx)
+	groups, err := s.plan(ctx, p, state.live)
 	if err != nil {
 		return MoveResult{}, err
 	}
-	holdLocked(groups, locks)
+	// An archive that cannot be read refuses before the long read of the logs (L2).
+	if _, err := usage.ArchivedPaths(s.roots.Data); err != nil {
+		return MoveResult{}, err
+	}
+	holdLocked(groups, state.locks)
 	if err := refuseAllHeld(groups); err != nil {
 		return MoveResult{}, err
 	}
@@ -256,6 +309,9 @@ func (s *Service) Move(ctx context.Context, p MoveParams, progress func(Progress
 		}
 		r, _ := cliRoots(s.roots, g.cli)
 		for _, f := range g.files {
+			if g.twins[f.Rel] {
+				continue
+			}
 			refs = append(refs, usage.LogRef{Path: filepath.Join(r.Root, f.Rel), CLI: usage.CLI(g.cli)})
 		}
 	}
@@ -276,10 +332,11 @@ func (s *Service) Move(ctx context.Context, p MoveParams, progress func(Progress
 		}
 	}
 	// Reading the logs can take a while: a session that started meanwhile holds its CLI back now.
-	if locks, err = s.locks(ctx); err != nil {
+	if state, err = s.locks(ctx); err != nil {
 		return MoveResult{}, err
 	}
-	holdLocked(groups, locks)
+	holdLocked(groups, state.locks)
+	dropLive(groups, state.live)
 	if err := refuseAllHeld(groups); err != nil {
 		return MoveResult{}, err
 	}
@@ -303,6 +360,27 @@ func (s *Service) Move(ctx context.Context, p MoveParams, progress func(Progress
 		return MoveResult{}, err
 	}
 	return result(groups, outcome), nil
+}
+
+// dropLive takes out of the log groups every path of a row that became live while the logs were read (L4).
+func dropLive(groups []*group, live map[string]map[string]bool) {
+	for _, g := range groups {
+		if !g.isLog {
+			continue
+		}
+		kept := g.files[:0]
+		for _, f := range g.files {
+			if ofLiveRow(f.Rel, live[g.cli]) {
+				g.stayed++
+				if g.reason == "" {
+					g.reason = "A session of this log is open again, so it was left in place."
+				}
+				continue
+			}
+			kept = append(kept, f)
+		}
+		g.files = kept
+	}
 }
 
 // refuseAllHeld is the 409 of a move with nothing open: every picked group is locked, or none holds a path.

@@ -119,13 +119,12 @@ func (s *Scanner) scan(ctx context.Context, progress func(Progress)) (Result, er
 		return Result{}, err
 	}
 	saveCache(next, s.roots.Data)
-	// CL-R3: the logs Clean moved still count, from their archived records; a live log at the same path wins.
-	live := make(map[string]bool, len(targets))
-	for _, t := range targets {
-		live[t.path] = true
-	}
-	merged, archived := withArchive(next, live, s.roots.Data)
-	return aggregate(merged, len(targets)+archived), nil
+	// CL-R3: the logs Clean moved still count, from their archived records; a parsed live log at the same path, or a
+	// twin of it (same folder and base name), wins.
+	merged, archived, problems := withArchive(next, s.roots.Data)
+	result := aggregate(merged, len(targets)+archived)
+	result.Problems = problems
+	return result, nil
 }
 
 // entry is the cached record when the log is unchanged, otherwise a fresh parse. ok is false when the log

@@ -32,6 +32,12 @@ type Identity struct {
 	Name  string
 }
 
+// ProcessLister lists every live process of each CLI by registry id, from the same fixed `ps -axo pid=,args=` reading
+// (S-R4). Clean's cache lock uses it (RD35). An error means the list is unknown, never empty.
+type ProcessLister interface {
+	CLIProcesses(ctx context.Context) (map[string][]int, error)
+}
+
 // Adapter is the process view Activity uses. Tests pass a fake with the same shape.
 type Adapter interface {
 	// Measurable reports whether this adapter can see processes at all.

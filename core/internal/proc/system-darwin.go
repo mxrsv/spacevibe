@@ -107,6 +107,16 @@ func (s System) CodexThreads(ctx context.Context) ([]Thread, error) {
 	return MergeThreads(pids, LockFds(lsof.stdout)), nil
 }
 
+// CLIProcesses is every live Claude Code and Codex process, helpers included (CLIProcessPids). A failed or timed out
+// `ps` is ErrUnknown.
+func (s System) CLIProcesses(ctx context.Context) (map[string][]int, error) {
+	ps, ok := run(ctx, orDefault(s.ps, psPath), []string{"-axo", "pid=,args="}, listTimeout)
+	if !ok || ps.status != 0 {
+		return nil, ErrUnknown
+	}
+	return CLIProcessPids(ps.stdout), nil
+}
+
 func orDefault(path, fallback string) string {
 	if path != "" {
 		return path

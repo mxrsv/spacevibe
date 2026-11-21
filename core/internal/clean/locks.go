@@ -16,8 +16,9 @@ import (
 // the core cannot get locks.
 //
 //   - Logs (RD27): a running or waiting session of the CLI is writing its logs.
-//   - Caches (RD35): any live session of the CLI (running, waiting, idle or unmeasurable) may be using them. An ended
-//     row has no process and locks nothing.
+//   - Caches (RD35): any live process of the CLI, with a row (running, waiting, idle or unmeasurable) or without one
+//     (a Codex app-server or mcp-server, a Claude Code with no sessions/<pid>.json), may be using them. An ended row
+//     has no process and locks nothing. A process list that could not be read locks them too.
 //   - Both, for processUnknown: the Activity read failed, the process adapter cannot see processes, the Codex process
 //     check failed (codex-process-unknown, on the report or on a row), or Claude Code's sessions folder exists and
 //     cannot be read (the read path then lists no Claude rows and reports nothing).
@@ -27,6 +28,10 @@ type lockInput struct {
 	report     activity.Report
 	readFailed bool
 	measurable bool
+	// processes are every live process of each CLI the adapter sees, a Codex app-server or a Claude Code with no
+	// status file included (M2); processErr means the list is unknown.
+	processes  map[string][]int
+	processErr error
 }
 
 func lockFor(input lockInput, r roots.Roots, cli string) Locks {
@@ -54,9 +59,15 @@ func lockFor(input lockInput, r roots.Roots, cli string) Locks {
 		out.Logs = &Lock{Reason: LockSessions, Sessions: writing,
 			Message: name + " has " + sessions(len(writing), "running") + ", so its logs stay until " + untilEnd(len(writing)) + "."}
 	}
-	if len(live) > 0 {
+	switch procs := len(input.processes[cli]); {
+	case len(live) > 0:
 		out.Caches = &Lock{Reason: LockSessions, Sessions: live,
 			Message: name + " has " + sessions(len(live), "open") + ", so its caches are in use."}
+	case input.processErr != nil:
+		out.Caches = unknown
+	case procs > 0:
+		out.Caches = &Lock{Reason: LockProcesses, Sessions: []string{},
+			Message: name + " is running (" + plural(procs, "process", "processes") + "), so its caches are in use."}
 	}
 	return out
 }
@@ -89,6 +100,13 @@ func cliName(cli string) string {
 		return c.Name
 	}
 	return cli
+}
+
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return strconv.Itoa(n) + " " + many
 }
 
 func sessions(n int, adjective string) string {

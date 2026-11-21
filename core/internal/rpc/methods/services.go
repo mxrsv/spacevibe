@@ -57,10 +57,19 @@ func New(cfg config.Config, r roots.Roots, adapter proc.Adapter, log io.Writer) 
 	s := &Services{
 		cfg: cfg, roots: r, inventory: inv, usage: scanner, activity: act,
 		mutate: mutate.NewService(r), rules: rs, findings: findings.NewService(r),
-		clean: clean.NewService(r, scanner, act.Read, adapter.Measurable()), now: time.Now, log: log,
+		clean: clean.NewService(r, scanner, act.Read, processLister(adapter), adapter.Measurable()), now: time.Now, log: log,
 	}
 	s.handlers = s.buildHandlers()
 	return s
+}
+
+// processLister is the adapter's list of every live CLI process (RD35), or nil when it has none, which Clean reads as
+// unknown and so locks every cache.
+func processLister(adapter proc.Adapter) func(context.Context) (map[string][]int, error) {
+	if l, ok := adapter.(proc.ProcessLister); ok {
+		return l.CLIProcesses
+	}
+	return nil
 }
 
 // Register adds every domain method to reg.

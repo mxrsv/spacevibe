@@ -89,7 +89,14 @@ func RefuseRealHomeUnderTest(cfg config.Config, path string) error {
 	if err != nil {
 		return coreerr.NewStatus(envTest+"=1: cannot tell where the real home is, so the write was refused.", coreerr.StatusInternalFailure)
 	}
-	if isUnderRealHome(real, path) {
+	return RefuseUnderHome(real, path)
+}
+
+// RefuseUnderHome is the check of RefuseRealHomeUnderTest against a given home folder (spelling, case, firmlink and
+// inode, as above). A test aims it at a temporary stand-in for the real home, so a regression of a guarded write is
+// caught without the write ever reaching the real one.
+func RefuseUnderHome(home, path string) error {
+	if isUnderRealHome(home, path) {
 		return coreerr.NewStatus(envTest+"=1: refusing to write under the real home.", coreerr.StatusInternalFailure)
 	}
 	return nil

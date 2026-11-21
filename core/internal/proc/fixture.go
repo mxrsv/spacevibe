@@ -31,18 +31,21 @@ const EnvProcFixture = identity.EnvPrefix + "PROC_FIXTURE"
 //
 // alive: pids IsAlive finds. starts: `ps lstart` text per pid. threads: live codex processes with
 // their thread lock. delayMs: the first question waits this long once, so a run can sit on "Reading logs".
+// others (optional): more live processes per CLI id that Activity gives no row, `{"codex": [53001]}` for a Codex
+// app-server; CLIProcesses lists them with the alive pids (Claude Code) and the thread pids (Codex).
 type Fixture struct {
 	mu           sync.Mutex
 	alive        map[int]bool
 	starts       map[int]string
 	threads      []Thread
+	others       map[string][]int
 	pendingDelay time.Duration
 }
 
 // NewFixture builds a list from values. With no arguments it is the empty list that SPACEVIBE_TEST=1
 // uses when no file is given, so test mode can never see a real process.
 func NewFixture(alive []int, starts map[int]string, threads []Thread, delay time.Duration) *Fixture {
-	f := &Fixture{alive: map[int]bool{}, starts: map[int]string{}, threads: slices.Clone(threads), pendingDelay: delay}
+	f := &Fixture{alive: map[int]bool{}, starts: map[int]string{}, threads: slices.Clone(threads), others: map[string][]int{}, pendingDelay: delay}
 	for _, p := range alive {
 		f.alive[p] = true
 	}
@@ -99,7 +102,15 @@ func LoadFixture(path string) (*Fixture, error) {
 		}
 	}
 	delay, _ := asInt(spec["delayMs"])
-	return NewFixture(alive, starts, threads, time.Duration(delay)*time.Millisecond), nil
+	f := NewFixture(alive, starts, threads, time.Duration(delay)*time.Millisecond)
+	if obj, isObj := spec["others"].(map[string]any); isObj {
+		for cli, v := range obj {
+			if pids, ok := intList(v); ok {
+				f.others[cli] = pids
+			}
+		}
+	}
+	return f, nil
 }
 
 func asInt(v any) (int, bool) {
@@ -206,6 +217,35 @@ func (f *Fixture) CodexThreads(ctx context.Context) ([]Thread, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return slices.Clone(f.threads), nil
+}
+
+// WithOthers adds live processes per CLI id that have no Activity row (a Codex app-server), for tests.
+func (f *Fixture) WithOthers(others map[string][]int) *Fixture {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for cli, pids := range others {
+		f.others[cli] = append(f.others[cli], pids...)
+	}
+	return f
+}
+
+// CLIProcesses is the alive pids as Claude Code, the thread pids as Codex, and the others; the fixture never fails.
+func (f *Fixture) CLIProcesses(ctx context.Context) (map[string][]int, error) {
+	f.firstQuestionDelay(ctx)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := map[string][]int{}
+	for pid := range f.alive {
+		out["claude"] = append(out["claude"], pid)
+	}
+	slices.Sort(out["claude"])
+	for _, t := range f.threads {
+		out["codex"] = append(out["codex"], t.Pid)
+	}
+	for cli, pids := range f.others {
+		out[cli] = append(out[cli], pids...)
+	}
+	return out, nil
 }
 
 // Terminate removes pid from the in-memory list; a pid the list does not know is ErrNoSuchProcess.

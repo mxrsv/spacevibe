@@ -119,8 +119,8 @@ Params and results use the types defined under "Wire types". "Journal entry" is 
 | `findings.kept` | `{}` | `{kept:string[]}`, oldest first; `[]` when there is no list | 409 `<data>/kept-findings.json` exists but is not the list, or is a link: refused, never read as empty | none | none |
 | `findings.keep` | `{id}` | `{entry:JournalEntryRef}` | 400 an id that is empty, over 1024 bytes, not UTF-8 or holds a control character; 409 already kept, the list or the journal unreadable, a link in place of the list; 500 | One write of `<data>/kept-findings.json`, the id added last; past 2000 ids the oldest drops | label `Kept a finding`; op `file-edited` |
 | `findings.unkeep` | `{id}` | `{entry:JournalEntryRef}` | 400 as `findings.keep`; 409 not kept, or as `findings.keep`; 500 | One write of the list, the id removed | label `Stopped keeping a finding`; op `file-edited` |
-| `clean.scan` | `{}` | `CleanScan` | -32800 | Reads the logs folders, the allowlisted caches, the inventory and one Activity report; writes nothing | none |
-| `clean.move` | `{logs?:LogPick[], caches?:string[]}` | `CleanMoveResult`; sends `clean/progress` | 400 nothing picked, a CLI other than `claude` or `codex`, an age other than 30, 90 or 180, a CLI's logs or a cache picked twice, a cache id outside the allowlist; 409 every picked row is locked (the lock's sentence, then "Nothing was moved."), nothing is left to move, the CLI folder, the data folder and the Trash are not on one volume, the Trash folder is missing, the journal or the usage archive cannot be read; -32800 cancelled before the first file moved; 500 | Archives the usage of each picked log in `<data>/usage-archive.json`, then renames each log or cache entry into a staging folder and that folder into the Trash ([clean.md](clean.md)); a locked row stays with its reason while the rest moves | label `Moved N files to the Trash: <CLI> logs, <CLI> caches`; ops `usage-archived`, `system-trash-moved`; one Undo puts every file back |
+| `clean.scan` | `{}` | `CleanScan` | -32800 | Reads the logs folders, the allowlisted caches, the inventory, one Activity report and one process list; writes nothing and caches nothing, so it is called on demand, never on a timer ([clean.md](clean.md#runtime-path)) | none |
+| `clean.move` | `{logs?:LogPick[], caches?:string[]}` | `CleanMoveResult`; sends `clean/progress` | 400 nothing picked, a CLI other than `claude` or `codex`, an age other than 30, 90 or 180, a CLI's logs or a cache picked twice, a cache id outside the allowlist; 409 a `clean.move` is already running in this core, every picked row is locked (the lock's sentence, then "Nothing was moved."), nothing is left to move, the CLI folder, the data folder and the Trash are not on one volume, the Trash folder is missing, the journal or the usage archive cannot be read; -32800 cancelled before the first file moved; 500 | Archives the usage of each picked log in `<data>/usage-archive.json`, then writes the list `<data>/clean/<slot>.json` and renames each log or cache entry into a staging folder and that folder into the Trash ([clean.md](clean.md)); a locked row or a live row's log stays with its reason while the rest moves | label `Moved N files to the Trash: <CLI> logs, <CLI> caches`; ops `usage-archived {file, list}`, `system-trash-moved {trash, staging, list}`, which name the list instead of the paths; one Undo puts every file back |
 
 Behavior the table cannot say:
 
@@ -143,7 +143,7 @@ Behavior the table cannot say:
 - **Journal ops are not exposed.** `JournalEntryRef` carries `count` only: ops hold absolute paths and trash names, and the shell uses only the id and the label. The journal file is `<data>/journal.json`, newest first ([retention](mutations.md#journal-retention-and-the-trash-sweep)), and a journal that exists but is not a JSON array of entries (every element needs a string `id`) makes every write 409; an element without an id is never dropped silently.
 - **`addSkill` and `addAgent` are not methods.** The app has no caller.
 - **Clean's sizes are allocated bytes.** Every `bytes` in `CleanScan` and `CleanMoveResult` is the allocated size of the exact paths a move takes (`st_blocks` × 512, what `du` counts; `du -A` would be the apparent size), so the scan's estimate, the result and the `du` difference of the CLI root agree (CL-R6). The shell's byte formatter shows them as they come.
-- **Clean's locks are the core's too.** `clean.scan` reports per CLI the lock on its logs (a running or waiting session, RD27) and on its caches (any live session, idle and unmeasurable included, RD35), or `processUnknown` when the process check failed; `clean.move` reads the Activity report again before and after archiving and refuses a locked row whatever the shell sent ([clean.md](clean.md#rules-that-are-easy-to-get-wrong)).
+- **Clean's locks are the core's too.** `clean.scan` reports per CLI the lock on its logs (a running or waiting session, RD27) and on its caches (any live process of the CLI, RD35: `sessions` for a row in any state but ended, `processes` for a process with no row, such as a Codex `app-server`), or `processUnknown` when the process check failed; `clean.move` reads the Activity report again before and after archiving and refuses a locked row whatever the shell sent ([clean.md](clean.md#rules-that-are-easy-to-get-wrong)).
 - **The pid is never a parameter.** `activity.stop` finds the live process from the id, so a reused pid cannot be signalled (the checks Stop makes before the signal are in [activity.md](activity.md#rules-that-are-easy-to-get-wrong)). A Codex id before its first prompt is `pid:<n>:<start-ms>`, bound to the process start; an id ending `:unknown` cannot authorize a stop.
 
 ## Wire types
@@ -219,7 +219,8 @@ type CliTotals = { skill: { [name: string]: NameUsage }, agent: { [name: string]
 type LogWindow = { files: number, oldest: string | null, newest: number | null }  // newest: ms since 1970
 type UsageResult = {
   totals: { claude: CliTotals, codex: CliTotals }, sessions: { claude: number, codex: number },
-  windows: { claude: LogWindow, codex: LogWindow }, files: number
+  windows: { claude: LogWindow, codex: LogWindow }, files: number,
+  problems?: string[]                             // omitted when empty; e.g. the usage archive cannot be read, so the logs Clean moved are not counted
 }
 
 type FilterCounts = { all: number, only: { claude: number, codex: number }, neverRan: number, dead: number }
@@ -323,7 +324,7 @@ type CleanScan = {
   }[],
   items: { key: string, bytes: number }[]         // row key of loadout.rows; a row with no removable Skill or Subagent member is absent
 }
-type CleanLock = { reason: "sessions" | "processUnknown", sessions: string[], message: string }   // sessions: Activity session ids
+type CleanLock = { reason: "sessions" | "processes" | "processUnknown", sessions: string[], message: string }   // sessions: Activity session ids
 type LogPick = { cli: Cli, olderThanDays: 30 | 90 | 180 }
 type CleanMoveResult = {
   entry: JournalEntryRef | null,                  // null only if nothing moved, which is answered as an error instead

@@ -65,6 +65,39 @@ func CodexPids(psOutput string) []int {
 	return pids
 }
 
+// claudeWord is the first word of a Claude Code process: `claude` or a path ending in /claude, lowercase only (the
+// desktop app is `.../MacOS/Claude`, which is not Claude Code).
+var claudeWord = regexp.MustCompile(`^[` + icuSpace + `]*([0-9]+)[` + icuSpace + `]+(?:[^` + icuSpace + `]*/)?claude(?:[` + icuSpace + `]+` + icuDot + `*)?$`)
+
+// claudeScript is a Claude Code started through node: an argument naming the npm package or its cli.js.
+var claudeScript = regexp.MustCompile(`^[` + icuSpace + `]*([0-9]+)[` + icuSpace + `]+(?:[^` + icuSpace + `]*/)?node[` + icuSpace + `]+` + icuDot + `*(?:@anthropic-ai/claude-code|/claude-code/cli\.js)`)
+
+// CLIProcessPids reads `ps -axo pid=,args=` output into every live process of each CLI by registry id, the helpers
+// included: a Codex app-server or mcp-server, a Claude Code that wrote no status file. Clean's cache lock (RD35) counts
+// every one; Activity's rows still come from CodexPids and the status files only.
+func CLIProcessPids(psOutput string) map[string][]int {
+	out := map[string][]int{}
+	for _, raw := range strings.Split(psOutput, "\n") {
+		line := finalTerminator(raw)
+		if m := psLine.FindStringSubmatch(line); m != nil {
+			if pid, err := strconv.Atoi(m[1]); err == nil {
+				out["codex"] = append(out["codex"], pid)
+			}
+			continue
+		}
+		m := claudeWord.FindStringSubmatch(line)
+		if m == nil {
+			m = claudeScript.FindStringSubmatch(line)
+		}
+		if m != nil {
+			if pid, err := strconv.Atoi(m[1]); err == nil {
+				out["claude"] = append(out["claude"], pid)
+			}
+		}
+	}
+	return out
+}
+
 // MergeThreads returns the lock entries, then every other pid with no thread yet (before its first
 // prompt a codex holds no lock). A pid that holds a lock appears only through its locks.
 func MergeThreads(pids []int, locks []Thread) []Thread {

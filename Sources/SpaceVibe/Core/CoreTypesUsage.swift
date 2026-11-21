@@ -55,6 +55,9 @@ struct CoreUsageResult: Codable, Equatable, Sendable {
     var windows: CoreUsageWindows
     /// Log files found, including any that could not be read.
     var files: Int
+    /// What the scan could not count, such as an unreadable usage archive (the logs Clean moved are then not counted).
+    /// The core omits it when empty.
+    var problems: [String]? = nil
 }
 
 /// The `usage/progress` notification, without the request id the transport adds.

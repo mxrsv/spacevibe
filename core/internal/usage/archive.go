@@ -245,13 +245,24 @@ func ArchivedPaths(dataDir string) ([]string, error) {
 	return out, nil
 }
 
-// withArchive adds to the scanned records every archived log whose path is not a live log of this scan, and returns
-// how many it added. An archive that cannot be read adds nothing: the scan still answers, and Clean refuses to write
-// until the file is fixed.
-func withArchive(next map[string]cachedFile, live map[string]bool, dataDir string) (map[string]cachedFile, int) {
+// ArchiveProblem is the problem line of a scan that could not read the archive.
+const ArchiveProblem = "The usage archive (usage-archive.json) cannot be read, so the logs Clean moved to the Trash are not counted. Fix or move the file."
+
+// withArchive adds to the scanned records every archived log that no parsed log of this scan stands for, and returns how
+// many it added. A parsed log stands for an archived one at the same path (L1: a log that is there but cannot be read
+// does not), or at the same folder and base name (M3: the .jsonl.zst twin of a moved rollout is the same session). An
+// archive that cannot be read adds nothing and says so in a problem line; Clean refuses to write until it is fixed.
+func withArchive(next map[string]cachedFile, dataDir string) (map[string]cachedFile, int, []string) {
 	archived, err := loadArchive(dataDir)
-	if err != nil || len(archived) == 0 {
-		return next, 0
+	if err != nil {
+		return next, 0, []string{ArchiveProblem}
+	}
+	if len(archived) == 0 {
+		return next, 0, nil
+	}
+	twins := make(map[string]bool, len(next))
+	for path := range next {
+		twins[filepath.Join(filepath.Dir(path), logs.BaseName(path))] = true
 	}
 	merged := make(map[string]cachedFile, len(next)+len(archived))
 	for k, v := range next {
@@ -259,11 +270,11 @@ func withArchive(next map[string]cachedFile, live map[string]bool, dataDir strin
 	}
 	added := 0
 	for path, a := range archived {
-		if live[path] {
+		if _, live := next[path]; live || twins[filepath.Join(filepath.Dir(path), logs.BaseName(path))] {
 			continue
 		}
 		merged[path] = a.file
 		added++
 	}
-	return merged, added
+	return merged, added, nil
 }

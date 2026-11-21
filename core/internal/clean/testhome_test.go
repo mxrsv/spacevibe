@@ -32,6 +32,9 @@ type home struct {
 	// report is what the fake Activity read answers; readErr makes it fail.
 	report  activity.Report
 	readErr error
+	// procs and procErr are what the fake process list answers (RD35 cache locks).
+	procs   map[string][]int
+	procErr error
 	svc     *Service
 	scanner *usage.Scanner
 }
@@ -45,7 +48,8 @@ func newHomeAt(t *testing.T, root string) *home {
 	}
 	h := &home{t: t, root: root, r: r, report: activity.Report{}}
 	h.scanner = usage.NewScanner(r)
-	h.svc = NewService(r, h.scanner, func(context.Context) (activity.Report, error) { return h.report, h.readErr }, true)
+	h.svc = NewService(r, h.scanner, func(context.Context) (activity.Report, error) { return h.report, h.readErr },
+		func(context.Context) (map[string][]int, error) { return h.procs, h.procErr }, true)
 	h.svc.Now = func() time.Time { return testNow }
 	return h
 }

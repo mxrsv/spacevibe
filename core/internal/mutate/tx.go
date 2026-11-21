@@ -16,18 +16,27 @@ type Tx struct {
 // WithLock runs fn under the one write lock (in-process mutex plus the flock on <data>/write.lock) with a
 // handle for the locked steps. If the lock cannot be taken, fn does not run.
 func WithLock(r roots.Roots, fn func(tx *Tx) error) error {
-	return fsx.WithWriteLock(r.Data, func() error { return fn(&Tx{r: r}) })
+	return fsx.WithWriteLock(r.Data, func() error { return fn(begin(r)) })
 }
 
 // WithLockContext is WithLock for a request that can be cancelled: while it waits for the lock, a cancelled ctx ends
 // the wait with context.Canceled and fn does not run (fsx.WithWriteLockContext).
 func WithLockContext(ctx context.Context, r roots.Roots, fn func(tx *Tx) error) error {
-	return fsx.WithWriteLockContext(ctx, r.Data, func() error { return fn(&Tx{r: r}) })
+	return fsx.WithWriteLockContext(ctx, r.Data, func() error { return fn(begin(r)) })
 }
 
 // locked is WithLock for a body that returns a value.
 func locked[T any](r roots.Roots, fn func(tx *Tx) (T, error)) (T, error) {
-	return fsx.WithWriteLockValue(r.Data, func() (T, error) { return fn(&Tx{r: r}) })
+	return fsx.WithWriteLockValue(r.Data, func() (T, error) { return fn(begin(r)) })
+}
+
+// begin is the handle of a lock just taken. Before any write body runs, it puts back what a core that died part way
+// through a Clean move left in <data>/clean (clean-list.go, recoverClean): the next write of any kind sees the CLI
+// folders whole.
+func begin(r roots.Roots) *Tx {
+	tx := &Tx{r: r}
+	tx.recoverClean()
+	return tx
 }
 
 // Roots are the roots the handle works on.
@@ -38,7 +47,7 @@ func (tx *Tx) Roots() roots.Roots { return tx.r }
 // never changes anything.
 func lockedContext[T any](ctx context.Context, r roots.Roots, fn func(tx *Tx) (T, error)) (T, error) {
 	return fsx.WithWriteLockValueContext(ctx, r.Data, func() (T, error) {
-		tx := &Tx{r: r}
+		tx := begin(r)
 		if err := ctx.Err(); err != nil {
 			var zero T
 			return zero, err

@@ -27,5 +27,8 @@ func (System) Identify(context.Context, int) (Identity, error) { return Identity
 // CodexThreads is always empty (nothing is measurable, which Measurable says).
 func (System) CodexThreads(context.Context) ([]Thread, error) { return nil, nil }
 
+// CLIProcesses always returns ErrNotMeasurable: the list is unknown, so Clean's caches lock.
+func (System) CLIProcesses(context.Context) (map[string][]int, error) { return nil, ErrNotMeasurable }
+
 // Terminate always returns ErrNotMeasurable.
 func (System) Terminate(context.Context, int) error { return ErrNotMeasurable }

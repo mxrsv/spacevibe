@@ -24,6 +24,8 @@ const (
 const (
 	// LockSessions: sessions of the CLI hold it (RD27 for logs: running or waiting; RD35 for caches: any live one).
 	LockSessions = "sessions"
+	// LockProcesses: processes of the CLI with no Activity row hold its caches (RD35).
+	LockProcesses = "processes"
 	// LockProcessUnknown: the process check failed, so whether the CLI runs is not known; the lock fails closed.
 	LockProcessUnknown = "processUnknown"
 )
@@ -77,8 +79,9 @@ type Locks struct {
 
 // Lock is one lock with its reason.
 type Lock struct {
+	// Reason is sessions, processes or processUnknown.
 	Reason string `json:"reason"`
-	// Sessions are the Activity session ids that hold it, so the shell can name them; empty for processUnknown.
+	// Sessions are the Activity session ids that hold it, so the shell can name them; empty for the other reasons.
 	Sessions []string `json:"sessions"`
 	Message  string   `json:"message"`
 }
