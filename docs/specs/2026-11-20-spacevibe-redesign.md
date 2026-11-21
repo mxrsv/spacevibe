@@ -1,7 +1,7 @@
 # SpaceVibe: app-wide redesign (macOS frame, v2)
 
 Date: 2026-11-20
-Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. The owner approved round 5 by eye on 2026-11-21 ("ok chốt"), with fixes made the same day: the window is one solid surface and only the floating sidebar's own rounded shape shows the desktop through its glass, so there is no blurred band or stepped corner around the sidebar. The [build plan](../plans/2026-11-21-spacevibe-redesign-build.md) gates code on the mock's readiness (G-0); no code yet.
+Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. The owner approved round 5 by eye on 2026-11-21 ("ok chốt"), with fixes made the same day: the window is one solid surface and only the floating sidebar's own rounded shape shows the desktop through its glass, so there is no blurred band or stepped corner around the sidebar. On 2026-11-21 the owner also accepted every pending item of the third readiness review ("ok approve chốt": RD35–RD40, the replaced ledger rows and the PRODUCT.md lines). The [build plan](../plans/2026-11-21-spacevibe-redesign-build.md) gates code on the mock's readiness (G-0, a fourth fresh review) and track approval (G-1); no code yet.
 Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: [build plan](../plans/2026-11-21-spacevibe-redesign-build.md).
 
 - **Reference mock (round 5, 2026-11-21):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`; round 4 is kept as `mock-r4.html` (built from `src-r4/`), and the "Trước fix / Sau fix" switch at the top left moves between them with the same state. The rail's `Dữ liệu` axis loads the break-ui datasets (Mẫu, Cực đoan, Một mục, Rất nhiều). It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
@@ -52,7 +52,7 @@ Decisions of 2026-11-21. Each was a recommendation after the four-agent mock rev
 | RD24 | Status-line capture stays under S-R4: the app copies the install and remove commands, the owner runs them. | "nhận hết fix mock đi" | RD-R15 | RD-A8 | Limits state `Rỗng` (Copy Install Command); Settings › Limits |
 | RD25 | Settings has no "Empty" for SpaceVibe's trash: emptying it would end every pending Undo. | "nhận hết fix mock đi" | RD-R15 | RD-A8 | Settings › Data |
 | RD26 | Inbox can reach zero: each finding has Keep; a Hook counts as failing only for errors in the last 7 days; an item added in the last day is not a finding; a Rule that allows a whole tool is a Control finding. | "nhận hết fix mock đi" | RD-R4 | RD-A9 | Inbox: Keep, Show Kept, Control `Bash`; preset "Inbox · không còn gì (Clear)" |
-| RD27 | Clean locks a CLI's logs and caches only while that CLI has a running session (running or waiting), as CL2 says. | "nhận hết fix mock đi" | CL-R5 | Clean spec | preset "Clean · Claude có session đang chạy" |
+| RD27 | AMENDED by RD35 for caches. Clean locks a CLI's logs and caches only while that CLI has a running session (running or waiting), as CL2 says. | "nhận hết fix mock đi" | CL-R5 | Clean spec | preset "Clean · Claude có session đang chạy" |
 | RD28 | Two CLIs use the same layout as many: installing a third CLI changes no page's shape. | "nhận hết fix mock đi" | RD-R10 | RD-A6 | axis `Số CLI` 2 against 3: same layout |
 
 Decisions of 2026-11-21, after the three Opus reviews. Each was the recommendation offered; the owner's answer was "tôi muốn fix đủ nhưng cần button before after để xem sau khi fix như nào".
@@ -62,6 +62,17 @@ Decisions of 2026-11-21, after the three Opus reviews. Each was the recommendati
 | RD29 | Keyboard focus is a 3 pt ink bar inside the focused row, field or control: not a ring, so D57 stands, and it reaches 3:1 and differs from hover and selection. | "tôi muốn fix đủ" | RD-R9, RD-R16 | RD-A10 | arrow keys on any list; `Tokens + base` "Keyboard focus" |
 | RD30 | A Window always counts as needing you at 5% left or less; pace ("faster than time") is judged only once a tenth of the Window has passed. | "tôi muốn fix đủ" | RD-R4 | RD-A9 | preset "Cực đoan · Limits" |
 | RD31 | A CLI that reads an item only through another CLI's folder (Cursor reading `~/.claude/skills`) shows it as "via" that CLI and is not a toggle; removing it is `Remove…`. | "tôi muốn fix đủ" | RD-R11 | RD-A6 | preset "Skills · 6 CLI" (link badge on Cursor, opencode, Amp) |
+
+Pending items of the third readiness review, all accepted by the owner on 2026-11-21 with the agent's recommendation:
+
+| ID | Decision | Owner's words | Req | Where in the mock |
+| --- | --- | --- | --- | --- |
+| RD35 | A cache folder is locked while its CLI has any process alive (running, waiting, idle or unmeasurable); logs keep the RD27 lock. | "ok approve chốt" (2026-11-21) | CL-R5 | Clean, Codex caches "In use by 1 session" (unmeasurable session) while Codex logs stay open |
+| RD36 | Show Terminal stays: it brings the app that runs the session to the front with the shipped `HostAppResolver` (GW5), starts no process and needs no Automation permission; with no host app (tmux, screen, ssh) the button is disabled with "Terminal app not found". | "ok approve chốt" (2026-11-21) | RD-R4 | Activity inspector; Inbox waiting finding |
+| RD37 | Content glyphs use Phosphor Bold and state glyphs Phosphor Fill; this supersedes D72's Duotone content glyphs. Page icons stay SpaceVibe's own Bold set (RD23). | "ok approve chốt" (2026-11-21) | RD-R3 | every page |
+| RD38 | The icon library stays Phosphor plus SpaceVibe's own set; no SF Symbols. | "ok approve chốt" (2026-11-21) | RD-R3 | every page |
+| RD39 | Keys: ↑↓ and j/k move the selection (D11), A toggles the focused logo (D69), S stops (asks), Z and ⌘Z undo (GLOSSARY Undo), ⌘1–⌘8 open the pages; every command is also in the menu bar. The v5 status-bar hints retire with the status bar; the Undo hint lives in the toast. | "ok approve chốt" (2026-11-21) | RD-R9 | "not shown" line (keys) |
+| RD40 | Narrows RD20: a list has checkboxes where a bulk action exists (remove, stop); Keep and Dismiss act on one row at a time. | "ok approve chốt" (2026-11-21) | RD-R11 | Inbox Balance, Control and Watch rows; Activity Failures |
 
 Earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
@@ -188,17 +199,12 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Hero of Clean:** what can be cleaned (equal to the sidebar); the selected amount sits on the button and the bar. Replaces the round-3 "hero = selected".
 - **Show in Settings › CLIs:** hides a CLI from every list only; who reads or loses a file always counts every installed CLI, so removing a shared file still names a hidden reader.
 - **Project items:** Skills, Subagents and Hooks under `<project>/.claude` are listed with a "Project · <name>" label, read-only (the engine refuses removal, 403), never an Inbox finding, never selectable in Clean.
-- **Show Terminal (owner decision pending, recommended: keep):** brings the app that runs the session to the front with the shipped `HostAppResolver` (GW5): no process started, no Automation permission. A session in tmux, screen or ssh has no app, so the button is disabled with "Terminal app not found". A waiting session also shows "Answer in the terminal. SpaceVibe only shows that it is waiting."
-- **Content icon weight:** the mock draws content glyphs in Phosphor Bold and state glyphs in Phosphor Fill; D72 has content glyphs in Phosphor Duotone, and RD23 covers only the 8 page icons. Owner decision pending.
 - **Refused Undo and a core that will not start:** declared in the mock's "not shown" with the shipped behaviour (error toast naming the reason; last data kept with "The core could not be started." and Try Again).
 - **Project rules:** Rules › Project reads and writes the chosen project's own file (`<project>/.claude/settings.json` or `settings.local.json`); the mock draws one synthetic rule set per project.
 - **Show guard:** at least one CLI stays shown; a hidden CLI's rows leave every list, its sessions still lock its logs and caches (RD27).
 - **Search (⌘F):** filters the page's list by name, description, command and path; no match shows "No <items> match" with Clear Search. Listed in the mock's "not shown"; D49 relies on it.
 - **Balance finding:** one finding at most, the most-used item missing in a pinned CLI; none when fewer than two CLIs are pinned.
 - **Open at login:** a new Settings switch, not in the shipped app, off by default; it adds a login item that the user approves in System Settings (W24 applies to the build). No owner decision of its own.
-- **Icon set (owner decision pending, recommended: keep):** Phosphor plus SpaceVibe's own set (D72, RD23), not SF Symbols.
-- **Keys (owner yes pending):** ↑↓ and j/k move the selection (D11), A toggles the focused logo (D69), S stops (asks), Z and ⌘Z undo (GLOSSARY Undo), ⌘1–⌘8 open the pages (grilling Q5, still open). The v5 status-bar hints are retired with the status bar; the Undo hint lives in the toast.
-- **Checkboxes (narrows RD20, owner yes pending):** a list has checkboxes where a bulk action exists (remove, stop); Keep and Dismiss act on one row at a time.
 - **Limits selection:** a Window row can be selected (highlight only, no inspector); the widget and its popover open Limits with that row selected (LC-R7).
 - **Keep is stored:** kept findings survive a restart, in a list in the app's data folder (`~/.spacevibe`); the build plan's RB-E5.
 - **Page × state cells drawn as Normal on purpose:** listed in the mock's `MOCK.na` with their behaviour (Moving only on Clean, Hooks never ask, Limits writes nothing, no shared file at 2 CLIs, the Settings window has no scan); the mock's `consistency.js` fails on any other such cell.
@@ -222,39 +228,39 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Subagents tone:** `#178082` in light is 28° from ok green, under the 30° target.
 - **Many-CLI open questions** from `research-many-clis.md`, each with the research's recommendation:
   - CLI registry first (yes).
-  - Pinned Balance; PRODUCT.md "Balance the two CLIs" changes to "pinned CLIs" (owner wording needed).
+  - Pinned Balance; PRODUCT.md "Balance the two CLIs" changes to "Balance the pinned CLIs" (accepted 2026-11-21).
   - `Add to…` copies by default.
   - "Not supported" joins the glossary.
 - **Superseded documents:** this spec, once approved, supersedes `docs/DESIGN-LANGUAGE.md` (v5) and the ledger decisions listed in "Ledger decisions this spec replaces" below; the countdown spec is carried, not superseded (RD33).
 
 ## Ledger decisions this spec replaces
 
-From the [2026-11-06 ledger](2026-11-06-reins-linear-identity-decisions.md). Rows marked "owner yes pending" narrow or reverse a decision the owner made and are not in force until the owner says yes (W20). D53, D57, D69 and D70 stay (RD21).
+From the [2026-11-06 ledger](2026-11-06-reins-linear-identity-decisions.md). Rows marked "owner yes" narrow or reverse a decision the owner made; the owner accepted them together on 2026-11-21 ("ok approve chốt", W20). D53, D57, D69 and D70 stay (RD21).
 
 | Ledger | What it said | Replaced by | State |
 | --- | --- | --- | --- |
 | D3, D4 | Linear desktop app as the one reference | Native macOS 26 frame (RD4, RD5) | recorded (RD4) |
 | D7 | Inter stays | SF Pro, figures in SF Pro Rounded (RD6) | recorded (RD22) |
-| D17, D45, D54, D56, D61, D67 | List-plus-pane, bento and split layouts | Native lists with a trailing inspector (RD4) | owner yes pending |
+| D17, D45, D54, D56, D61, D67 | List-plus-pane, bento and split layouts | Native lists with a trailing inspector (RD4) | owner yes 2026-11-21 |
 | D20 | Sidebar icons white, row icons grey | Category tone on sidebar and row icons (RD12) | recorded (RD22) |
 | D21, D31 | Badge on a lit logo | Full logo; the tile carries the check (RD-R11) | recorded (RD22) |
-| D23 | No count column in the list | Sessions column with a thin bar (RD-R11) | owner yes pending |
+| D23 | No count column in the list | Sessions column with a thin bar (RD-R11) | owner yes 2026-11-21 |
 | D26, D43, D46 | Agents page with tabs Skills, Subagents, Hooks, Rules | Four sidebar pages (RD19) | recorded (RD19, owner's guess taken) |
 | D27, D33–D37 | Filter menu, chips, Group by, Order by | `All / Never ran`, `All CLIs`, Sessions sort (RD22) | recorded (RD22) |
-| D28 | Bottom bar: add the selection to one CLI in one click | Per-CLI sheet `Add to…` / `Remove from…` (RD-R11) | owner yes pending |
-| D29, D30 | Tab head and row line styling | New tokens and blocks (RD-R3) | owner yes pending |
-| D32, D72 | MingCute category icons; Phosphor Duotone content glyphs | SpaceVibe's own Bold set for page icons (RD23); content glyph weight pending ("Inferred, not decided") | partly recorded (RD23) |
-| D51 | Attention queue strip on Agents | Inbox page (RD3) | owner yes pending |
-| D59 | Limits: one card, one band per CLI | One card per CLI, fixed order (RD-R10) | owner yes pending |
+| D28 | Bottom bar: add the selection to one CLI in one click | Per-CLI sheet `Add to…` / `Remove from…` (RD-R11) | owner yes 2026-11-21 |
+| D29, D30 | Tab head and row line styling | New tokens and blocks (RD-R3) | owner yes 2026-11-21 |
+| D32, D72 | MingCute category icons; Phosphor Duotone content glyphs | SpaceVibe's own Bold set for page icons (RD23); Phosphor Bold content glyphs, Fill state glyphs (RD37) | recorded (RD23, RD37) |
+| D51 | Attention queue strip on Agents | Inbox page (RD3) | owner yes 2026-11-21 |
+| D59 | Limits: one card, one band per CLI | One card per CLI, fixed order (RD-R10) | owner yes 2026-11-21 |
 | D60 | No reset tick on bars | Pace tick (RD22) | recorded (RD22) |
-| D66 | Spacing tokens of the mock kit | Spacing of the redesign Tokens page (RD-R3) | owner yes pending |
+| D66 | Spacing tokens of the mock kit | Spacing of the redesign Tokens page (RD-R3) | owner yes 2026-11-21 |
 | D68 | 2026-11-07 frozen mock as build reference | This spec's reference mock | recorded (RD1, RD-A1) |
-| D24, D41 | Row-end warning icon with a Remove / Open file popover; the fix within one hover or click | Row actions on the selected row and the inspector (RD-R4), logo toggles in the row (RD-R11) | owner yes pending |
+| D24, D41 | Row-end warning icon with a Remove / Open file popover; the fix within one hover or click | Row actions on the selected row and the inspector (RD-R4), logo toggles in the row (RD-R11) | owner yes 2026-11-21 |
 | D58 | Row warning icons keep their state tones | Severity once per group, row icons grey (RD10) | recorded (RD10) |
 | D60 (clause 1) | A number appears once | Sidebar values repeat each page's hero (RD10) | recorded (RD10) |
-| D11 | `j`/`k` navigation | Kept, with ↑↓ ("Inferred, not decided": keys) | owner yes pending |
+| D11 | `j`/`k` navigation | Kept, with ↑↓ (RD39) | owner yes 2026-11-21 |
 
-PRODUCT.md lines this spec changes, updated at the cut-over (RB-X1), owner yes pending: "primary datum … at 20px; everything else 13px or smaller" (the scale is 11–40 pt, RD-R5); "a number shows once … never repeated in another card" (sidebar values repeat the hero, RD10); "a problem shown in a row offers its fix in the same row … (the warning popover with Remove)" (Skills and Subagents rows fix through their logo toggles; removal of the whole item is the inspector's `Remove…`); "Balance the two CLIs" (pinned CLIs, RD-R10).
+PRODUCT.md lines this spec changes, updated at the cut-over (RB-X1), owner yes 2026-11-21: "primary datum … at 20px; everything else 13px or smaller" (the scale is 11–40 pt, RD-R5); "a number shows once … never repeated in another card" (sidebar values repeat the hero, RD10); "a problem shown in a row offers its fix in the same row … (the warning popover with Remove)" (Skills and Subagents rows fix through their logo toggles; removal of the whole item is the inspector's `Remove…`); "Balance the two CLIs" (pinned CLIs, RD-R10).
 
 ## Needs new engine data or contracts
 
