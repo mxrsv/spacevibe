@@ -336,7 +336,7 @@ struct FrameIntegrationTests {
         var scans = 0
         store.cleanScanner = {
             scans += 1
-            return CleanScan()
+            return CoreCleanScan(clis: [], items: [])
         }
         let t0 = Date(timeIntervalSince1970: 1_000)
         await store.start(now: t0)
@@ -344,7 +344,7 @@ struct FrameIntegrationTests {
         await store.refresh(now: t0.addingTimeInterval(FrameStore.refreshInterval + 1))
         #expect(scans == 0, "the 10 s refresh never walks the logs")
         await store.readClean()
-        #expect(scans == 1 && store.facts.clean == CleanScan() && store.states[.clean] == .ready)
+        #expect(scans == 1 && store.snapshot.clean == CoreCleanScan(clis: [], items: []) && store.states[.clean] == .ready)
         await store.refresh(force: true, now: t0.addingTimeInterval(2 * FrameStore.refreshInterval + 2))
         #expect(scans == 2, "⌘R reads Clean again")
         store.stop()

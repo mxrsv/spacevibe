@@ -32,6 +32,7 @@ final class CoreClient: CoreService, @unchecked Sendable {
     private struct CopyTo: Encodable { let id: String, targets: [String] }
     private struct RemoveFrom: Encodable { let id: String, clis: [String] }
     private struct IDs: Encodable { let ids: [String] }
+    private struct CleanMove: Encodable { let logs: [CoreCleanLogPick], caches: [String] }
 
     /// The members of every `rules.*` call; a member a call does not take stays nil and is left out (params are strict).
     /// `dir` is `null` for the global scope.
@@ -188,4 +189,12 @@ final class CoreClient: CoreService, @unchecked Sendable {
     func findingsKept() async throws -> CoreKeptFindings { try await connection.call("findings.kept") }
     func findingsKeep(id: String) async throws -> CoreEntryResult { try await connection.call("findings.keep", ID(id: id)) }
     func findingsUnkeep(id: String) async throws -> CoreEntryResult { try await connection.call("findings.unkeep", ID(id: id)) }
+
+    // MARK: Clean
+
+    func cleanScan() async throws -> CoreCleanScan { try await connection.call("clean.scan") }
+
+    func cleanMove(logs: [CoreCleanLogPick], caches: [String], progress: (@Sendable (CoreCleanProgress) -> Void)?) async throws -> CoreCleanMoveResult {
+        try await connection.call("clean.move", CleanMove(logs: logs, caches: caches), cleanProgress: progress)
+    }
 }

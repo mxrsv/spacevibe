@@ -52,6 +52,15 @@ enum CoreWire {
         let total: Int
     }
 
+    /// The `clean/progress` params: the DTO plus the id of the `clean.move` request.
+    struct CleanProgressParams: Decodable {
+        let id: Int
+        let phase: String
+        let done: Int
+        let total: Int
+        let bytes: Int64
+    }
+
     static func decode<T: Decodable>(_ type: T.Type, from line: Data) throws -> T {
         try JSONDecoder().decode(type, from: line)
     }

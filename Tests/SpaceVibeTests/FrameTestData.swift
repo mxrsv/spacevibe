@@ -113,4 +113,15 @@ enum FrameTestData {
     static func entry(_ id: String, label: String = "Removed a") -> CoreJournalEntry {
         CoreJournalEntry(id: id, at: "2026-11-21T10:00:00.000Z", label: label, undone: false, count: 1)
     }
+
+    // MARK: Clean
+
+    /// A `clean.scan` answer: each CLI given, or an empty measured one; `items` are row key → bytes.
+    static func cleanScan(claude: CoreCleanCLI? = nil, codex: CoreCleanCLI? = nil, items: [String: Int64] = [:], problems: [String]? = nil) -> CoreCleanScan {
+        let empty = { (cli: String) in
+            CoreCleanCLI(cli: cli, logs: CoreCleanLogs(state: "measured", buckets: []), caches: [], locks: CoreCleanLocks(logs: nil, caches: nil))
+        }
+        return CoreCleanScan(clis: [claude ?? empty("claude"), codex ?? empty("codex")],
+                             items: items.sorted { $0.key < $1.key }.map { CoreCleanItemSize(key: $0.key, bytes: $0.value) }, problems: problems)
+    }
 }

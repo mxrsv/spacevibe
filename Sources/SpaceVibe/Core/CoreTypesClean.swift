@@ -1,8 +1,8 @@
 import Foundation
 
 // clean.scan, clean.move and clean/progress (RB-E7). Go: core/internal/clean/types.go (docs/internals/core-protocol.md,
-// "Wire types"; docs/internals/clean.md). Every `bytes` is allocated bytes, what `du` counts (CL-R6). Decoders only for
-// now: the Clean page (RB-R5) maps them onto `CleanScan`.
+// "Wire types"; docs/internals/clean.md). Every `bytes` is allocated bytes, what `du` counts (CL-R6). The frame's store
+// keeps the scan as it came (`FrameSnapshot.clean`) and `CleanPlan` derives the page from it (RB-R5).
 
 /// The logs of one CLI older than an age (30, 90 or 180 days); a bucket holds every older age too.
 struct CoreCleanBucket: Codable, Equatable, Sendable {
@@ -26,7 +26,8 @@ struct CoreCleanCache: Codable, Equatable, Sendable, Identifiable {
     var bytes: Int64
 }
 
-/// What holds a CLI's logs or caches back: `sessions` (their Activity ids) or `processUnknown`, with the sentence.
+/// What holds a CLI's logs or caches back: `sessions` (their Activity ids), `processes` (a process of the CLI with no
+/// Activity row, caches only) or `processUnknown` (the process check failed), with the sentence the core refuses with.
 struct CoreCleanLock: Codable, Equatable, Sendable {
     var reason: String
     var sessions: [String]
@@ -90,4 +91,10 @@ struct CoreCleanProgress: Codable, Equatable, Sendable {
     var done: Int
     var total: Int
     var bytes: Int64
+}
+
+/// One CLI's logs older than an age, as `clean.move` takes them (`LogPick`).
+struct CoreCleanLogPick: Codable, Equatable, Hashable, Sendable {
+    var cli: String
+    var olderThanDays: Int
 }

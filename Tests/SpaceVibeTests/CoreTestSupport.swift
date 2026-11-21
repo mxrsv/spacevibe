@@ -35,4 +35,6 @@ class UnservedCore: CoreService, @unchecked Sendable {
     func findingsKept() async throws -> CoreKeptFindings { throw unserved() }
     func findingsKeep(id: String) async throws -> CoreEntryResult { throw unserved() }
     func findingsUnkeep(id: String) async throws -> CoreEntryResult { throw unserved() }
+    func cleanScan() async throws -> CoreCleanScan { throw unserved() }
+    func cleanMove(logs: [CoreCleanLogPick], caches: [String], progress: (@Sendable (CoreCleanProgress) -> Void)?) async throws -> CoreCleanMoveResult { throw unserved() }
 }

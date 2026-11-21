@@ -114,7 +114,7 @@ struct FrameWorldTests {
         facts.hidden = ["codex"]
         let w = FrameWorld(snapshot: snapshot, facts: facts, now: D.now)
         #expect(w.clis.map(\.id) == ["claude"] && w.rows.isEmpty && w.sessions.isEmpty)
-        #expect(w.clean.locks.logs == ["codex"], "a hidden CLI's sessions still lock its logs (RD27)")
+        #expect(Set(w.clean.locks.logs.keys) == ["codex"], "a hidden CLI's sessions still lock its logs (RD27)")
         facts.hidden = ["claude", "codex"]
         #expect(FrameWorld(snapshot: snapshot, facts: facts, now: D.now).clis.map(\.id) == ["claude"])
     }
@@ -127,37 +127,69 @@ struct FrameWorldTests {
         #expect(w.removalSet(selected: ticked, shown: shown).map(\.id) == ["skill::never"])
     }
 
-    // MARK: Clean (RD27, RD35)
+    // MARK: Clean (RD27, RD35, CL-R5)
 
-    @Test("logs lock on a running or waiting session; caches on any live process, idle and unmeasurable included")
+    @Test("locks come from clean.scan with their sentence; a session the live report adds after the scan locks too, never unlocks")
     func locks() {
         let registry = D.registry
-        let idle = CleanLocks(activity: D.activity([D.session("i", state: .idle), D.session("u", cli: .codex, state: .unmeasurable)]), registry: registry)
-        #expect(idle.logs.isEmpty && idle.caches == ["claude", "codex"])
-        let busy = CleanLocks(activity: D.activity([D.session("r", state: .running), D.session("e", cli: .codex, state: .ended)]), registry: registry)
-        #expect(busy.logs == ["claude"] && busy.caches == ["claude"])
-        #expect(CleanLocks(activity: nil, registry: registry).logs == ["claude", "codex"], "no report yet: nothing may move")
-        let unknown = CleanLocks(activity: D.activity([], unmeasurable: [CoreActivityLimit(cli: .codex, code: CleanLocks.processUnknownCode, text: "x")]), registry: registry)
-        #expect(unknown.logs == ["codex"] && unknown.caches == ["codex"])
+        let held = CoreCleanLock(reason: "processes", sessions: [], message: "Codex is running (1 process), so its caches are in use.")
+        let scan = D.cleanScan(codex: .init(cli: "codex", logs: .init(state: "measured", buckets: []), caches: [],
+                                            locks: .init(logs: nil, caches: held)))
+        let quiet = CleanLocks(scan: scan, activity: D.activity([]), registry: registry)
+        #expect(quiet.logs.isEmpty, "no lock on the wire, no session: logs are open")
+        #expect(quiet.caches["codex"] == CleanLock(reason: .processes, message: held.message), "the core's processes lock and its words")
+        let idle = CleanLocks(scan: scan, activity: D.activity([D.session("i", state: .idle), D.session("u", cli: .codex, state: .unmeasurable)]),
+                              registry: registry)
+        #expect(idle.logs.isEmpty && Set(idle.caches.keys) == ["claude", "codex"], "RD35: an idle session holds its CLI's caches")
+        #expect(idle.caches["codex"]?.reason == .processes, "the scan's lock wins over the live one")
+        let busy = CleanLocks(scan: scan, activity: D.activity([D.session("r", state: .running), D.session("e", cli: .codex, state: .ended)]),
+                              registry: registry)
+        #expect(busy.logs["claude"]?.message == "Claude has 1 running session, so its logs stay until it ends.")
+        #expect(busy.logs["claude"]?.sessionIDs == ["r"] && busy.logs["codex"] == nil)
+        let unknown = CleanLocks(scan: nil, activity: D.activity([], unmeasurable: [CoreActivityLimit(cli: .codex, code: CleanLocks.processUnknownCode, text: "x")]),
+                                 registry: registry)
+        #expect(unknown.logs["codex"]?.reason == .processUnknown && unknown.caches["codex"]?.reason == .processUnknown)
+        #expect(CleanLock(CoreCleanLock(reason: "somethingNew", sessions: [], message: "m")).reason == .processUnknown, "an unknown reason fails closed")
     }
 
     @Test("what can be cleaned: open rows only; locked and read-only rows never count; the selection is cut to them")
     func cleanable() {
         let w = FrameWorld(snapshot: mixed(), now: D.now)
-        let scan = CleanScan(
-            logs: ["claude": [90: .init(files: 10, bytes: 1_000)], "codex": [90: .init(files: 4, bytes: 400), 30: .init(files: 9, bytes: 900)]],
-            caches: [.init(id: "c1", cli: "claude", path: "~/.claude/paste-cache", bytes: 50)],
-            itemBytes: ["skill::never": 7, "agent::agent-never": 3, "skill::plug": 1_000_000]
-        )
-        let locks = CleanLocks(activity: D.activity([D.session("r", cli: .codex, state: .running)]), registry: D.registry)
+        let codexLock = CoreCleanLock(reason: "sessions", sessions: ["r"], message: "Codex has 1 running session, so its logs stay until it ends.")
+        let scan = D.cleanScan(
+            claude: .init(cli: "claude", logs: .init(state: "measured", buckets: [.init(olderThanDays: 90, files: 10, bytes: 1_000)]),
+                          caches: [.init(id: "claude:cache", path: "/h/.claude/cache", entries: 1, files: 1, bytes: 50)], locks: .init(logs: nil, caches: nil)),
+            codex: .init(cli: "codex", logs: .init(state: "measured", buckets: [.init(olderThanDays: 30, files: 9, bytes: 900), .init(olderThanDays: 90, files: 4, bytes: 400)]),
+                         caches: [], locks: .init(logs: codexLock, caches: nil)),
+            items: ["skill::never": 7, "agent::agent-never": 3, "skill::plug": 1_000_000])
+        let locks = CleanLocks(scan: scan, activity: nil, registry: D.registry)
         let plan = CleanPlan(candidates: w.candidates, kept: [], scan: scan, locks: locks, shownCLIs: ["claude", "codex"])
         // claude logs 1000 + cache 50 + never 7 + agent-never 3 + hooks 0; Codex logs are locked; plug is read-only.
         #expect(plan.cleanableBytes == 1_060)
         #expect(plan.lockedBytes == 400)
-        #expect(plan.selectedBytes(["logs:codex", "skill::plug", "c1"]) == 50)
+        #expect(plan.selectedBytes(["logs:codex", "skill::plug", "claude:cache"]) == 50)
         #expect(!plan.openIDs.contains("skill:/p:proj"))
+        #expect(plan.agentRows.first { $0.id == "skill::plug" }?.readOnly == .plugin("a-plugin"))
         let older = CleanPlan(candidates: w.candidates, kept: [], scan: scan, locks: locks, shownCLIs: ["claude", "codex"], logAge: ["codex": 30])
         #expect(older.logs.first { $0.cli == "codex" }?.files == 9)
-        #expect(CleanPlan(candidates: w.candidates, kept: [], scan: nil, locks: locks, shownCLIs: ["claude"]).selectedBytes(["c1"]) == nil)
+        let missingAge = CleanPlan(candidates: w.candidates, kept: [], scan: scan, locks: locks, shownCLIs: ["claude", "codex"], logAge: ["claude": 180])
+        #expect(missingAge.logs.first { $0.cli == "claude" }?.ageDays == 90, "an age that holds no log falls back to 90 days")
+        #expect(CleanPlan(candidates: w.candidates, kept: [], scan: nil, locks: locks, shownCLIs: ["claude"]).selectedBytes(["claude:cache"]) == nil)
+    }
+
+    @Test("the sidebar figure follows the log age the page picked (hero = sidebar), and a never-asked scan is no figure")
+    func cleanFigureFollowsAge() {
+        var snapshot = mixed()
+        let scan = D.cleanScan(claude: .init(cli: "claude", logs: .init(state: "measured", buckets: [
+            .init(olderThanDays: 30, files: 3, bytes: 3_000), .init(olderThanDays: 90, files: 1, bytes: 1_000)]),
+                                             caches: [], locks: .init(logs: nil, caches: nil)), items: [:])
+        snapshot.clean = scan
+        var facts = FrameFacts()
+        let at90 = FrameWorld(snapshot: snapshot, facts: facts, now: D.now).figure(for: .clean, loading: [], failed: [])
+        facts.cleanLogAges = ["claude": 30]
+        let at30 = FrameWorld(snapshot: snapshot, facts: facts, now: D.now).figure(for: .clean, loading: [], failed: [])
+        #expect(at90 == .bytes(1_000) && at30 == .bytes(3_000))
+        #expect(FrameWorld(snapshot: snapshot, now: D.now).figure(for: .clean, loading: [.clean], failed: []) == .pending)
+        #expect(FrameWorld(snapshot: snapshot, now: D.now).figure(for: .clean, loading: [], failed: [.clean]) == .failed)
     }
 }

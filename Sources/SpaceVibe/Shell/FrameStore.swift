@@ -7,7 +7,7 @@ enum FrameSource: Hashable, Sendable {
     case rules(FrameScope)
     /// `findings.kept`: the Keep list, kept in `facts.findings.kept`.
     case kept
-    /// `clean.scan`: what Clean can move, kept in `facts.clean`. Never part of the refresh (`FrameStore.readClean`).
+    /// `clean.scan`: what Clean can move, kept in `snapshot.clean`. Never part of the refresh (`FrameStore.readClean`).
     case clean
 }
 
@@ -41,6 +41,8 @@ final class FrameStore {
 
     private(set) var snapshot = FrameSnapshot()
     private(set) var states: [FrameSource: FrameSourceState] = [:]
+    /// Sources with a read in flight, data or not: a page that re-reads on demand (Clean's Scan Again) shows it pending.
+    private(set) var reading: Set<FrameSource> = []
     private(set) var isScanning = false
     /// The core's sentence when the last usage scan failed.
     private(set) var scanFailure: String?
@@ -51,8 +53,9 @@ final class FrameStore {
 
     /// Reads `clean.scan` (RB-R5 sets it). The scan walks every log of every CLI (the RB-E7 build-review), so it is never
     /// polled: the 10 s activation refresh skips it, and only `readClean()` runs it, which RB-R5 calls when Clean opens and
-    /// ⌘R (`refresh(force: true)`) calls too. Nil: Clean is not wired yet and nothing reads it.
-    @ObservationIgnored var cleanScanner: (@MainActor () async throws -> CleanScan)?
+    /// ⌘R (`refresh(force: true)`) calls too. `FrameModel` sets it to the core's `clean.scan`; nil (a test, a shot) reads
+    /// nothing.
+    @ObservationIgnored var cleanScanner: (@MainActor () async throws -> CoreCleanScan)?
 
     /// Settings › CLIs (Show, Balance pins). Nil: `facts.hidden` and `facts.findings.pinned` stand as set (tests).
     @ObservationIgnored let cliPreferences: CLIPreferences?
@@ -119,10 +122,11 @@ final class FrameStore {
     func readClean() async {
         guard let cleanScanner else { return }
         let generation = begin(.clean)
+        defer { if isLatest(.clean, generation) { reading.remove(.clean) } }
         do {
             let scan = try await cleanScanner()
             guard isLatest(.clean, generation) else { return }
-            facts.clean = scan
+            snapshot.clean = scan
             states[.clean] = .ready
         } catch is CancellationError {
             return
@@ -165,7 +169,7 @@ final class FrameStore {
         case .journal: snapshot.journal != nil
         case .rules(let file): snapshot.rules[file] != nil
         case .kept: hasKept
-        case .clean: facts.clean != nil
+        case .clean: snapshot.clean != nil
         }
     }
 
@@ -173,6 +177,7 @@ final class FrameStore {
         let next = (generations[source] ?? 0) + 1
         generations[source] = next
         if !hasData(source) { states[source] = .loading }
+        reading.insert(source)
         return next
     }
 
@@ -182,6 +187,7 @@ final class FrameStore {
     /// again and again; the next refresh scans.
     private func read(_ source: FrameSource, refreshProjects: Bool, mayRestartScan: Bool = true) async {
         let generation = begin(source)
+        defer { if isLatest(source, generation) { reading.remove(source) } }
         do {
             switch source {
             case .registry:
@@ -255,7 +261,9 @@ final class FrameStore {
         guard !isScanning else { return }
         isScanning = true
         do {
-            _ = try await core.usageScan(progress: nil)
+            let result = try await core.usageScan(progress: nil)
+            // The scan's problems (an unreadable usage archive: the logs Clean moved are not counted) are shown, not dropped.
+            snapshot.usageProblems = result.problems ?? []
             scanFailure = nil
         } catch is CancellationError {
             // The next refresh scans again.

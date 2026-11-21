@@ -61,12 +61,14 @@ final class CoreConnection: @unchecked Sendable {
     // MARK: Requests
 
     /// Sends one request and decodes its answer. Throws a `CoreError` for the engine's refusal and for every fault of the
-    /// helper, and `CancellationError` for a cancelled call. `progress` gets the `usage/progress` notifications.
+    /// helper, and `CancellationError` for a cancelled call. `progress` gets the `usage/progress` notifications and
+    /// `cleanProgress` the `clean/progress` ones.
     func call<R: Decodable>(
         _ method: String,
         _ params: some Encodable = CoreWire.NoParams(),
         as _: R.Type = R.self,
-        progress: (@Sendable (CoreUsageProgress) -> Void)? = nil
+        progress: (@Sendable (CoreUsageProgress) -> Void)? = nil,
+        cleanProgress: (@Sendable (CoreCleanProgress) -> Void)? = nil
     ) async throws -> R {
         let isRead = Self.readMethods.contains(method)
         var attempts = 0
@@ -80,7 +82,8 @@ final class CoreConnection: @unchecked Sendable {
             }
             do {
                 let line = try await session.request(
-                    id: id, method: method, line: try CoreWire.line(id: id, method: method, params: params), isRead: isRead, progress: progress
+                    id: id, method: method, line: try CoreWire.line(id: id, method: method, params: params), isRead: isRead, progress: progress,
+                    cleanProgress: cleanProgress
                 )
                 lock.withLock { failures = 0 }
                 do {

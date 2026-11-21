@@ -11,6 +11,7 @@ extension FramePageContent {
         case .rules: RulesFrame.content(model: model)
         case .limits: LimitsRegion.content(model)
         case .activity: ActivityPage.content(model)
+        case .clean: .clean(model: model)
         default: .notBuilt(page)
         }
     }

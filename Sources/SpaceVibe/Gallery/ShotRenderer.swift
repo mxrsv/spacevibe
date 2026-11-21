@@ -55,6 +55,12 @@ enum ShotRenderer {
                     try writeActivityStates(state, into: directory)
                     exit(0)
                 }
+                // Clean draws each of its page states from in-memory data (RB-R5, `CleanShots`).
+                if screen == FramePage.clean.rawValue {
+                    try requireSyntheticHome(environment)
+                    try CleanShots.run(into: directory)
+                    exit(0)
+                }
                 // Inbox draws each of its page states from in-memory data (RB-R1, `InboxShots`).
                 if screen == FramePage.inbox.rawValue {
                     try requireSyntheticHome(environment)

@@ -23,6 +23,8 @@ final class FrameModel {
     /// `cliPreferences`: Settings › CLIs; nil is the app's own (`CLIPreferences.shared`, in memory under `SPACEVIBE_TEST=1`).
     init(core: any CoreService, toasts: ToastCenter, route: FrameRoute = FrameRoute(), cliPreferences: CLIPreferences? = nil) {
         store = FrameStore(core: core, cliPreferences: cliPreferences ?? .shared)
+        // RB-R5: `clean.scan` through the store's on-demand hook (Clean opening, Scan Again, ⌘R, after a write).
+        store.cleanScanner = { try await core.cleanScan() }
         writes = FrameWrites(core: core, store: store, toasts: toasts)
         router = FrameRouter(route)
     }

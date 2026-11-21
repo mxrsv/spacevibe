@@ -10,6 +10,10 @@ struct FrameSnapshot: Equatable, Sendable {
     var limits: CoreLimitsResult?
     var activity: CoreActivityReport?
     var journal: CoreJournalHistory?
+    /// `clean.scan`, read on demand (`FrameSource.clean`); nil until the Clean page first asks.
+    var clean: CoreCleanScan?
+    /// The last `usage.scan`'s `problems`, e.g. a usage archive that cannot be read, so moved logs are not counted.
+    var usageProblems: [String] = []
 }
 
 /// What the derivations need beside the snapshot: engine answers the store keeps in the derivations' terms, inputs the
@@ -19,10 +23,11 @@ struct FrameFacts: Equatable, Sendable {
     /// The store fills hook errors in 7 days (from `loadout.rows`) and the Keep list (from `findings.kept`); RB-R8 the
     /// Balance pins.
     var findings = FindingFacts()
-    /// RB-E7: `clean.scan`.
-    var clean: CleanScan?
     /// RB-R8 Settings › CLIs › Show: hidden registry ids. A hidden CLI leaves every list; it still locks and still loses files.
     var hidden: Set<String> = []
+    /// RB-R5 Clean's age control: registry id → the log age (30, 90 or 180 days) its row offers. A fact, not page state,
+    /// because the age decides what can be cleaned, which the sidebar shows too (AR3: hero = sidebar). Empty is 90 days.
+    var cleanLogAges: [String: Int] = [:]
 }
 
 /// The one figure a page leads with; the sidebar shows the same value, so the two cannot disagree (AR3, RD10).
@@ -79,8 +84,9 @@ struct FrameWorld: Sendable {
         let found = Findings.all(rows: rows, wideAllows: wideAllows, windows: windows, sessions: sessions, shownCLIs: ids, facts: facts.findings)
         findings = found.open
         keptFindings = found.kept
-        clean = CleanPlan(candidates: candidates, kept: facts.findings.kept, scan: facts.clean,
-                          locks: CleanLocks(activity: snapshot.activity, registry: snapshot.registry), shownCLIs: ids)
+        clean = CleanPlan(candidates: candidates, kept: facts.findings.kept, scan: snapshot.clean,
+                          locks: CleanLocks(scan: snapshot.clean, activity: snapshot.activity, registry: snapshot.registry), shownCLIs: ids,
+                          logAge: facts.cleanLogAges)
     }
 
     /// Global first, then projects by folder, Shared before Local.

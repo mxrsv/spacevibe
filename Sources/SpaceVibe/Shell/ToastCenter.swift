@@ -1,7 +1,9 @@
 import Observation
 import SwiftUI
 
-enum ToastTone { case info, danger }
+/// `partial`: a write that changed some of what was asked and left the rest (the redesign's Clean move): the attention
+/// toast, with Undo for what changed. The v5 toast draws it as `info`; only the redesign's `FrameToastHost` tells it apart.
+enum ToastTone { case info, danger, partial }
 
 /// The one button a toast can carry. Undo is the common case; without an action the toast offers only dismiss.
 struct ToastAction {

@@ -15,6 +15,8 @@ final class CoreSession: @unchecked Sendable {
         let isRead: Bool
         let continuation: CheckedContinuation<Data, Error>
         let progress: (@Sendable (CoreUsageProgress) -> Void)?
+        /// `clean/progress` of a `clean.move` (RB-R5).
+        var cleanProgress: (@Sendable (CoreCleanProgress) -> Void)? = nil
     }
 
     private static let logger = Logger(subsystem: "dev.spacevibe.app", category: "core")
@@ -89,10 +91,12 @@ final class CoreSession: @unchecked Sendable {
     /// Sends one request line and waits for its answer: the whole response line, for the caller to decode. A read is
     /// answered with `CancellationError` as soon as the task is cancelled; a write keeps waiting, because once the core
     /// has started it the real result (and its Undo entry) must not be hidden.
-    func request(id: Int, method: String, line: Data, isRead: Bool, progress: (@Sendable (CoreUsageProgress) -> Void)? = nil) async throws -> Data {
+    func request(id: Int, method: String, line: Data, isRead: Bool, progress: (@Sendable (CoreUsageProgress) -> Void)? = nil,
+                 cleanProgress: (@Sendable (CoreCleanProgress) -> Void)? = nil) async throws -> Data {
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-                let sent = register(id: id, method: method, line: line, entry: Pending(isRead: isRead, continuation: continuation, progress: progress))
+                let entry = Pending(isRead: isRead, continuation: continuation, progress: progress, cleanProgress: cleanProgress)
+                let sent = register(id: id, method: method, line: line, entry: entry)
                 // The cancel handler may have run before the entry existed.
                 if sent, Task.isCancelled { cancel(id) }
             }
@@ -235,6 +239,11 @@ final class CoreSession: @unchecked Sendable {
             guard let note = try? CoreWire.decode(CoreWire.Note<CoreWire.ProgressParams>.self, from: line) else { return }
             let report = lock.withLock { pending[note.params.id]?.progress }
             report?(CoreUsageProgress(done: note.params.done, total: note.params.total))
+        case "clean/progress":
+            guard let note = try? CoreWire.decode(CoreWire.Note<CoreWire.CleanProgressParams>.self, from: line) else { return }
+            let report = lock.withLock { pending[note.params.id]?.cleanProgress }
+            let params = note.params
+            report?(CoreCleanProgress(phase: params.phase, done: params.done, total: params.total, bytes: params.bytes))
         default:
             break
         }

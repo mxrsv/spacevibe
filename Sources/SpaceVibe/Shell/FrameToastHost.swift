@@ -7,18 +7,25 @@ enum FrameToastKind: Equatable, Sendable {
     case write(action: String?)
     /// A refused write (`ToastTone.danger`): "Nothing changed." first, 3 lines with Details, and Dismiss.
     case refused(action: String?)
+    /// A write that did part of what was asked (`ToastTone.partial`): the attention glyph, its sentence, Undo for what
+    /// changed, and Dismiss (the mock's `failToast` with `partial`).
+    case partial(action: String?)
 
     init(_ toast: Toast) {
         switch toast.tone {
         case .info: self = .write(action: toast.action?.title)
         case .danger: self = .refused(action: toast.action?.title)
+        case .partial: self = .partial(action: toast.action?.title)
         }
     }
 
-    /// A refusal stays until it is dismissed (RD-R17); a write's toast times out, paused while the pointer is on it.
+    /// A refusal or a partial write stays until it is dismissed (RD-R17); a write's toast times out, paused while the
+    /// pointer is on it.
     var staysUntilDismissed: Bool {
-        if case .refused = self { return true }
-        return false
+        switch self {
+        case .refused, .partial: true
+        case .write: false
+        }
     }
 
     /// Undo carries its arrow; any other action is its verb alone.
@@ -64,8 +71,9 @@ struct FrameToastHost: View {
             WriteToast(message: toast.message, undo: action.map { _ in { toasts.runCurrentAction() } },
                        actionTitle: action ?? ToastText.undoTitle, actionIcon: FrameToastKind.icon(for: action))
                 .onHover { $0 ? toasts.hold() : toasts.release() }
-        case .refused(let action):
-            RefusedWriteToast(message: toast.message, actionTitle: action, actionIcon: FrameToastKind.icon(for: action),
+        case .refused(let action), .partial(let action):
+            RefusedWriteToast(message: toast.message, isPartial: kind == .partial(action: action), actionTitle: action,
+                              actionIcon: FrameToastKind.icon(for: action),
                               action: action.map { _ in { toasts.runCurrentAction() } },
                               dismiss: { toasts.dismiss(id: toast.id) })
                 .onAppear { if kind.staysUntilDismissed { toasts.hold() } }

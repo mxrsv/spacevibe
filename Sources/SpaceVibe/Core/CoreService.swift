@@ -62,4 +62,21 @@ protocol CoreService: Sendable {
     func findingsKept() async throws -> CoreKeptFindings
     func findingsKeep(id: String) async throws -> CoreEntryResult
     func findingsUnkeep(id: String) async throws -> CoreEntryResult
+
+    /// `clean.scan` (RB-E7): logs by CLI and age, the allowlisted caches, item sizes and the locks. Walks every log and cache
+    /// tree, so it is read on demand (the Clean page opening, Scan Again, after a write), never on a timer.
+    func cleanScan() async throws -> CoreCleanScan
+    /// `clean.move`: these log buckets and caches to the macOS Trash as one Journal entry. `progress` gets `clean/progress`
+    /// from a background executor. Cancelling the calling task stops the move before its next file: the answer is then the
+    /// real result with `cancelled`, or `CancellationError` when nothing had moved yet.
+    func cleanMove(logs: [CoreCleanLogPick], caches: [String], progress: (@Sendable (CoreCleanProgress) -> Void)?) async throws -> CoreCleanMoveResult
+}
+
+/// A fake that serves no Clean (the shot cores of other pages) refuses, so a stray call fails loudly instead of answering
+/// with made-up sizes.
+extension CoreService {
+    func cleanScan() async throws -> CoreCleanScan { throw CoreError("clean.scan is not served here", status: 500) }
+    func cleanMove(logs: [CoreCleanLogPick], caches: [String], progress: (@Sendable (CoreCleanProgress) -> Void)?) async throws -> CoreCleanMoveResult {
+        throw CoreError("clean.move is not served here", status: 500)
+    }
 }

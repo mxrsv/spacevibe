@@ -43,4 +43,11 @@ enum TableColumnWidth {
     static let capabilityName: CGFloat = 120
     /// Rules: a capability's Allow / Ask / Deny dial (`190px`).
     static let capabilityDial: CGFloat = 190
+    /// Clean: where an item is loaded, a lock, or the 30 / 90 / 180 days control (the mock's `pageClean` grid, `190px`).
+    static let cleanDetail: CGFloat = 190
+    /// Clean: a row's size, right-aligned (`112px`).
+    static let cleanSize: CGFloat = 112
+    /// Clean: the band's figure beside the bar ("1.02 GB selected · 380 MB more in use", `min-width: 232px`), so the bar
+    /// keeps one length whatever the figure says.
+    static let cleanBandFigure: CGFloat = 232
 }

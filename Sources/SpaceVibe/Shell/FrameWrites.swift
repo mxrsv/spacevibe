@@ -12,6 +12,12 @@ enum FrameWriteOutcome: Equatable, Sendable {
     case nothingToChange
     /// A change that is not journaled (Stop): no Undo.
     case done
+    /// One write that recorded several Journal entries (Clean: the equipment's `loadout.removeMany`, then `clean.move`). The
+    /// toast's one Undo reverts every entry, newest first. `isPartial`: something stayed where it was, so the toast is the
+    /// attention one that stays until dismissed, still with Undo for what changed.
+    case entries([CoreJournalEntry], label: String, isPartial: Bool)
+    /// The write stopped before changing anything (Clean's Cancel before the first file): a notice, no Undo.
+    case notice(String)
 }
 
 /// One write as the write service runs it.
@@ -71,6 +77,15 @@ final class FrameWrites {
             toasts.show(Self.nothingToChange)
         case .success(.done):
             toasts.show(write.label)
+        case .success(.entries(let entries, let label, let isPartial)):
+            let tone: ToastTone = isPartial ? .partial : .info
+            if entries.isEmpty {
+                toasts.show(label, tone: tone)
+            } else {
+                toasts.show(label, tone: tone, asyncUndo: { [weak self] in await self?.undo(entries, label: label, touches: write.touches) })
+            }
+        case .success(.notice(let sentence)):
+            toasts.show(sentence)
         case .failure(let error):
             if let refused { refused(AppEnvironment.message(error)) } else { toasts.show(AppEnvironment.message(error), tone: .danger) }
         }
@@ -91,6 +106,21 @@ final class FrameWrites {
     /// `rules.check`: whether a rule string has a shape Claude Code reads, and the sentence a write would refuse it with.
     func check(rule: String) async throws -> CoreRuleCheck {
         try await core.rulesCheck(rule: rule)
+    }
+
+    /// Several entries of one write, newest first; the first refusal stops and says so, and what was undone stays undone.
+    private func undo(_ entries: [CoreJournalEntry], label: String, touches: Set<FrameSource>) async {
+        var labels: [String] = []
+        do {
+            for entry in entries.reversed() {
+                let undone = try await core.journalUndo(id: entry.id)
+                labels.insert(undone.label.isEmpty ? entry.label : undone.label, at: 0)
+            }
+            toasts.show("Undid \(CLINames.sentence(labels.isEmpty ? [label] : labels))")
+        } catch {
+            toasts.show(AppEnvironment.message(error), tone: .danger)
+        }
+        await store.reread(touches.union([.journal]))
     }
 
     private func undo(_ entry: CoreJournalEntry, label: String, touches: Set<FrameSource>) async {
