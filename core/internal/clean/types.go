@@ -36,6 +36,9 @@ type ScanResult struct {
 	CLIs []CLIScan `json:"clis"`
 	// Items is the size of every Skill and Subagent row with a member the user can remove, by row key.
 	Items []ItemSize `json:"items"`
+	// Problems are fixed sentences about what Clean could not settle, such as a staging folder of an interrupted move
+	// whose list is refused (mutate.StrandedStaging). Omitted when empty.
+	Problems []string `json:"problems,omitempty"`
 }
 
 // CLIScan is what one CLI leaves behind.

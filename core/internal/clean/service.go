@@ -133,6 +133,7 @@ func (s *Service) Scan(ctx context.Context) (ScanResult, error) {
 		return ScanResult{}, err
 	}
 	result.Items = items
+	result.Problems = mutate.StrandedStaging(s.roots)
 	return result, nil
 }
 

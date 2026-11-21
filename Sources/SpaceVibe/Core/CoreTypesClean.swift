@@ -57,6 +57,8 @@ struct CoreCleanItemSize: Codable, Equatable, Sendable {
 struct CoreCleanScan: Codable, Equatable, Sendable {
     var clis: [CoreCleanCLI]
     var items: [CoreCleanItemSize]
+    /// Fixed sentences about what Clean left alone, such as an interrupted move whose list is refused. Omitted when empty.
+    var problems: [String]? = nil
 }
 
 /// Files (or cache entries) and their allocated bytes.

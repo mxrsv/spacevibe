@@ -322,7 +322,8 @@ type CleanScan = {
     caches: { id: string, path: string, entries: number, files: number, bytes: number }[], // allowlisted, non-empty only
     locks: { logs: CleanLock | null, caches: CleanLock | null }
   }[],
-  items: { key: string, bytes: number }[]         // row key of loadout.rows; a row with no removable Skill or Subagent member is absent
+  items: { key: string, bytes: number }[],        // row key of loadout.rows; a row with no removable Skill or Subagent member is absent
+  problems?: string[]                             // omitted when empty; a staging folder of an interrupted move whose list is refused
 }
 type CleanLock = { reason: "sessions" | "processes" | "processUnknown", sessions: string[], message: string }   // sessions: Activity session ids
 type LogPick = { cli: Cli, olderThanDays: 30 | 90 | 180 }

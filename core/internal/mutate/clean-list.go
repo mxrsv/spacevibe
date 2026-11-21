@@ -15,6 +15,7 @@ import (
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/ojson"
+	"spacevibe.dev/core/internal/roots"
 	"spacevibe.dev/core/internal/usage"
 )
 
@@ -187,11 +188,19 @@ func (tx *Tx) recoverClean() {
 	}
 }
 
-// restoreStaging puts back one orphaned staging folder, from its list, or from its <cli>/<rel> layout without one.
+// restoreStaging puts back one orphaned staging folder, from its list, or from its <cli>/<rel> layout when it has no
+// list at all. A list that exists but is refused (unreadable, or naming a root that is not its CLI's now) leaves the
+// folder alone: its files are never put under a root they may not have come from; clean.scan reports the folder
+// (StrandedStaging). A staged path whose place is taken again goes on into the Trash, which is what the user asked for,
+// as its own "SpaceVibe Clean <date>" folder with no Undo.
 func (tx *Tx) restoreStaging(staging string) {
 	type item struct{ cli, rel string }
 	var todo []item
-	l, err := tx.readCleanList(staging + cleanListSuffix)
+	list := staging + cleanListSuffix
+	l, err := tx.readCleanList(list)
+	if err != nil && pathExists(list) {
+		return
+	}
 	if err == nil {
 		for _, g := range l.Groups {
 			for _, rel := range g.Files {
@@ -224,6 +233,50 @@ func (tx *Tx) restoreStaging(staging string) {
 	}
 	tx.dropLiveRecords(l.Archived)
 	tx.dropStaging(staging)
+	if pathExists(staging) {
+		tx.trashLeftovers(staging)
+	}
+}
+
+// trashLeftovers renames what is left of a staging folder (paths whose place was taken again) into the Trash, under a
+// free "SpaceVibe Clean <date>" name, in the same <cli>/<rel> layout. Best effort: a refusal leaves the folder for the
+// next write and for clean.scan's problem line.
+func (tx *Tx) trashLeftovers(staging string) {
+	if tx.ensureSystemTrash() != nil {
+		return
+	}
+	if same, err := fsx.SameVolume(staging, tx.r.Trash); err != nil || !same {
+		return
+	}
+	if trash, err := tx.freeTrashName(time.Now()); err == nil {
+		_ = fsx.RenameSameVolume(staging, trash)
+	}
+}
+
+// StrandedStaging is one sentence per staging folder that recovery leaves alone because its list exists but is
+// refused, for clean.scan's problems. It reads only; a move in progress always has a list it can read, so it is never
+// named here.
+func StrandedStaging(r roots.Roots) []string {
+	tx := &Tx{r: r}
+	items, err := os.ReadDir(tx.stagingRoot())
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, item := range items {
+		if !item.IsDir() || !cleanSlotPattern.MatchString(item.Name()) {
+			continue
+		}
+		staging := filepath.Join(tx.stagingRoot(), item.Name())
+		list := staging + cleanListSuffix
+		if !pathExists(list) {
+			continue
+		}
+		if _, err := tx.readCleanList(list); err != nil {
+			out = append(out, staging+" holds files of an interrupted Clean move whose list cannot be trusted, so SpaceVibe left them there. Put them back by hand.")
+		}
+	}
+	return out
 }
 
 // dropLiveRecords removes the archive records of paths whose log is in place again: a live log counts by itself.
