@@ -43,12 +43,20 @@ enum ShotHarness {
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
     }
 
-    /// The redesign's frame on `page` as one 1440x900 frame (`SPACEVIBE_REDESIGN=1`), with the services of `env` in the
-    /// environment. The demo tabs only fill `spaceVibeRoot`'s shell slot: the frame does not read them.
-    static func frame(on page: FramePage, choice: AppearanceChoice, env: AppEnvironment) -> some View {
-        AppFrame(page: page)
+    /// The redesign's frame on `page` in `look` as one 1440x900 frame (`SPACEVIBE_REDESIGN=1`), with the services of `env`
+    /// in the environment. The demo tabs only fill `spaceVibeRoot`'s shell slot: the frame does not read them.
+    static func frame(on page: FramePage, look: MaterialLook, choice: AppearanceChoice, env: AppEnvironment) -> some View {
+        AppFrame(page: page, env: env, look: look)
             .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)),
                            toasts: ToastCenter(announce: false), env: env)
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
+    }
+
+    /// The redesign's Settings window (RD4) at its own width, on its first pane.
+    static func settingsWindow(look: MaterialLook, choice: AppearanceChoice, env: AppEnvironment) -> some View {
+        SettingsWindowFrame()
+            .frameLookRoot(forced: look)
+            .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)),
+                           toasts: ToastCenter(announce: false), env: env)
     }
 }

@@ -44,9 +44,9 @@ struct FrameRoute: Equatable, Sendable {
 /// The holder of the one route value, for everything that sets it from outside a page: the sidebar, the menu bar and its
 /// ⌘1 to ⌘8, the glance widget and the countdown pill.
 ///
-/// Wired today: the sidebar (`AppFrame`). Still to come: the menu-bar commands and ⌘1 to ⌘8 (RB-S3, which replaces the
-/// v5 `ShellCommands` while the switch is on), the countdown pill (RB-R6) and the glance widget (RB-R9), each calling
-/// `go(to:)` with `FrameRoute.window` or `FrameRoute.session`.
+/// Wired today: the sidebar (`AppFrame`) and the menu bar with ⌘1 to ⌘8 (`FrameCommands`, installed in place of the v5
+/// `ShellCommands` while the switch is on). Still to come: the countdown pill (RB-R6) and the glance widget (RB-R9), each
+/// calling `go(to:)` with `FrameRoute.window` or `FrameRoute.session`.
 @MainActor
 @Observable
 final class FrameRouter {

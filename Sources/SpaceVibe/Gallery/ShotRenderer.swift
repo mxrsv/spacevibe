@@ -19,10 +19,16 @@ enum ShotRenderer {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let environment = ProcessInfo.processInfo.environment
             let screen = environment[CoreEnvironment.variable("SHOT_SCREEN")] ?? "shell"
-            if LaunchMode.surface(environment: environment) == .redesign, let pages = try framePages(forScreen: screen) {
-                try requireSyntheticHome(environment)
-                try writeFrame(on: pages, into: directory)
-                exit(0)
+            if LaunchMode.surface(environment: environment) == .redesign {
+                if screen == frameSettingsScreen {
+                    try writeSettingsWindow(into: directory)
+                    exit(0)
+                }
+                if let pages = framePages(forScreen: screen) {
+                    try requireSyntheticHome(environment)
+                    try writeFrame(on: pages, into: directory)
+                    exit(0)
+                }
             }
             switch screen {
             case "shell":
@@ -47,24 +53,38 @@ enum ShotRenderer {
         exit(0)
     }
 
+    /// With the switch on, `settings` draws the redesign's Settings window (AR8), not the v5 overlay.
+    nonisolated static let frameSettingsScreen = "settings"
+
     /// The pages a shot key draws in the redesign's frame: `shell` every page, a page's own key (`FramePage.rawValue`, so
-    /// `inbox` and `clean` too) that page. Nil for a key that does not draw the window (`glance`: the widget keeps its run)
-    /// or is unknown, which the v5 run then answers. `settings` fails: the redesign's Settings is its own window (AR8) and is
-    /// not built yet, and the v5 Settings overlay is not a redesign surface.
-    nonisolated static func framePages(forScreen screen: String) throws -> [FramePage]? {
+    /// `inbox` and `clean` too) that page. Nil for `settings` (its own window, `frameSettingsScreen`), a key that does not
+    /// draw the window (`glance`: the widget keeps its run) or an unknown key, which the v5 run then answers.
+    nonisolated static func framePages(forScreen screen: String) -> [FramePage]? {
         if screen == "shell" { return FramePage.allCases }
-        if screen == "settings" {
-            throw ShotHarness.Failure("the redesign has no Settings window yet: unset SPACEVIBE_REDESIGN for the v5 Settings shots")
-        }
         return FramePage(rawValue: screen).map { [$0] }
     }
 
-    /// `frame-<page>-<appearance>.png` for each page, in both appearances.
+    /// Both looks are drawn (DS-R8): Glass is the system material, which this renderer may not draw.
+    nonisolated static let frameLooks: [MaterialLook] = [.glass, .solid]
+
+    /// `frame-<page>-<look>-<appearance>.png` for each page, in both looks and appearances.
     private static func writeFrame(on pages: [FramePage], into directory: URL) throws {
         for choice in [AppearanceChoice.dark, .light] {
-            for page in pages {
-                let view = ShotHarness.frame(on: page, choice: choice, env: AppEnvironment.shared)
-                try write(view, name: "frame-\(page.rawValue)", choice: choice, to: directory)
+            for look in frameLooks {
+                for page in pages {
+                    let view = ShotHarness.frame(on: page, look: look, choice: choice, env: AppEnvironment.shared)
+                    try write(view, name: "frame-\(page.rawValue)-\(look)", choice: choice, to: directory)
+                }
+            }
+        }
+    }
+
+    /// `settings-window-<look>-<appearance>.png`. It reads no config, so it needs no synthetic home.
+    private static func writeSettingsWindow(into directory: URL) throws {
+        for choice in [AppearanceChoice.dark, .light] {
+            for look in frameLooks {
+                let view = ShotHarness.settingsWindow(look: look, choice: choice, env: AppEnvironment.shared)
+                try write(view, name: "settings-window-\(look)", choice: choice, to: directory, fullHeight: true)
             }
         }
     }

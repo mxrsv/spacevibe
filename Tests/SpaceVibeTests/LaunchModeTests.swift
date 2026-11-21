@@ -63,16 +63,18 @@ struct LaunchModeTests {
         #expect(FramePage.allCases.map(\.title) == ["Inbox", "Clean", "Skills", "Subagents", "Hooks", "Rules", "Limits", "Activity"])
     }
 
-    @Test("with the switch on, the window's shot keys draw the frame; glance keeps its run; settings is refused")
+    @Test("with the switch on, the window's shot keys draw the frame in both looks; glance keeps its run; settings draws the Settings window")
     @MainActor
-    func frameShotKeys() throws {
-        #expect(try ShotRenderer.framePages(forScreen: "shell") == FramePage.allCases)
+    func frameShotKeys() {
+        #expect(ShotRenderer.framePages(forScreen: "shell") == FramePage.allCases)
         for page in FramePage.allCases {
-            #expect(try ShotRenderer.framePages(forScreen: page.rawValue) == [page])
+            #expect(ShotRenderer.framePages(forScreen: page.rawValue) == [page])
         }
-        #expect(try ShotRenderer.framePages(forScreen: "glance") == nil)
-        #expect(try ShotRenderer.framePages(forScreen: "unknown") == nil)
-        #expect(throws: ShotHarness.Failure.self) { try ShotRenderer.framePages(forScreen: "settings") }
+        #expect(ShotRenderer.framePages(forScreen: "glance") == nil)
+        #expect(ShotRenderer.framePages(forScreen: "unknown") == nil)
+        #expect(ShotRenderer.framePages(forScreen: "settings") == nil)
+        #expect(ShotRenderer.frameSettingsScreen == "settings")
+        #expect(ShotRenderer.frameLooks == [.glass, .solid])
     }
 
     @Test("a debug build counts as a development build")
