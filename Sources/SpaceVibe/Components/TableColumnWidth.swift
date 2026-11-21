@@ -1,0 +1,20 @@
+import CoreGraphics
+
+/// The fixed column widths of the frame's tables (the mock's `--cols` grids, `src/d-hooks-rules.js`), so a long name or a
+/// state in one cell never moves the columns of the rows below (FE-L1). The name column takes what is left.
+enum TableColumnWidth {
+    /// A CLI logo column: the 28 pt cell of a 20 pt logo.
+    static let logo: CGFloat = SizeRole.hitCell
+    /// Runs: a thin bar and its count.
+    static let runs: CGFloat = 148
+    /// The count after a Runs bar.
+    static let runsFigure: CGFloat = 44
+    /// Status: a state glyph and a short sentence.
+    static let status: CGFloat = 168
+    /// The selected row's action buttons; every row keeps the room, so selecting a row moves nothing.
+    static let action: CGFloat = 172
+    /// A table's header line (the mock's `.th`, 30 px).
+    static let headerHeight: CGFloat = 30
+    /// Below this list width the Status column folds into the row's sub-line (the mock's `ctx.wide`, `mw >= 940`).
+    static let statusColumnMinListWidth: CGFloat = 940
+}

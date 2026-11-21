@@ -29,6 +29,12 @@ enum ShotRenderer {
                     try writeFrameGalleries(into: directory)
                     exit(0)
                 }
+                // Hooks draws each of its page states from in-memory data (RB-R3, `HooksFrameShots`).
+                if screen == FramePage.hooks.rawValue {
+                    try requireSyntheticHome(environment)
+                    try HooksFrameShots.run(into: directory)
+                    exit(0)
+                }
                 if let pages = framePages(forScreen: screen) {
                     try requireSyntheticHome(environment)
                     try writeFrame(on: pages, into: directory)

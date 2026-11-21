@@ -4,6 +4,7 @@ extension FramePageContent {
     @MainActor
     static func region(_ page: FramePage, model: FrameModel) -> FramePageContent {
         switch page {
+        case .hooks: HooksFrame.content(model: model)
         default: .notBuilt(page)
         }
     }
