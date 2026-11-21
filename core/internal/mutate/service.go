@@ -9,9 +9,9 @@ import (
 	"spacevibe.dev/core/internal/usage"
 )
 
-// Service holds the five write methods of the RPC surface: loadout.copyToOther, loadout.removeItem,
-// loadout.removeDeadHooks, journal.undo and journal.history (docs/internals/core-protocol.md). A later wiring step
-// registers them. AddSkill, AddAgent and AddHook are not methods (see the package comment).
+// Service holds the write methods of the RPC surface: loadout.copyToOther, loadout.removeItem, loadout.removeDeadHooks,
+// loadout.copyTo, loadout.removeFrom, loadout.removeMany, journal.undo and journal.history
+// (docs/internals/core-protocol.md). AddSkill, AddAgent and AddHook are not methods (see the package comment).
 //
 // A write is short and ends in a journal entry, so ctx is looked at twice and never in between: before the write lock
 // is queued for, and again as the first step inside the lock. A cancelled request never starts, even when it waited
@@ -64,6 +64,47 @@ func (s *Service) RemoveItem(ctx context.Context, p IDParams) (EntryResult, erro
 	}
 	entry, err := removeItem(ctx, s.roots, p.ID)
 	return EntryResult{Entry: entry.Ref()}, err
+}
+
+// CopyToParams is the params of loadout.copyTo: the item and the registry ids of the CLIs that get a copy.
+type CopyToParams struct {
+	ID      string   `json:"id"`
+	Targets []string `json:"targets"`
+}
+
+// RemoveFromParams is the params of loadout.removeFrom: the item and the registry ids of the CLIs that lose it.
+type RemoveFromParams struct {
+	ID   string   `json:"id"`
+	CLIs []string `json:"clis"`
+}
+
+// IDsParams is the params of loadout.removeMany: item and hook ids, one per member.
+type IDsParams struct {
+	IDs []string `json:"ids"`
+}
+
+// CopyTo is loadout.copyTo (RB-E3).
+func (s *Service) CopyTo(ctx context.Context, p CopyToParams) (CopyToResult, error) {
+	if err := ctx.Err(); err != nil {
+		return CopyToResult{}, err
+	}
+	return copyTo(ctx, s.roots, p.ID, p.Targets)
+}
+
+// RemoveFrom is loadout.removeFrom (RB-E3).
+func (s *Service) RemoveFrom(ctx context.Context, p RemoveFromParams) (RemoveFromResult, error) {
+	if err := ctx.Err(); err != nil {
+		return RemoveFromResult{}, err
+	}
+	return removeFrom(ctx, s.roots, p.ID, p.CLIs)
+}
+
+// RemoveMany is loadout.removeMany (RB-E4).
+func (s *Service) RemoveMany(ctx context.Context, p IDsParams) (RemoveManyResult, error) {
+	if err := ctx.Err(); err != nil {
+		return RemoveManyResult{}, err
+	}
+	return removeMany(ctx, s.roots, p.IDs)
 }
 
 // RemoveDeadHooks is loadout.removeDeadHooks.

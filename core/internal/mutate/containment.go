@@ -13,8 +13,8 @@ import (
 // G-fix.3: journal.json is a file a user, a sync tool or another program can edit, and Undo moves, writes and
 // removes the paths it names. Before an undo changes anything, every path of the entry is checked:
 //
-//   - file, path and from must be inside a folder SpaceVibe manages: the Claude Code or Codex folder, the data folder, or
-//     the .claude folder of a project that discovery found (rules edit a project's settings.json). A file-edited
+//   - file, path and from must be inside a folder SpaceVibe manages: the Claude Code or Codex folder, the data folder,
+//     the shared ~/.agents/skills (not the rest of ~/.agents), or the .claude folder of a project that discovery found (rules edit a project's settings.json). A file-edited
 //     file may also be the real file a configuration link points at (a dotfiles setup: the journal records the target).
 //   - backup and to must be inside <data>/trash.
 //   - a path with a ".." segment, or a relative path, is refused.
@@ -38,6 +38,11 @@ func newContainment(r roots.Roots) *containment {
 	c := &containment{r: r}
 	for _, p := range []string{r.Claude.Root, r.Codex.Root, r.Data} {
 		c.managed = append(c.managed, spellings(p)...)
+	}
+	// The shared skills folder Codex reads (loadout.removeFrom and removeMany move its skills to the trash). Only that
+	// folder: the rest of ~/.agents is not SpaceVibe's to touch.
+	if r.AgentsSkills != "" {
+		c.managed = append(c.managed, spellings(r.AgentsSkills)...)
 	}
 	c.trash = spellings(trashDir(r))
 	for _, p := range []string{r.Claude.HookFile, r.Codex.HookFile, filepath.Join(r.Codex.Root, "config.toml")} {

@@ -1,0 +1,20 @@
+{"dir":"send","json":{"id":0,"jsonrpc":"2.0","method":"initialize","params":{"client":{"name":"contract","version":"0"},"protocolVersion":1}}}
+{"dir":"recv","json":{"id":0,"jsonrpc":"2.0","result":{"core":{"name":"spacevibe","version":"dev"},"identity":{"dataDir":".spacevibe","envPrefix":"SPACEVIBE_"},"methods":["activity.read","activity.stop","activity.subscribe","activity.unsubscribe","clis.registry","findings.keep","findings.kept","findings.unkeep","initialize","inventory.read","journal.history","journal.undo","limits.read","loadout.copyTo","loadout.copyToOther","loadout.removeDeadHooks","loadout.removeFrom","loadout.removeItem","loadout.removeMany","loadout.rows","rules.add","rules.changeVerdict","rules.changeVerdicts","rules.check","rules.preview","rules.remove","rules.removeMany","rules.setCapability","rules.snapshot","usage.scan"],"protocolVersion":1}}}
+{"dir":"send","json":{"id":100,"jsonrpc":"2.0","method":"inventory.read","params":{}}}
+{"dir":"recv","text":"(12617 bytes)"}
+{"dir":"send","json":{"id":1,"jsonrpc":"2.0","method":"loadout.removeMany","params":{"ids":[]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"Pick at least one item to remove.","status":400},"message":"Pick at least one item to remove."},"id":1,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":2,"jsonrpc":"2.0","method":"loadout.removeMany","params":{"ids":["claude:skill:local:tdd","claude:skill:neon:neon-postgres"]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"This one belongs to a plugin. Remove the plugin instead.","status":403},"message":"This one belongs to a plugin. Remove the plugin instead."},"id":2,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":3,"jsonrpc":"2.0","method":"loadout.removeMany","params":{"ids":["claude:skill:local:tdd","$HOOK_ID_8"]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"This one belongs to a project folder, so SpaceVibe only shows it. Change it in the project.","status":403},"message":"This one belongs to a project folder, so SpaceVibe only shows it. Change it in the project."},"id":3,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":4,"jsonrpc":"2.0","method":"loadout.removeMany","params":{"ids":["claude:skill:local:tdd","claude:agent:local:no-such.md"]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"This item no longer exists. Refresh the list.","status":404},"message":"This item no longer exists. Refresh the list."},"id":4,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":5,"jsonrpc":"2.0","method":"loadout.removeMany","params":{"ids":"claude:skill:local:tdd"}}}
+{"dir":"recv","json":{"error":{"code":-32602,"message":"Invalid params: ids has the wrong type."},"id":5,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":6,"jsonrpc":"2.0","method":"loadout.removeMany","params":{"ids":["claude:skill:local:tdd","codex:agent:local:security-reviewer.toml","$HOOK_ID_6","$HOOK_ID_5","$HOOK_ID_7"]}}}
+{"dir":"recv","json":{"id":6,"jsonrpc":"2.0","result":{"entry":{"at":"$TIME","count":5,"id":"$ENTRY_ID","label":"Removed 1 skill, 1 agent and 2 hooks from Claude Code and Codex","undone":false},"lost":["claude","codex"]}}}
+{"dir":"send","json":{"id":7,"jsonrpc":"2.0","method":"journal.history","params":{}}}
+{"dir":"recv","json":{"id":7,"jsonrpc":"2.0","result":{"entries":[{"at":"$TIME","count":5,"id":"$ENTRY_ID","label":"Removed 1 skill, 1 agent and 2 hooks from Claude Code and Codex","undone":false}]}}}
+{"dir":"send","json":{"id":8,"jsonrpc":"2.0","method":"journal.undo","params":{"id":"$ENTRY_ID"}}}
+{"dir":"recv","json":{"id":8,"jsonrpc":"2.0","result":{"label":"Removed 1 skill, 1 agent and 2 hooks from Claude Code and Codex"}}}

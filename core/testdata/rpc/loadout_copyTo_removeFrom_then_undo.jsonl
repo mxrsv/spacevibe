@@ -1,0 +1,36 @@
+{"dir":"send","json":{"id":0,"jsonrpc":"2.0","method":"initialize","params":{"client":{"name":"contract","version":"0"},"protocolVersion":1}}}
+{"dir":"recv","json":{"id":0,"jsonrpc":"2.0","result":{"core":{"name":"spacevibe","version":"dev"},"identity":{"dataDir":".spacevibe","envPrefix":"SPACEVIBE_"},"methods":["activity.read","activity.stop","activity.subscribe","activity.unsubscribe","clis.registry","findings.keep","findings.kept","findings.unkeep","initialize","inventory.read","journal.history","journal.undo","limits.read","loadout.copyTo","loadout.copyToOther","loadout.removeDeadHooks","loadout.removeFrom","loadout.removeItem","loadout.removeMany","loadout.rows","rules.add","rules.changeVerdict","rules.changeVerdicts","rules.check","rules.preview","rules.remove","rules.removeMany","rules.setCapability","rules.snapshot","usage.scan"],"protocolVersion":1}}}
+{"dir":"send","json":{"id":100,"jsonrpc":"2.0","method":"inventory.read","params":{}}}
+{"dir":"recv","text":"(12617 bytes)"}
+{"dir":"send","json":{"id":1,"jsonrpc":"2.0","method":"loadout.copyTo","params":{"id":"claude:skill:neon:neon-postgres","targets":["codex"]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"This one belongs to a plugin, so SpaceVibe does not copy it. Install the plugin in the other CLI instead.","status":403},"message":"This one belongs to a plugin, so SpaceVibe does not copy it. Install the plugin in the other CLI instead."},"id":1,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":2,"jsonrpc":"2.0","method":"loadout.copyTo","params":{"id":"claude:skill:local:explain","targets":["codex"]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"Codex already has explain, so nothing was copied.","status":409},"message":"Codex already has explain, so nothing was copied."},"id":2,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":3,"jsonrpc":"2.0","method":"loadout.copyTo","params":{"id":"claude:skill:local:tdd","targets":["gemini"]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"That CLI is not one SpaceVibe can change.","status":400},"message":"That CLI is not one SpaceVibe can change."},"id":3,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":4,"jsonrpc":"2.0","method":"loadout.removeFrom","params":{"clis":[],"id":"claude:skill:local:explain"}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"Pick at least one CLI.","status":400},"message":"Pick at least one CLI."},"id":4,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":5,"jsonrpc":"2.0","method":"loadout.removeFrom","params":{"clis":["claude"],"id":"$PROJECT_SKILL_ID"}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"This one belongs to a project folder, so SpaceVibe only shows it. Change it in the project.","status":403},"message":"This one belongs to a project folder, so SpaceVibe only shows it. Change it in the project."},"id":5,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":6,"jsonrpc":"2.0","method":"loadout.removeFrom","params":{"clis":["codex"],"id":"claude:skill:local:tdd"}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"Codex does not have tdd, so nothing was removed.","status":409},"message":"Codex does not have tdd, so nothing was removed."},"id":6,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":7,"jsonrpc":"2.0","method":"loadout.removeFrom","params":{"clis":["claude"],"id":"$HOOK_ID_6"}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"This method takes a Skill or a Subagent, not a Hook.","status":400},"message":"This method takes a Skill or a Subagent, not a Hook."},"id":7,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":8,"jsonrpc":"2.0","method":"loadout.copyTo","params":{"id":"codex:skill:agents:no-such","targets":["claude"]}}}
+{"dir":"recv","json":{"error":{"code":-32000,"data":{"message":"This item no longer exists. Refresh the list.","status":404},"message":"This item no longer exists. Refresh the list."},"id":8,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":9,"jsonrpc":"2.0","method":"loadout.copyTo","params":{"id":"claude:skill:local:tdd","path":"/etc","targets":["codex"]}}}
+{"dir":"recv","json":{"error":{"code":-32602,"message":"Invalid params: \"path\" is not a known member."},"id":9,"jsonrpc":"2.0"}}
+{"dir":"send","json":{"id":10,"jsonrpc":"2.0","method":"journal.history","params":{}}}
+{"dir":"recv","json":{"id":10,"jsonrpc":"2.0","result":{"entries":[]}}}
+{"dir":"send","json":{"id":11,"jsonrpc":"2.0","method":"loadout.copyTo","params":{"id":"codex:skill:agents:sv-shared","targets":["claude"]}}}
+{"dir":"recv","json":{"id":11,"jsonrpc":"2.0","result":{"alsoReaders":[],"entry":{"at":"$TIME","count":1,"id":"$COPY_ID","label":"Copied skill sv-shared to Claude Code","undone":false}}}}
+{"dir":"send","json":{"id":12,"jsonrpc":"2.0","method":"loadout.removeFrom","params":{"clis":["codex"],"id":"codex:skill:agents:sv-shared"}}}
+{"dir":"recv","json":{"id":12,"jsonrpc":"2.0","result":{"entry":{"at":"$TIME","count":1,"id":"$SHARED_ID","label":"Removed skill sv-shared from Codex","undone":false},"lost":["codex"],"stillHave":["claude"]}}}
+{"dir":"send","json":{"id":13,"jsonrpc":"2.0","method":"loadout.removeFrom","params":{"clis":["claude","codex"],"id":"claude:skill:local:explain"}}}
+{"dir":"recv","json":{"id":13,"jsonrpc":"2.0","result":{"entry":{"at":"$TIME","count":2,"id":"$BOTH_ID","label":"Removed skill explain from Claude Code and Codex","undone":false},"lost":["claude","codex"],"stillHave":[]}}}
+{"dir":"send","json":{"id":14,"jsonrpc":"2.0","method":"journal.undo","params":{"id":"$BOTH_ID"}}}
+{"dir":"recv","json":{"id":14,"jsonrpc":"2.0","result":{"label":"Removed skill explain from Claude Code and Codex"}}}
+{"dir":"send","json":{"id":15,"jsonrpc":"2.0","method":"journal.undo","params":{"id":"$SHARED_ID"}}}
+{"dir":"recv","json":{"id":15,"jsonrpc":"2.0","result":{"label":"Removed skill sv-shared from Codex"}}}
+{"dir":"send","json":{"id":16,"jsonrpc":"2.0","method":"journal.undo","params":{"id":"$COPY_ID"}}}
+{"dir":"recv","json":{"id":16,"jsonrpc":"2.0","result":{"label":"Copied skill sv-shared to Claude Code"}}}

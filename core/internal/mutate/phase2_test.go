@@ -362,14 +362,14 @@ func TestServiceWireShape(t *testing.T) {
 	}
 }
 
-// G-fix.16: AddHook is not an RPC method. Only the five methods of the protocol are on the service.
+// G-fix.16: AddHook is not an RPC method. Only the methods of the protocol are on the service (RB-E3, RB-E4 add three).
 func TestServiceHasOnlyTheProtocolMethods(t *testing.T) {
 	typ := reflect.TypeOf(&Service{})
 	var got []string
 	for i := 0; i < typ.NumMethod(); i++ {
 		got = append(got, typ.Method(i).Name)
 	}
-	want := []string{"CopyToOther", "History", "RemoveDeadHooks", "RemoveItem", "Undo"}
+	want := []string{"CopyTo", "CopyToOther", "History", "RemoveDeadHooks", "RemoveFrom", "RemoveItem", "RemoveMany", "Undo"}
 	if !slices.Equal(got, want) {
 		t.Errorf("service methods %v, want %v", got, want)
 	}

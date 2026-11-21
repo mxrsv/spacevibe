@@ -124,8 +124,26 @@ func (tx *Tx) Undo(id string) (string, error) {
 			}
 			rollbacks = append(rollbacks, back)
 		} else {
+			// Hook ops that share one restore are one edit of one file (loadout.removeMany edits each hook file
+			// once): they are undone together, once, at the place of the last of them, never one by one (the second
+			// would find the file restored already and add its hook a second time).
+			var restored []ojson.Value
 			for _, op := range slices.Backward(entry.Ops) {
-				back, err := tx.undoOp(op)
+				group := hookEditGroup(entry.Ops, op)
+				if group == nil {
+					back, err := tx.undoOp(op)
+					if err != nil {
+						return err
+					}
+					rollbacks = append(rollbacks, back)
+					continue
+				}
+				restore, _ := op.JSON.Member("restore")
+				if slices.ContainsFunc(restored, restore.Equal) {
+					continue
+				}
+				restored = append(restored, restore)
+				back, err := tx.undoHooks(group)
 				if err != nil {
 					return err
 				}
@@ -149,6 +167,32 @@ func (tx *Tx) Undo(id string) (string, error) {
 		return "", err
 	}
 	return entry.Label, nil
+}
+
+// hookEditGroup is every hook op of ops whose restore equals op's, in entry order, when op is a hook op with a
+// restore object and at least one other op shares it; nil otherwise, so a lone hook op, an op of another kind and
+// an op without a restore (a Node journal) are undone one by one as before.
+func hookEditGroup(ops []Op, op Op) []Op {
+	if op.Type() != "hook-added" && op.Type() != "hook-removed" {
+		return nil
+	}
+	restore, ok := op.JSON.Member("restore")
+	if !ok || restore.Kind() != ojson.KindObject {
+		return nil
+	}
+	var group []Op
+	for _, other := range ops {
+		if other.Type() != "hook-added" && other.Type() != "hook-removed" {
+			continue
+		}
+		if r, ok := other.JSON.Member("restore"); ok && r.Equal(restore) {
+			group = append(group, other)
+		}
+	}
+	if len(group) < 2 {
+		return nil
+	}
+	return group
 }
 
 func opField(op Op, key string) (string, error) {

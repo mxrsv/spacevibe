@@ -115,6 +115,8 @@ struct CoreTypesTests {
         "clis.registry": CoreRegistryResult.self, "inventory.read": CoreInventorySnapshot.self, "usage.scan": CoreUsageResult.self, "loadout.rows": CoreLoadoutRows.self,
         "activity.read": CoreActivityReport.self, "activity.subscribe": CoreActivityReport.self, "activity.stop": CoreStopResult.self,
         "loadout.copyToOther": CoreEntryResult.self, "loadout.removeItem": CoreEntryResult.self, "loadout.removeDeadHooks": CoreEntryResult.self,
+        "loadout.copyTo": CoreCopyToResult.self, "loadout.removeFrom": CoreRemoveFromResult.self, "loadout.removeMany": CoreRemoveManyResult.self,
+        "rules.removeMany": CoreEntryResult.self,
         "journal.undo": CoreUndoResult.self, "journal.history": CoreJournalHistory.self,
         "rules.snapshot": CoreRulesSnapshot.self, "rules.preview": CoreCapabilityPreview.self, "rules.setCapability": CoreSetCapabilityResult.self,
         "rules.add": CoreEntryResult.self, "rules.remove": CoreEntryResult.self, "rules.changeVerdict": CoreEntryResult.self, "rules.changeVerdicts": CoreEntryResult.self,

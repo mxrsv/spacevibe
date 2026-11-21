@@ -305,6 +305,7 @@ func TestContract(t *testing.T) {
 
 	readCases(t)
 	writeCases(t)
+	perCLIWriteCases(t)
 	leakCases(t)
 	oneShotCases(t)
 

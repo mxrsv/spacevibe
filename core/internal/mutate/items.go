@@ -256,7 +256,19 @@ func (tx *Tx) removeFile(item inventory.Item) (Entry, error) {
 	if err != nil {
 		return Entry{}, err
 	}
-	return tx.RecordMutation("Removed "+string(item.Kind)+" "+item.Name+" from "+label(item.CLI), []Op{op})
+	text := "Removed " + string(item.Kind) + " " + item.Name + " from " + label(item.CLI)
+	// RB-E2 finding F4: the v5 fields leave ~/.agents/skills out, so the v5 list shows Codex without the skill once
+	// its own copy is gone. Codex still reads the shared copy; the label (the Undo toast) says so. That copy stays:
+	// removing it is loadout.removeFrom's, which names its readers.
+	if item.CLI == inventory.Codex && item.Kind == inventory.KindSkill && tx.sharedSkillExists(item.Entry) {
+		text += "; Codex still reads it from ~/.agents/skills"
+	}
+	return tx.RecordMutation(text, []Op{op})
+}
+
+// sharedSkillExists is true when ~/.agents/skills holds a skill folder with that name (its SKILL.md is there).
+func (tx *Tx) sharedSkillExists(entry string) bool {
+	return tx.r.AgentsSkills != "" && entry != "" && pathExists(filepath.Join(tx.r.AgentsSkills, entry, "SKILL.md"))
 }
 
 func (tx *Tx) copyItem(item inventory.Item) (Entry, error) {
@@ -282,6 +294,11 @@ func (tx *Tx) copyItem(item inventory.Item) (Entry, error) {
 	if item.Kind == inventory.KindSkill {
 		dir := filepath.Join(tx.cliRoots(target).Skills, name)
 		if err := need(!pathExists(dir), label(target)+" already has a skill named "+name+".", coreerr.StatusConflict); err != nil {
+			return Entry{}, err
+		}
+		// RB-E2 finding F3: Codex also reads ~/.agents/skills, which the v5 list leaves out, so the v5 shell offers this
+		// copy for a skill Codex already has there. A second copy would be read twice; refuse it.
+		if err := need(target != inventory.Codex || !tx.sharedSkillExists(name), "Codex already reads a skill named "+name+" from ~/.agents/skills, so nothing was copied.", coreerr.StatusConflict); err != nil {
 			return Entry{}, err
 		}
 		source := realPath(item.Path)

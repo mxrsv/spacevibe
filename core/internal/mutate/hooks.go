@@ -165,10 +165,18 @@ func hookOp(kind, file, event string, matcher *string, hook ojson.Value, restore
 	)}
 }
 
-// isHookRemovalBatch: several hook removals in one entry are one file write (RemoveDeadHooks), so undo reverses them
-// together, not one by one.
+// isHookRemovalBatch: several hook removals of one file in one entry are one file write (RemoveDeadHooks), so undo
+// reverses them together, not one by one. Removals from several files (loadout.removeMany) are not one batch: Undo
+// groups them by their restore (hookEditGroup).
 func isHookRemovalBatch(ops []Op) bool {
-	return len(ops) > 1 && !slices.ContainsFunc(ops, func(op Op) bool { return op.Type() != "hook-removed" })
+	if len(ops) < 2 {
+		return false
+	}
+	file, _ := ops[0].str("file")
+	return !slices.ContainsFunc(ops, func(op Op) bool {
+		f, _ := op.str("file")
+		return op.Type() != "hook-removed" || f != file
+	})
 }
 
 // undoHooks reverses hook-added or hook-removed ops that share one file, and returns what puts things back.

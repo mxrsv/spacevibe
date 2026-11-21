@@ -33,7 +33,8 @@
 //
 // AddSkill, AddAgent and AddHook are Go API only: the golden scenarios use them, but the app has
 // no caller and the RPC methods are loadout.copyToOther, loadout.removeItem,
-// loadout.removeDeadHooks, journal.undo and journal.history (Service). In particular AddHook is
+// loadout.removeDeadHooks, loadout.copyTo, loadout.removeFrom, loadout.removeMany, journal.undo
+// and journal.history (Service). In particular AddHook is
 // never exposed: it would write a Codex hook that Codex skips until it is trusted, which
 // CopyToOther refuses for the same reason (G-fix.16).
 package mutate
