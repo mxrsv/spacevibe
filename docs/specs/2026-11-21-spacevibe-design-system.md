@@ -59,6 +59,7 @@ Carried, not re-decided here: RD6 (SF Pro Rounded for figures only, "chỉ sử 
   | `title` | 15 / 20 | 500 | page title, empty-state title |
   | `body` | 13 / 18 | 400, 500 | rows, buttons, names |
   | `quiet` | 12 / 16 | 400 | sub-lines, notes, sidebar values |
+  | `hero unit` | 15 / 20 | 400 | the unit beside the hero figure (RB-S4 integration, from the mock's `.hero .fg small`) |
   | `quiet` medium | 12 / 16 | 500 | small-button labels, sidebar group heads, inspector section heads, run and session counts in table cells (DS2) |
   | `caption` | 11 / 14 | 400 | chart axes, legends, tile captions only |
   | `mono` | 12 / 16 | 400, SF Mono | paths, commands, rule text, Hook labels |
