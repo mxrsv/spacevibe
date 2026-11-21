@@ -9,8 +9,9 @@ final class FrameModel {
     let writes: FrameWrites
     let router: FrameRouter
 
-    init(core: any CoreService, toasts: ToastCenter, route: FrameRoute = FrameRoute()) {
-        store = FrameStore(core: core)
+    /// `cliPreferences`: Settings › CLIs; nil is the app's own (`CLIPreferences.shared`, in memory under `SPACEVIBE_TEST=1`).
+    init(core: any CoreService, toasts: ToastCenter, route: FrameRoute = FrameRoute(), cliPreferences: CLIPreferences? = nil) {
+        store = FrameStore(core: core, cliPreferences: cliPreferences ?? .shared)
         writes = FrameWrites(core: core, store: store, toasts: toasts)
         router = FrameRouter(route)
     }

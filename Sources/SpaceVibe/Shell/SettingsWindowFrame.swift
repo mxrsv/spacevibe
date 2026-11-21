@@ -27,39 +27,83 @@ enum SettingsPane: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// The redesign's separate Settings window (RD4, plan AR8): a row of pane tabs under the title bar and the open pane below.
-/// The panes are RB-R8's; until then each one says "Not built yet". Declared as its own `Window` scene by
+/// What a screenshot draws the Settings window with: the store's facts and the preferences, in memory, never the machine's.
+@MainActor
+struct SettingsWindowPreview {
+    var state: SettingsWindowState = .normal
+    var facts: SettingsFacts
+    var now: Date
+    var cli: CLIPreferences
+    var glance: GlancePreferences
+    var countdown: LimitsCountdownPreferences
+    var loginItem: LoginItem
+    var dataFolder: URL
+    /// The refused-setting toast the shot shows.
+    var refusal: String?
+}
+
+/// The redesign's separate Settings window (RD4, plan AR8): a row of pane tabs under the title bar and the open pane below
+/// (RB-R8: General, CLIs, Limits, Data, Updates; `SettingsPanes.swift`). Declared as its own `Window` scene by
 /// `SpaceVibeFrameApp` only, so a v5 launch never has it; the v5 Settings overlay stays until RB-X1.
+///
+/// It reads the frame's store (`FrameStore.running`, AR2) for the registry, the status-line snapshot and the Journal, and
+/// edits the app's preferences: theme and Session widget in the v5 stores, the Weekly lead in `LimitsCountdownPreferences`,
+/// Show and Balance pins in `CLIPreferences`, Open at login through macOS (`LoginItem`). A switch applies at once and is its
+/// own undo, so no toast follows; a refused one (macOS said no, the Show guard, a fourth pin) shows the error toast in this
+/// window's own toast host.
 struct SettingsWindowFrame: View {
     static let windowID = "settings"
+    /// The snapshot age and the login item's status are read again this often while the window is open.
+    static let redrawInterval: TimeInterval = 60
 
     @State private var pane: SettingsPane
+    @State private var toasts: ToastCenter
+    private let preview: SettingsWindowPreview?
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.glancePreferences) private var glancePreferences
 
-    init(pane: SettingsPane = .general) {
-        _pane = State(initialValue: pane)
+    init(pane: SettingsPane = .general, preview: SettingsWindowPreview? = nil) {
+        _pane = State(initialValue: preview?.state.openingPane ?? pane)
+        let toasts = ToastCenter(announce: preview == nil)
+        if let refusal = preview?.refusal { toasts.show(refusal, tone: .danger) }
+        _toasts = State(initialValue: toasts)
+        self.preview = preview
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            FrameWindowSurface(hasSidebar: false)
-            VStack(spacing: 0) {
-                HStack(spacing: SpaceRole.step4) {
-                    ForEach(SettingsPane.allCases) { item in
-                        FramePaneTab(title: item.title, icon: item.icon, isCurrent: item == pane) { pane = item }
+        TimelineView(.periodic(from: .now, by: Self.redrawInterval)) { timeline in
+            ZStack(alignment: .top) {
+                FrameWindowSurface(hasSidebar: false)
+                VStack(spacing: 0) {
+                    HStack(spacing: SpaceRole.step4) {
+                        ForEach(SettingsPane.allCases) { item in
+                            FramePaneTab(title: item.title, icon: item.icon, isCurrent: item == pane) { pane = item }
+                        }
                     }
+                    .padding(.top, SpaceRole.titleBarClearance)
+                    .padding(.horizontal, SpaceRole.step16)
+                    .padding(.bottom, SpaceRole.step10)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Settings panes")
+                    SettingsPaneBody(pane: pane, context: context(now: preview?.now ?? timeline.date))
                 }
-                .padding(.top, SpaceRole.titleBarClearance)
-                .padding(.horizontal, SpaceRole.step16)
-                .padding(.bottom, SpaceRole.step10)
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel("Settings panes")
-                PageEmptyState(icon: pane.icon, title: "Not built yet",
-                               text: "The \(pane.title) pane has no view in the redesign yet.")
-                    .frame(maxWidth: .infinity, minHeight: FrameRole.settingsBodyMinHeight, alignment: .top)
+                FrameToastHost()
             }
         }
+        .environment(toasts)
         .frame(width: FrameRole.settingsWindowWidth)
         .ignoresSafeArea()
         .navigationTitle("Settings")
+        .onExitCommand { toasts.dismiss() }
+    }
+
+    private func context(now: Date) -> SettingsPaneContext {
+        SettingsPaneContext(
+            facts: preview?.facts ?? SettingsFacts(store: FrameStore.running), now: now,
+            cli: preview?.cli ?? .shared, glance: preview?.glance ?? glancePreferences ?? .shared,
+            countdown: preview?.countdown ?? LimitsCountdownPreferences.shared, loginItem: preview?.loginItem ?? .shared,
+            dataFolder: preview?.dataFolder ?? SettingsDataWording.dataFolder(),
+            toast: { message, tone in toasts.show(message, tone: tone) },
+            showJournal: { openWindow(id: JournalWindow.windowID) })
     }
 }

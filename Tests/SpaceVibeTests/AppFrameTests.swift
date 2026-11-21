@@ -169,7 +169,7 @@ struct AppFrameTests {
         #expect(ObjectIdentifier(SpaceVibeApp.app(for: .v5)) == ObjectIdentifier(SpaceVibeApp.self))
         #expect(ObjectIdentifier(SpaceVibeApp.app(for: .redesign)) == ObjectIdentifier(SpaceVibeFrameApp.self))
         #expect(SpaceVibeApp.sceneIDs == [SpaceVibeApp.mainWindowID])
-        #expect(SpaceVibeFrameApp.sceneIDs == [SpaceVibeApp.mainWindowID, SettingsWindowFrame.windowID])
+        #expect(SpaceVibeFrameApp.sceneIDs == [SpaceVibeApp.mainWindowID, SettingsWindowFrame.windowID, JournalWindow.windowID])
         // A distribution build never reaches the frame app.
         #expect(LaunchMode.surface(environment: ["SPACEVIBE_REDESIGN": "1"], isDevelopmentBuild: false) == .v5)
         #expect(SettingsPane.allCases.map(\.title) == ["General", "CLIs", "Limits", "Data", "Updates"])

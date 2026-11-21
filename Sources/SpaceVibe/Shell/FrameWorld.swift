@@ -116,7 +116,10 @@ struct FrameWorld: Sendable {
 
     /// When the newest status line snapshot of this Claude account was taken (`limits.read` `statusline.at`, RD24): what
     /// Settings › Limits ages. Not the Claude entry's `at`, which may date Claude's usage cache. Nil when there is none.
-    var statuslineAt: Date? { snapshot.limits?.statusline?.at.map(Date.init(timeIntervalSince1970:)) }
+    var statuslineAt: Date? { Self.statuslineAt(snapshot) }
+
+    /// The same without building every derivation (the Settings window reads only this).
+    static func statuslineAt(_ snapshot: FrameSnapshot) -> Date? { snapshot.limits?.statusline?.at.map(Date.init(timeIntervalSince1970:)) }
 
     // MARK: Readers
 

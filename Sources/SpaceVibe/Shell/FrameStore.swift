@@ -42,9 +42,16 @@ final class FrameStore {
     /// The core's sentence when the last usage scan failed.
     private(set) var scanFailure: String?
     /// The derivations' other inputs (`FrameFacts`). The store fills `findings.kept` from each `findings.kept` and
-    /// `findings.hookErrorsLastWeek` from each `loadout.rows`; the rest are set by their owners (Settings) or still empty.
+    /// `findings.hookErrorsLastWeek` from each `loadout.rows`; the rest are set by their owners or still empty. With
+    /// `cliPreferences`, `world` takes `hidden` and `findings.pinned` from Settings › CLIs instead of from here.
     var facts = FrameFacts()
 
+    /// The running frame's store, for the windows beside it (Settings, Journal; RB-R8): set by `start()`, so it is the store
+    /// `AppFrame` kept, never one SwiftUI built and dropped. Nil before the main window starts and after it closes.
+    static private(set) weak var running: FrameStore?
+
+    /// Settings › CLIs (Show, Balance pins). Nil: `facts.hidden` and `facts.findings.pinned` stand as set (tests).
+    @ObservationIgnored let cliPreferences: CLIPreferences?
     @ObservationIgnored private let core: any CoreService
     @ObservationIgnored private var generations: [FrameSource: Int] = [:]
     @ObservationIgnored private var lastRefresh: Date?
@@ -52,11 +59,25 @@ final class FrameStore {
     @ObservationIgnored private(set) var isStarted = false
     @ObservationIgnored private var hasKept = false
 
-    init(core: any CoreService) {
+    init(core: any CoreService, cliPreferences: CLIPreferences? = nil) {
         self.core = core
+        self.cliPreferences = cliPreferences
     }
 
-    func world(now: Date = Date()) -> FrameWorld { FrameWorld(snapshot: snapshot, facts: facts, now: now) }
+    func world(now: Date = Date()) -> FrameWorld { FrameWorld(snapshot: snapshot, facts: appliedFacts, now: now) }
+
+    /// `facts` with Settings › CLIs applied: the hidden CLIs and the Balance pins, both over the registry read.
+    var appliedFacts: FrameFacts {
+        guard let cliPreferences else { return facts }
+        var applied = facts
+        applied.hidden = cliPreferences.hidden(in: snapshot.registry)
+        applied.findings.pinned = cliPreferences.pins(in: snapshot.registry)
+        return applied
+    }
+
+    /// A write service over this store's core and `toasts`: what a window beside the frame (the Journal window) writes
+    /// through, so it takes the same path (AR4) without reaching the core itself.
+    func makeWrites(toasts: ToastCenter) -> FrameWrites { FrameWrites(core: core, store: self, toasts: toasts) }
 
     /// Sources not answered yet, and sources that failed with nothing read before: the input of `FrameWorld.figure`.
     var loading: Set<FrameSource> { Set(states.filter { $0.value == .loading }.keys) }
@@ -72,6 +93,7 @@ final class FrameStore {
     func start(now: Date = Date()) async {
         guard !isStarted else { return }
         isStarted = true
+        Self.running = self
         lastRefresh = now
         subscribe()
         await readEverything(refreshProjects: true)

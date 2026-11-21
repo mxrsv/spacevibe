@@ -54,10 +54,11 @@ struct SpaceVibeApp: App {
 }
 
 /// The redesign behind `SPACEVIBE_REDESIGN=1` in a development build (FE-P9): the frame (`AppFrame`), its own commands
-/// (`FrameCommands`, which replace the v5 `ShellCommands`: no v5 ⌘1–⌘9) and the separate Settings window (RD4, AR8).
+/// (`FrameCommands`, which replace the v5 `ShellCommands`: no v5 ⌘1–⌘9), the separate Settings window (RD4, AR8) and the
+/// Journal window it opens (RB-R8).
 struct SpaceVibeFrameApp: App {
     /// The scenes this app declares: the main window and the Settings window.
-    static let sceneIDs = [SpaceVibeApp.mainWindowID, SettingsWindowFrame.windowID]
+    static let sceneIDs = [SpaceVibeApp.mainWindowID, SettingsWindowFrame.windowID, JournalWindow.windowID]
 
     @NSApplicationDelegateAdaptor(SpaceVibeAppDelegate.self) private var appDelegate
     @State private var shell: ShellModel
@@ -89,6 +90,17 @@ struct SpaceVibeFrameApp: App {
         .defaultLaunchBehavior(.suppressed)
         .restorationBehavior(.disabled)
         // Opened from Settings… (⌘,) and the sidebar's foot, not listed in the Window menu.
+        .commandsRemoved()
+        // Settings › Data › Show Journal (RB-R8).
+        Window("Journal", id: JournalWindow.windowID) {
+            JournalWindow()
+                .frameLookRoot()
+                .spaceVibeRoot(shell: shell, toasts: env.toasts, env: env)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentMinSize)
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
         .commandsRemoved()
     }
 }

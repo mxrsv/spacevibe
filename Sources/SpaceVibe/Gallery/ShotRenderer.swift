@@ -7,7 +7,8 @@ import SwiftUI
 /// `SPACEVIBE_SHOT_SCREEN` selects shell, skills, subagents, hooks, rules, activity, limits, settings or glance.
 /// With `SPACEVIBE_REDESIGN=1` the keys that draw the window draw the redesign's frame instead (`framePages`), `shell` adds
 /// the redesign's specimens, and `gallery` draws only those (`frameGalleryParts`). `activity` with `SPACEVIBE_SHOT_STATE`
-/// draws that page's states from synthetic data (`ActivityShotState`).
+/// draws that page's states from synthetic data (`ActivityShotState`); `settings` with `SPACEVIBE_SHOT_STATE` the Settings
+/// window's (`SettingsWindowShots`).
 /// Real-screen runs require SPACEVIBE_TEST=1 and a synthetic home. Settings uses demo data. Glance draws in-memory reports
 /// only, and still runs under the test guard: in the app the widget is fed by the core.
 @MainActor
@@ -23,7 +24,8 @@ enum ShotRenderer {
             let screen = environment[CoreEnvironment.variable("SHOT_SCREEN")] ?? "shell"
             if LaunchMode.surface(environment: environment) == .redesign {
                 if screen == frameSettingsScreen {
-                    try writeSettingsWindow(into: directory)
+                    // RB-R8: every pane and state of the Settings window, and the Journal window (`SettingsWindowShots`).
+                    try SettingsWindowShots.run(into: directory, state: environment[CoreEnvironment.variable("SHOT_STATE")])
                     exit(0)
                 }
                 if screen == frameGalleryScreen {
@@ -140,16 +142,6 @@ enum ShotRenderer {
                         sidebarValues: state.sidebarValues(), toasts: toasts)
                     try write(view, name: "frame-activity-\(state.rawValue)-\(look)", choice: choice, to: directory)
                 }
-            }
-        }
-    }
-
-    /// `settings-window-<look>-<appearance>.png`. It reads no config, so it needs no synthetic home.
-    private static func writeSettingsWindow(into directory: URL) throws {
-        for choice in [AppearanceChoice.dark, .light] {
-            for look in frameLooks {
-                let view = ShotHarness.settingsWindow(look: look, choice: choice, env: AppEnvironment.shared)
-                try write(view, name: "settings-window-\(look)", choice: choice, to: directory, fullHeight: true)
             }
         }
     }

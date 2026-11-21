@@ -55,12 +55,4 @@ enum ShotHarness {
                            toasts: toasts ?? ToastCenter(announce: false), env: env)
             .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
     }
-
-    /// The redesign's Settings window (RD4) at its own width, on its first pane.
-    static func settingsWindow(look: MaterialLook, choice: AppearanceChoice, env: AppEnvironment) -> some View {
-        SettingsWindowFrame()
-            .frameLookRoot(forced: look)
-            .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)),
-                           toasts: ToastCenter(announce: false), env: env)
-    }
 }
