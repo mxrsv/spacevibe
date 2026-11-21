@@ -164,6 +164,7 @@ Each region: views from RB-S4 only; shots for normal, empty, scanning, error, wo
 
 ## Handoff
 
-- 2026-11-21: plan written. Nothing built. The owner set the five readiness questions (G-0); the measured state is in Phase M. Owed edits: point the UI v5 plan's U13 and U14 at this plan; add "Keep is stored in the app's data folder" to the spec's "Inferred, not decided" list (RB-E5 assumes it). Waiting for G-1.
+- 2026-11-21: plan written. Nothing built. The owner set the five readiness questions (G-0); the measured state is in Phase M.
+- 2026-11-21, Phase M: RB-M1 done (missing states drawn: confirmations, Activity after Stop, Settings states, the Rules CLI picker; cells left as Normal listed in `MOCK.na` with their behaviour; `consistency.js` now checks the page × state grid at 2 and 6 CLIs: `checks=7662 failures=0`, `sweep.js` 31,680 clean). RB-M3 done (design-notes §27: blocks → components, figures → engine fields, icons). RB-M4 done ("Where in the mock" column on RD1–RD31; Keep storage, `MOCK.na` and Settings states added to "Inferred, not decided"). RB-M2 (break-ui, fresh Opus agent) and RB-M5 (mock-review, fresh Opus agent) running. Owed edits: point the UI v5 plan's U13 and U14 at this plan; add "Keep is stored in the app's data folder" to the spec's "Inferred, not decided" list (RB-E5 assumes it). Waiting for G-1.
 
 /goal Pass G-0 on the mock, then build the redesign behind SPACEVIBE_REDESIGN=1 until every page matches the mock (RD-A1 to RD-A11) and answers yes to the same five questions, build-review passes and the owner approves it by eye, then cut over.

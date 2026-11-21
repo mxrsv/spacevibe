@@ -21,54 +21,54 @@ Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: [build plan](../pl
 
 Owner words are quoted; dates are 2026-11-18 to 2026-11-20.
 
-| ID | Decision | Owner's words | Req | Acceptance |
-| --- | --- | --- | --- | --- |
-| RD1 | Redesign the whole app, not one page. | "toàn bộ cả app" | RD-R1 | RD-A1 |
-| RD2 | Every page has a planned first and second glance. There is one token set and one base block set. | "phải có tính toán khi user vào app nhìn vào đâu đầu tiên rồi vào page thì nhìn UI nào đầu tiên ? rồi phải có design tokens và ui design base" | RD-R2, RD-R3 | RD-A2, RD-A3 |
-| RD3 | What needs fixing now is the first thing seen. | "đúng, việc cần xử lý ngay phải nhìn thấy đầu tiên" | RD-R4 | RD-A2 |
-| RD4 | Native macOS frame: glass sidebar, toolbar, native lists and tables, trailing inspector, separate Settings window. | "đã thay đổi layout design hoàn toàn, ý tôi là muốn như này, chứ không phải đi chỉnh sửa nhỏ từng tí một" | RD-R1 | RD-A1 |
-| RD5 | The design is rebuilt from scratch with the TinySift process: thesis, signature, measured token plan, self-critique. | "ok dựng thử đi" (on that proposal) | RD-R2 | RD-A3 |
-| RD6 | Text is SF Pro. Only figures use SF Pro Rounded. | "chỉ sử dụng font rounded cho số liệu" | RD-R5 | RD-A4 |
-| RD7 | Meters and progress bars are thin. | "các progress nên cho nhỏ height lại" | RD-R6 | RD-A4 |
-| RD8 | State tones: attention is a yellow-leaning amber; ok and critical are kept. | "thử update đi" (on the proposal) | RD-R7 | RD-A5 |
-| RD9 | The background is Graphite, neutral with no hue cast. | "chốt graphite" | RD-R7 | RD-A5 |
-| RD10 | Colour discipline: severity is shown once per group; big figures are ink; content sits on a solid background; glass is only on the sidebar and toolbar; sidebar counts are neutral. | owner-pasted diagnosis, applied in mock round 3 | RD-R8 | RD-A5 |
-| RD11 | The primary is the TinySift button blue `#0B6FE4` with white text, a flat fill with no shadow. | "dùng màu primary giống màu button bên mock này"; "bạn thêm shadow vào làm gì ?" | RD-R9 | RD-A5 |
-| RD12 | Data is drawn in neutral greys. Category tones appear on icons only. | "ok" (on that proposal) | RD-R8 | RD-A5 |
-| RD13 | The design must hold for many CLIs, not only two. | "nếu sau này có 10 agents thì sao ?" | RD-R10 | RD-A6 |
-| RD14 | Each Skill and Subagent row shows its CLIs as logo toggles. A click adds the item to that CLI or removes it. | "logo các agent hiển thị lên có thể click toggle"; "ổn" | RD-R11 | RD-A6 |
-| RD15 | The inspector shows a grid of CLI tiles. Fill darkness shows how much each CLI uses the item. Each tile is a toggle with a success check when enabled. The grid has at most 3 rows, with small tiles. | "dạng lưới logo … bọc 1 box … có màu đậm nhạt để tương trưng cho agent đó dùng skill ít hay nhiều"; "thêm icon success vào nếu đang enabled, chỉ cho max là 3 hàng, cho chúng size nhỏ lại" | RD-R12 | RD-A6 |
-| RD16 | The "Never ran" amber dot is shown only on the CLI that owns the file. | "ổn" (on that recommendation) | RD-R11 | RD-A6 |
-| RD17 | Options the owner did not pick are removed from the mock. | "clean những cái option không đc chọn đi đã" | n/a | n/a |
-| RD18 | Clean covers anything AI CLIs leave behind and is one feature group of the app. | "dọn bất kỳ cái gì liên quan đến agent, ai"; "Clean chỉ là một nhóm tính năng nhỏ trong đó" | CL-R1–CL-R8 | Clean spec |
+| ID | Decision | Owner's words | Req | Acceptance | Where in the mock |
+| --- | --- | --- | --- | --- | --- |
+| RD1 | Redesign the whole app, not one page. | "toàn bộ cả app" | RD-R1 | RD-A1 | every page on the rail axis `Trang` |
+| RD2 | Every page has a planned first and second glance. There is one token set and one base block set. | "phải có tính toán khi user vào app nhìn vào đâu đầu tiên rồi vào page thì nhìn UI nào đầu tiên ? rồi phải có design tokens và ui design base" | RD-R2, RD-R3 | RD-A2, RD-A3 | the hero of every page; RD-R2 table |
+| RD3 | What needs fixing now is the first thing seen. | "đúng, việc cần xử lý ngay phải nhìn thấy đầu tiên" | RD-R4 | RD-A2 | preset "Đề xuất · Inbox" |
+| RD4 | Native macOS frame: glass sidebar, toolbar, native lists and tables, trailing inspector, separate Settings window. | "đã thay đổi layout design hoàn toàn, ý tôi là muốn như này, chứ không phải đi chỉnh sửa nhỏ từng tí một" | RD-R1 | RD-A1 | every page; page `Settings window` |
+| RD5 | The design is rebuilt from scratch with the TinySift process: thesis, signature, measured token plan, self-critique. | "ok dựng thử đi" (on that proposal) | RD-R2 | RD-A3 | process only (design-notes §1–§5) |
+| RD6 | Text is SF Pro. Only figures use SF Pro Rounded. | "chỉ sử dụng font rounded cho số liệu" | RD-R5 | RD-A4 | page `Tokens + base`, Type; every figure |
+| RD7 | Meters and progress bars are thin. | "các progress nên cho nhỏ height lại" | RD-R6 | RD-A4 | page Limits; `Tokens + base` meters |
+| RD8 | State tones: attention is a yellow-leaning amber; ok and critical are kept. | "thử update đi" (on the proposal) | RD-R7 | RD-A5 | `Tokens + base` colour roles; Limits Codex 5-hour |
+| RD9 | The background is Graphite, neutral with no hue cast. | "chốt graphite" | RD-R7 | RD-A5 | every page; `Tokens + base` |
+| RD10 | Colour discipline: severity is shown once per group; big figures are ink; content sits on a solid background; glass is only on the sidebar and toolbar; sidebar counts are neutral. | owner-pasted diagnosis, applied in mock round 3 | RD-R8 | RD-A5 | Inbox group heads |
+| RD11 | The primary is the TinySift button blue `#0B6FE4` with white text, a flat fill with no shadow. | "dùng màu primary giống màu button bên mock này"; "bạn thêm shadow vào làm gì ?" | RD-R9 | RD-A5 | Rules `Add Rule…`; `Tokens + base` Primary |
+| RD12 | Data is drawn in neutral greys. Category tones appear on icons only. | "ok" (on that proposal) | RD-R8 | RD-A5 | Skills Sessions bars, inspector tiles; `Tokens + base` Data colour |
+| RD13 | The design must hold for many CLIs, not only two. | "nếu sau này có 10 agents thì sao ?" | RD-R10 | RD-A6 | axis `Số CLI` 2 / 3 / 6 / 10; preset "Skills · 10 CLI · xấu nhất" |
+| RD14 | Each Skill and Subagent row shows its CLIs as logo toggles. A click adds the item to that CLI or removes it. | "logo các agent hiển thị lên có thể click toggle"; "ổn" | RD-R11 | RD-A6 | Skills rows; presets "Skills · 6 CLI", "Undo sau khi bật/tắt" |
+| RD15 | The inspector shows a grid of CLI tiles. Fill darkness shows how much each CLI uses the item. Each tile is a toggle with a success check when enabled. The grid has at most 3 rows, with small tiles. | "dạng lưới logo … bọc 1 box … có màu đậm nhạt để tương trưng cho agent đó dùng skill ít hay nhiều"; "thêm icon success vào nếu đang enabled, chỉ cho max là 3 hàng, cho chúng size nhỏ lại" | RD-R12 | RD-A6 | Skills inspector `CLIs` tiles |
+| RD16 | The "Never ran" amber dot is shown only on the CLI that owns the file. | "ổn" (on that recommendation) | RD-R11 | RD-A6 | Skills row of screenshot-diff (Codex dot) |
+| RD17 | Options the owner did not pick are removed from the mock. | "clean những cái option không đc chọn đi đã" | n/a | n/a | the rail holds picked options only |
+| RD18 | Clean covers anything AI CLIs leave behind and is one feature group of the app. | "dọn bất kỳ cái gì liên quan đến agent, ai"; "Clean chỉ là một nhóm tính năng nhỏ trong đó" | CL-R1–CL-R8 | Clean spec | page Clean; presets "Clean · …" |
 
 Decisions of 2026-11-21. Each was a recommendation after the four-agent mock review; the owner's answer to all of them was "nhận hết fix mock đi".
 
-| ID | Decision | Owner's words | Req | Acceptance |
-| --- | --- | --- | --- | --- |
-| RD21 | Earlier decisions D53, D57, D69 and D70 stay: the last lit CLI logo is not a toggle (D53); no ring on any input or button, focus is a fill change (D57); Limits has no Refresh and no Gemini card (D69); Activity has no Files tab and Settings keeps the theme switch (D70). | "nhận hết fix mock đi" | RD-R9, RD-R11, RD-R14 | RD-A8 |
-| RD22 | The redesign supersedes D60 (pace tick on Window bars), D20 (category tone on the sidebar and row icons, RD12), D7 (SF Pro instead of Inter, RD6) and D27, D33–D37 (Filter menu, chips, Group by and Order by give way to `All / Never ran`, the `All CLIs` menu and a Sessions sort, most first, as D33's default). D21 and D31 (badge on a lit logo) give way to RD-R11: a lit logo is the full logo, the tile carries the check. | "nhận hết fix mock đi" | RD-R2, RD-R6, RD-R11 | RD-A1 |
-| RD23 | SpaceVibe's own Bold icon set for the 8 page and category icons, sidebar icons at 20 pt, sidebar labels at weight 600 in every state, selection told apart by fill and ink only. Supersedes D72 and D32 for those icons. Picked 2026-11-20 ("chốt", "ok ổn", "ok chốt"), recorded here on 2026-11-21. | "chốt"; "ok chốt"; "nhận hết fix mock đi" | RD-R5 | RD-A4 |
-| RD24 | Status-line capture stays under S-R4: the app copies the install and remove commands, the owner runs them. | "nhận hết fix mock đi" | RD-R15 | RD-A8 |
-| RD25 | Settings has no "Empty" for SpaceVibe's trash: emptying it would end every pending Undo. | "nhận hết fix mock đi" | RD-R15 | RD-A8 |
-| RD26 | Inbox can reach zero: each finding has Keep; a Hook counts as failing only for errors in the last 7 days; an item added in the last day is not a finding; a Rule that allows a whole tool is a Control finding. | "nhận hết fix mock đi" | RD-R4 | RD-A9 |
-| RD27 | Clean locks a CLI's logs and caches only while that CLI has a running session (running or waiting), as CL2 says. | "nhận hết fix mock đi" | CL-R5 | Clean spec |
-| RD28 | Two CLIs use the same layout as many: installing a third CLI changes no page's shape. | "nhận hết fix mock đi" | RD-R10 | RD-A6 |
+| ID | Decision | Owner's words | Req | Acceptance | Where in the mock |
+| --- | --- | --- | --- | --- | --- |
+| RD21 | Earlier decisions D53, D57, D69 and D70 stay: the last lit CLI logo is not a toggle (D53); no ring on any input or button, focus is a fill change (D57); Limits has no Refresh and no Gemini card (D69); Activity has no Files tab and Settings keeps the theme switch (D70). | "nhận hết fix mock đi" | RD-R9, RD-R11, RD-R14 | RD-A8 | Settings › General theme; Activity tabs; Limits toolbar; Skills · 2 CLI, review-pr Claude logo |
+| RD22 | The redesign supersedes D60 (pace tick on Window bars), D20 (category tone on the sidebar and row icons, RD12), D7 (SF Pro instead of Inter, RD6) and D27, D33–D37 (Filter menu, chips, Group by and Order by give way to `All / Never ran`, the `All CLIs` menu and a Sessions sort, most first, as D33's default). D21 and D31 (badge on a lit logo) give way to RD-R11: a lit logo is the full logo, the tile carries the check. | "nhận hết fix mock đi" | RD-R2, RD-R6, RD-R11 | RD-A1 | Limits pace tick; sidebar icons; Skills toolbar `All / Never ran` + `All CLIs` |
+| RD23 | SpaceVibe's own Bold icon set for the 8 page and category icons, sidebar icons at 20 pt, sidebar labels at weight 600 in every state, selection told apart by fill and ink only. Supersedes D72 and D32 for those icons. Picked 2026-11-20 ("chốt", "ok ổn", "ok chốt"), recorded here on 2026-11-21. | "chốt"; "ok chốt"; "nhận hết fix mock đi" | RD-R5 | RD-A4 | sidebar |
+| RD24 | Status-line capture stays under S-R4: the app copies the install and remove commands, the owner runs them. | "nhận hết fix mock đi" | RD-R15 | RD-A8 | Limits state `Rỗng` (Copy Install Command); Settings › Limits |
+| RD25 | Settings has no "Empty" for SpaceVibe's trash: emptying it would end every pending Undo. | "nhận hết fix mock đi" | RD-R15 | RD-A8 | Settings › Data |
+| RD26 | Inbox can reach zero: each finding has Keep; a Hook counts as failing only for errors in the last 7 days; an item added in the last day is not a finding; a Rule that allows a whole tool is a Control finding. | "nhận hết fix mock đi" | RD-R4 | RD-A9 | Inbox: Keep, Show Kept, Control `Bash`; preset "Inbox · không còn gì (Clear)" |
+| RD27 | Clean locks a CLI's logs and caches only while that CLI has a running session (running or waiting), as CL2 says. | "nhận hết fix mock đi" | CL-R5 | Clean spec | preset "Clean · Claude có session đang chạy" |
+| RD28 | Two CLIs use the same layout as many: installing a third CLI changes no page's shape. | "nhận hết fix mock đi" | RD-R10 | RD-A6 | axis `Số CLI` 2 against 3: same layout |
 
 Decisions of 2026-11-21, after the three Opus reviews. Each was the recommendation offered; the owner's answer was "tôi muốn fix đủ nhưng cần button before after để xem sau khi fix như nào".
 
-| ID | Decision | Owner's words | Req | Acceptance |
-| --- | --- | --- | --- | --- |
-| RD29 | Keyboard focus is a 3 pt ink bar inside the focused row, field or control: not a ring, so D57 stands, and it reaches 3:1 and differs from hover and selection. | "tôi muốn fix đủ" | RD-R9, RD-R16 | RD-A10 |
-| RD30 | A Window always counts as needing you at 5% left or less; pace ("faster than time") is judged only once a tenth of the Window has passed. | "tôi muốn fix đủ" | RD-R4 | RD-A9 |
-| RD31 | A CLI that reads an item only through another CLI's folder (Cursor reading `~/.claude/skills`) shows it as "via" that CLI and is not a toggle; removing it is `Remove…`. | "tôi muốn fix đủ" | RD-R11 | RD-A6 |
+| ID | Decision | Owner's words | Req | Acceptance | Where in the mock |
+| --- | --- | --- | --- | --- | --- |
+| RD29 | Keyboard focus is a 3 pt ink bar inside the focused row, field or control: not a ring, so D57 stands, and it reaches 3:1 and differs from hover and selection. | "tôi muốn fix đủ" | RD-R9, RD-R16 | RD-A10 | arrow keys on any list; `Tokens + base` "Keyboard focus" |
+| RD30 | A Window always counts as needing you at 5% left or less; pace ("faster than time") is judged only once a tenth of the Window has passed. | "tôi muốn fix đủ" | RD-R4 | RD-A9 | preset "Cực đoan · Limits" |
+| RD31 | A CLI that reads an item only through another CLI's folder (Cursor reading `~/.claude/skills`) shows it as "via" that CLI and is not a toggle; removing it is `Remove…`. | "tôi muốn fix đủ" | RD-R11 | RD-A6 | preset "Skills · 6 CLI" (link badge on Cursor, opencode, Amp) |
 
 Two earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
-| ID | Decision | Owner's words | Req |
-| --- | --- | --- | --- |
-| RD19 | Skills, Subagents, Hooks and Rules are separate sidebar pages. | taken as guessed (Q1) | RD-R1 |
-| RD20 | Every list supports multi-select, and Clean uses the same mechanism. | "a" (Q3) | RD-R11 |
+| ID | Decision | Owner's words | Req | Where in the mock |
+| --- | --- | --- | --- | --- |
+| RD19 | Skills, Subagents, Hooks and Rules are separate sidebar pages. | taken as guessed (Q1) | RD-R1 | sidebar group Agents |
+| RD20 | Every list supports multi-select, and Clean uses the same mechanism. | "a" (Q3) | RD-R11 | checkboxes on every list; Clean sections |
 
 ## Requirements
 
@@ -182,6 +182,9 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Pre-selection:** the default is "nothing pre-selected" (mock axis `preselect`). The alternative is to pre-select dead Hooks only. Since round 4 the group head only selects, so pre-selection is the one way a removal starts without a tick.
 - **Row actions:** the default is the selected row plus a group-head `Select N Suggested` (mock axis `rowact`). The alternative is one button on every row. This conflicts with the earlier "every action visible" answer.
 - **Hero of Clean:** what can be cleaned (equal to the sidebar); the selected amount sits on the button and the bar. Replaces the round-3 "hero = selected".
+- **Keep is stored:** kept findings survive a restart, in a list in the app's data folder (`~/.spacevibe`); the build plan's RB-E5.
+- **Page × state cells drawn as Normal on purpose:** listed in the mock's `MOCK.na` with their behaviour (Moving only on Clean, Hooks never ask, Limits writes nothing, no shared file at 2 CLIs, the Settings window has no scan); the mock's `consistency.js` fails on any other such cell.
+- **Settings window states:** empty and error open the Limits pane (no snapshot, Unmeasurable), worst and dialog the CLIs pane, a refused setting shows the error toast.
 - **Inbox Remove:** a Skill or Subagent that is not a shared file is removed at once with Undo (`Remove`); a shared one asks with its readers (`Remove…`).
 - **Capability write:** follows the engine (rules.md): Read, Edit, Run, Network change the cell's wide rules or add one bare rule; Push and deploy and Secrets change their own rules; the preview says when the cell will still read Mixed; a same-value change is "Nothing to change" and writes nothing.
 - **Pinning:** Balance pins live in Settings › CLIs only, two to three, and only for CLIs that hold Skills or Subagents; the All CLIs menu no longer pins.
