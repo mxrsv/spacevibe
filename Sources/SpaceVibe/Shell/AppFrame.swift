@@ -7,7 +7,8 @@ import SwiftUI
 ///
 /// It owns the frame's `FrameModel` (RB-S5), so the store exists only with the switch on: it reads at first appearance, on
 /// app activation and on ⌘R (`FrameCommands`). Each region hands its page's parts through `content`; a region not built yet
-/// is `FramePageContent.notBuilt`. The look is decided once here (`frameLookRoot`, AR8).
+/// is `FramePageContent.notBuilt`. The look is decided once here (`frameLookRoot`, AR8), and the toasts of the write path
+/// show here (`FrameToastHost`).
 struct AppFrame: View {
     typealias PageContent = @MainActor (FramePage, FrameModel) -> FramePageContent
 
@@ -97,6 +98,8 @@ private struct FrameWindow: View {
                     .focused($focus, equals: .inspector)
                     .focusEffectDisabled()
             }
+            // The write path's toasts (AR4): above the list and the overlay inspector, bottom centre of the window.
+            FrameToastHost()
         }
         .ignoresSafeArea()
         .frameWindowBackground()

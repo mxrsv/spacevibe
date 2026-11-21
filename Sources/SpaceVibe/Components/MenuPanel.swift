@@ -48,7 +48,6 @@ struct MenuPanel: View {
     let entries: [MenuPanelEntry]
     var footnote: String?
     var width: CGFloat = BlockRole.menuWidth
-    var look: MaterialLook = .solid
     let pick: (String) -> Void
     let close: () -> Void
 
@@ -84,7 +83,7 @@ struct MenuPanel: View {
         }
         .padding(SpaceRole.step6)
         .frame(width: width, alignment: .leading)
-        .overlayPanelSurface(look: look)
+        .overlayPanelSurface()
         .focusable()
         .focused($focused)
         .focusEffectDisabled()

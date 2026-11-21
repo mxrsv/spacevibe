@@ -19,14 +19,13 @@ struct StatusBanner<Action: View>: View {
     let kind: Kind
     let title: String
     var detail: String?
-    var look: MaterialLook = .solid
+    @Environment(\.materialLook) private var look
     @ViewBuilder var action: Action
 
-    init(_ kind: Kind, title: String, detail: String? = nil, look: MaterialLook = .solid, @ViewBuilder action: () -> Action) {
+    init(_ kind: Kind, title: String, detail: String? = nil, @ViewBuilder action: () -> Action) {
         self.kind = kind
         self.title = title
         self.detail = detail
-        self.look = look
         self.action = action()
     }
 
@@ -53,7 +52,7 @@ struct StatusBanner<Action: View>: View {
         }
         .padding(.vertical, SpaceRole.step12)
         .padding(.horizontal, SpaceRole.step16)
-        .background(PushButtonShape(corner: RadiusRole.groupCorner(look)).fill(ColorRole.groupSurface))
+        .background(CornerRoleShape(RadiusRole.groupCorner(look)).fill(ColorRole.groupSurface))
         .accessibilityElement(children: .contain)
     }
 
@@ -73,7 +72,7 @@ extension StatusBanner.Kind {
 }
 
 extension StatusBanner where Action == EmptyView {
-    init(_ kind: Kind, title: String, detail: String? = nil, look: MaterialLook = .solid) {
-        self.init(kind, title: title, detail: detail, look: look) { EmptyView() }
+    init(_ kind: Kind, title: String, detail: String? = nil) {
+        self.init(kind, title: title, detail: detail) { EmptyView() }
     }
 }

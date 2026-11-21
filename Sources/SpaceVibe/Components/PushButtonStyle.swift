@@ -38,15 +38,20 @@ struct PushButtonStyle: ButtonStyle {
     var isLoading = false
     /// Drawn as hovered while what it opens is open (a menu's button, the inspector toggle: the mock's `.act`).
     var isActive = false
-    /// Solid until the frame's material reaches the blocks (RB-S3's `materialLook`): Glass rounds controls to a capsule.
-    var look: MaterialLook = .solid
 
-    init(_ kind: Kind, size: Size = .regular, isLoading: Bool = false, isActive: Bool = false, look: MaterialLook = .solid) {
+    /// The look (Glass rounds controls to a capsule and puts the 32 controls on glass) comes from the frame's
+    /// `\.materialLook` (AR8), never from the caller.
+    init(_ kind: Kind, size: Size = .regular, isLoading: Bool = false, isActive: Bool = false) {
         self.kind = kind
         self.size = size
         self.isLoading = isLoading
         self.isActive = isActive
-        self.look = look
+    }
+
+    /// Whether the button sits on the system glass in `look`: the mock's `.ctl` (a 32 control) and `.ctl.ico` at 32 and 26
+    /// (the toolbar's icons, the overlay inspector's close). Row buttons (`.rb`), primary and destructive keep their fills.
+    func isOnGlass(_ look: MaterialLook) -> Bool {
+        look == .glass && (kind == .icon || (kind == .control && size == .regular))
     }
 
     func makeBody(configuration: Configuration) -> some View {
@@ -70,8 +75,13 @@ struct PushButtonStyle: ButtonStyle {
         }
     }
 
-    /// The ground for a state; nil draws none.
-    func fill(hovered: Bool, pressed: Bool, enabled: Bool) -> Color? {
+    /// The ground for a state; nil draws none. On glass a control has no resting fill: the glass is its ground, and hover
+    /// and press tint it (the mock's `.ctl:hover`, `.ctl.ico.act`).
+    func fill(hovered: Bool, pressed: Bool, enabled: Bool, onGlass: Bool = false) -> Color? {
+        if onGlass {
+            guard enabled else { return nil }
+            return pressed ? ColorRole.controlPressedFill : hovered ? ColorRole.controlHoverFill : nil
+        }
         guard enabled else { return kind == .quiet || kind == .link ? nil : kind == .primary ? ColorRole.primaryAction : ColorRole.controlFill }
         switch kind {
         case .primary:
@@ -97,12 +107,14 @@ struct PushButtonStyle: ButtonStyle {
         }
     }
 
-    /// The 1 pt edge: a hairline on control fills, the red edge on the destructive tint, none elsewhere or when disabled.
-    func edge(enabled: Bool) -> Color? {
+    /// The 1 pt edge: a hairline on control fills, the red edge on the destructive tint, none on glass (the glass draws its
+    /// own rim), elsewhere or when disabled.
+    func edge(enabled: Bool, onGlass: Bool = false) -> Color? {
+        guard !onGlass else { return nil }
         switch kind {
-        case .control, .icon: ColorRole.hairline
-        case .destructive: enabled ? ColorRole.destructiveTintEdge : nil
-        default: nil
+        case .control, .icon: return ColorRole.hairline
+        case .destructive: return enabled ? ColorRole.destructiveTintEdge : nil
+        default: return nil
         }
     }
 }
@@ -115,14 +127,16 @@ private struct PushButtonBody: View {
     @Environment(\.isFocused) private var isFocused
     @Environment(\.specimenInteraction) private var specimen
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.materialLook) private var look
     @State private var hovering = false
 
     var body: some View {
         let enabled = isEnabled && !style.isLoading
         let hovered = enabled && (hovering || style.isActive || specimen.contains(.hover))
         let pressed = enabled && (configuration.isPressed || specimen.contains(.press))
-        let corner = RadiusRole.controlCorner(style.look)
-        let shape = PushButtonShape(corner: corner)
+        let corner = RadiusRole.controlCorner(look)
+        let shape = CornerRoleShape(corner)
+        let onGlass = style.isOnGlass(look)
         HStack(spacing: style.kind == .primary || style.kind == .destructive ? SpaceRole.step8 : SpaceRole.step6) {
             if style.isLoading { StillSpinner(onPrimary: style.kind == .primary) }
             configuration.label
@@ -133,10 +147,11 @@ private struct PushButtonBody: View {
         .padding(.horizontal, style.sidePadding)
         .frame(minWidth: style.size.height, minHeight: style.size.height, maxHeight: style.size.height)
         .background {
-            if let fill = style.fill(hovered: hovered, pressed: pressed, enabled: isEnabled) { shape.fill(fill) }
+            if let fill = style.fill(hovered: hovered, pressed: pressed, enabled: isEnabled, onGlass: onGlass) { shape.fill(fill) }
         }
+        .frameGlass(in: corner, interactive: true, solid: .clear, when: onGlass)
         .overlay {
-            if let edge = style.edge(enabled: isEnabled) { shape.strokeBorder(edge, lineWidth: 1) }
+            if let edge = style.edge(enabled: isEnabled, onGlass: onGlass) { shape.strokeBorder(edge, lineWidth: 1) }
         }
         .opacity(isEnabled ? 1 : OpacityRole.disabled)
         .scaleEffect(MotionRole.scale(pressed: pressed, reduceMotion: reduceMotion))
@@ -146,22 +161,6 @@ private struct PushButtonBody: View {
         .onHover { hovering = $0 }
         .accessibilityAddTraits(style.isLoading ? .updatesFrequently : [])
     }
-}
-
-/// A control's corner: a radius or a capsule, as `RadiusRole` gives it by look.
-struct PushButtonShape: InsettableShape {
-    let corner: CornerRole
-    var inset: CGFloat = 0
-
-    func path(in rect: CGRect) -> Path {
-        let box = rect.insetBy(dx: inset, dy: inset)
-        switch corner {
-        case .capsule: return Capsule().path(in: box)
-        case .radius(let radius): return RoundedRectangle(cornerRadius: max(0, radius - inset), style: .continuous).path(in: box)
-        }
-    }
-
-    func inset(by amount: CGFloat) -> PushButtonShape { PushButtonShape(corner: corner, inset: inset + amount) }
 }
 
 /// Loading: the mock's `.spin`, a ring with its top quarter in the label's ink. Still (no loop, DS-R9).

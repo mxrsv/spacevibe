@@ -24,6 +24,8 @@ enum BlockRole {
     /// A toast's height when it holds one line (`.toast` min-height 44) and its widest (`max-width: 620px`).
     static let toastMinHeight: CGFloat = 44
     static let toastMaxWidth: CGFloat = 620
+    /// What a toast keeps clear of each side of the window (`max-width: min(620px, calc(100% - 320px))`).
+    static let toastWindowMargin: CGFloat = 160
     /// The per-CLI sheet and the remove confirmation (`.alert.sheet`, width 392).
     static let sheetWidth: CGFloat = 392
     /// A menu (`.cpop`, 252 wide) and an anchored popover (`.tpop`, 300 wide).

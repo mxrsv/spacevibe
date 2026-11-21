@@ -53,8 +53,8 @@ struct SettingsWindowFrame: View {
                 .padding(.bottom, SpaceRole.step10)
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Settings panes")
-                FrameQuietEmptyState(icon: pane.icon, title: "Not built yet",
-                                     message: "The \(pane.title) pane has no view in the redesign yet.")
+                PageEmptyState(icon: pane.icon, title: "Not built yet",
+                               text: "The \(pane.title) pane has no view in the redesign yet.")
                     .frame(maxWidth: .infinity, minHeight: FrameRole.settingsBodyMinHeight, alignment: .top)
             }
         }

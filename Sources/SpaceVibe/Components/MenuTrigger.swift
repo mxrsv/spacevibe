@@ -10,7 +10,6 @@ struct MenuTrigger: View {
     let isOpen: Bool
     /// What the menu chooses, for VoiceOver ("CLIs shown", "CLI", "Project").
     let label: String
-    var look: MaterialLook = .solid
     let toggle: () -> Void
 
     var body: some View {
@@ -25,7 +24,7 @@ struct MenuTrigger: View {
                 FrameGlyph(.caretDown, side: SizeRole.icon12, ink: ColorRole.ink3)
             }
         }
-        .buttonStyle(PushButtonStyle(.control, isActive: isOpen, look: look))
+        .buttonStyle(PushButtonStyle(.control, isActive: isOpen))
         .focusEffectDisabled()
         .accessibilityLabel(label)
         .accessibilityValue(title)

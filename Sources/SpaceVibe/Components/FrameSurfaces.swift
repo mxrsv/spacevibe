@@ -50,7 +50,8 @@ extension EnvironmentValues {
     var materialLook: MaterialLook { frameMaterial.look }
 }
 
-/// A `CornerRole` as a shape: a continuous rounded rectangle, or a capsule.
+/// A `CornerRole` as a shape: a continuous rounded rectangle, or a capsule (the mock's `border-radius: 999px`, round ends).
+/// The one shape for a corner role: frame surfaces, buttons, overlay panels and banners all draw it.
 struct CornerRoleShape: InsettableShape {
     let corner: CornerRole
     var inset: CGFloat = 0
@@ -59,12 +60,10 @@ struct CornerRoleShape: InsettableShape {
 
     func path(in rect: CGRect) -> Path {
         let box = rect.insetBy(dx: inset, dy: inset)
-        let radius: CGFloat
         switch corner {
-        case .radius(let value): radius = max(0, value - inset)
-        case .capsule: radius = min(box.width, box.height) / 2
+        case .radius(let value): return RoundedRectangle(cornerRadius: max(0, value - inset), style: .continuous).path(in: box)
+        case .capsule: return Capsule().path(in: box)
         }
-        return RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: box)
     }
 
     func inset(by amount: CGFloat) -> CornerRoleShape {
@@ -76,8 +75,10 @@ struct CornerRoleShape: InsettableShape {
 
 extension View {
     /// The look's surface in `corner`: the system glass in Glass (interactive for a control), `solid` filled in Solid.
-    func frameGlass(in corner: CornerRole, interactive: Bool = false, solid: Color) -> some View {
-        modifier(FrameGlassSurface(corner: corner, interactive: interactive, solid: solid))
+    /// `when: false` leaves the view as it is in either look (a block whose variant is never glass), so the view's identity does
+    /// not change with the variant.
+    func frameGlass(in corner: CornerRole, interactive: Bool = false, solid: Color, when isGlass: Bool = true) -> some View {
+        modifier(FrameGlassSurface(corner: corner, interactive: interactive, solid: solid, isGlass: isGlass))
     }
 }
 
@@ -85,11 +86,13 @@ private struct FrameGlassSurface: ViewModifier {
     let corner: CornerRole
     let interactive: Bool
     let solid: Color
+    let isGlass: Bool
     @Environment(\.frameMaterial) private var material
 
     func body(content: Content) -> some View {
         switch material {
-        case .glass(let painter): painter.paint(AnyView(content), in: corner, interactive: interactive)
+        case .glass(let painter) where isGlass: painter.paint(AnyView(content), in: corner, interactive: interactive)
+        case .glass: content
         case .solid: content.background(solid, in: CornerRoleShape(corner))
         }
     }

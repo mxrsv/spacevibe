@@ -143,6 +143,8 @@ enum MotionRole {
     static let tileDuration: TimeInterval = 0.12
     static let tileLift: CGFloat = 1
     static let pressScale: CGFloat = 0.98
+    /// A toast sliding in from the bottom edge (opacity only with Reduce Motion).
+    static let toastSlideDuration: TimeInterval = 0.2
 
     static func lift(reduceMotion: Bool) -> CGFloat { reduceMotion ? 0 : tileLift }
     static func scale(pressed: Bool, reduceMotion: Bool) -> CGFloat { pressed && !reduceMotion ? pressScale : 1 }

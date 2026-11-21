@@ -77,6 +77,9 @@ final class ToastCenter {
     /// The Undo the toast showing now offers, if it offers one; `current` and this share an id while it is on screen.
     @ObservationIgnored private var currentUndo: UndoItem?
     private let announce: Bool
+    /// The toast host on screen announces each toast itself, so the center does not: the redesign's `FrameToastHost`, whose
+    /// blocks announce a refusal at high priority (RD-R16). False for the v5 `ToastHost`, which leaves it to the center.
+    @ObservationIgnored var hostAnnounces = false
 
     /// `announce: false` for headless rendering, where there is no accessibility client.
     init(announce: Bool = true) { self.announce = announce }
@@ -188,7 +191,7 @@ final class ToastCenter {
     private func present(_ toast: Toast) {
         current = toast
         schedule(for: toast.id)
-        if announce {
+        if announce && !hostAnnounces {
             AccessibilityNotification.Announcement(toast.action.map { "\(toast.message). \($0.title) available." } ?? toast.message).post()
         }
     }

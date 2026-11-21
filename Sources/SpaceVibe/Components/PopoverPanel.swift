@@ -7,15 +7,13 @@ import SwiftUI
 struct PopoverPanel<Content: View>: View {
     var width: CGFloat? = BlockRole.popoverWidth
     var label: String
-    var look: MaterialLook = .solid
     let close: () -> Void
     @ViewBuilder var content: Content
 
-    init(label: String, width: CGFloat? = BlockRole.popoverWidth, look: MaterialLook = .solid, close: @escaping () -> Void,
+    init(label: String, width: CGFloat? = BlockRole.popoverWidth, close: @escaping () -> Void,
          @ViewBuilder content: () -> Content) {
         self.label = label
         self.width = width
-        self.look = look
         self.close = close
         self.content = content()
     }
@@ -25,7 +23,7 @@ struct PopoverPanel<Content: View>: View {
             .padding(SpaceRole.step12)
             .frame(width: width, alignment: .leading)
             .fixedSize(horizontal: width == nil, vertical: true)
-            .overlayPanelSurface(look: look)
+            .overlayPanelSurface()
             .onExitCommand(perform: close)
             .accessibilityElement(children: .contain)
             .accessibilityLabel(label)

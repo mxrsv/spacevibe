@@ -70,17 +70,20 @@ struct FrameRowsTests {
 
     // MARK: Tiles (RD-R12)
 
-    @Test("tile heat is 0 to 3 relative to the item's top CLI, as consistency.js computes it")
+    @Test("tile heat is 0 to 3 relative to the item's top CLI, as consistency.js computes it, through the one HeatStep rule")
     func heat() {
         let r = row(["claude": D.sessions(100), "codex": D.sessions(20), "c3": D.sessions(50), "c4": D.sessions(0), "c5": .missing])
-        #expect(["claude", "codex", "c3", "c4", "c5"].map(r.heatStep) == [3, 1, 2, 0, 0])
+        let steps = ["claude", "codex", "c3", "c4", "c5"].map(r.heatStep)
+        #expect(steps.map(\.rawValue) == [3, 1, 2, 0, 0])
+        #expect(steps == ["claude", "codex", "c3", "c4", "c5"].map { HeatStep.step(sessions: r.cell($0).count ?? 0, top: 100) })
     }
 
-    @Test("the tile grid never exceeds 3 rows at 2, 3, 6 and 10 CLIs")
+    @Test("the tile grid never exceeds 3 rows at 2, 3, 6 and 10 CLIs (the one rule, CLITileGridLayout)")
     func tileRows() {
         for n in [2, 3, 6, 10, 11] {
-            let columns = FrameRow.tileColumns(cliCount: n)
+            let columns = CLITileGridLayout.columns(n)
             #expect(columns >= 3 && (n + columns - 1) / columns <= 3, "N=\(n) columns \(columns)")
+            #expect(CLITileGridLayout.rows(n) <= 3, "N=\(n)")
         }
     }
 

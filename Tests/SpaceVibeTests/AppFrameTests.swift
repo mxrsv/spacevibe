@@ -82,23 +82,66 @@ struct AppFrameTests {
         #expect(chrome.presentation == .hidden, "crossing the line closed the overlay")
         chrome.openInspector()
         chrome.isHelpOpen = true
-        chrome.markKeyboardSelection(true)
+        chrome.keyboardRow = "a"
         chrome.pageChanged()
-        #expect(chrome.presentation == .hidden && !chrome.isHelpOpen && !chrome.showsFocusBar)
+        #expect(chrome.presentation == .hidden && !chrome.isHelpOpen && chrome.keyboardRow == nil)
         chrome.isHelpOpen = true
         #expect(chrome.closeOverlays() && !chrome.isHelpOpen)
     }
 
-    @Test("arrow keys step through the shown rows and hold at the ends; nothing selected starts at an edge")
-    func selectionStep() {
+    @Test("the frame's arrow keys move the route's selection by ListSelection; a click clears the focus bar")
+    func keyboardSelection() {
+        let router = FrameRouter(FrameRoute(page: .skills))
+        let chrome = FrameChrome()
         let rows = ["a", "b", "c"]
-        #expect(FrameSelectionStep.next(from: nil, in: rows, by: 1) == "a")
-        #expect(FrameSelectionStep.next(from: nil, in: rows, by: -1) == "c")
-        #expect(FrameSelectionStep.next(from: "b", in: rows, by: 1) == "c")
-        #expect(FrameSelectionStep.next(from: "c", in: rows, by: 1) == "c")
-        #expect(FrameSelectionStep.next(from: "a", in: rows, by: -1) == "a")
-        #expect(FrameSelectionStep.next(from: "gone", in: rows, by: 1) == "a")
-        #expect(FrameSelectionStep.next(from: "a", in: [], by: 1) == nil)
+        // What `frameListKeys` does on ↓ twice and ↑ once: the one rule, written into the route and the keyboard row.
+        for move in [ListSelection.Move.next, .next, .previous] {
+            let next = ListSelection.moved(move, from: router.route.selection, in: rows)
+            router.select(next)
+            chrome.keyboardRow = next
+        }
+        #expect(router.route.selection == "a" && chrome.keyboardRow == "a")
+        #expect(router.route.page == .skills, "selecting never changes the page (AR5)")
+        chrome.pointerSelected()
+        #expect(chrome.keyboardRow == nil && router.route.selection == "a")
+    }
+
+    // MARK: Toasts (AR4, RD-R16, RD-R17)
+
+    @Test("the frame draws a write's toast with its action, a refusal as the refused toast that stays until dismissed")
+    func toastKinds() {
+        let undo = Toast(message: "Removed ponytail", tone: .info, action: .undo {})
+        let plain = Toast(message: "Stopped", tone: .info, action: nil)
+        let view = Toast(message: "SpaceVibe 0.2.0 is available", tone: .info, action: ToastAction(title: "View") {})
+        let refused = Toast(message: "Couldn't remove x. Nothing changed.", tone: .danger, action: nil)
+        #expect(FrameToastKind(undo) == .write(action: "Undo"))
+        #expect(FrameToastKind(plain) == .write(action: nil))
+        #expect(FrameToastKind(view) == .write(action: "View"))
+        #expect(FrameToastKind(refused) == .refused(action: nil))
+        #expect(FrameToastKind(refused).staysUntilDismissed && !FrameToastKind(undo).staysUntilDismissed)
+        #expect(FrameToastKind.icon(for: "Undo") == .arrowCounterClockwise)
+        #expect(FrameToastKind.icon(for: "View") == nil && FrameToastKind.icon(for: nil) == nil)
+        #expect(ToastText.spoken("Removed ponytail", action: "Undo") == "Removed ponytail. Undo available.")
+        #expect(ToastText.spoken("Stopped", action: nil) == "Stopped")
+    }
+
+    @Test("while the frame's host announces, the center stays quiet; the v5 host leaves it to the center")
+    func toastAnnouncer() {
+        let toasts = ToastCenter(announce: false)
+        #expect(!toasts.hostAnnounces, "v5 default: the center announces")
+        toasts.hostAnnounces = true
+        toasts.show("Removed ponytail") {}
+        #expect(toasts.current?.message == "Removed ponytail" && toasts.canUndoByKey, "the toast and its Undo are unchanged")
+    }
+
+    // MARK: Row actions (RD-R16, R3)
+
+    @Test("a row action is a red-tint button when destructive, a control otherwise, with its shortcut in the tooltip")
+    func rowActionButtons() {
+        let keep = FrameRowAction(id: "keep", title: "Keep", shortcut: FrameShortcut("k")) {}
+        let remove = FrameRowAction(id: "remove", title: "Remove from…", isDestructive: true) {}
+        #expect(keep.buttonKind == .control && remove.buttonKind == .destructive)
+        #expect(keep.tooltip == "Keep (⌘K)" && remove.tooltip == "Remove from…")
     }
 
     // MARK: Material (AR8, DS-R8)

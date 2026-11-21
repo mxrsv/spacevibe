@@ -116,6 +116,8 @@ struct RoleTokenTests {
         #expect(boxes["hero"]! == (40, 44) && boxes["figure"]! == (22, 26) && boxes["title"]! == (15, 20))
         #expect(boxes["body"]! == (13, 18) && boxes["quiet"]! == (12, 16) && boxes["caption"]! == (11, 14) && boxes["mono"]! == (12, 16))
         #expect(boxes["body 500"]! == (13, 18) && boxes["quiet 500"]! == (12, 16))
+        // The hero's unit is the mock's `.hero .fg small`: 15/20 at 400, SF Pro.
+        #expect(boxes["hero unit"]! == (15, 20) && TypeRole.heroUnit.weight == .regular && TypeRole.heroUnit.face == .text)
         #expect(roles.filter { $0.role.weight == .medium }.map(\.name) == ["hero", "windowFigure", "pageTitle", "bodyMedium", "quietMedium"])
         #expect(roles.filter { $0.role.face == .figures }.map(\.name) == ["hero", "windowFigure"])
         #expect(roles.filter { $0.role.face == .mono }.map(\.name) == ["mono"])

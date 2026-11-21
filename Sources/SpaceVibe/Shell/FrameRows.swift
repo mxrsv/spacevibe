@@ -85,12 +85,10 @@ struct FrameRow: Identifiable, Equatable, Sendable {
         isCandidate && !isRecentlyAdded && !isPlugin && !isProject && !kept.contains(id)
     }
 
-    /// The tile's heat step for one CLI, 0 to 3, relative to the item's top CLI (RD-R12): 0 for no use, then a quarter,
-    /// six tenths, and above.
-    func heatStep(_ cli: String) -> Int {
-        let top = max(1, cells.values.compactMap(\.count).max() ?? 0)
-        let ratio = Double(cell(cli).count ?? 0) / Double(top)
-        return ratio <= 0 ? 0 : ratio <= 0.25 ? 1 : ratio <= 0.6 ? 2 : 3
+    /// The tile's heat step for one CLI (RD-R12), by the one rule in `HeatStep.step(sessions:top:)`: its count (sessions, or
+    /// runs for a Hook) against the item's top CLI. A cell with no count (missing, unmeasurable, scanning) is step 0.
+    func heatStep(_ cli: String) -> HeatStep {
+        HeatStep.step(sessions: cell(cli).count ?? 0, top: cells.values.compactMap(\.count).max() ?? 0)
     }
 }
 
@@ -123,7 +121,4 @@ extension FrameRow {
     private static func bareName(_ name: String) -> String {
         name.split(separator: ":").last.map(String.init) ?? name
     }
-
-    /// The width of the inspector's tile grid: `max(3, ceil(N/3))` columns, so N CLIs never take more than 3 rows (RD-R12).
-    static func tileColumns(cliCount: Int) -> Int { max(3, (cliCount + 2) / 3) }
 }

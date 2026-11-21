@@ -75,6 +75,9 @@ struct LaunchModeTests {
         #expect(ShotRenderer.framePages(forScreen: "settings") == nil)
         #expect(ShotRenderer.frameSettingsScreen == "settings")
         #expect(ShotRenderer.frameLooks == [.glass, .solid])
+        // `gallery` draws the redesign's specimens (RB-V2 shoots them), never a page.
+        #expect(ShotRenderer.framePages(forScreen: ShotRenderer.frameGalleryScreen) == nil)
+        #expect(ShotRenderer.frameGalleryParts.map(\.name) == ["design-system", "frame-blocks", "frame-overlays"])
     }
 
     @Test("a debug build counts as a development build")

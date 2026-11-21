@@ -40,9 +40,14 @@ struct FrameToolbar: View {
             Spacer(minLength: 0)
             if let controls = content.toolbarControls { controls }
             if content.inspector != nil {
-                FrameIconButton(icon: .sidebarSimple,
-                                label: "\(chrome.isInspectorShown ? "Hide" : "Show") Inspector (\(FrameCommandMap.inspector))",
-                                isOn: chrome.isInspectorShown) { chrome.toggleInspector() }
+                let label = "\(chrome.isInspectorShown ? "Hide" : "Show") Inspector (\(FrameCommandMap.inspector))"
+                Button { chrome.toggleInspector() } label: { SpaceVibeIcon(frame: .sidebarSimple, size: .control) }
+                    .buttonStyle(PushButtonStyle(.icon, isActive: chrome.isInspectorShown))
+                    .focusEffectDisabled()
+                    .help(label)
+                    .accessibilityLabel(label)
+                    .accessibilityAddTraits(chrome.isInspectorShown ? .isSelected : [])
+                    .accessibilityValue(chrome.isInspectorShown ? "On" : "Off")
             }
             if let primary = content.primary { FrameToolbarSlot { primary } }
         }
@@ -80,7 +85,11 @@ struct FrameInspector: View {
                     HStack(spacing: SpaceRole.step8) {
                         if let overlayActions { overlayActions }
                         Spacer(minLength: 0)
-                        FrameIconButton(icon: .x, label: "Close Inspector (Esc)", size: .small, action: close)
+                        Button(action: close) { SpaceVibeIcon(frame: .x, size: .control) }
+                            .buttonStyle(PushButtonStyle(.icon, size: .small))
+                            .focusEffectDisabled()
+                            .help("Close Inspector (Esc)")
+                            .accessibilityLabel("Close Inspector (Esc)")
                     }
                 }
                 content

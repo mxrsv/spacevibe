@@ -23,10 +23,10 @@ struct FramePageContent {
     static func notBuilt(_ page: FramePage) -> FramePageContent {
         FramePageContent(
             help: page.help,
-            body: AnyView(FrameQuietEmptyState(icon: page.icon, title: "Not built yet",
-                                               message: "\(page.title) has no view in the redesign yet.")),
+            body: AnyView(PageEmptyState(icon: page.icon, title: "Not built yet",
+                                         text: "\(page.title) has no view in the redesign yet.")),
             inspector: page.hasInspector
-                ? AnyView(FrameQuietEmptyState(icon: .sidebarSimple, title: nil, message: "Select a row to see its details."))
+                ? AnyView(PageEmptyState(icon: .sidebarSimple, text: "Select a row to see its details."))
                 : nil)
     }
 }

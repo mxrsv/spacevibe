@@ -46,8 +46,7 @@ struct PageHero: View {
             HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step6) {
                 Text(verbatim: value).typeRole(.hero).foregroundStyle(ColorRole.ink)
                 if let unit {
-                    // The mock sets the unit at 15/20 400; TypeRole has 15 only at 500 (`pageTitle`), so it takes that (reported).
-                    Text(verbatim: unit).typeRole(.pageTitle).foregroundStyle(ColorRole.ink3)
+                    Text(verbatim: unit).typeRole(.heroUnit).foregroundStyle(ColorRole.ink3)
                 }
             }
         case .clear(let word):

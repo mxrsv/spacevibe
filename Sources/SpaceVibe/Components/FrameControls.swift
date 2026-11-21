@@ -1,9 +1,9 @@
 import SwiftUI
 
 // The controls of the redesign's window frame (RB-S3), from the reference mock's `src/style.css`: the sidebar's page items,
-// group heads and Settings foot, the toolbar's icon button (the "icon 32" variant RB-S4's `PushButtonStyle` will replace),
-// the page help button, the fixed-width primary slot, the Settings window's pane tabs and the "Not built yet" state. Every
-// one that takes a click sets the pointer and shows hover, press, disabled and the 3 pt keyboard focus bar (RD29).
+// group heads and Settings foot, the page help button, the fixed-width primary slot and the Settings window's pane tabs. The
+// toolbar's icon buttons are `PushButtonStyle(.icon)`, empty states `PageEmptyState`. Every one that takes a click sets the
+// pointer and shows hover, press, disabled and the 3 pt keyboard focus bar (`focusBar`, RD29).
 
 // MARK: - Sidebar
 
@@ -78,7 +78,7 @@ private struct FrameSidebarItemStyle: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: FrameRole.sidebarItemHeight(look), alignment: .leading)
             .background(fill(pressed: configuration.isPressed), in: CornerRoleShape(corner))
             .contentShape(CornerRoleShape(corner))
-            .frameFocusBar(isFocused)
+            .focusBar(isFocused, inset: SpaceRole.step2)
             .focusable()
             .focused($isFocused)
             .focusEffectDisabled()
@@ -139,7 +139,7 @@ private struct FrameSidebarFootStyle: ButtonStyle {
             .background(configuration.isPressed ? ColorRole.selectionFill : isHovered ? ColorRole.hoverFill : .clear,
                         in: CornerRoleShape(FrameRole.sidebarFootCorner))
             .contentShape(CornerRoleShape(FrameRole.sidebarFootCorner))
-            .frameFocusBar(isFocused)
+            .focusBar(isFocused, inset: SpaceRole.step2)
             .focusable()
             .focused($isFocused)
             .focusEffectDisabled()
@@ -149,72 +149,6 @@ private struct FrameSidebarFootStyle: ButtonStyle {
 }
 
 // MARK: - Toolbar
-
-/// A toolbar icon button, the "icon 32" variant (`style.css` `.ctl.ico`): glass in Glass, the control fill with a hairline in
-/// Solid; `isOn` shows a pressed toggle (`.ctl.ico.act`, the inspector button). The label is its tooltip and spoken name.
-/// RB-S4's `PushButtonStyle` icon variant replaces it once both land.
-struct FrameIconButton: View {
-    enum Size: Sendable {
-        /// 32, the toolbar's.
-        case regular
-        /// 26, the overlay inspector's close button (`.in.ov .ovx`).
-        case small
-
-        var side: CGFloat { self == .regular ? SizeRole.controlRegular : SizeRole.controlSmall }
-    }
-
-    let icon: FrameIcon
-    let label: String
-    var size: Size = .regular
-    var isOn: Bool?
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            SpaceVibeIcon(frame: icon, size: .control)
-        }
-        .buttonStyle(FrameIconButtonStyle(isOn: isOn ?? false, side: size.side))
-        .help(label)
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(isOn == true ? .isSelected : [])
-        .accessibilityValue(isOn.map { $0 ? "On" : "Off" } ?? "")
-    }
-}
-
-private struct FrameIconButtonStyle: ButtonStyle {
-    let isOn: Bool
-    let side: CGFloat
-    @Environment(\.materialLook) private var look
-    @Environment(\.isEnabled) private var isEnabled
-    @State private var isHovered = false
-    @FocusState private var isFocused: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        let corner = RadiusRole.controlCorner(look)
-        configuration.label
-            .foregroundStyle(ColorRole.ink)
-            .frame(width: side, height: side)
-            .background(fill(pressed: configuration.isPressed), in: CornerRoleShape(corner))
-            .frameGlass(in: corner, interactive: true, solid: .clear)
-            .overlay {
-                if look == .solid { CornerRoleShape(corner).strokeBorder(ColorRole.hairline) }
-            }
-            .contentShape(CornerRoleShape(corner))
-            .frameFocusBar(isFocused)
-            .opacity(isEnabled ? 1 : OpacityRole.disabled)
-            .focusable()
-            .focused($isFocused)
-            .focusEffectDisabled()
-            .onHover { isHovered = $0 }
-            .pointerCursor()
-    }
-
-    private func fill(pressed: Bool) -> Color {
-        if pressed { return ColorRole.controlPressedFill }
-        if isOn || isHovered { return ColorRole.controlHoverFill }
-        return look == .solid ? ColorRole.controlFill : .clear
-    }
-}
 
 /// The page help button beside the title (RD32): a 24 pt `?` with no fill of its own, click only.
 struct FrameHelpButton: View {
@@ -245,7 +179,7 @@ private struct FrameHelpButtonStyle: ButtonStyle {
             .background(isOpen || isHovered || configuration.isPressed ? ColorRole.hoverFill : .clear,
                         in: CornerRoleShape(.capsule))
             .contentShape(CornerRoleShape(.capsule))
-            .frameFocusBar(isFocused)
+            .focusBar(isFocused, inset: SpaceRole.step2)
             .focusable()
             .focused($isFocused)
             .focusEffectDisabled()
@@ -304,58 +238,11 @@ private struct FramePaneTabStyle: ButtonStyle {
             .background(isCurrent || configuration.isPressed ? ColorRole.selectionFill : isHovered ? ColorRole.hoverFill : .clear,
                         in: CornerRoleShape(corner))
             .contentShape(CornerRoleShape(corner))
-            .frameFocusBar(isFocused)
+            .focusBar(isFocused, inset: SpaceRole.step2)
             .focusable()
             .focused($isFocused)
             .focusEffectDisabled()
             .onHover { isHovered = $0 }
             .pointerCursor()
-    }
-}
-
-// MARK: - States
-
-/// A quiet empty state (`style.css` `.emp`): a 40 pt icon in ink3, the title, one plain sentence. The redesign's regions that
-/// are not built yet show it as "Not built yet" (plan, FE-P9 shape); RB-S4's empty state block replaces it.
-struct FrameQuietEmptyState: View {
-    let icon: FrameIcon
-    var title: String?
-    let message: String
-
-    var body: some View {
-        VStack(spacing: SpaceRole.step12) {
-            SpaceVibeIcon(frame: icon, size: .row)
-                .scaleEffect(SizeRole.icon40 / SizeRole.icon20)
-                .frame(width: SizeRole.icon40, height: SizeRole.icon40)
-                .foregroundStyle(ColorRole.ink3)
-            if let title { Text(title).typeRole(.pageTitle).foregroundStyle(ColorRole.ink) }
-            Text(message)
-                .typeRole(.quiet)
-                .foregroundStyle(ColorRole.ink3)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.top, SpaceRole.emptyStateTop)
-        .padding(.horizontal, SpaceRole.step24)
-        .frame(maxWidth: .infinity, alignment: .top)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-// MARK: - Keyboard focus (RD29)
-
-extension View {
-    /// The keyboard focus mark (RD29): a 3 pt ink bar inside the control's leading edge, not a ring (D57), distinct from hover
-    /// and selection. RB-S4's rows use the same bar.
-    func frameFocusBar(_ isFocused: Bool) -> some View {
-        overlay(alignment: .leading) {
-            if isFocused {
-                Rectangle()
-                    .fill(ColorRole.ink)
-                    .frame(width: SizeRole.focusBar)
-                    .padding(.vertical, SpaceRole.step4)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
-        }
     }
 }

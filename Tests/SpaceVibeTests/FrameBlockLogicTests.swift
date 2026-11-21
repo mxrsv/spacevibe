@@ -59,6 +59,24 @@ struct FrameBlockLogicTests {
         #expect(HeatStep.steps([]).isEmpty)
     }
 
+    // MARK: Buttons on the frame's material (AR8)
+
+    @Test("in Glass the 32 controls and the icon buttons sit on glass with no resting fill or edge; Solid keeps the fill")
+    func buttonsOnGlass() {
+        let icon = PushButtonStyle(.icon), closeIcon = PushButtonStyle(.icon, size: .small)
+        let control = PushButtonStyle(.control), rowButton = PushButtonStyle(.control, size: .small)
+        #expect(icon.isOnGlass(.glass) && closeIcon.isOnGlass(.glass) && control.isOnGlass(.glass))
+        #expect(!rowButton.isOnGlass(.glass), "a row button (`.rb`) keeps its fill")
+        #expect(!PushButtonStyle(.primary).isOnGlass(.glass) && !PushButtonStyle(.destructive).isOnGlass(.glass))
+        #expect([icon, closeIcon, control, rowButton].allSatisfy { !$0.isOnGlass(.solid) })
+        #expect(icon.fill(hovered: false, pressed: false, enabled: true, onGlass: true) == nil)
+        #expect(icon.fill(hovered: true, pressed: false, enabled: true, onGlass: true) == ColorRole.controlHoverFill)
+        #expect(icon.fill(hovered: true, pressed: true, enabled: true, onGlass: true) == ColorRole.controlPressedFill)
+        #expect(icon.fill(hovered: true, pressed: false, enabled: false, onGlass: true) == nil)
+        #expect(icon.fill(hovered: false, pressed: false, enabled: true) == ColorRole.controlFill)
+        #expect(icon.edge(enabled: true, onGlass: true) == nil && icon.edge(enabled: true) == ColorRole.hairline)
+    }
+
     // MARK: Logo toggle states
 
     @Test("which states are toggles: on and off write; via, last copy, plugin, Not supported, unreadable and pending do not")

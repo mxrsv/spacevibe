@@ -66,6 +66,9 @@ struct TypeRole: Hashable, Sendable {
     static let windowFigure = TypeRole(size: 22, lineHeight: 26, weight: .medium, face: .figures)
     /// The page title, an empty state's title.
     static let pageTitle = TypeRole(size: 15, lineHeight: 20, weight: .medium, face: .text)
+    /// The unit beside the hero's figure ("MB", "% left"): `pageTitle`'s size at 400, in SF Pro (the mock's `.hero .fg small`,
+    /// `400 15px/20px`), so the unit reads quieter than the figure.
+    static let heroUnit = TypeRole(size: 15, lineHeight: 20, weight: .regular, face: .text)
     /// Rows, buttons, names.
     static let bodyText = TypeRole(size: 13, lineHeight: 18, weight: .regular, face: .text)
     /// `bodyText` at 500 (DS-R2 "body 400, 500"): a row's name, a button's label, a group head.
@@ -86,7 +89,8 @@ struct TypeRole: Hashable, Sendable {
 
     /// Every role: its name here, the spec's name, the role. In the spec's order; the specimen draws them, the tests walk them.
     static let all: [(name: String, specName: String, role: TypeRole)] = [
-        ("hero", "hero", hero), ("windowFigure", "figure", windowFigure), ("pageTitle", "title", pageTitle),
+        ("hero", "hero", hero), ("heroUnit", "hero unit", heroUnit), ("windowFigure", "figure", windowFigure),
+        ("pageTitle", "title", pageTitle),
         ("bodyText", "body", bodyText), ("bodyMedium", "body 500", bodyMedium), ("quiet", "quiet", quiet),
         ("quietMedium", "quiet 500", quietMedium), ("axisCaption", "caption", axisCaption),
         ("mono", "mono", mono), ("sidebarLabel", "body 600", sidebarLabel),

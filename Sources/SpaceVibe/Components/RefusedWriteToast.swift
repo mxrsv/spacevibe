@@ -13,21 +13,20 @@ struct RefusedWriteToast: View {
     var actionIcon: FrameIcon?
     var action: (() -> Void)?
     let dismiss: () -> Void
-    var look: MaterialLook = .solid
 
     @Environment(\.isShotRendering) private var isShotRendering
+    @Environment(\.materialLook) private var look
     @State private var expanded: Bool
     @State private var textWidth: CGFloat = 0
 
     /// `expanded` opens Details from the start (the gallery's open state).
     init(message: String, isPartial: Bool = false, actionTitle: String? = nil, actionIcon: FrameIcon? = nil,
-         action: (() -> Void)? = nil, expanded: Bool = false, look: MaterialLook = .solid, dismiss: @escaping () -> Void) {
+         action: (() -> Void)? = nil, expanded: Bool = false, dismiss: @escaping () -> Void) {
         self.message = message
         self.isPartial = isPartial
         self.actionTitle = actionTitle
         self.actionIcon = actionIcon
         self.action = action
-        self.look = look
         self.dismiss = dismiss
         _expanded = State(initialValue: expanded)
     }
@@ -52,16 +51,16 @@ struct RefusedWriteToast: View {
             HStack(spacing: SpaceRole.step8) {
                 if expanded || ToastText.needsDetails(shown, width: textWidth) {
                     Button { expanded.toggle() } label: { Text(expanded ? "Less" : "Details") }
-                        .buttonStyle(PushButtonStyle(.quiet, size: .small, look: look))
+                        .buttonStyle(PushButtonStyle(.quiet, size: .small))
                         .focusEffectDisabled()
                 }
                 if let actionTitle, let action {
                     Button(action: action) { PushButtonLabel(actionTitle, icon: actionIcon, size: .small) }
-                        .buttonStyle(PushButtonStyle(.control, size: .small, look: look))
+                        .buttonStyle(PushButtonStyle(.control, size: .small))
                         .focusEffectDisabled()
                 }
                 Button(action: dismiss) { Text("Dismiss") }
-                    .buttonStyle(PushButtonStyle(.quiet, size: .small, look: look))
+                    .buttonStyle(PushButtonStyle(.quiet, size: .small))
                     .focusEffectDisabled()
             }
             .fixedSize()
@@ -73,9 +72,9 @@ struct RefusedWriteToast: View {
         .frame(minHeight: BlockRole.toastMinHeight)
         .frame(maxWidth: BlockRole.toastMaxWidth)
         .fixedSize(horizontal: false, vertical: true)
-        .overlayPanelSurface(look: look)
+        .overlayPanelSurface()
         .overlay {
-            PushButtonShape(corner: RadiusRole.popoverCorner(look))
+            CornerRoleShape(RadiusRole.popoverCorner(look))
                 .strokeBorder(isPartial ? ColorRole.hairline : ColorRole.destructiveTintEdge, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)

@@ -94,15 +94,20 @@ struct PointerCursorPolicyTests {
                 let allowed = Self.allowed[file] ?? 0
                 if found > allowed { problems.append("\(file): \(found) hand-made controls, \(allowed) allowed. Use a block that sets the cursor.") }
                 if found < allowed { problems.append("\(file): \(found) hand-made controls, the list says \(allowed). Lower its entry.") }
-                // A button style a screen names must be one that sets the cursor.
+                // A button style a screen names must be one that sets the cursor: v5's `ActionButtonStyle` or the new frame's
+                // `PushButtonStyle` (`.pointerCursor()` in its body, checked below).
                 let styled = text.components(separatedBy: "\n").filter {
                     $0.contains(".buttonStyle(") && !$0.contains(".buttonStyle(ActionButtonStyle(")
+                        && !$0.contains(".buttonStyle(PushButtonStyle(")
                         && !$0.contains(".buttonStyle(.plain)") && !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//")
                 }
                 if !styled.isEmpty { problems.append("\(file): a button style that sets no cursor: \(styled)") }
             }
         }
         #expect(problems.isEmpty, "\(problems.joined(separator: "\n"))")
+        // The styles a screen may name carry the cursor themselves.
+        let push = try #require(Self.sources(in: "Components").first { $0.file == "Components/PushButtonStyle.swift" }?.text)
+        #expect(push.contains(".pointerCursor()"), "PushButtonStyle must set the pointer for every screen that names it")
     }
 
     @Test("the patterns catch a block or a screen that forgets")

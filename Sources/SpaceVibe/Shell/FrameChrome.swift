@@ -50,8 +50,8 @@ struct FrameInspectorState: Equatable, Sendable {
     }
 }
 
-/// The frame's own view state, beside the route (`FrameRouter`): the inspector, the page help, the window width and whether
-/// the keyboard is moving the selection (the RD29 focus bar shows only then, as the mock's `kbd`). It is not the store
+/// The frame's own view state, beside the route (`FrameRouter`): the inspector, the page help, the window width and the row
+/// the keyboard moved the selection to (the RD29 focus bar shows only there, as the mock's `kbdId`). It is not the store
 /// (AR3): nothing here is data. `AppFrame` owns it; regions read it from the environment and the menu bar from the focused
 /// scene.
 @MainActor
@@ -62,9 +62,9 @@ final class FrameChrome {
     /// Whether the page showing has an inspector (its region gave one).
     var pageHasInspector = false
     var isHelpOpen = false
-    /// True after an arrow key moved the selection, false after a pointer click: rows draw the focus bar on the selected
-    /// row only while it is true.
-    private(set) var showsFocusBar = false
+    /// The row an arrow key moved the selection to (`frameListKeys`); nil after a pointer click, on another page and when the
+    /// list loses focus. Only that row draws the focus bar.
+    var keyboardRow: String?
 
     var presentation: InspectorPresentation {
         inspector.presentation(windowWidth: windowWidth, pageHasInspector: pageHasInspector)
@@ -83,7 +83,8 @@ final class FrameChrome {
     /// A row click (regions call it) or Return on a selected row.
     func openInspector() { inspector = inspector.opened(windowWidth: windowWidth) }
 
-    func markKeyboardSelection(_ isKeyboard: Bool) { showsFocusBar = isKeyboard }
+    /// A row click: the selection moved by pointer, so no row shows the focus bar.
+    func pointerSelected() { keyboardRow = nil }
 
     /// Esc: closes the overlay inspector and the page help. False when nothing was open, so the key goes on.
     @discardableResult
@@ -97,48 +98,19 @@ final class FrameChrome {
     func pageChanged() {
         inspector = inspector.closingOverlay()
         isHelpOpen = false
-        showsFocusBar = false
-    }
-}
-
-/// One step of arrow-key selection (RD39: ↑↓ and j/k) over the rows a page shows, in order. Nothing selected: down picks the
-/// first row, up the last; the ends hold. A selection that is no longer shown starts again from the edge.
-enum FrameSelectionStep {
-    static func next(from current: String?, in rows: [String], by offset: Int) -> String? {
-        guard !rows.isEmpty else { return nil }
-        guard let current, let index = rows.firstIndex(of: current) else { return offset >= 0 ? rows.first : rows.last }
-        return rows[min(max(index + offset, 0), rows.count - 1)]
+        keyboardRow = nil
     }
 }
 
 extension View {
-    /// The list keys of a page (RD39, RD-R16): ↑↓ and j/k move the selection over `rows` and show the RD29 focus bar; Return
-    /// opens the inspector on the selected row. Arrows never open it. A region applies it on its list; a native `Table` keeps
-    /// its own arrows.
+    /// The list keys of a page (RD39, RD-R16): ↑↓ and j/k move the route's selection over `rows` (the rows shown, in order)
+    /// through the one selection rule, `ListSelection` with `listKeyboardSelection`, and the moved-to row shows the RD29
+    /// focus bar (`chrome.keyboardRow`). Arrows never open the inspector; Return does, at the frame (`AppFrame`). A region
+    /// applies it on its list and draws `ItemRow(isKeyboardFocused: chrome.keyboardRow == row.id)`; a click selects through the
+    /// router and clears the bar (`chrome.pointerSelected()`).
     func frameListKeys(rows: [String], router: FrameRouter, chrome: FrameChrome) -> some View {
-        modifier(FrameListKeys(rows: rows, router: router, chrome: chrome))
-    }
-}
-
-private struct FrameListKeys: ViewModifier {
-    let rows: [String]
-    let router: FrameRouter
-    let chrome: FrameChrome
-
-    func body(content: Content) -> some View {
-        content
-            .onKeyPress(keys: [.upArrow, .downArrow, "j", "k"]) { press in
-                guard press.modifiers.isEmpty else { return .ignored }
-                let offset = press.key == .upArrow || press.key == "k" ? -1 : 1
-                guard let next = FrameSelectionStep.next(from: router.route.selection, in: rows, by: offset) else { return .ignored }
-                router.select(next)
-                chrome.markKeyboardSelection(true)
-                return .handled
-            }
-            .onKeyPress(.return) {
-                guard router.route.selection != nil else { return .ignored }
-                chrome.openInspector()
-                return .handled
-            }
+        listKeyboardSelection(ids: rows,
+                              selection: Binding(get: { router.route.selection }, set: { router.select($0) }),
+                              keyboardRow: Binding(get: { chrome.keyboardRow }, set: { chrome.keyboardRow = $0 }))
     }
 }

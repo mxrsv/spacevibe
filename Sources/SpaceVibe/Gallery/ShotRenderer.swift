@@ -5,7 +5,8 @@ import SwiftUI
 /// focus is taken and no Screen Recording permission is needed. Then the process exits.
 ///
 /// `SPACEVIBE_SHOT_SCREEN` selects shell, skills, subagents, hooks, rules, activity, limits, settings or glance.
-/// With `SPACEVIBE_REDESIGN=1` the keys that draw the window draw the redesign's frame instead (`framePages`).
+/// With `SPACEVIBE_REDESIGN=1` the keys that draw the window draw the redesign's frame instead (`framePages`), `shell` adds
+/// the redesign's specimens, and `gallery` draws only those (`frameGalleryParts`).
 /// Real-screen runs require SPACEVIBE_TEST=1 and a synthetic home. Settings uses demo data. Glance draws in-memory reports
 /// only, and still runs under the test guard: in the app the widget is fed by the core.
 @MainActor
@@ -24,9 +25,15 @@ enum ShotRenderer {
                     try writeSettingsWindow(into: directory)
                     exit(0)
                 }
+                if screen == frameGalleryScreen {
+                    try writeFrameGalleries(into: directory)
+                    exit(0)
+                }
                 if let pages = framePages(forScreen: screen) {
                     try requireSyntheticHome(environment)
                     try writeFrame(on: pages, into: directory)
+                    // As the v5 `shell` run adds its gallery, the frame's adds the design system and the blocks.
+                    if screen == "shell" { try writeFrameGalleries(into: directory) }
                     exit(0)
                 }
             }
@@ -85,6 +92,29 @@ enum ShotRenderer {
             for look in frameLooks {
                 let view = ShotHarness.settingsWindow(look: look, choice: choice, env: AppEnvironment.shared)
                 try write(view, name: "settings-window-\(look)", choice: choice, to: directory, fullHeight: true)
+            }
+        }
+    }
+
+    /// With the switch on, `gallery` draws only the redesign's specimens (`frameGalleryParts`); `shell` draws them after the
+    /// pages.
+    nonisolated static let frameGalleryScreen = "gallery"
+
+    /// The redesign's gallery parts and their shot names: the Tokens + base specimen (RB-S1, beside `mock.html?page=tokens`)
+    /// and the blocks in every state (RB-S4), split to stay under the image height limit.
+    nonisolated static let frameGalleryParts: [(part: ComponentGalleryContent.Part, name: String)] = [
+        (.designSystem, "design-system"), (.frameBlocks, "frame-blocks"), (.frameOverlays, "frame-overlays"),
+    ]
+
+    /// `<part>-<look>-<appearance>.png` for each redesign part, in both looks (DS-R8) and appearances. Specimens hold
+    /// synthetic data only, so no synthetic home is needed.
+    private static func writeFrameGalleries(into directory: URL) throws {
+        for choice in [AppearanceChoice.dark, .light] {
+            for look in frameLooks {
+                for item in frameGalleryParts {
+                    try write(gallery(choice, part: item.part).frameLookRoot(forced: look), name: "\(item.name)-\(look)", choice: choice,
+                              to: directory, fullHeight: true)
+                }
             }
         }
     }

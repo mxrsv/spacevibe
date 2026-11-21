@@ -23,9 +23,10 @@ enum ItemRowHeight: Hashable, Sendable {
 ///   whole cell ticks it, and a click elsewhere selects the row instead. Nothing is ticked at first (RD41).
 /// - Actions: the selected row shows its action buttons (`actions`) at the trailing end; other rows do not (RD41). The same
 ///   actions are menu commands, context-menu items and accessibility actions, because Tab does not enter table cells (RB-T0c,
-///   R3): the page applies the frame's `.frameRowActions(_:)` to the row with the same list it fills `actions` from.
-/// - Selecting is a click on the row or the arrow keys of the list (`listKeyboardSelection`); it never opens the overlay
-///   inspector or starts work (FE-I2).
+///   R3): a frame page draws its rows with `FrameItemRow` (`Shell/FrameRowActions.swift`), which fills `actions` and those
+///   three places from one list.
+/// - Selecting is a click on the row or the arrow keys of the list (`listKeyboardSelection`; in the frame `frameListKeys`);
+///   it never opens the overlay inspector or starts work (FE-I2).
 struct ItemRow<Content: View, Actions: View>: View {
     typealias Height = ItemRowHeight
 

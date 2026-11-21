@@ -9,6 +9,15 @@ enum ToastText {
 
     static let nothingChanged = "Nothing changed."
 
+    /// The write toast's usual action.
+    static let undoTitle = "Undo"
+
+    /// What VoiceOver hears for a toast: the sentence, then the action it offers, so Undo is known to be in reach
+    /// ("Removed ponytail. Undo available.").
+    static func spoken(_ message: String, action: String?) -> String {
+        action.map { "\(message). \($0) available." } ?? message
+    }
+
     /// The reassurance comes first, so a clamped toast still says nothing changed: "Couldn't remove x: y. Nothing changed."
     /// reads "Nothing changed. Couldn't remove x: y." A message without it is left as it is.
     static func refusedMessage(_ message: String) -> String {
