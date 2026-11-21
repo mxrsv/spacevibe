@@ -98,6 +98,19 @@ func isWide(rule ParsedRule) bool {
 	return rule.Specifier == nil || textjs.Trim(*rule.Specifier) == "*"
 }
 
+// specifierTools are the Claude Code tools that take a specifier (RD-R17). Only for these does a bare or * rule cover
+// a whole tool; a bare MCP name (mcp__server or mcp__server__tool) or another tool name (Skill, Task, Glob...) does not.
+// Tool names are case-sensitive, as in Claude Code.
+var specifierTools = map[string]bool{
+	"Bash": true, "Read": true, "Edit": true, "Write": true, "MultiEdit": true, "NotebookEdit": true, "WebFetch": true, "WebSearch": true,
+}
+
+// coversWholeTool is the Rule.Wide flag: a wide rule (isWide, the same test the grid and the cell write use) on a tool
+// of specifierTools. A specifier that only reads as "everything" to a person (Bash(:*), Read(**), WebFetch(domain:*))
+// is narrow here as it is in the grid, so for a tool the grid places the flag never disagrees with what a cell write
+// replaces.
+func coversWholeTool(rule ParsedRule) bool { return specifierTools[rule.Tool] && isWide(rule) }
+
 // namesEnvFile: the specifier names a .env file, that is ".env" at the start or right after a "/" or "*". Tested on
 // the untrimmed specifier.
 func namesEnvFile(specifier string) bool {

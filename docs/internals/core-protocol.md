@@ -258,7 +258,8 @@ Rules (`ruleObject` and the preview shapes are the ones the frozen rules golden 
 type Rule = {                                     // golden ruleObject
   id: string,                                     // "<scope>:<verdict>:<rule>"
   scope: Scope, dir: string | null, file: string, verdict: Verdict, rule: string,
-  tool: string | null, specifier: string | null
+  tool: string | null, specifier: string | null,
+  wide: boolean                                   // RB-E6, outside ruleObject: the rule covers a whole tool (rules.md); any verdict
 }
 type CapabilityCell = { capability: Capability, label: string, state: CapabilityState, editable: boolean, rules: Rule[] }
 type VerdictRule = { verdict: Verdict, rule: string }
@@ -325,6 +326,6 @@ Rules around it:
 - **Never use `encoding/json` output as expected text.** It sorts differently, escapes `<>&` and U+2028, and prints floats its own way.
 - **`$HOME` token.** `HomeToken` replaces the fixture root with `$HOME` in keys and values, on both sides, before comparing.
 - **Assert the case count.** `AssertCaseCount` fails a golden test that ran zero cases, so an unloaded golden cannot pass.
-- **Goldens are frozen.** `SHA256SUMS` covers `golden/*.json`, `manifest.json` and `zst/*`, and `VerifyChecksums` also fails on a file added to a covered folder. A wrong golden is fixed together with its test in one commit (SV5), and its line in `SHA256SUMS` changes in that commit. `cli-cells.json` (the `cliCells` of every fixture row, after a scan and before one) has no Node or Swift origin: `go test ./internal/inventory -run TestGoldenCLICells -update-cli-cells` writes it, under the same freeze.
+- **Goldens are frozen.** `SHA256SUMS` covers `golden/*.json`, `manifest.json` and `zst/*`, and `VerifyChecksums` also fails on a file added to a covered folder. A wrong golden is fixed together with its test in one commit (SV5), and its line in `SHA256SUMS` changes in that commit. `cli-cells.json` (the `cliCells` of every fixture row, after a scan and before one) has no Node or Swift origin: `go test ./internal/inventory -run TestGoldenCLICells -update-cli-cells` writes it, under the same freeze. `rules-wide.json` (the `wide` of every rule the rules golden lists, shared fixture HOME and `rules-home/main`) likewise: `go test ./internal/rules -run TestGoldenRulesWide -update-rules-wide`.
 - **Leak guard.** `FindLeaks` scans every file under `core/testdata`, and the decompressed `.zst`, for the real home path, user name and temp root (S-R2). It reports file names, never the matched content.
 - **On failure, print a unified diff of the canonical text**; on success, log the canonical SHA-256.

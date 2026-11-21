@@ -1,0 +1,174 @@
+{
+  "main": {
+    "global": [
+      {
+        "id": "global:allow:Read",
+        "wide": true
+      },
+      {
+        "id": "global:allow:Edit",
+        "wide": true
+      },
+      {
+        "id": "global:allow:WebSearch",
+        "wide": true
+      },
+      {
+        "id": "global:allow:Bash(git status:*)",
+        "wide": false
+      },
+      {
+        "id": "global:allow:mcp__demo__lookup",
+        "wide": false
+      },
+      {
+        "id": "global:allow:not a rule!",
+        "wide": false
+      },
+      {
+        "id": "global:ask:Bash(git push *)",
+        "wide": false
+      },
+      {
+        "id": "global:ask:Read(./.env)",
+        "wide": false
+      },
+      {
+        "id": "global:deny:WebFetch(domain:blocked.example)",
+        "wide": false
+      }
+    ],
+    "local:proj-bare": [],
+    "local:proj-broken": [],
+    "local:proj-null": [],
+    "local:proj-open": [
+      {
+        "id": "local:ask:Edit",
+        "wide": true
+      },
+      {
+        "id": "local:ask:WebFetch",
+        "wide": true
+      },
+      {
+        "id": "local:ask:Bash(npm test *)",
+        "wide": false
+      }
+    ],
+    "project:proj-bare": [],
+    "project:proj-broken": [],
+    "project:proj-null": [],
+    "project:proj-open": [
+      {
+        "id": "project:allow:Bash",
+        "wide": true
+      },
+      {
+        "id": "project:deny:Bash(git push *)",
+        "wide": false
+      },
+      {
+        "id": "project:deny:Read(./.env)",
+        "wide": false
+      }
+    ]
+  },
+  "shared": {
+    "global": [
+      {
+        "id": "global:allow:Read(*)",
+        "wide": true
+      },
+      {
+        "id": "global:allow:Bash(git status:*)",
+        "wide": false
+      },
+      {
+        "id": "global:allow:Bash(git diff:*)",
+        "wide": false
+      },
+      {
+        "id": "global:allow:Bash(pnpm run:*)",
+        "wide": false
+      },
+      {
+        "id": "global:allow:Bash(node:*)",
+        "wide": false
+      },
+      {
+        "id": "global:allow:WebFetch(domain:github.com)",
+        "wide": false
+      },
+      {
+        "id": "global:ask:Bash(git push:*)",
+        "wide": false
+      },
+      {
+        "id": "global:ask:Bash(vercel:*)",
+        "wide": false
+      },
+      {
+        "id": "global:deny:Bash(rm -rf:*)",
+        "wide": false
+      },
+      {
+        "id": "global:deny:Read(.env*)",
+        "wide": false
+      },
+      {
+        "id": "global:deny:Edit(~/.ssh/**)",
+        "wide": false
+      }
+    ],
+    "local:work/spacevibe-academy": [
+      {
+        "id": "local:allow:Bash(pnpm dev)",
+        "wide": false
+      }
+    ],
+    "local:work/spacevibe-api": [],
+    "local:work/spacevibe-bench": [],
+    "project:work/spacevibe-academy": [
+      {
+        "id": "project:allow:Read",
+        "wide": true
+      },
+      {
+        "id": "project:allow:Edit",
+        "wide": true
+      },
+      {
+        "id": "project:ask:Bash",
+        "wide": true
+      },
+      {
+        "id": "project:ask:WebFetch",
+        "wide": true
+      },
+      {
+        "id": "project:ask:WebSearch",
+        "wide": true
+      },
+      {
+        "id": "project:deny:Bash(git push *)",
+        "wide": false
+      }
+    ],
+    "project:work/spacevibe-api": [
+      {
+        "id": "project:deny:Bash(prisma migrate reset:*)",
+        "wide": false
+      }
+    ],
+    "project:work/spacevibe-bench": [
+      {
+        "id": "project:allow:Bash(pnpm tsc:*)",
+        "wide": false
+      },
+      {
+        "id": "project:allow:Bash(pnpm test:*)",
+        "wide": false
+      }
+    ]
+  }
+}

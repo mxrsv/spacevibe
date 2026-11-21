@@ -163,6 +163,9 @@ type Rule struct {
 	Rule      string  `json:"rule"`
 	Tool      *string `json:"tool"`
 	Specifier *string `json:"specifier"`
+	// Wide is true when the rule covers every call of a tool that takes a specifier (RD26, RD-R17): see coversWholeTool.
+	// Any verdict; false for an MCP tool, a tool without a specifier and a string that is not a rule.
+	Wide bool `json:"wide"`
 }
 
 // newRule builds the rule item of a rule string.
@@ -176,6 +179,7 @@ func newRule(scope Scope, file string, verdict Verdict, rule string) Rule {
 		tool := parsed.Tool
 		r.Tool = &tool
 		r.Specifier = parsed.Specifier
+		r.Wide = coversWholeTool(parsed)
 	}
 	return r
 }
