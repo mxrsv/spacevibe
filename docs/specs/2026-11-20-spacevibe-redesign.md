@@ -80,7 +80,7 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
 | --- | --- | --- | --- | --- |
 | RD19 | Skills, Subagents, Hooks and Rules are separate sidebar pages. | taken as guessed (Q1) | RD-R1 | sidebar group Agents |
 | RD32 | Each page has a click-only `?` beside its title, actions keep full-verb labels, empty states say plainly what is missing; no fixed explainer line. | "b và c" (Q2) | RD-R2 | Toolbar `?` on every page; empty states |
-| RD33 | The limit reset countdown carries over unchanged ([countdown spec](2026-11-19-limit-reset-countdown.md), LC1–LC10): a 5-hour Window counts its last hour, a Weekly one counts inside the lead set in Settings › Limits (24 / 12 / 5 / 1 h, default 1 h), the clock in the row's tone. | "thêm vào đếm ngược trong widget và cả app main" (LC1) | RD-R10 | Limits Claude Code 5-hour row; Settings › Limits |
+| RD33 | The limit reset countdown carries over unchanged ([countdown spec](2026-11-19-limit-reset-countdown.md), LC1–LC10): a 5-hour Window counts its last hour, a Weekly one counts inside the lead set in Settings › Limits (24 / 12 / 5 / 1 h, default 1 h), the clock in the row's tone, `MM:SS` (H:MM:SS above an hour). One clause changes: LC5's "Next resets card" no longer exists, so the clock sits in the Window row's reset column. | "thêm vào đếm ngược trong widget và cả app main" (LC1) | RD-R10 | Limits Claude Code 5-hour row; Settings › Limits |
 | RD34 | The session glance widget carries over unchanged ([widget spec](2026-11-19-session-glance-widget.md), GW1–GW22): a floating strip over every app in 8 drop slots, its own state colours (GW20, GW22); only its surface and text tokens change. Activity uses the widget's session glyph set (`SessionStateGlyph`). | "yes" to the widget intent (GW1) | RD-R3 | not drawn: the mock's "not shown" line; Activity rows |
 | RD20 | Every list supports multi-select, and Clean uses the same mechanism. | "a" (Q3) | RD-R11 | checkboxes on every list; Clean sections |
 
@@ -106,10 +106,10 @@ Earlier owner answers are also carried here. They come from the paused layout-fr
   - **Groups:** findings are grouped by job: Clean up, Balance, Control, Watch. Severity is shown once at the group head. The hero count equals the rows shown.
   - **Row actions:** the selected row carries the full-verb action and Keep. The group head only selects (`Select N Suggested`); removing goes through the toolbar's `Remove N selected`, so nothing is removed that was not ticked.
   - **What counts (RD26):** Dead and Never ran items not added in the last day, not plugin-owned and not kept; Hooks with errors in the last 7 days; Claude Code Rules that allow a whole tool; Windows behind pace or over the limit; waiting sessions. Kept findings are listed under `N kept · Show` and leave the count.
-  - **Watch:** limit Windows are judged by pace (share left against share of time left), not by a fixed threshold. Proposed data, readings older than 6 hours and Windows without a length are shown but never judged.
+  - **Watch:** limit Windows are judged by pace (share left against share of time left), not by a fixed threshold. Proposed data and readings older than 6 hours are shown but never judged; a Window without a length is not judged by pace but still counts at 5% left or less (RD30).
 - **RD-R5. Type.**
   - **Typefaces:** SF Pro for text, SF Pro Rounded for figures only (in SwiftUI, `.fontDesign(.rounded)` on figure `Text`), SF Mono for paths and commands.
-  - **Scale:** 11/12/13/15/22/40 pt, weights 400 and 500 only.
+  - **Scale:** 11/12/13/15/22/40 pt, weights 400 and 500, and 600 for sidebar labels only (RD23).
   - **Letter-spacing:** never changed (FE-SP4).
 - **RD-R6. Meters.** 4 pt meters, 6 pt hero meter, 3 pt progress. The "time" tick on limit Windows stays readable.
 - **RD-R7. Colour roles.**
@@ -208,6 +208,7 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Project rules in Inbox:** a whole-tool allow in any known project's Shared or Local file is a Control finding like a global one; its `Change to Ask` writes that project file. The Rules hero and the sidebar count every file and say where ("2 rules allow a whole tool · 1 in Global, 1 in a project").
 - **Adding to a shared folder:** a CLI that reads the same folder (OpenCode and Amp read `~/.claude/skills`) gets the item too; the toast names them ("… read the same folder, so they have it too"), as removal names the CLIs that lose it.
 - **Session glyphs in Activity:** exactly `SessionStateGlyph`: working, waiting and done in their own session inks (GW20), unmeasurable grey, idle a dot; done is an idle session with a log write in the last 10 minutes (GW8); an ended row (kept 15 minutes) has no glyph.
+- **Usage kept after a log moves (CL-R3):** the redesign has no totals page; the Clean band says "A moved log keeps only its usage totals, which Limits and Activity still count."
 - **Journal window:** Settings › Data › Show Journal lists `journal.history` (at most 200, newest first) with an Undo per row; an undone row reads "Undone"; a refused Undo (409) shows the error toast and writes nothing; empty reads "No changes yet"; an unreadable journal shows an error, never an empty list. Declared in the mock's "not shown".
 - **Limits selection:** a Window row can be selected (highlight only, no inspector); the widget and its popover open Limits with that row selected (LC-R7).
 - **Keep is stored:** kept findings survive a restart, in a list in the app's data folder (`~/.spacevibe`); the build plan's RB-E5.
@@ -217,7 +218,7 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Capability write:** follows the engine (rules.md): Read, Edit, Run, Network change the cell's wide rules or add one bare rule; Push and deploy and Secrets change their own rules; the preview says when the cell will still read Mixed; a same-value change is "Nothing to change" and writes nothing.
 - **Pinning:** Balance pins live in Settings › CLIs only, two to three, and only for CLIs that hold Skills or Subagents; the All CLIs menu no longer pins.
 - **Plugin-owned Never ran items:** counted in the Skills hero (a fact), listed read-only in Clean (CL-R1), never an Inbox finding.
-- **Row state icons:** grey inside rows (severity once per group, RD10) except Activity's waiting hand, which stays amber; FE-C3 asks for coloured state icons everywhere.
+- **Row state icons:** grey inside rows (severity once per group, RD10) except the session glyphs, which keep their `SessionStateGlyph` inks (the waiting glyph `chat-circle-dots` is the same in Inbox and Activity); FE-C3 asks for coloured state icons everywhere.
 - **Sidebar Activity figure:** the waiting count when a session waits, otherwise the running count.
 - **Dead Hook runs:** a dead Hook shows the runs the logs hold (they can be above 0 if the script was deleted after running); unverified against the engine.
 - **Keep on watch findings:** a kept Window or waiting session comes back when its state changes (a new Window, a new wait).
