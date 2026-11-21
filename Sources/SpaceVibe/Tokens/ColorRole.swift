@@ -144,7 +144,9 @@ enum ColorRoleValues {
     // Text
     static let ink = ColorRoleValue(dark: 0xF5F6F8, light: 0x14171D)
     static let ink2 = ColorRoleValue(dark: 0xD6D9DF, light: 0x434955)
-    static let ink3 = ColorRoleValue(dark: 0xA9AEB8, light: 0x616775, increased: (0xBCC1CA, 0x4E5462))
+    /// Light `#616775` until 2026-11-21: it read 4.18:1 as a hovered Solid sidebar item's value; OKLCH lightness lowered,
+    /// hue and chroma kept, to the first value that reads 4.5:1 there.
+    static let ink3 = ColorRoleValue(dark: 0xA9AEB8, light: 0x5C6270, increased: (0xBCC1CA, 0x4E5462))
     /// An empty track.
     static let faint = ColorRoleValue(dark: 0x3A404C, light: 0xC9CFDA, increased: (0x6B717D, 0x8A909C))
 
@@ -153,7 +155,9 @@ enum ColorRoleValues {
     static let stateOk = ColorRoleValue(dark: 0x4CC38A, light: 0x17784C)
     static let stateAttention = ColorRoleValue(dark: 0xE8B33A, light: 0x8A6200)
     static let stateCritical = ColorRoleValue(dark: 0xEF6B5E, light: 0xC42F1D)
-    static let attentionBar = ColorRoleValue(dark: 0xE8B33A, light: 0xB07E00)
+    /// Light `#B07E00` until 2026-11-21: it read 2.97:1 as the sidebar Inbox dot on the Solid sidebar; OKLCH lightness
+    /// lowered, hue and chroma kept, until it reads 3:1 on the sidebar at rest, hovered and selected.
+    static let attentionBar = ColorRoleValue(dark: 0xE8B33A, light: 0xA37100)
     static let criticalBar = ColorRoleValue(dark: 0xEF6B5E, light: 0xD9402F)
     /// Text on the destructive tint (`stateCritical` at `destructiveTintShare` over its ground).
     static let criticalInk = ColorRoleValue(dark: 0xFF8A7D, light: 0x9E1D0F)
@@ -161,8 +165,9 @@ enum ColorRoleValues {
     // The primary action (RD11, RD-R9): the one primary action of a surface, checkbox and switch on; flat, the same in both
     // themes.
     static let primaryAction = ColorRoleValue(dark: 0x0B6FE4, light: 0x0B6FE4)
-    /// One step lighter: the primary with 14% white.
-    static let primaryActionHover = ColorRoleValue.mix(0xFFFFFF, share: 0.14, into: 0x0B6FE4)
+    /// One step darker, half way to pressed: the primary with 8% black. Until 2026-11-21 it was 14% white, which put the
+    /// white label at 3.80:1; no lighter step reads 4.5:1 and still differs from rest (3% white: 4.56:1 but 1.05:1 from rest).
+    static let primaryActionHover = ColorRoleValue.mix(0x000000, share: 0.08, into: 0x0B6FE4)
     /// One step darker: the primary with 16% black.
     static let primaryActionPressed = ColorRoleValue.mix(0x000000, share: 0.16, into: 0x0B6FE4)
     static let onPrimaryAction = ColorRoleValue(dark: 0xFFFFFF, light: 0xFFFFFF)
@@ -191,6 +196,27 @@ enum ColorRoleValues {
     static let data4 = ColorRoleValue.mix(ink, share: (0.38, 0.44), into: groupSurface, increased: (0xC4C8CE, 0x3B404B))
     static let dataBar = ColorRoleValue.mix(ink, share: (0.55, 0.55), into: groupSurface, increased: (0xE3E5E8, 0x22262E))
 
+    // Text on a heat step (a CLI tile, RD-R12), so it reads 4.5:1 on every step in every variant. `dataInkN` for a count and
+    // a name on the two strongest steps, `dataSecondaryInkN` for a name, `dataZeroInk` for a zero count (always on step 1).
+    // Normal: `ink`, the mock's `ink2` on steps 1 and 2 (`ink` on 3 and 4), `ink3`. Under Increase Contrast the steps are
+    // bright greys in dark and dark greys in light, so every tile text takes one ink per step: `ink` on step 1, the group
+    // surface's colour on steps 2 to 4.
+    private static func onHeat(_ normal: ColorRoleValue, increased: ColorRoleValue) -> ColorRoleValue {
+        ColorRoleValue(dark: normal.dark, light: normal.light, darkIncreased: increased.darkIncreased, lightIncreased: increased.lightIncreased)
+    }
+
+    private static let heatInverse = ColorRoleValue(dark: groupSurface.dark, light: groupSurface.light,
+                                                    darkIncreased: groupSurface.dark, lightIncreased: groupSurface.light)
+    static let dataInk1 = ink
+    static let dataInk2 = onHeat(ink, increased: heatInverse)
+    static let dataInk3 = onHeat(ink, increased: heatInverse)
+    static let dataInk4 = onHeat(ink, increased: heatInverse)
+    static let dataSecondaryInk1 = onHeat(ink2, increased: ink)
+    static let dataSecondaryInk2 = onHeat(ink2, increased: heatInverse)
+    static let dataSecondaryInk3 = dataInk3
+    static let dataSecondaryInk4 = dataInk4
+    static let dataZeroInk = onHeat(ink3, increased: ink)
+
     // Lines and fills over a surface. Under Increase Contrast the hairline is `faint`'s opaque grey.
     static let hairline: ColorRoleValue = {
         let line = ColorRoleValue.translucent(dark: 0x14, light: 0x17)
@@ -201,11 +227,19 @@ enum ColorRoleValues {
     static let hoverFill = ColorRoleValue.translucent(dark: 0x0F, light: 0x0D)
     /// The selected row, segment and sidebar item (neutral, never the primary).
     static let selectionFill = ColorRoleValue.translucent(dark: 0x17, light: 0x12)
-    /// Control fills. Increase Contrast raises rest and hover and adds a `hairline` edge; neither the spec nor the mock gives
-    /// a pressed value, so pressed keeps its own.
-    static let controlFill = ColorRoleValue.translucent(dark: 0x17, light: 0x0D, increased: (0x33, 0x26))
-    static let controlHoverFill = ColorRoleValue.translucent(dark: 0x26, light: 0x17, increased: (0x44, 0x33))
-    static let controlPressedFill = ColorRoleValue.translucent(dark: 0x33, light: 0x22)
+    /// Control fills. Under Increase Contrast every fill reaches 3:1 on `groupSurface` and keeps `ink` at 4.5:1, which leaves
+    /// a narrow band (dark white 0x54 to 0x61, light black 0x6A to 0x7A); pressed sits between rest and hover in dark and past
+    /// hover in light, darker than hover in both. They also take a `hairline` edge. Labels on them use `controlSecondaryInk`
+    /// and `controlQuietInk`, never `ink2` or `ink3`.
+    static let controlFill = ColorRoleValue.translucent(dark: 0x17, light: 0x0D, increased: (0x55, 0x6B))
+    static let controlHoverFill = ColorRoleValue.translucent(dark: 0x26, light: 0x17, increased: (0x61, 0x72))
+    static let controlPressedFill = ColorRoleValue.translucent(dark: 0x33, light: 0x22, increased: (0x5B, 0x79))
+    /// A secondary label and a placeholder on a control fill: `ink2` and `ink3`, and `ink` under Increase Contrast, where the
+    /// fills are too strong for the quieter inks.
+    static let controlSecondaryInk = ColorRoleValue(dark: ink2.dark, light: ink2.light,
+                                                    darkIncreased: ink.darkIncreased, lightIncreased: ink.lightIncreased)
+    static let controlQuietInk = ColorRoleValue(dark: ink3.dark, light: ink3.light,
+                                                darkIncreased: ink.darkIncreased, lightIncreased: ink.lightIncreased)
     /// Behind sheets and alerts.
     static let scrimFill = ColorRoleValue(dark: .init(hex: 0x000000, alpha: Double(0x80) / 255),
                                           light: .init(hex: 0x000000, alpha: Double(0x4D) / 255))
@@ -234,9 +268,14 @@ enum ColorRoleValues {
         ("toneHooks", "c-hooks", toneHooks), ("toneRules", "c-rules", toneRules),
         ("sessionWork", "s-work", sessionWork), ("sessionWait", "s-wait", sessionWait), ("sessionDone", "s-done", sessionDone),
         ("data1", "data-1", data1), ("data2", "data-2", data2), ("data3", "data-3", data3), ("data4", "data-4", data4),
-        ("dataBar", "data-bar", dataBar), ("hairline", "hair", hairline), ("zebraFill", "alt", zebraFill),
+        ("dataBar", "data-bar", dataBar), ("dataInk1", "ink on data-1", dataInk1), ("dataInk2", "ink on data-2", dataInk2),
+        ("dataInk3", "ink on data-3", dataInk3), ("dataInk4", "ink on data-4", dataInk4),
+        ("dataSecondaryInk1", "ink2 on data-1", dataSecondaryInk1), ("dataSecondaryInk2", "ink2 on data-2", dataSecondaryInk2),
+        ("dataSecondaryInk3", "name on data-3", dataSecondaryInk3), ("dataSecondaryInk4", "name on data-4", dataSecondaryInk4),
+        ("dataZeroInk", "zero count", dataZeroInk), ("hairline", "hair", hairline), ("zebraFill", "alt", zebraFill),
         ("hoverFill", "hover", hoverFill), ("selectionFill", "sel", selectionFill), ("controlFill", "ctl", controlFill),
         ("controlHoverFill", "ctl-h", controlHoverFill), ("controlPressedFill", "ctl-a", controlPressedFill),
+        ("controlSecondaryInk", "ink2 on ctl", controlSecondaryInk), ("controlQuietInk", "ink3 on ctl", controlQuietInk),
         ("scrimFill", "scrim", scrimFill), ("floatShadow", "sh-float", floatShadow),
     ]
 }
@@ -276,6 +315,15 @@ enum ColorRole {
     static let data3 = ColorRoleValues.data3.color
     static let data4 = ColorRoleValues.data4.color
     static let dataBar = ColorRoleValues.dataBar.color
+    static let dataInk1 = ColorRoleValues.dataInk1.color
+    static let dataInk2 = ColorRoleValues.dataInk2.color
+    static let dataInk3 = ColorRoleValues.dataInk3.color
+    static let dataInk4 = ColorRoleValues.dataInk4.color
+    static let dataSecondaryInk1 = ColorRoleValues.dataSecondaryInk1.color
+    static let dataSecondaryInk2 = ColorRoleValues.dataSecondaryInk2.color
+    static let dataSecondaryInk3 = ColorRoleValues.dataSecondaryInk3.color
+    static let dataSecondaryInk4 = ColorRoleValues.dataSecondaryInk4.color
+    static let dataZeroInk = ColorRoleValues.dataZeroInk.color
     static let hairline = ColorRoleValues.hairline.color
     static let zebraFill = ColorRoleValues.zebraFill.color
     static let hoverFill = ColorRoleValues.hoverFill.color
@@ -283,6 +331,8 @@ enum ColorRole {
     static let controlFill = ColorRoleValues.controlFill.color
     static let controlHoverFill = ColorRoleValues.controlHoverFill.color
     static let controlPressedFill = ColorRoleValues.controlPressedFill.color
+    static let controlSecondaryInk = ColorRoleValues.controlSecondaryInk.color
+    static let controlQuietInk = ColorRoleValues.controlQuietInk.color
     static let scrimFill = ColorRoleValues.scrimFill.color
     static let floatShadow = ColorRoleValues.floatShadow.color
     /// The destructive button's ground and edge: `stateCritical` at its share, over whatever surface the button sits on.

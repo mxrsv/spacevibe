@@ -30,12 +30,17 @@ enum SpaceRole {
     static let titleBarClearance: CGFloat = 36
     /// Where an empty state starts.
     static let emptyStateTop: CGFloat = 72
-    /// The trailing inspector, and its wider form for the CLI tile grid (the mock: Skills, Subagents and Inbox; the spec:
-    /// "336 at 1600". Which pages take the wider form is open, see the RB-S1 report).
-    static let inspectorWidth: CGFloat = 308
-    static let inspectorWideWidth: CGFloat = 336
     /// Below this window width the inspector is an overlay that covers the list (RD-R13).
     static let inspectorOverlayBelowWindowWidth: CGFloat = 1100
+}
+
+/// The trailing inspector's width at any window width from `SpaceRole.inspectorOverlayBelowWindowWidth` up: `wide` on the
+/// pages whose inspector holds the CLI tile grid (Skills, Subagents, Inbox; `FramePage.inspectorWidth`), `standard` on every
+/// other page (the mock's `iw`, owner 2026-11-21: no 1600 rule).
+enum InspectorWidth: Hashable, Sendable {
+    case standard, wide
+
+    var points: CGFloat { self == .wide ? 336 : 308 }
 }
 
 /// A corner: a fixed radius, or a capsule (half the shorter side).

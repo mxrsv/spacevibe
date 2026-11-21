@@ -9,13 +9,13 @@ import Testing
 struct RoleTokenTests {
     private typealias V = ColorRoleValues
 
-    /// DS-R1's opaque roles by spec name: dark, light, and the Increase Contrast pair where the spec gives one.
+    /// DS-R1's opaque roles by spec name, with the owner's 2026-11-21 contrast changes (`ink3` and `warn-bar` in light): dark, light, and the Increase Contrast pair where the spec gives one.
     private static let specOpaque: [String: (dark: UInt32, light: UInt32, increased: (UInt32, UInt32)?)] = [
         "canvas": (0x111214, 0xF4F4F5, nil), "group": (0x191A1D, 0xFFFFFF, nil), "side": (0x141518, 0xE9E9EB, nil),
-        "ink": (0xF5F6F8, 0x14171D, nil), "ink2": (0xD6D9DF, 0x434955, nil), "ink3": (0xA9AEB8, 0x616775, (0xBCC1CA, 0x4E5462)),
+        "ink": (0xF5F6F8, 0x14171D, nil), "ink2": (0xD6D9DF, 0x434955, nil), "ink3": (0xA9AEB8, 0x5C6270, (0xBCC1CA, 0x4E5462)),
         "faint": (0x3A404C, 0xC9CFDA, (0x6B717D, 0x8A909C)),
         "ok": (0x4CC38A, 0x17784C, nil), "warn": (0xE8B33A, 0x8A6200, nil), "crit": (0xEF6B5E, 0xC42F1D, nil),
-        "warn-bar": (0xE8B33A, 0xB07E00, nil), "crit-bar": (0xEF6B5E, 0xD9402F, nil), "crit-ink": (0xFF8A7D, 0x9E1D0F, nil),
+        "warn-bar": (0xE8B33A, 0xA37100, nil), "crit-bar": (0xEF6B5E, 0xD9402F, nil), "crit-ink": (0xFF8A7D, 0x9E1D0F, nil),
         "primary": (0x0B6FE4, 0x0B6FE4, nil), "on-primary": (0xFFFFFF, 0xFFFFFF, nil), "link": (0x5AA2FF, 0x0A64D0, nil),
         "clay": (0xE08463, 0xAD4A28, nil), "logo-codex": (0xE9E9ED, 0x2A2B30, nil),
         "c-skills": (0xA38BF5, 0x6A4FD8, nil), "c-subs": (0x7BDEE0, 0x178082, nil), "c-hooks": (0xCF84E0, 0x9A3FB0, nil),
@@ -23,11 +23,11 @@ struct RoleTokenTests {
         "s-work": (0xE1B236, 0x9C7802, nil), "s-wait": (0xEB871B, 0xAF6005, nil), "s-done": (0x6FBE94, 0x27885D, nil),
     ]
 
-    /// DS-R1's translucent roles: white (dark; black for `scrim`) and black (light) at these percentages, and the Increase
+    /// DS-R1's translucent roles, with the owner's 2026-11-21 Increase Contrast control fills: white (dark; black for `scrim`) and black (light) at these percentages, and the Increase
     /// Contrast pair.
     private static let specTranslucent: [String: (dark: Double, light: Double, increased: (Double, Double)?)] = [
         "hair": (8, 9, nil), "alt": (3, 2, nil), "hover": (6, 5, nil), "sel": (9, 7, nil),
-        "ctl": (9, 5, (20, 15)), "ctl-h": (15, 9, (27, 20)), "ctl-a": (20, 13, nil), "scrim": (50, 30, nil),
+        "ctl": (9, 5, (33.3, 42.0)), "ctl-h": (15, 9, (38.0, 44.7)), "ctl-a": (20, 13, (35.7, 47.5)), "scrim": (50, 30, nil),
     ]
 
     private static func role(_ specName: String) -> ColorRoleValue? {
@@ -74,16 +74,18 @@ struct RoleTokenTests {
         #expect(shares.map { $0.0.lightIncreased.hex } == [0x8A909C, 0x6E7480, 0x545A66, 0x3B404B, 0x22262E])
     }
 
-    @Test("the primary's hover and pressed steps are 14% white and 16% black (RD-R9)")
+    @Test("the primary's hover and pressed steps are 8% and 16% black (RD-R9, owner 2026-11-21)")
     func primarySteps() {
-        #expect(V.primaryActionHover.dark.hex == 0x2D83E8 && V.primaryActionHover.light.hex == 0x2D83E8)
+        #expect(V.primaryActionHover.dark.hex == 0x0A66D2 && V.primaryActionHover.light.hex == 0x0A66D2)
         #expect(V.primaryActionPressed.dark.hex == 0x095DC0 && V.primaryActionPressed.light.hex == 0x095DC0)
     }
 
     @Test("Increase Contrast changes exactly the rows DS-R1 marks")
     func increasedContrastRows() {
         let changed = Set(V.all.filter { $0.value.changesWithIncreasedContrast }.map(\.specName))
-        #expect(changed == ["ink3", "faint", "data-1", "data-2", "data-3", "data-4", "data-bar", "hair", "ctl", "ctl-h"])
+        #expect(changed == ["ink3", "faint", "data-1", "data-2", "data-3", "data-4", "data-bar", "hair", "ctl", "ctl-h", "ctl-a",
+                            "ink on data-2", "ink on data-3", "ink on data-4", "ink2 on data-1", "ink2 on data-2", "name on data-3",
+                            "name on data-4", "zero count", "ink2 on ctl", "ink3 on ctl"])
     }
 
     @Test("the session inks are v5's, unchanged (SessionStateGlyph)")
@@ -113,12 +115,13 @@ struct RoleTokenTests {
         let boxes = Dictionary(uniqueKeysWithValues: roles.map { ($0.specName, ($0.role.size, $0.role.lineHeight)) })
         #expect(boxes["hero"]! == (40, 44) && boxes["figure"]! == (22, 26) && boxes["title"]! == (15, 20))
         #expect(boxes["body"]! == (13, 18) && boxes["quiet"]! == (12, 16) && boxes["caption"]! == (11, 14) && boxes["mono"]! == (12, 16))
+        #expect(boxes["body 500"]! == (13, 18) && boxes["quiet 500"]! == (12, 16))
+        #expect(roles.filter { $0.role.weight == .medium }.map(\.name) == ["hero", "windowFigure", "pageTitle", "bodyMedium", "quietMedium"])
         #expect(roles.filter { $0.role.face == .figures }.map(\.name) == ["hero", "windowFigure"])
         #expect(roles.filter { $0.role.face == .mono }.map(\.name) == ["mono"])
         #expect(roles.filter { $0.role.weight == .sidebarLabel }.map(\.name) == ["sidebarLabel"])
         for (name, _, role) in roles {
-            #expect(role.medium.weight != .regular, "\(name)")
-            #expect(role.medium.weight == (role.weight == .sidebarLabel ? .sidebarLabel : .medium), "\(name)")
+            #expect(role.figures.weight == role.weight, "\(name)")
             #expect(role.figures.face == (role.face == .mono ? .mono : .figures), "\(name)")
             #expect(role.lineSpacing >= 0 && role.naturalLineHeight > role.size, "\(name)")
         }
@@ -131,7 +134,10 @@ struct RoleTokenTests {
         #expect(SpaceRole.steps == [2, 4, 6, 8, 10, 12, 16, 20, 24])
         #expect(SpaceRole.toolbarClearance(.glass) == 68 && SpaceRole.toolbarClearance(.solid) == 64)
         #expect(SpaceRole.titleBarClearance == 36 && SpaceRole.emptyStateTop == 72)
-        #expect(SpaceRole.inspectorWidth == 308 && SpaceRole.inspectorWideWidth == 336)
+        #expect(InspectorWidth.standard.points == 308 && InspectorWidth.wide.points == 336)
+        // The mock's `iw`: 336 where the inspector holds the CLI tile grid, 308 on every other page, at any width from 1100.
+        #expect(FramePage.allCases.filter { $0.inspectorWidth == .wide } == [.inbox, .skills, .subagents])
+        #expect(SpaceRole.inspectorOverlayBelowWindowWidth == 1100)
         #expect(RadiusRole.steps == [.radius(4), .radius(6), .radius(8), .radius(10), .radius(14), .radius(18), .capsule])
         #expect(RadiusRole.windowCorner(.glass) == .radius(26) && RadiusRole.windowCorner(.solid) == .radius(12))
         #expect(RadiusRole.sidebarCorner(.glass) == .radius(18) && RadiusRole.sidebarCorner(.solid) == .radius(0))

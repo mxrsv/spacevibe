@@ -7,7 +7,8 @@ import SwiftUI
 ///
 /// - Faces: SF Pro for text, SF Pro Rounded for figures only (RD6: the hero, a Window's figure, counts in tables and tiles,
 ///   sizes, sidebar values; `figures` gives any role its rounded twin), SF Mono for paths, commands, rule text and Hook labels.
-/// - Weights: 400 and 500 (`medium`); 600 exists only as `sidebarLabel` (RD23), so no other text can reach it.
+/// - Weights: 400, and 500 only through the roles that carry it (`hero`, `windowFigure`, `pageTitle`, `bodyMedium`,
+///   `quietMedium`); 600 exists only as `sidebarLabel` (RD23). No accessor turns another role to 500, so a screen cannot.
 /// - Sizes are fixed points: the v5 Font size setting (`TypeScale`) does not move them.
 /// - Digits are tabular in every role, as the mock's `font-variant-numeric: tabular-nums` on the whole window.
 /// - Names (AR6): the spec's `figure`, `title`, `body` and `caption` are v5 `SpaceVibeType` names with other values, so here
@@ -65,10 +66,17 @@ struct TypeRole: Hashable, Sendable {
     static let windowFigure = TypeRole(size: 22, lineHeight: 26, weight: .medium, face: .figures)
     /// The page title, an empty state's title.
     static let pageTitle = TypeRole(size: 15, lineHeight: 20, weight: .medium, face: .text)
-    /// Rows, buttons, names (500 through `medium`).
+    /// Rows, buttons, names.
     static let bodyText = TypeRole(size: 13, lineHeight: 18, weight: .regular, face: .text)
+    /// `bodyText` at 500 (DS-R2 "body 400, 500"): a row's name, a button's label, a group head.
+    static let bodyMedium = TypeRole(size: 13, lineHeight: 18, weight: .medium, face: .text)
     /// Sub-lines, notes, sidebar values.
     static let quiet = TypeRole(size: 12, lineHeight: 16, weight: .regular, face: .text)
+    /// `quiet` at 500, only where the mock sets 12 at 500 (owner 2026-11-21): a small button's label (`.rb`), a sidebar
+    /// group head (`.sbg h6`), an inspector section head (`.in .sec>h5`), and the count beside a thin bar in a table cell
+    /// (`.rc b`, the Hooks Runs cell; `.rch b`, the Sessions cell of Skills and Subagents, is the same block), which takes
+    /// `.figures`. A zero count there stays `quiet` (`.rc b.z`).
+    static let quietMedium = TypeRole(size: 12, lineHeight: 16, weight: .medium, face: .text)
     /// Chart axes, legends and tile captions only.
     static let axisCaption = TypeRole(size: 11, lineHeight: 14, weight: .regular, face: .text)
     /// Paths, commands, rule text, Hook labels.
@@ -79,14 +87,10 @@ struct TypeRole: Hashable, Sendable {
     /// Every role: its name here, the spec's name, the role. In the spec's order; the specimen draws them, the tests walk them.
     static let all: [(name: String, specName: String, role: TypeRole)] = [
         ("hero", "hero", hero), ("windowFigure", "figure", windowFigure), ("pageTitle", "title", pageTitle),
-        ("bodyText", "body", bodyText), ("quiet", "quiet", quiet), ("axisCaption", "caption", axisCaption),
+        ("bodyText", "body", bodyText), ("bodyMedium", "body 500", bodyMedium), ("quiet", "quiet", quiet),
+        ("quietMedium", "quiet 500", quietMedium), ("axisCaption", "caption", axisCaption),
         ("mono", "mono", mono), ("sidebarLabel", "body 600", sidebarLabel),
     ]
-
-    /// The same role at 500. A sidebar label stays at 600.
-    var medium: TypeRole {
-        weight == .sidebarLabel ? self : TypeRole(size: size, lineHeight: lineHeight, weight: .medium, face: face)
-    }
 
     /// The same role with SF Pro Rounded, for a figure set in a text role (a count in a row, a size, a sidebar value).
     /// A mono role stays mono: paths and commands keep SF Mono.

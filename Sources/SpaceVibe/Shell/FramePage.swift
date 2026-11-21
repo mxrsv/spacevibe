@@ -20,4 +20,12 @@ enum FramePage: String, CaseIterable, Identifiable, Sendable {
         case .activity: "Activity"
         }
     }
+
+    /// The inspector's width on this page: wide where it holds the CLI tile grid.
+    var inspectorWidth: InspectorWidth {
+        switch self {
+        case .skills, .subagents, .inbox: .wide
+        case .clean, .hooks, .rules, .limits, .activity: .standard
+        }
+    }
 }

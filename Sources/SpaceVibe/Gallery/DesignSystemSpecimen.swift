@@ -109,12 +109,12 @@ private struct SpecimenColumn: View {
     private var data: some View {
         VStack(alignment: .leading, spacing: SpaceRole.step12) {
             HStack(spacing: SpaceRole.step8) {
-                ForEach([("1", V.data1), ("2", V.data2), ("3", V.data3), ("4", V.data4), ("bar", V.dataBar), ("track", V.faint)],
-                        id: \.0) { name, value in
+                ForEach([("1", V.data1, V.dataInk1), ("2", V.data2, V.dataInk2), ("3", V.data3, V.dataInk3), ("4", V.data4, V.dataInk4),
+                         ("bar", V.dataBar, V.canvasSurface), ("track", V.faint, V.ink)], id: \.0) { name, value, ink in
                     RoundedRectangle(cornerRadius: RadiusRole.step8)
                         .fill(c(value))
                         .frame(width: Layout.dataStep.width, height: Layout.dataStep.height)
-                        .overlay(label(name, .axisCaption, ink: V.ink))
+                        .overlay(label(name, .quietMedium.figures, ink: ink))
                 }
             }
             meter(height: SizeRole.meterHero, fill: 0.62, tick: 0.48, ink: V.dataBar)
@@ -135,9 +135,8 @@ private struct SpecimenColumn: View {
                 }
             }
             HStack(spacing: SpaceRole.step16) {
-                label("bodyText.medium", .mono).frame(width: Layout.typeLabel, alignment: .leading)
-                Text("Remove from Claude Code").typeRole(TypeRole.bodyText.medium).foregroundStyle(c(V.ink))
-                Text("1,204").typeRole(TypeRole.bodyText.medium.figures).foregroundStyle(c(V.ink))
+                label("quietMedium.figures · .rc b", .mono).frame(width: Layout.typeLabel, alignment: .leading)
+                Text("1,204").typeRole(TypeRole.quietMedium.figures).foregroundStyle(c(V.ink))
             }
         }
     }
@@ -146,7 +145,7 @@ private struct SpecimenColumn: View {
         switch role.face {
         case .figures: role.size > TypeRole.pageTitle.size ? "3.42 GB" : "38% left"
         case .mono: "~/.claude/hooks/lint-staged.sh"
-        case .text: role == .sidebarLabel ? "Skills" : "commit-helper · added 41 days ago"
+        case .text: role == .sidebarLabel ? "Skills" : (role == .quietMedium ? "Show in Finder" : "commit-helper · added 41 days ago")
         }
     }
 

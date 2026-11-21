@@ -6,9 +6,8 @@ import Testing
 /// fills, category and session icons, logos, the checkbox, the focus bar) 3:1. Increase Contrast must bring tracks,
 /// hairlines and data steps to 3:1 on the group surface.
 ///
-/// A pair the values do not meet today is listed with `knownGap` and its reason: the test records it as a known issue, so the
-/// suite stays green while the gap stays visible, and the day the values change it fails until the entry goes. A gap is a
-/// decision for the owner (the values are owner-decided), never fixed here by editing a token.
+/// Every pair passes: the 2026-11-21 gaps were closed by the owner's pick of the least value change ("Nhận hết"). A miss is
+/// fixed in `ColorRoleValues` with the owner's yes, never exempted here.
 @Suite("Contrast: design-system roles on their grounds")
 struct RoleContrastTests {
     private typealias V = ColorRoleValues
@@ -38,8 +37,6 @@ struct RoleContrastTests {
         let ground: Ground
         let minimum: Double
         var variants: [ColorRoleVariant] = ColorRoleVariant.allCases
-        /// Variants that miss today, and why.
-        var knownGap: (variants: Set<ColorRoleVariant>, reason: String)?
         var testDescription: String { "\(ink) on \(ground.name)" }
     }
 
@@ -60,6 +57,8 @@ struct RoleContrastTests {
     static let toolbarControlHovered = ground("hovered toolbar control", V.canvasSurface, (V.controlHoverFill, nil))
     static let toolbarControlPressed = ground("pressed toolbar control", V.canvasSurface, (V.controlPressedFill, nil))
     static let rowButton = ground("small button in a row", V.groupSurface, (V.controlFill, nil))
+    static let rowButtonHovered = ground("hovered small button", V.groupSurface, (V.controlHoverFill, nil))
+    static let rowButtonPressed = ground("pressed small button", V.groupSurface, (V.controlPressedFill, nil))
     static let selectedSegment = ground("selected segment", V.canvasSurface, (V.controlFill, nil), (V.selectionFill, nil))
     static let destructiveOnGroup = ground("destructive tint on group", V.groupSurface, (V.stateCritical, V.destructiveTintShare))
     static let destructiveHovered = ground("hovered destructive tint on group", V.groupSurface,
@@ -78,7 +77,6 @@ struct RoleContrastTests {
         grounds.map { Pair(ink: ink, value: value, ground: $0, minimum: 3) }
     }
 
-    private static let lightOnly: Set<ColorRoleVariant> = [.light, .lightIncreased]
     private static let increasedOnly: [ColorRoleVariant] = [.darkIncreased, .lightIncreased]
 
     static var pairs: [Pair] {
@@ -86,33 +84,32 @@ struct RoleContrastTests {
         // Text on every surface and row state.
         all += text("ink", V.ink, on: rowGrounds) + text("ink2", V.ink2, on: rowGrounds) + text("ink3", V.ink3, on: rowGrounds)
         // Sidebar items: label ink2 and value ink3 at rest and hovered; ink and ink2 when selected.
-        all += text("ink2", V.ink2, on: [hoveredSidebarItem]) + text("ink", V.ink, on: [selectedSidebarItem])
-            + text("ink2", V.ink2, on: [selectedSidebarItem])
-        all.append(Pair(ink: "ink3", value: V.ink3, ground: hoveredSidebarItem, minimum: 4.5,
-                        knownGap: ([.light], "a hovered Solid sidebar item's value (`.nv:hover .tv`) reads 4.18:1 in light")))
-        // State text, links, text on the destructive tint.
+        all += text("ink2", V.ink2, on: [hoveredSidebarItem]) + text("ink3", V.ink3, on: [hoveredSidebarItem])
+            + text("ink", V.ink, on: [selectedSidebarItem]) + text("ink2", V.ink2, on: [selectedSidebarItem])
         // State text sits on surfaces (a Hooks node's count); in rows a state is a glyph and the text is ink2 (the mock's `.st`).
         all += text("stateOk", V.stateOk, on: surfaces) + text("stateAttention", V.stateAttention, on: surfaces)
             + text("stateCritical", V.stateCritical, on: surfaces)
         all += text("link", V.link, on: [canvas, group])
         all += text("criticalInk", V.criticalInk, on: [destructiveOnGroup, destructiveHovered, destructiveOnCanvas])
-        // The primary button's label.
-        all += text("onPrimaryAction", V.onPrimaryAction, on: [ground("primary", V.primaryAction), ground("primary pressed", V.primaryActionPressed)])
-        all.append(Pair(ink: "onPrimaryAction", value: V.onPrimaryAction, ground: ground("primary hovered", V.primaryActionHover),
-                        minimum: 4.5, knownGap: (Set(ColorRoleVariant.allCases),
-                                                 "white on the hover step (14% white, RD-R9) reads 3.80:1")))
-        // Controls: labels, the search placeholder, segments.
-        all += text("ink", V.ink, on: [toolbarControl, toolbarControlHovered, toolbarControlPressed, rowButton, selectedSegment])
-        all += text("ink2", V.ink2, on: [toolbarControl, rowButton]) + text("ink3", V.ink3, on: [toolbarControl])
-        // Tile heat (RD-R12): name ink2 on the two lightest steps, ink on all, a zero count ink3 on the lightest.
+        // The primary button's label at rest, hovered and pressed.
+        all += text("onPrimaryAction", V.onPrimaryAction, on: [
+            ground("primary", V.primaryAction), ground("primary hovered", V.primaryActionHover),
+            ground("primary pressed", V.primaryActionPressed),
+        ])
+        // Controls: labels, secondary labels and the search placeholder, segments.
+        let controls = [toolbarControl, toolbarControlHovered, toolbarControlPressed, rowButton, rowButtonHovered, rowButtonPressed]
+        all += text("ink", V.ink, on: controls + [selectedSegment])
+        all += text("controlSecondaryInk", V.controlSecondaryInk, on: controls)
+            + text("controlQuietInk", V.controlQuietInk, on: [toolbarControl, rowButton])
+        // Tile heat (RD-R12).
         all += tileText()
         // Marks.
         all += marks("stateOk", V.stateOk, on: markGrounds) + marks("stateAttention", V.stateAttention, on: markGrounds)
             + marks("stateCritical", V.stateCritical, on: markGrounds)
-        all += marks("attentionBar", V.attentionBar, on: [group]) + marks("criticalBar", V.criticalBar, on: [group, side])
-            + marks("dataBar", V.dataBar, on: [group])
-        all.append(Pair(ink: "attentionBar", value: V.attentionBar, ground: side, minimum: 3,
-                        knownGap: (lightOnly, "the sidebar Inbox dot (`.nv .dot`) on the Solid sidebar reads 2.97:1 in light")))
+        // A meter's fill on its group, and the sidebar Inbox dot on the sidebar item at rest, hovered and selected.
+        let sidebarItem = [side, hoveredSidebarItem, selectedSidebarItem]
+        all += marks("attentionBar", V.attentionBar, on: [group] + sidebarItem)
+            + marks("criticalBar", V.criticalBar, on: [group] + sidebarItem) + marks("dataBar", V.dataBar, on: [group])
         let iconGrounds = [canvas, group, side, selectedRow, selectedSidebarItem]
         for (name, value) in [("toneSkills", V.toneSkills), ("toneSubagents", V.toneSubagents), ("toneHooks", V.toneHooks),
                               ("toneRules", V.toneRules), ("logoClaude", V.logoClaude), ("logoCodex", V.logoCodex)] {
@@ -125,32 +122,26 @@ struct RoleContrastTests {
         all += marks("onPrimaryAction", V.onPrimaryAction, on: [ground("checkbox on", V.primaryAction)])
         // The focus bar (RD29): ink on the row and field it sits in.
         all += marks("focus bar (ink)", V.ink, on: [group, hoveredRow, selectedRow, toolbarControl])
-        // Increase Contrast: tracks, hairlines and data steps reach 3:1 on the group surface (DS-R1).
+        // Increase Contrast: tracks, hairlines, data steps and control fills reach 3:1 on the group surface (DS-R1).
         for (name, value) in [("faint", V.faint), ("hairline", V.hairline), ("data1", V.data1), ("data2", V.data2),
-                              ("data3", V.data3), ("data4", V.data4), ("dataBar", V.dataBar)] {
+                              ("data3", V.data3), ("data4", V.data4), ("dataBar", V.dataBar), ("controlFill", V.controlFill),
+                              ("controlHoverFill", V.controlHoverFill), ("controlPressedFill", V.controlPressedFill)] {
             all.append(Pair(ink: name, value: value, ground: group, minimum: 3, variants: increasedOnly))
         }
-        all.append(Pair(ink: "controlFill (IC)", value: V.controlFill, ground: group, minimum: 3, variants: increasedOnly,
-                        knownGap: (Set(increasedOnly), "DS-R1 says control fills reach 3:1 under IC; the fill reads 1.90:1 (dark) and "
-                            + "1.41:1 (light) on group, only its hairline edge reaches 3:1")))
         return all
     }
 
+    /// Tile heat (RD-R12): on each step its ink (a count, a name on steps 3 and 4) and its secondary ink (a name), and the zero
+    /// count's ink on step 1.
     private static func tileText() -> [Pair] {
-        let steps = [("data1", V.data1), ("data2", V.data2), ("data3", V.data3), ("data4", V.data4)]
+        let steps = [("data1", V.data1, V.dataInk1, V.dataSecondaryInk1), ("data2", V.data2, V.dataInk2, V.dataSecondaryInk2),
+                     ("data3", V.data3, V.dataInk3, V.dataSecondaryInk3), ("data4", V.data4, V.dataInk4, V.dataSecondaryInk4)]
         var pairs: [Pair] = []
-        let gap = "under IC the tile steps rise to 3:1 against group, so tile text in ink no longer reads 4.5:1 (RD-R12 vs DS-R1)"
-        for (index, (name, value)) in steps.enumerated() {
-            let tile = ground("tile on \(name)", value)
-            // ink still reads 4.5:1 on the lightest IC step; from the second step on it does not.
-            pairs.append(Pair(ink: "ink", value: V.ink, ground: tile, minimum: 4.5, knownGap: index == 0 ? nil : (Set(increasedOnly), gap)))
-            if index < 2 {
-                pairs.append(Pair(ink: "ink2", value: V.ink2, ground: tile, minimum: 4.5, knownGap: (Set(increasedOnly), gap)))
-            }
+        for (name, fill, ink, secondary) in steps {
+            let tile = ground("tile on \(name)", fill)
+            pairs += text("dataInk", ink, on: [tile]) + text("dataSecondaryInk", secondary, on: [tile])
         }
-        pairs.append(Pair(ink: "ink3", value: V.ink3, ground: ground("tile on data1", V.data1), minimum: 4.5,
-                          knownGap: (Set(increasedOnly), gap)))
-        return pairs
+        return pairs + text("dataZeroInk", V.dataZeroInk, on: [ground("tile on data1", V.data1)])
     }
 
     @Test("each pair reads at its minimum in every variant", arguments: pairs)
@@ -158,15 +149,18 @@ struct RoleContrastTests {
         for variant in pair.variants {
             let ink = Ground(name: pair.ink, base: pair.ground.base, tops: pair.ground.tops + [(pair.value, nil)]).rgb(variant)
             let ratio = ColorMath.contrast(ink, pair.ground.rgb(variant))
-            let check = {
-                #expect(ratio >= pair.minimum,
-                        "\(variant): \(pair.testDescription) reads \(String(format: "%.2f", ratio)):1, needs \(pair.minimum):1")
-            }
-            if let gap = pair.knownGap, gap.variants.contains(variant) {
-                withKnownIssue("\(variant): \(gap.reason)") { check() }
-            } else {
-                check()
-            }
+            #expect(ratio >= pair.minimum,
+                    "\(variant): \(pair.testDescription) reads \(String(format: "%.2f", ratio)):1, needs \(pair.minimum):1")
+        }
+    }
+
+    @Test("under Increase Contrast the pressed control fill differs from rest and hover and is darker than hover")
+    func pressedFillIsDistinct() {
+        for variant in Self.increasedOnly {
+            let rest = Self.rowButton.rgb(variant), hover = Self.rowButtonHovered.rgb(variant), pressed = Self.rowButtonPressed.rgb(variant)
+            #expect(pressed != rest && pressed != hover, "\(variant)")
+            #expect(ColorMath.luminance(pressed) < ColorMath.luminance(hover), "\(variant): pressed must be darker than hover")
+            #expect(ColorMath.contrast(pressed, rest) > 1.03 && ColorMath.contrast(pressed, hover) > 1.03, "\(variant)")
         }
     }
 
