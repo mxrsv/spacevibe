@@ -63,11 +63,13 @@ Decisions of 2026-11-21, after the three Opus reviews. Each was the recommendati
 | RD30 | A Window always counts as needing you at 5% left or less; pace ("faster than time") is judged only once a tenth of the Window has passed. | "tôi muốn fix đủ" | RD-R4 | RD-A9 | preset "Cực đoan · Limits" |
 | RD31 | A CLI that reads an item only through another CLI's folder (Cursor reading `~/.claude/skills`) shows it as "via" that CLI and is not a toggle; removing it is `Remove…`. | "tôi muốn fix đủ" | RD-R11 | RD-A6 | preset "Skills · 6 CLI" (link badge on Cursor, opencode, Amp) |
 
-Two earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
+Earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
 | ID | Decision | Owner's words | Req | Where in the mock |
 | --- | --- | --- | --- | --- |
 | RD19 | Skills, Subagents, Hooks and Rules are separate sidebar pages. | taken as guessed (Q1) | RD-R1 | sidebar group Agents |
+| RD32 | Each page has a click-only `?` beside its title, actions keep full-verb labels, empty states say plainly what is missing; no fixed explainer line. | "b và c" (Q2) | RD-R2 | Toolbar `?` on every page; empty states |
+| RD33 | The limit reset countdown carries over unchanged ([countdown spec](2026-11-19-limit-reset-countdown.md), LC1–LC10): a 5-hour Window counts its last hour, a Weekly one counts inside the lead set in Settings › Limits (24 / 12 / 5 / 1 h, default 1 h), the clock in the row's tone. | "thêm vào đếm ngược trong widget và cả app main" (LC1) | RD-R10 | Limits Claude Code 5-hour row; Settings › Limits |
 | RD20 | Every list supports multi-select, and Clean uses the same mechanism. | "a" (Q3) | RD-R11 | checkboxes on every list; Clean sections |
 
 ## Requirements
@@ -187,6 +189,11 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Waiting sessions:** no button opens a terminal; the inspector says "Answer in the terminal. SpaceVibe only shows that it is waiting." as the shipped app does. The mock had a "Show Terminal" action with no decision behind it; it was removed on 2026-11-21 pending the owner (it would need a way to find the right terminal and possibly an Automation permission).
 - **Content icon weight:** the mock draws content glyphs in Phosphor Bold and state glyphs in Phosphor Fill; D72 has content glyphs in Phosphor Duotone, and RD23 covers only the 8 page icons. Owner decision pending.
 - **Refused Undo and a core that will not start:** declared in the mock's "not shown" with the shipped behaviour (error toast naming the reason; last data kept with "The core could not be started." and Try Again).
+- **Project rules:** Rules › Project reads and writes the chosen project's own file (`<project>/.claude/settings.json` or `settings.local.json`); the mock draws one synthetic rule set per project.
+- **Show guard:** at least one CLI stays shown; a hidden CLI's rows leave every list, its sessions still lock its logs and caches (RD27).
+- **Search (⌘F):** filters the page's list by name, description, command and path; no match shows "No <items> match" with Clear Search. Listed in the mock's "not shown"; D49 relies on it.
+- **Balance finding:** one finding at most, the most-used item missing in a pinned CLI; none when fewer than two CLIs are pinned.
+- **Open at login:** a Settings switch that adds a login item (system permission; W24 applies to the build). Kept from the shipped Settings direction, no owner decision of its own.
 - **Keep is stored:** kept findings survive a restart, in a list in the app's data folder (`~/.spacevibe`); the build plan's RB-E5.
 - **Page × state cells drawn as Normal on purpose:** listed in the mock's `MOCK.na` with their behaviour (Moving only on Clean, Hooks never ask, Limits writes nothing, no shared file at 2 CLIs, the Settings window has no scan); the mock's `consistency.js` fails on any other such cell.
 - **Settings window states:** empty and error open the Limits pane (no snapshot, Unmeasurable), worst and dialog the CLIs pane, a refused setting shows the error toast.
@@ -212,7 +219,7 @@ Each line comes from the mock or from an agent's choice, not from the owner:
   - Pinned Balance; PRODUCT.md "Balance the two CLIs" changes to "pinned CLIs" (owner wording needed).
   - `Add to…` copies by default.
   - "Not supported" joins the glossary.
-- **Superseded documents:** this spec, once approved, supersedes `docs/DESIGN-LANGUAGE.md` (v5) and the layout and visual decisions of the 2026-11-06 ledger. The exact D-ids still need to be listed with the owner, so none is narrowed silently.
+- **Superseded documents:** this spec, once approved, supersedes `docs/DESIGN-LANGUAGE.md` (v5; the countdown spec is carried, not superseded, RD33) and the layout and visual decisions of the 2026-11-06 ledger. The exact D-ids still need to be listed with the owner, so none is narrowed silently.
 
 ## Needs new engine data or contracts
 

@@ -128,9 +128,9 @@ Each region: views from RB-S4 only; shots for normal, empty, scanning, error, wo
 - **RB-R3. Hooks.** Lifecycle strip by stage, rows grouped by stage at every CLI count, No Hooks / Not supported lines, Claude Code-only writes. Serves RD-R10, RD-R17.
 - **RB-R4. Rules.** CLI picker; Claude Code page editable (capability preview through `rules.preview`, permission change, Add Rule sheet from the mock's notShown, project picker, Shared / Local file); other CLIs read-only in their own terms. Needs RB-E6. Serves RD-R10, RD26.
 - **RB-R5. Clean.** Hero = what can be cleaned, one bar, sections, lock popover, moving progress at the control, refused partial move. Needs RB-E7. Serves RD18, RD27, CL-R1 to CL-R7.
-- **RB-R6. Limits.** Fixed CLI order, pace tick, 7-hour-old readings shown not judged, over the limit, no window length, Unmeasurable line, Copy Install Command. Serves RD30, RD24, RD-R10.
+- **RB-R6. Limits.** Fixed CLI order, pace tick, 7-hour-old readings shown not judged, over the limit, no window length, Unmeasurable line, Copy Install Command, the reset countdown (RD33: reuse `LimitsCountdown`). Serves RD30, RD24, RD33, RD-R10.
 - **RB-R7. Activity.** Sessions (waiting first) and Failures with its own inspector, Stop from row or selection, "Answer in the terminal" for a waiting session (no terminal-opening action unless the owner decides one). Serves RD21 (no Files tab), RD-R16.
-- **RB-R8. Settings window.** General (theme switch, RD21), CLIs (Show, Balance pins), Limits (copy commands), Data (`~/.spacevibe`, Journal, SpaceVibe trash without Empty), Updates. Serves RD4, RD21, RD24, RD25.
+- **RB-R8. Settings window.** General (theme switch, RD21), CLIs (Show, Balance pins), Limits (Weekly countdown lead, RD33; copy commands), Data (`~/.spacevibe`, Journal, SpaceVibe trash without Empty), Updates. Serves RD4, RD21, RD24, RD25.
 - **RB-R9. Glance widget.** New tokens only. Serves RD-R3.
 
 ### Phase 4: review, approval, cut-over
