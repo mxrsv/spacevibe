@@ -32,7 +32,7 @@ A spec owns requirements and acceptance; a plan owns tasks, progress, verificati
 | Settings | [spec](specs/2026-11-04-reins-settings.md) | [plan](plans/2026-11-04-reins-settings.md) | active: built, eye approval open |
 | Session glance widget | [spec](specs/2026-11-19-session-glance-widget.md) | [plan](plans/2026-11-19-session-glance-widget.md) | active |
 | Limit reset countdown | [spec](specs/2026-11-19-limit-reset-countdown.md) | the widget plan (its task GL-T13) | active |
-| App-wide redesign (macOS frame, v2) | [spec](specs/2026-11-20-spacevibe-redesign.md) | none | draft: mock checkpointed, eye approval open |
+| App-wide redesign (macOS frame, v2) | [spec](specs/2026-11-20-spacevibe-redesign.md) | [build plan](plans/2026-11-21-spacevibe-redesign-build.md) | mock round 5 eye-approved 2026-11-21; mock readiness (G-0) open, nothing built |
 | Clean | [spec](specs/2026-11-18-clean.md), absorbed by the redesign spec | none | draft |
 | Tokens page | [product spec, "Tab: Tokens"](specs/2026-11-02-reins.md#tab-tokens) | [plan](plans/2026-11-03-reins-tokens.md) | active: not built |
 | Landing page | [spec](specs/2026-11-05-reins-landing.md) | none | draft, direction picked |

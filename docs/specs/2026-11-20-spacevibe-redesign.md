@@ -2,7 +2,7 @@
 
 Date: 2026-11-20
 Status: draft, 2026-11-21. The direction is set by the mock below. The owner said "giao diện đã tốt hơn rất nhiều nhưng không vì thế mà tôi approve ngay được" (2026-11-20), so the mock is not eye-approved yet. On 2026-11-21 four independent mock reviews ran, the owner accepted every recommendation (RD21–RD28) and the mock was rebuilt as round 4; three Opus reviews (accessibility, click paths, break-ui) followed, the owner asked for every fix with a before/after switch (RD29–RD31), and the mock is now round 5. The owner approved round 5 by eye on 2026-11-21 ("ok chốt"), with fixes made the same day: the window is one solid surface and only the floating sidebar's own rounded shape shows the desktop through its glass, so there is no blurred band or stepped corner around the sidebar. No plan and no code yet.
-Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: none yet.
+Parent: [PRODUCT.md](../../PRODUCT.md) (all four jobs). Plan: [build plan](../plans/2026-11-21-spacevibe-redesign-build.md).
 
 - **Reference mock (round 5, 2026-11-21):** `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html`; round 4 is kept as `mock-r4.html` (built from `src-r4/`), and the "Trước fix / Sau fix" switch at the top left moves between them with the same state. The rail's `Dữ liệu` axis loads the break-ui datasets (Mẫu, Cực đoan, Một mục, Rất nhiều). It is built from `src/` in the same folder (`cd src && python3 build.py`). Its consistency check is `node src/consistency.js`.
 - **Design record:** `design-notes.md` in the same folder, sections 1–25 (§25 is round 4). It holds the thesis per page, the token tables with measured contrast, and the needs-new-data list.
