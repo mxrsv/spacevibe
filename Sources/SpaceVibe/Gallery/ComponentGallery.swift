@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Development-only specimens, split to stay below ImageRenderer's maximum image height.
 struct ComponentGalleryContent: View {
-    enum Part { case all, first, second, third, fourth, fifth }
+    /// `designSystem` is the redesign's Tokens + base specimen (RB-S1), on its own so its shot sits beside the mock's page.
+    enum Part { case all, first, second, third, fourth, fifth, designSystem }
     var part: Part = .all
 
     var body: some View {
@@ -24,6 +25,9 @@ struct ComponentGalleryContent: View {
             }
             if part == .all || part == .fifth {
                 section("Skills detail pane") { PaneSpecimens() }
+            }
+            if part == .all || part == .designSystem {
+                section("Redesign: Tokens + base") { DesignSystemSpecimen() }
             }
         }
     }
