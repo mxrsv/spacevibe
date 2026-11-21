@@ -1,7 +1,7 @@
 # SpaceVibe: design system for the redesign
 
 Date: 2026-11-21
-Status: draft, 2026-11-21. Token set and block inventory written, and the reference mock moved onto them (round 6); waiting for the owner's eye approval of the specimen page. Nothing in `Sources/` yet.
+Status: decided, 2026-11-21. The owner approved the specimen and the round-6 mock ("ok cần prompt để build"); nothing in `Sources/` yet.
 Parent: [app-wide redesign spec](2026-11-20-spacevibe-redesign.md) (RD2, RD-R3 to RD-R9, RD-R16). Plan: [redesign build plan](../plans/2026-11-21-spacevibe-redesign-build.md), tasks RB-S1 and RB-S4.
 
 - **Specimen (the preview):** the mock's `Tokens + base` page, `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html?page=tokens` (rail: theme, look, Increase Contrast). Every token and every shared block is drawn there, read live from the same CSS variables the screens use.
@@ -108,7 +108,7 @@ Carried, not re-decided here: RD6 (SF Pro Rounded for figures only, "chỉ sử 
 
 ## Inferred, not decided
 
-Values the agent chose from the round-5 audit; they are on the specimen for the owner's eye:
+Values the agent chose from the round-5 audit, shown on the specimen the owner approved on 2026-11-21:
 
 - **Spacing step 10:** kept as a step (control inset, 22 uses) rather than a one-off metric. Source: audit, agent's choice.
 - **Increase Contrast values** in DS-R1. Source: agent's choice, measured.
