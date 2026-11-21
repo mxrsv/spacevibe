@@ -98,8 +98,11 @@ struct FrameWorld: Sendable {
     func neverRan(_ kind: CoreKind) -> [FrameRow] { rows(kind).filter { $0.status == .neverRan } }
     var deadHooks: [FrameRow] { rows(.hook).filter { $0.status == .dead } }
 
-    /// The candidates `Select N Suggested` ticks: not just added, not plugin or project, not kept.
-    var suggested: Set<String> { Set(candidates.filter { $0.isSuggested(kept: facts.findings.kept) }.map(\.id)) }
+    /// The candidates `Select N Suggested` ticks: not just added, not plugin or project, not kept, not a Hook SpaceVibe does
+    /// not write (D25).
+    var suggested: Set<String> {
+        Set(candidates.filter { $0.isSuggested(kept: facts.findings.kept) && !$0.isHookSpaceVibeDoesNotWrite }.map(\.id))
+    }
 
     var groups: [InboxGroup] { Findings.groups(findings) }
     var waiting: [CoreActivitySession] { sessions.filter { $0.state == .waiting } }

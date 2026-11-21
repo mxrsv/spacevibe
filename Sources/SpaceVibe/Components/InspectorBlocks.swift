@@ -40,15 +40,18 @@ struct InspectorTitle<Lead: View>: View {
 struct InspectorNote: View {
     let text: String
     var icon: FrameIcon?
+    /// A state glyph keeps its state colour (FE-C3, RD-R16): `stateAttention` for a warning note.
+    var iconInk: Color = ColorRole.ink3
 
-    init(_ text: String, icon: FrameIcon? = nil) {
+    init(_ text: String, icon: FrameIcon? = nil, iconInk: Color = ColorRole.ink3) {
         self.text = text
         self.icon = icon
+        self.iconInk = iconInk
     }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step6) {
-            if let icon { FrameGlyph(icon, side: SizeRole.icon12, ink: ColorRole.ink3) }
+            if let icon { FrameGlyph(icon, side: SizeRole.icon12, ink: iconInk) }
             Text(text)
                 .typeRole(.quiet)
                 .foregroundStyle(ColorRole.ink3)
@@ -148,7 +151,11 @@ struct InspectorAction: Identifiable {
     /// The quiet variant (Dismiss): no ground until hovered.
     var isQuiet = false
     var isLoading = false
+    /// The red tint for an undoable removal (Remove…), never a solid fill (RD-R9).
+    var isDestructive = false
     let perform: @MainActor () -> Void
+
+    var kind: PushButtonStyle.Kind { isDestructive ? .destructive : isQuiet ? .quiet : .control }
 }
 
 /// The inspector's actions (`.in .bt`): one column of full-width small-height buttons, label leading, in the order given.
@@ -163,7 +170,7 @@ struct InspectorActions: View {
                     PushButtonLabel(action.title, icon: action.icon, size: .small)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(PushButtonStyle(action.isQuiet ? .quiet : .control, size: .small, isLoading: action.isLoading))
+                .buttonStyle(PushButtonStyle(action.kind, size: .small, isLoading: action.isLoading))
                 .focusEffectDisabled()
                 .disabled(!action.isEnabled)
                 .help(action.title)

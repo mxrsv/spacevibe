@@ -41,6 +41,12 @@ enum ShotRenderer {
                     try writeActivityStates(state, into: directory)
                     exit(0)
                 }
+                // Inbox draws each of its page states from in-memory data (RB-R1, `InboxShots`).
+                if screen == FramePage.inbox.rawValue {
+                    try requireSyntheticHome(environment)
+                    try InboxShots.run(into: directory)
+                    exit(0)
+                }
                 if let pages = framePages(forScreen: screen) {
                     try requireSyntheticHome(environment)
                     try writeFrame(on: pages, into: directory)

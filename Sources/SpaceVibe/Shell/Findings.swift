@@ -121,7 +121,7 @@ enum Findings {
         shownCLIs: [String], facts: FindingFacts
     ) -> (open: [InboxFinding], kept: [InboxFinding]) {
         var found: [InboxFinding] = []
-        let quiet = rows.filter { !$0.isRecentlyAdded && !$0.isPlugin && !$0.isProject }
+        let quiet = rows.filter { !$0.isRecentlyAdded && !$0.isPlugin && !$0.isProject && !$0.isHookSpaceVibeDoesNotWrite }
         for row in quiet where row.status == .dead {
             found.append(InboxFinding(id: row.id, job: .cleanUp, severity: .critical, subject: .row(row)))
         }
@@ -166,4 +166,11 @@ enum Findings {
             return rows.isEmpty ? nil : InboxGroup(job: job, findings: rows)
         }
     }
+}
+
+extension FrameRow {
+    /// SpaceVibe writes Hooks only into Claude Code (D25, RB-R3): a Hook no Claude Code member holds (Codex or another CLI
+    /// only) is a fact in the Hooks hero but, like a plugin item, never suggested, never an Inbox Clean up finding and never
+    /// offered Remove.
+    var isHookSpaceVibeDoesNotWrite: Bool { kind == .hook && !hooks.contains { $0.cli == .claude } }
 }

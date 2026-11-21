@@ -4,6 +4,7 @@ extension FramePageContent {
     @MainActor
     static func region(_ page: FramePage, model: FrameModel) -> FramePageContent {
         switch page {
+        case .inbox: .inbox(model: model)
         case .hooks: HooksFrame.content(model: model)
         case .limits: LimitsRegion.content(model)
         case .activity: ActivityPage.content(model)
