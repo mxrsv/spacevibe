@@ -14,7 +14,7 @@ import (
 )
 
 // undoable are the op kinds Undo can reverse. The two hook kinds are written by this package (see hooks.go).
-var undoable = []string{"file-edited", "created", "moved", "link-removed", "hook-added", "hook-removed"}
+var undoable = []string{"file-edited", "created", "moved", "link-removed", "hook-added", "hook-removed", opUsageArchived, opSystemTrashMoved}
 
 // putBack puts back what an undone op had changed, when a later op refuses. A failure is reported, never
 // dropped (G-fix.9; Swift ran these with try? and left a half-undone entry without a word).
@@ -268,6 +268,12 @@ func (tx *Tx) undoOp(op Op) (putBack, error) {
 
 	case "hook-added", "hook-removed":
 		return tx.undoHooks([]Op{op})
+
+	case opUsageArchived:
+		return tx.undoUsageArchived(op)
+
+	case opSystemTrashMoved:
+		return tx.undoSystemTrash(op)
 	}
 	return nil, fail(unknownEntryMessage, coreerr.StatusBadRequest)
 }

@@ -122,6 +122,7 @@ struct CoreTypesTests {
         "rules.add": CoreEntryResult.self, "rules.remove": CoreEntryResult.self, "rules.changeVerdict": CoreEntryResult.self, "rules.changeVerdicts": CoreEntryResult.self,
         "rules.check": CoreRuleCheck.self, "limits.read": CoreLimitsResult.self,
         "findings.kept": CoreKeptFindings.self, "findings.keep": CoreEntryResult.self, "findings.unkeep": CoreEntryResult.self,
+        "clean.scan": CoreCleanScan.self, "clean.move": CoreCleanMoveResult.self,
     ]
 
     private static func unmaskedParams(_ json: [String: Any]) throws -> Any {
@@ -149,6 +150,13 @@ struct CoreTypesTests {
                 #expect(params.removeValue(forKey: "id") != nil)
                 #expect(try difference(params, as: CoreUsageProgress.self) == nil, "\(line.file) usage/progress")
                 covered.insert("usage/progress")
+                continue
+            }
+            if line.dir == "recv", line.json["id"] == nil, line.json["method"] as? String == "clean/progress" {
+                var params = try #require(line.json["params"] as? [String: Any])
+                #expect(params.removeValue(forKey: "id") != nil)
+                #expect(try difference(params, as: CoreCleanProgress.self) == nil, "\(line.file) clean/progress")
+                covered.insert("clean/progress")
                 continue
             }
             guard line.dir == "recv", let result = line.json["result"].map({ CoreTestData.unmaskingClock($0) }), let name = method[key], let type = Self.resultTypes[name] else { continue }

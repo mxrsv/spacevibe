@@ -1,0 +1,74 @@
+# Clean
+
+What the core does for the Clean page: it measures the session logs, the caches and the Skills and Subagents that Claude Code and Codex leave on disk (`clean.scan`), and moves a selection of logs and caches to the macOS Trash (`clean.move`), with one Undo for the whole move. Equipment is not moved here: Clean's Skills, Subagents and Hooks go through `loadout.removeMany` and SpaceVibe's own trash ([mutations.md](mutations.md)). Requirements: [Clean spec](../specs/2026-11-18-clean.md) CL1 to CL-R8, narrowed to Claude Code and Codex by RD42 of the [redesign spec](../specs/2026-11-20-spacevibe-redesign.md). Wire shapes: [core-protocol.md](core-protocol.md). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
+
+Code: [`core/internal/clean`](../../core/internal/clean) (scan, selection, locks, the cache allowlist), [`mutate/system-trash.go`](../../core/internal/mutate/system-trash.go) and [`system-trash-undo.go`](../../core/internal/mutate/system-trash-undo.go) (the move, its journal ops and their Undo), [`usage/archive.go`](../../core/internal/usage/archive.go) (the usage archive), [`activity/log-tokens.go`](../../core/internal/activity/log-tokens.go) (tokens of one whole log), [`fsx`](../../core/internal/fsx) (`RenameSameVolume`, `DiskUsage`, `PlainFoldersBelow`).
+
+## What moves where
+
+| What | Found by | Moves | Goes to |
+| --- | --- | --- | --- |
+| Session logs of one CLI older than 30, 90 or 180 days (by modification time) | `logs.Walk` of `projects/` (Claude Code) or `sessions/` (Codex), nothing else | each log file | `<Trash>/SpaceVibe Clean <date>/<cli>/<path under the CLI root>` |
+| An allowlisted cache folder | the [allowlist](#cache-allowlist) | each entry directly inside it; the folder stays | the same folder in the Trash |
+| Skills, Subagents, Hooks | `loadout.removeMany` | as in [mutations.md](mutations.md) | `<data>/trash` |
+
+Never moved, whatever the selection: a `memory` folder or anything in one, a SQLite database or its journal files (any name holding `.sqlite`), a file reached through a link, anything outside `projects/`, `sessions/` and the allowlisted folders.
+
+## Cache allowlist
+
+A folder joins only with a primary source for what it holds and what its loss costs (CL-R4), checked 2026-11-21 against Claude Code 2.1.330 ([Application data](https://code.claude.com/docs/en/claude-directory#application-data), whose table says what deleting each folder loses) and Codex at `openai/codex` commit `1145028`. The list is [`allowlist.go`](../../core/internal/clean/allowlist.go). Both CLIs move folders between releases, so re-check this table before widening it.
+
+| Path | Meaning, from the source | Why it may go |
+| --- | --- | --- |
+| Claude `cache/` | `changelog.md` ("Refreshed in the background"), model and gateway catalogs | the docs: loses nothing |
+| Claude `shell-snapshots/` | shell aliases, functions and options the Bash tool applies, "removed on clean exit" | the docs: nothing user-facing |
+| Claude `session-env/` | per-session environment metadata | the docs: nothing user-facing |
+| Claude `debug/` | per-session debug logs, written while debug logging is on | the docs: nothing user-facing |
+| Claude `image-cache/` | images saved by 2.1.274 and earlier | the docs: nothing, legacy |
+| Claude `statsig/`, `todos/` | legacy folders, no longer written | the docs: nothing |
+| Codex `cache/` | connector and app directory caches, the remote plugin catalog (3 h TTL), marketplace records, pet images | the source refetches each one |
+| Codex `shell_snapshots/` | shell snapshots kept 3 days by Codex itself | the source rebuilds them |
+
+Left out, with the reason: Claude `file-history/` (checkpoint restore of past sessions) and `paste-cache/` (pasted text of recalled prompts), both lose a feature per the docs; Claude `plans/` (plan files the user may want, and `plansDirectory` can move it); Claude `telemetry/` (a queue of unsent events, known only from strings in the binary); Codex `packages/` (the installed CLI itself: `packages/standalone/current` names the release in use, and the installer already prunes older releases, so "versions other than the one in use" stays the installer's job); Codex `log/` (may hold `logs_2.sqlite`, an open database), `tmp/` and `.tmp/` (helpers of live sessions and a plugin checkout re-synced over the network); Codex `plugins/cache/` (installed plugins, despite the name).
+
+## Runtime path
+
+`clean.scan`: one Activity read for the locks, then per CLI the logs (`logs.Walk`, each kept only as a regular file under the root with no link on the way) counted into the three age buckets, the allowlisted cache folders entry by entry, and the size of every removable Skill and Subagent row from `inventory.ReadMembers`. It writes nothing.
+
+`clean.move`:
+
+1. Plan: the picked rows become the exact paths, found as the scan finds them, so the sizes agree. Bad picks are 400 before anything else.
+2. Locks: one Activity read; a locked row stays with its sentence. All rows held back: 409.
+3. Archive read (phase `reading`): each picked log's usage record, from the scan cache when its stamp still matches or a fresh parse, plus its tokens per model from a whole-log fold. Nothing is written yet; a cancel here changes nothing.
+4. Locks again, since reading may have taken a while.
+5. Under the write lock: the journal is checked, the Trash, the data folder and each CLI root must be on one volume, a staging folder `<data>/clean/<ms>-<hex>` is made, every archive record is written in one atomic write of `<data>/usage-archive.json`, then each path is checked again (no link on the way, a log still a plain file with the stamp it was read at), measured and renamed into staging (phase `moving`). A path that fails stays with its reason; the next one is tried.
+6. Records of logs that stayed are dropped from the archive, a free name `SpaceVibe Clean <date>[ n]` is found by `Lstat`, the staging folder is renamed into the Trash, and one journal entry is written: `usage-archived` (when a log moved) and `system-trash-moved`.
+
+Undo, last op first: the Trash folder is renamed back to its staging path, every file back to `<root>/<rel>` (missing parent folders are made 0700, one level at a time, never through a link), the staging folders are removed, then the archive records go.
+
+## Rules that are easy to get wrong
+
+- **The core cannot list the Trash.** Without Full Disk Access it can rename into `~/.Trash`, `Lstat` a name it knows and rename back out, and nothing else (plan RB-T0 (b)). So every path inside the Trash is one the core named itself: the files are gathered in `<data>/clean` first and the folder enters the Trash in one rename, and Undo leaves it the same way. Do not add a step that reads or writes inside a folder that is already in the Trash, and do not pick a name by listing. Finder's "Put Back" is not written; Undo is the way back. [system-trash.go](../../core/internal/mutate/system-trash.go)
+- **One volume or nothing.** Every move is `fsx.RenameSameVolume`, which refuses EXDEV instead of copying, and the device of the Trash, the data folder and each CLI root is compared before the first rename. A CLI folder on another volume is refused with 409, never copied and never sent to SpaceVibe's trash: that trash is swept after 30 days, so gigabytes would end up deleted, not trashed. `fsx.Move` copies across volumes and must not be used here. [file-ops.go](../../core/internal/fsx/file-ops.go)
+- **The test Trash is a seam in `roots`, not in HOME.** Under `SPACEVIBE_TEST=1`, `roots.Resolve` sets the Trash to `<data>/test-trash` whatever HOME says, and the write guard refuses a path under the real home in every rename; outside test mode it is `$HOME/.Trash`. The core creates the Trash only when it is that stand-in; a missing real Trash is a 409. Test `TestRealHomeGuardRefusesTheRealTrash`. [roots.go](../../core/internal/roots/roots.go)
+- **Locks fail closed, and the core holds them too.** Logs are locked by a running or waiting session of their CLI (RD27); caches by any live session, idle and unmeasurable included (RD35); an ended row locks nothing. A failed Activity read, an adapter that cannot see processes, `codex-process-unknown` on the report or on a row, or an unreadable Claude `sessions/` folder lock both, as `processUnknown`. The shell's `CleanLocks` reads the same report; the core reads it again before and after archiving and refuses what is locked whatever the shell sent. A session that starts during the moves themselves is not seen: the locks are read twice, not per file. [locks.go](../../core/internal/clean/locks.go)
+- **A moved log keeps its usage through the archive, and a live log wins.** The usage scan adds every archived record whose path is not a live log of the scan, so counts stay the same after a move and after its Undo, and a log both live and archived counts once. The archive is never rebuilt and never pruned: it is the only copy of facts no log holds any more, so an archive that exists and cannot be read refuses every Clean write (409) and the scan then counts without it. `ScanVersion` does not reach archived records, which keep what the parser of their day read. `Result.Files` drops by the unreadable logs that moved: they had no record to keep, and counted nothing else. [archive.go](../../core/internal/usage/archive.go), tests `TestUsageSurvivesMoveAndUndo`, `TestArchiveNeverDoubles`
+- **Moving a plain rollout uncovers its compressed twin.** When a Codex session sits in one folder as `.jsonl` and `.jsonl.zst`, `logs.Walk` lists only the plain file, so only it moves; the next scan lists the twin as a log of its own. Counts per item stay the same (a session counts once per name, by its id), and the twin is offered by the next scan if it is old enough. Do not widen the move past `logs.Walk` to take it along (CL-R2).
+- **The archive holds counts, never text (S-R3).** A record is the scan cache's record (names, days, hook hashes, durations) plus input, output and cache tokens per model from `activity.LogTokens`. Archiving reads each picked log whole, so a move of many gigabytes spends most of its time in phase `reading`; that phase changes nothing and stops at once on cancel.
+- **Sizes are allocated bytes of the paths that move.** `fsx.DiskUsage` sums `st_blocks` × 512 without following links, which is what `du` counts; the scan and the move call it on the same paths, and the result reports what was measured just before each rename. A link frees nothing, so a linked Skill's size is 0. A hard-linked log frees nothing either, and is counted anyway. Test `TestFreedBytesEqualDuDifference` compares with `BLOCKSIZE=512 du -s`. [disk-usage.go](../../core/internal/fsx/disk-usage.go)
+- **No link is followed, on the way in or back.** `logs.Walk` lists regular files only; each path is then checked with `fsx.PlainFoldersBelow` (every folder between the CLI root and the entry is a real folder), at scan time and again just before its rename, so a folder swapped for a link after the scan stops that file. A cache entry that is a link moves as a link. The CLI root itself may be a link (a dotfiles setup). A logs folder that is itself a link offers nothing. [plain-folders.go](../../core/internal/fsx/plain-folders.go)
+- **Undo trusts nothing in `journal.json`.** `system-trash-moved` is undone only when its Trash folder is a direct child of the Trash named `SpaceVibe Clean …`, its staging path a direct child of `<data>/clean`, each root the current root of its CLI, and each file a clean relative path; `usage-archived` only when its file is this data folder's archive and every log is under a CLI root. Anything else is 400 before a byte moves. Undo is all or nothing: a file whose place is taken again, a Trash folder that is gone or a file missing from it is 409, and the entry stays undoable. [system-trash-undo.go](../../core/internal/mutate/system-trash-undo.go)
+- **Journal retention never touches the Trash.** Dropping an old entry deletes only `<data>/trash` slots its ops name; a Clean entry names none, so its folder stays in the Trash until the user empties it, and its archive records stay too. Test `TestRetentionLeavesTheTrashAlone`.
+- **Equipment sizes are per row key.** `items` gives a `loadout.rows` row key the bytes of its removable Skill and Subagent members, each real path once. A plugin-only or project-only row has no entry, so the shell never offers it (CL-R1); a Hook removal edits a settings file and moves nothing.
+
+## Failure behavior
+
+- **Locked or empty.** A locked row stays with its sentence while the rest moves; every row locked, or nothing left, is 409 with nothing written.
+- **One path fails.** It stays, its row's `reason` is the first such sentence (a path, never content), the next path is tried. Nothing moved at all: the first failure is the answer and nothing is written.
+- **Cancel.** Before the first file: -32800, nothing changed. After: the move stops before the next file and records what moved; the rest of each row is `stayed` with "The move was cancelled before this file."
+- **The final rename or the journal fails.** Every staged file goes back to its place and the archive records go; if that fails too, 500 `RollbackFailureMessage`.
+- **Crash.** Before the staging folder reaches the Trash, the moved files sit in `<data>/clean/<ms>-<hex>/<cli>/…` with their archive records and no journal entry: nothing deletes them, and they are put back by hand. After it, the Trash holds the folder and, if the journal write did not happen, there is no Undo.
+
+## Verification
+
+`cd core && SPACEVIBE_TEST=1 go test -count=1 ./internal/clean/... ./internal/mutate/... ./internal/usage/... ./internal/fsx/...`, and the contract cases `clean_scan`, `clean_move_then_undo` and `clean_move_locked` in `TestContract`. Every test works in `t.TempDir()` or a private copy of the fixture home; the Trash is `<data>/test-trash`.

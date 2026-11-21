@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"spacevibe.dev/core/internal/activity"
+	"spacevibe.dev/core/internal/clean"
 	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/findings"
@@ -75,6 +76,8 @@ func (s *Services) buildHandlers() map[string]rpc.Handler {
 		"findings.kept":           typed(s, "findings.kept", func(ctx context.Context, _ none) (findings.KeptResult, error) { return s.findings.Kept(ctx) }),
 		"findings.keep":           typed(s, "findings.keep", s.findings.Keep),
 		"findings.unkeep":         typed(s, "findings.unkeep", s.findings.Unkeep),
+		"clean.scan":              typed(s, "clean.scan", func(ctx context.Context, _ none) (clean.ScanResult, error) { return s.clean.Scan(ctx) }),
+		"clean.move":              s.cleanMove,
 	}
 }
 

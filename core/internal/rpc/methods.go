@@ -55,4 +55,6 @@ var AllMethods = []string{
 	"findings.kept",
 	"findings.keep",
 	"findings.unkeep",
+	"clean.scan",
+	"clean.move",
 }

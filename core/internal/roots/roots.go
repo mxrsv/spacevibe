@@ -38,11 +38,18 @@ type Roots struct {
 	// $CODEX_HOME/skills (codex-cli 0.170.0, plan RB-T0a); Claude Code does not. Inventory reads it as a second
 	// Codex skills folder; no write targets it (docs/internals/inventory.md#readers-map).
 	AgentsSkills string
+	// Trash is where Clean moves logs and caches (clean.move, CL-R5): $HOME/.Trash, the macOS Trash of the home
+	// volume. Under SPACEVIBE_TEST=1 it is <data>/test-trash instead, never a folder derived from HOME, so no test can
+	// reach the real Trash even when HOME is left unset (docs/internals/clean.md, "Rules that are easy to get wrong").
+	Trash string
 }
+
+// TestTrashName is the folder inside the data folder that stands in for the macOS Trash under SPACEVIBE_TEST=1.
+const TestTrashName = "test-trash"
 
 // UnderRealHomeError means SPACEVIBE_TEST=1 and a root sits under the real home.
 type UnderRealHomeError struct {
-	// Label is claude, codex, spacevibe, "claude state", gemini or "agents skills".
+	// Label is claude, codex, spacevibe, "claude state", gemini, "agents skills" or trash.
 	Label string
 	// Path is the offending root, as configured.
 	Path string
@@ -70,10 +77,12 @@ func Resolve(cfg config.Config, realHome string) (Roots, error) {
 	claudeState := filepath.Join(orDefault(cfg.ClaudeConfigDir, home), ".claude.json")
 	geminiRoot := filepath.Join(home, ".gemini")
 	agentsSkills := filepath.Join(home, ".agents", "skills")
+	trash := filepath.Join(home, ".Trash")
 	if cfg.Test {
+		trash = filepath.Join(dataRoot, TestTrashName)
 		err := assertNotUnderRealHome(realHome, []labelled{
 			{"claude", claudeRoot}, {"codex", codexRoot}, {"spacevibe", dataRoot},
-			{"claude state", claudeState}, {"gemini", geminiRoot}, {"agents skills", agentsSkills},
+			{"claude state", claudeState}, {"gemini", geminiRoot}, {"agents skills", agentsSkills}, {"trash", trash},
 		})
 		if err != nil {
 			return Roots{}, err
@@ -95,6 +104,7 @@ func Resolve(cfg config.Config, realHome string) (Roots, error) {
 		ClaudeState:  claudeState,
 		Gemini:       geminiRoot,
 		AgentsSkills: agentsSkills,
+		Trash:        trash,
 	}, nil
 }
 

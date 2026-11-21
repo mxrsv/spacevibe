@@ -150,6 +150,10 @@ func (c *containment) checkOp(op Op) error {
 			return err
 		}
 		return check("to", c.trashPath)
+	case opUsageArchived:
+		return c.checkUsageArchived(op)
+	case opSystemTrashMoved:
+		return c.checkTrashMove(op)
 	case "hook-added", "hook-removed":
 		if err := check("file", c.configFile); err != nil {
 			return err

@@ -39,9 +39,10 @@ Notifications have no `id` and get no response.
 | --- | --- | --- |
 | core to shell | usage/progress | `{id, done, total}`: `id` is the `usage.scan` request id. Sent after every 20 files and once at the end. |
 | core to shell | activity/report | The full `ActivityReport`, see below. |
+| core to shell | clean/progress | `{id, phase, done, total, bytes}`: `id` is the `clean.move` request id; `phase` is `reading` (the usage of the picked logs is archived) then `moving`; `bytes` is what has moved so far. Sent after every 20 paths and at the last one of each phase. |
 | shell to core | $/cancelRequest | `{id}`. An unknown or finished id is ignored. |
 
-A cancelled read answers -32800. A write is cancellable while it waits for the write lock, in this process or for another core's `flock`; once its body has started, the cancel is ignored and the response is the real result, so a cancel never leaves a half-applied change. Cancelling `usage.scan` leaves `usage-cache.json` as it was and the process's usage state unchanged. Neither a write nor `activity.stop` is ever retried by the core, and a handler never holds the write lock itself: the service takes it around its own write, after looking at the cancel once. `loadout.copyToOther`, `loadout.removeItem`, `loadout.removeDeadHooks`, `loadout.copyTo`, `loadout.removeFrom`, `loadout.removeMany`, `journal.undo` and the `rules.*` writes take the lock with their request context ([`fsx.WithWriteLockContext`](../../core/internal/fsx/write-lock.go)), so one cancelled while it queued stops waiting at once, changes nothing, writes no journal entry and answers -32800; they also look at the context again as the first step inside the lock.
+A cancelled read answers -32800. A write is cancellable while it waits for the write lock, in this process or for another core's `flock`; once its body has started, the cancel is ignored and the response is the real result, so a cancel never leaves a half-applied change. Cancelling `usage.scan` leaves `usage-cache.json` as it was and the process's usage state unchanged. Neither a write nor `activity.stop` is ever retried by the core, and a handler never holds the write lock itself: the service takes it around its own write, after looking at the cancel once. `loadout.copyToOther`, `loadout.removeItem`, `loadout.removeDeadHooks`, `loadout.copyTo`, `loadout.removeFrom`, `loadout.removeMany`, `journal.undo` and the `rules.*` writes take the lock with their request context ([`fsx.WithWriteLockContext`](../../core/internal/fsx/write-lock.go)), so one cancelled while it queued stops waiting at once, changes nothing, writes no journal entry and answers -32800; they also look at the context again as the first step inside the lock. `clean.move` is the one write that also stops part way: it looks at the context before each file it moves, so a cancel (or the end of input) after the first file stops before the next one, records one journal entry for what moved, and answers the real result with `cancelled: true`; a cancel before the first file answers -32800 and changes nothing.
 
 ## Activity subscription
 
@@ -118,6 +119,8 @@ Params and results use the types defined under "Wire types". "Journal entry" is 
 | `findings.kept` | `{}` | `{kept:string[]}`, oldest first; `[]` when there is no list | 409 `<data>/kept-findings.json` exists but is not the list, or is a link: refused, never read as empty | none | none |
 | `findings.keep` | `{id}` | `{entry:JournalEntryRef}` | 400 an id that is empty, over 1024 bytes, not UTF-8 or holds a control character; 409 already kept, the list or the journal unreadable, a link in place of the list; 500 | One write of `<data>/kept-findings.json`, the id added last; past 2000 ids the oldest drops | label `Kept a finding`; op `file-edited` |
 | `findings.unkeep` | `{id}` | `{entry:JournalEntryRef}` | 400 as `findings.keep`; 409 not kept, or as `findings.keep`; 500 | One write of the list, the id removed | label `Stopped keeping a finding`; op `file-edited` |
+| `clean.scan` | `{}` | `CleanScan` | -32800 | Reads the logs folders, the allowlisted caches, the inventory and one Activity report; writes nothing | none |
+| `clean.move` | `{logs?:LogPick[], caches?:string[]}` | `CleanMoveResult`; sends `clean/progress` | 400 nothing picked, a CLI other than `claude` or `codex`, an age other than 30, 90 or 180, a CLI's logs or a cache picked twice, a cache id outside the allowlist; 409 every picked row is locked (the lock's sentence, then "Nothing was moved."), nothing is left to move, the CLI folder, the data folder and the Trash are not on one volume, the Trash folder is missing, the journal or the usage archive cannot be read; -32800 cancelled before the first file moved; 500 | Archives the usage of each picked log in `<data>/usage-archive.json`, then renames each log or cache entry into a staging folder and that folder into the Trash ([clean.md](clean.md)); a locked row stays with its reason while the rest moves | label `Moved N files to the Trash: <CLI> logs, <CLI> caches`; ops `usage-archived`, `system-trash-moved`; one Undo puts every file back |
 
 Behavior the table cannot say:
 
@@ -139,6 +142,8 @@ Behavior the table cannot say:
 - **`rules.check`** is the live check of a rule's shape (the Rules model calls it before every add), built on `Rules.checkedRule`: empty text, over 1000 UTF-16 units, a newline, or no `Tool` or `Tool(pattern)` shape. `message` is the same sentence the write would refuse with. The write path checks again; this method is advice.
 - **Journal ops are not exposed.** `JournalEntryRef` carries `count` only: ops hold absolute paths and trash names, and the shell uses only the id and the label. The journal file is `<data>/journal.json`, newest first ([retention](mutations.md#journal-retention-and-the-trash-sweep)), and a journal that exists but is not a JSON array of entries (every element needs a string `id`) makes every write 409; an element without an id is never dropped silently.
 - **`addSkill` and `addAgent` are not methods.** The app has no caller.
+- **Clean's sizes are allocated bytes.** Every `bytes` in `CleanScan` and `CleanMoveResult` is the allocated size of the exact paths a move takes (`st_blocks` × 512, what `du` counts; `du -A` would be the apparent size), so the scan's estimate, the result and the `du` difference of the CLI root agree (CL-R6). The shell's byte formatter shows them as they come.
+- **Clean's locks are the core's too.** `clean.scan` reports per CLI the lock on its logs (a running or waiting session, RD27) and on its caches (any live session, idle and unmeasurable included, RD35), or `processUnknown` when the process check failed; `clean.move` reads the Activity report again before and after archiving and refuses a locked row whatever the shell sent ([clean.md](clean.md#rules-that-are-easy-to-get-wrong)).
 - **The pid is never a parameter.** `activity.stop` finds the live process from the id, so a reused pid cannot be signalled (the checks Stop makes before the signal are in [activity.md](activity.md#rules-that-are-easy-to-get-wrong)). A Codex id before its first prompt is `pid:<n>:<start-ms>`, bound to the process start; an id ending `:unknown` cannot authorize a stop.
 
 ## Wire types
@@ -302,6 +307,30 @@ type RulesSnapshot = {                            // no UI-only fields
   rules: Rule[], grid: CapabilityCell[], codex: CodexPermissions,
   notReadable: boolean,                           // the scope's file or folder cannot be looked at: rules and grid are unknown, not empty, and not editable
   globalNotReadable: boolean                      // the same for the global file that globalRuleCount counts
+}
+```
+
+Clean (Go: [clean/types.go](../../core/internal/clean/types.go); no Swift DTO yet, RB-R5 adds it):
+
+```ts
+type CleanScan = {
+  clis: {                                         // claude, codex, in registry order (RD42)
+    cli: Cli,
+    logs: { state: "measured" | "missing" | "unreadable",
+            buckets: { olderThanDays: 30 | 90 | 180, files: number, bytes: number }[] },   // only ages with a log; a bucket holds every older age
+    caches: { id: string, path: string, entries: number, files: number, bytes: number }[], // allowlisted, non-empty only
+    locks: { logs: CleanLock | null, caches: CleanLock | null }
+  }[],
+  items: { key: string, bytes: number }[]         // row key of loadout.rows; a row with no removable Skill or Subagent member is absent
+}
+type CleanLock = { reason: "sessions" | "processUnknown", sessions: string[], message: string }   // sessions: Activity session ids
+type LogPick = { cli: Cli, olderThanDays: 30 | 90 | 180 }
+type CleanMoveResult = {
+  entry: JournalEntryRef | null,                  // null only if nothing moved, which is answered as an error instead
+  moved: { files: number, bytes: number },        // what left the CLI folders
+  groups: { id: string, moved: { files: number, bytes: number }, stayed: number, reason: string | null }[],  // id "logs:<cli>" or the cache id
+  cancelled: boolean,
+  trash: string | null                            // the "SpaceVibe Clean <date>" folder in the Trash
 }
 ```
 

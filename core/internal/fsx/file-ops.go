@@ -270,3 +270,52 @@ func syncDirectory(dir string) error {
 	}
 	return err
 }
+
+// RenameSameVolume renames from to to on one volume and never copies: Clean's moves into the macOS Trash must leave
+// the bytes where they are, so a move across volumes (EXDEV) is refused with 409 and nothing changes. It fails with
+// 409 when anything exists at to, a link included. Both paths are guarded; a link at from is renamed, never followed.
+func RenameSameVolume(from, to string) error {
+	if err := checkWrite(from, to); err != nil {
+		return err
+	}
+	if _, err := os.Lstat(to); err == nil {
+		return coreerr.NewStatus("Could not move "+from+" (the destination already exists).", coreerr.StatusConflict)
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return coreerr.NewStatus("Could not move "+from+" ("+reason(err)+").", coreerr.StatusInternalFailure)
+	}
+	if err := os.Rename(from, to); err != nil {
+		if errors.Is(err, syscall.EXDEV) {
+			return coreerr.NewStatus(from+" is on another volume than "+filepath.Dir(to)+", so it was left in place.", coreerr.StatusConflict)
+		}
+		if errors.Is(err, fs.ErrNotExist) {
+			return coreerr.NewStatus(from+" does not exist.", coreerr.StatusNotFound)
+		}
+		return coreerr.NewStatus("Could not move "+from+" ("+reason(err)+").", coreerr.StatusInternalFailure)
+	}
+	syncDir(filepath.Dir(to))
+	syncDir(filepath.Dir(from))
+	return nil
+}
+
+// RemoveEmptyDir removes the folder at path only when it is empty (rmdir, so a folder that still holds anything is
+// never emptied). A missing path is not an error; a file, a link or a folder with content is left alone with 409.
+func RemoveEmptyDir(path string) error {
+	if err := checkWrite(path); err != nil {
+		return err
+	}
+	info, err := os.Lstat(path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return coreerr.NewStatus("Could not remove "+path+" ("+reason(err)+").", coreerr.StatusInternalFailure)
+	}
+	if !info.IsDir() {
+		return coreerr.NewStatus(path+" is not a folder, so it was left alone.", coreerr.StatusConflict)
+	}
+	if err := syscall.Rmdir(path); err != nil {
+		return coreerr.NewStatus(path+" is not empty, so it was left alone.", coreerr.StatusConflict)
+	}
+	syncDir(filepath.Dir(path))
+	return nil
+}

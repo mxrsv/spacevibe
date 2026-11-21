@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"spacevibe.dev/core/internal/clean"
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/rpc"
 	"spacevibe.dev/core/internal/usage"
@@ -49,6 +50,28 @@ func (s *Services) usageScan(ctx context.Context, call rpc.Call) (any, error) {
 	})
 	if err != nil {
 		s.noteFailure("usage.scan", err)
+		return nil, err
+	}
+	return result, nil
+}
+
+// cleanProgress is the params of clean/progress; ID is the clean.move request id as sent.
+type cleanProgress struct {
+	ID json.RawMessage `json:"id"`
+	clean.ProgressParams
+}
+
+// cleanMove is clean.move: it sends clean/progress and stops before the next file on cancel (clean.Service.Move).
+func (s *Services) cleanMove(ctx context.Context, call rpc.Call) (any, error) {
+	var p clean.MoveParams
+	if err := rpc.DecodeParams(call.Params, &p); err != nil {
+		return nil, err
+	}
+	result, err := s.clean.Move(ctx, p, func(pr clean.ProgressParams) {
+		call.Notify("clean/progress", cleanProgress{ID: call.ID, ProgressParams: pr})
+	})
+	if err != nil {
+		s.noteFailure("clean.move", err)
 		return nil, err
 	}
 	return result, nil
