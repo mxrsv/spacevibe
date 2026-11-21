@@ -33,7 +33,7 @@ These are one-time steps. Until all three are done, `release.sh` refuses; delete
 
 ## The update feed and the repository
 
-Shipped copies read the feed at `https://github.com/mxrsv/spacevibe/releases/latest/download/appcast.xml`. `GITHUB_REPO` in [`release.sh`](../../scripts/release.sh) is the one constant behind that URL, and it is a working value until the owner settles the repository name (open item D-1 of the SV ledger, gate GH1 of the [go-core plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md)).
+Shipped copies read the feed at `https://github.com/mxrsv/spacevibe/releases/latest/download/appcast.xml`. `GITHUB_REPO` in [`release.sh`](../../scripts/release.sh) is the one constant behind that URL. The owner settled the repository name on 2026-11-21 and the repository was renamed that day ([SV ledger](../specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md#owner-answer-on-the-repo-name-2026-11-21)).
 
 - Every GitHub release carries the DMG plus an asset named exactly `appcast.xml`.
 - The repository must stay public under the name baked into shipped copies, or installed copies stop updating.

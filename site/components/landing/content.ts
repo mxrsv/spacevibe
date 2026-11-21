@@ -9,8 +9,8 @@
  * subset and the file list (a subset of the golden file history, paths shortened to the repo).
  */
 
-// Working value (D-1, not yet approved by the owner): the same `mxrsv/spacevibe` as GITHUB_REPO in
-// scripts/release.sh, the single constant there. Change both together once GH1 settles the repo name.
+// The same `mxrsv/spacevibe` as GITHUB_REPO in scripts/release.sh (settled by the owner on 2026-11-21,
+// SV ledger D-1). Change both together.
 export const GITHUB_URL = "https://github.com/mxrsv/spacevibe";
 export const DOWNLOAD_URL = `${GITHUB_URL}/releases/latest`;
 

@@ -2,7 +2,7 @@
 
 Record: Active task plan
 Started: 2026-11-07
-Status, checked 2026-11-20: active. Built and committed: the Go core, the protocol, the Swift shell's cut-over to it and the rename (phases P0, PR, G0 to G2, S, R1, R3 to R6, X1's workflow). Open, all the owner's: the Sparkle key (R2), the runtime checks A1 to A5, X2, F1 and the gates GH1, REL1, GH2 and WEB1 to WEB3; see "Next action" in the Handoff.
+Status, checked 2026-11-20: active. Built and committed: the Go core, the protocol, the Swift shell's cut-over to it and the rename (phases P0, PR, G0 to G2, S, R1, R3 to R6, X1's workflow). Open, all the owner's: the Sparkle key (R2), the runtime checks A1 to A5, X2, F1 and the gates REL1, GH2 and WEB1 to WEB3 (D-1 was answered and GH1 ran on 2026-11-21); see "Next action" in the Handoff.
 Base revision: 39ff3f5 (main, clean at survey time)
 Open items of older plans that this plan now owns are listed in "What this plan takes over" and, for the launch plan, in the Handoff.
 
@@ -205,7 +205,7 @@ Six of the ledger's "Open" items map to D-1 and D-3 to D-7 (the spike item is C7
 
 | ID | Decision (ledger Open item) | Recommendation (not assumed) | Blocks |
 | --- | --- | --- | --- |
-| D-1 | Repo name | none; `mxrsv/spacevibe` vs `spacevibe-app` | R4 (`release.sh:30`), R5 (`site/components/landing/content.ts:9`), GH1, REL1 |
+| D-1 | Repo name | none; `mxrsv/spacevibe` vs `spacevibe-app`. Answered 2026-11-21: `mxrsv/spacevibe` (ledger) | R4 (`release.sh:30`), R5 (`site/components/landing/content.ts:9`), GH1, REL1 |
 | D-2 | Go port module order | the order above; answered by approving this plan | G2 |
 | D-3 | `ReinsStatusline` as a core subcommand | `spacevibe statusline install\|undo\|capture`. A reinstall unwraps an old `…/.reins/bin/reins-statusline --capture …` command, not double-wrapping it (`StatuslineSetup.swift:44` checks only its own prefix). | G2.6, S.8 |
 | D-4 | May the core run `claude --version` and `codex --version` | no task here needs it; S-R4 lists only `ps`, `lsof`, signals and the D-3 capture | S-R4 wording in R5 |
@@ -217,7 +217,7 @@ Outward-facing gates. Each needs the owner's explicit approval when it runs; non
 
 | Gate | Step |
 | --- | --- |
-| GH1 | Rename the GitHub repo |
+| GH1 | Rename the GitHub repo. Done 2026-11-21 |
 | REL1 | Notarized release and publish (tag, push, `gh release create`) |
 | GH2 | Mark the v0.1.0 release description deprecated (SV14) |
 | WEB1 | Vercel project and preview deploy for `site/` |
@@ -626,7 +626,7 @@ The owner signs both CLIs in to that home; real sessions spend quota. H9: Claude
   - Build: in the owner's runtime (W22): the renamed app on the fixture home and on the A1 home (all tabs, About, Settings > Update, the update toast); the old-vs-new shot comparisons from S.1 to S.8; the site build. Open the main sheet (W18).
   - Verify: the owner's words recorded with the date.
 - [ ] **Gates (outward-facing; each needs explicit approval when it runs)**
-  - GH1: rename the GitHub repo (after D-1), then `git remote set-url`.
+  - GH1: rename the GitHub repo (after D-1), then `git remote set-url`. Done 2026-11-21: `gh repo rename spacevibe`; `gh repo view mxrsv/spacevibe` → `PUBLIC`; `https://github.com/mxrsv/spacevibe-reins` → `301` to the new URL, and the old `releases/latest/download/appcast.xml` still resolves to the `v0.1.0` asset.
   - REL1: a fresh notarization profile and key backup; `scripts/release.sh --notarize` on a clean `main`; then the printed tag, push and `gh release create` (feed asset name decided from the R2 H7 result).
   - GH2: `gh release edit v0.1.0` with the deprecation text and a link to the new download (SV14; after REL1).
   - WEB1: Vercel project for `site/` and a preview deploy; `curl -sI <preview>/live/abc` → `308` with `location: https://active.spacevibe.dev/abc`; an old Hub route → `kyant.dev`.
@@ -1093,7 +1093,7 @@ Checkout `main` at `a8bce31`, run 2026-11-08 on darwin/arm64, `go1.25.5`. Comman
   - X1: `7541db9` (workflow). The UI v5 track (U0 to U5) is a separate plan and also landed on `main`.
 - Checkout: `main` at `a8bce31`, no push, no branch. Other sessions had uncommitted edits in `Sources/SpaceVibe` and `Tests/SpaceVibeTests` while this record was written (the working tree did not build); they are not part of this plan's commits. The `v0.1.0` tag exists.
 - Next action (the owner's list):
-  1. Answer D-1 (repo name), then GH1 when ready.
+  1. Done 2026-11-21: D-1 answered (`mxrsv/spacevibe`) and GH1 run. Left for a workspace session: the local checkout folder name and the workspace `AGENTS.md` row.
   2. Create the Sparkle key pair for `dev.spacevibe.app`, paste `SUPublicEDKey`, back it up, flip the two account constants; then the H7 check and AC7 (finish R2).
   3. Run A1 to A5 on the final identity build with both CLIs signed in; decide the Codex skills path from A1.
   4. Push so Linux CI can run `core.yml` (X1); run the Go tests on Windows hardware (X2).
@@ -1102,13 +1102,12 @@ Checkout `main` at `a8bce31`, run 2026-11-08 on darwin/arm64, `go1.25.5`. Comman
 
 | Blocker | Blocks |
 | --- | --- |
-| D-1 repo name | GH1, REL1, the repo constant in `scripts/release.sh` and `site/components/landing/content.ts` |
 | Sparkle key pair (owner, writes the Keychain) | R2, AC7, H7, REL1 |
 | A1 to A5 runtime checks: need the owner's machine and CLI logins | the release (SV7), A6, AC1, AC2, AC4, AC5, H2, H9 |
 | X2 Windows hardware | X2 |
 | Push approval | the Linux CI result of X1 |
 | F1 eye approval | AC6, the end of the UI work |
-| Gates GH1, REL1, GH2, WEB1 to WEB3 | publishing |
+| Gates REL1, GH2, WEB1 to WEB3 | publishing |
 
 - Open owner decisions (each needs a spec or SV5 call; none is decided here):
   - The P1 "Owner" list above: Codex skills path, Secrets cell and `Write(path)` rules, usage "0 runs" hiding unreadable logs, undo of rule edits and `created`, trash pruning, statusline value over 100, "Push and deploy" rules, cancelled hooks, duplicate hook add, the stale Known-defect wording.
@@ -1119,7 +1118,6 @@ Checkout `main` at `a8bce31`, run 2026-11-08 on darwin/arm64, `go1.25.5`. Comman
   - Usage "never ran" hides unreadable logs: a `UsageResult` shape change.
   - Hook duplicate add (golden `add-hook-duplicate-command`): a golden fix.
   - `/api/auth` and `/vote` redirects in `site/vercel.json` go to `kyant.dev`; login may break. The Hub session decides before WEB2.
-  - The repo name constant `mxrsv/spacevibe` in `scripts/release.sh` and `site/components/landing/content.ts` is a working value only.
   - Copy changes not checked by eye, including the new Codex "not readable" sentence; F1 covers them.
 - Taken over from the [launch plan](2026-11-03-reins-launch.md) on 2026-11-20, when it was marked historical: its L6, L7 and L12 are R2 and REL1 here (steps in the [release runbook](../operations/release.md)), its L9 is A1 to A5, its L13 is WEB1 to WEB3. One item had no home: L8's licence. No `LICENSE` exists and `README.md` says none is chosen; the owner picks one before the repository is announced (GH1, REL1).
 - Process incident: an agent amended another session's commit and then reset it back. The reflog was checked and is intact; no commit was lost. Agents must not amend or reset commits they did not make (W11).

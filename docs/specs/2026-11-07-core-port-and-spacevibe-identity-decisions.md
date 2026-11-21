@@ -1,7 +1,7 @@
 # Standalone Go core and SpaceVibe identity, decision ledger
 
 Date: 2026-11-07
-Status: active ledger. SV1 to SV17 settled on 2026-11-07; the owner's later answers are in the dated sections below (2026-11-07, 2026-11-08, 2026-11-20). Open items are under "Open (not assumed)" and "Still open".
+Status: active ledger. SV1 to SV17 settled on 2026-11-07; the owner's later answers are in the dated sections below (2026-11-07, 2026-11-08, 2026-11-20, 2026-11-21). Open items are under "Open (not assumed)" and "Still open".
 ID namespace: `D<n>` without a hyphen is a decision of the Linear identity ledger; `SV<n>` is a decision of the SV ledger; `D-<n>` with a hyphen is an open item of the go-core plan. Other documents reuse short ids (`C1` to `C3`, `X1`, `G1`): cite those with their document, for example "v5 C1" or "go-core plan D-1" ([docs/README.md](../README.md#id-namespaces)).
 
 Source: grilling session 2026-11-07. Owner's words are quoted (Vietnamese originals kept where the wording matters; "approve đủ" means the owner accepted every recommended answer in the round).
@@ -36,7 +36,7 @@ The 2026-11-02 spec made the engine a Swift library (`ReinsCore`). Owner on that
 
 ## Open (not assumed)
 
-The list as it stood on 2026-11-07. Items settled since are in "Owner answers at plan execution" and "Status 2026-11-08"; the repo name is still open.
+The list as it stood on 2026-11-07. Items settled since are in "Owner answers at plan execution", "Status 2026-11-08" and "Owner answer on the repo name (2026-11-21)".
 
 - Repo name (go-core plan D-1). The recommendation was `mxrsv/spacevibe`, with `spacevibe-app` named as safer because the workspace uses `spacevibe-<product>` and `spacevibe-workspace` exists. The owner has not picked between them. Until then `mxrsv/spacevibe` is only a working value kept in one constant; gate GH1 still needs explicit approval, and the owner may pick `spacevibe-app`.
 - Spike (fact, not a decision): Go reads a `.jsonl.zst` rollout, parses TOML and cross-compiles to Windows before any port starts.
@@ -81,10 +81,10 @@ Settled or taken, no further owner input needed (all still reversible until the 
 
 Still open:
 
-- D-1 repo name: `mxrsv/spacevibe` is only a working value in one constant (`scripts/release.sh`, `site/components/landing/content.ts`); GH1 needs explicit approval.
+- D-1 repo name: settled on 2026-11-21, see "Owner answer on the repo name" below.
 - D-6 and X2: Windows hardware run, not done.
 - New Sparkle key pair and the account flip (R2), then AC7 and the H7 check.
-- Runtime checks A1 to A5, F1 eye approval, and every outward gate (GH1, REL1, GH2, WEB1 to WEB3).
+- Runtime checks A1 to A5, F1 eye approval, and every outward gate still to run (REL1, GH2, WEB1 to WEB3; GH1 ran on 2026-11-21).
 - Windows and Linux UI technology; Hub `/vote`, marketing and the workspace map (workspace session).
 
 ## Owner answer on SV5 (2026-11-20)
@@ -92,6 +92,15 @@ Still open:
 The [product spec](2026-11-02-reins.md) (RQ-SV5) said that narrowing SV5's "byte for byte" needed the owner's explicit yes, and "tiếp tục hết tất các phase" had only been read as one. Asked directly as DN-Q3 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md) with the recommendation "record an explicit yes to the narrowing", the owner answered: "ok" (2026-11-20).
 
 So SV5 reads: the Go core matches the frozen goldens as canonical bytes of the named projections, with the case counts asserted (row C1/Q1 above). The goldens have been frozen on that reading since 2026-11-07. Nothing else in SV5 changes.
+
+## Owner answer on the repo name (2026-11-21)
+
+Owner, in chat: "tôi muốn chuyển đổi repo này chỉ tên là spacevibe, không còn reins nữa, và repo nó sẽ có domain là spacevibe.dev luôn, tôi đã mua domain này rồi".
+
+- D-1 is settled: the repository is `mxrsv/spacevibe`, not `spacevibe-app`. `GITHUB_REPO` in `scripts/release.sh` and `GITHUB_URL` in `site/components/landing/content.ts` already held that value and are no longer working values.
+- Gate GH1 ran the same day on those words: the GitHub repository was renamed from `mxrsv/spacevibe-reins`. GitHub redirects the old URL, so a `v0.1.0` copy still reaches the `v0.1.0` feed until REL1 publishes a newer one (H7 of the go-core plan stays open until then).
+- `spacevibe.dev` as this repo's domain restates SV10 and SV16. It does not waive the deploy gates: WEB0 to WEB3 of the [landing spec](2026-11-05-reins-landing.md#deploy-gates) still stand, and on 2026-11-21 the domain still served the Hub.
+- Not decided here: the name of the local checkout folder (`spacevibe-reins` in the workspace) and the workspace `AGENTS.md` row, which belong to a workspace session.
 
 ## Out of scope for this ledger
 

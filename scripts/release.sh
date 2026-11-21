@@ -14,7 +14,7 @@
 # Builds from `git archive HEAD` in a temporary folder, so the artifact is exactly the committed revision even when the
 # checkout has other sessions' edits; a dirty tree is still refused so nothing is forgotten. Output goes to
 # build/distribution/v<version>-<sha7>/ (gitignored).
-# working value, repo name not yet chosen by the owner (ledger D-1); GH1 renames the repo
+# the repository name the owner settled on 2026-11-21 (SV ledger, D-1); shipped copies read this URL (B9)
 GITHUB_REPO="mxrsv/spacevibe"
 
 set -euo pipefail
