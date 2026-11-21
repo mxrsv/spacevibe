@@ -54,8 +54,9 @@ func agentsSkillsFolder(path string) Folder {
 // sharedSkills are the skills of ~/.agents/skills as Codex items: their own id tag, and not removable. They are in no
 // field the v5 shell decodes until RB-X1 (plan AR1, FE-P9): not in inventory.read, not in loadout.rows' items, cells,
 // countsByScope, rowFlags or problems. loadout.rows writes them as extraItems, and they count in every row's
-// cliCells. The write methods find ids through inventory.Read, so they do not see them either (RB-E3 owns writes to a
-// shared folder). It returns new items (C1).
+// cliCells. Not removable here: the v5 writes find ids through inventory.Read and never touch them. The per-CLI and
+// batch removals find them through ReadMembers, which makes them removable, so loadout.removeFrom and
+// loadout.removeMany do remove from ~/.agents/skills; loadout.copyTo never copies into it. It returns new items (C1).
 func sharedSkills(items []Item) []Item {
 	out := make([]Item, len(items))
 	for i, item := range items {

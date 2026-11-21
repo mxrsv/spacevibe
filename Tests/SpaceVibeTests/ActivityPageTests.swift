@@ -235,7 +235,7 @@ struct ActivityPageTests {
         #expect(state.confirmStop(writes: model.writes) == nil && core.stopped.count == 1)
     }
 
-    @Test("several Stops are one write and one toast; a partial refusal names how many stopped and the pid that was refused")
+    @Test("several Stops are one write and one toast; a partial refusal is the partial toast naming what stopped and what did not")
     func stopMany() async {
         let core = StopFakeCore()
         core.refuse = ["b"]
@@ -243,9 +243,17 @@ struct ActivityPageTests {
         let model = FrameModel(core: core, toasts: toasts)
         let rows = ActivityPageData(input([session("a", state: .running, pid: 48211), session("b", state: .waiting, pid: 47990)])).sessionRows
         let ok = await model.writes.perform(ActivityPageState.stopWrite(rows))
-        #expect(!ok && Set(core.stopped) == ["claude:a", "claude:b"])
-        #expect(toasts.current?.tone == .danger)
-        #expect(toasts.current?.message == "Stopped 1 of 2 sessions. pid 47990: The process could not be checked again, so nothing was sent to it.")
+        // Something stopped, so it is never shown as a refusal (RB-V1 finding 6).
+        #expect(ok && Set(core.stopped) == ["claude:a", "claude:b"])
+        #expect(toasts.current?.tone == .partial && toasts.current?.action == nil)
+        #expect(toasts.current?.message
+            == "Stopped 1 of 2 sessions: pid 48211. Not stopped: pid 47990. The process could not be checked again, so nothing was sent to it.")
+        // Every one refused is the refusal.
+        core.refuse = ["a", "b"]
+        #expect(await model.writes.perform(ActivityPageState.stopWrite(rows)) == false)
+        let refusal = toasts.current?.message ?? ""
+        #expect(toasts.current?.tone == .danger && refusal == "Stopped 0 of 2 sessions. Not stopped: pid 47990 and pid 48211. "
+                + "pid 47990: The process could not be checked again, so nothing was sent to it.")
         core.refuse = []
         #expect(await model.writes.perform(ActivityPageState.stopWrite(rows)))
         #expect(toasts.current?.message == "Stopped 2 sessions. This can't be undone." && toasts.current?.action == nil)

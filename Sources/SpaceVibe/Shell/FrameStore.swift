@@ -78,7 +78,8 @@ final class FrameStore {
         guard let cliPreferences else { return facts }
         var applied = facts
         applied.hidden = cliPreferences.hidden(in: snapshot.registry)
-        applied.findings.pinned = cliPreferences.pins(in: snapshot.registry)
+        applied.findings.pinned = cliPreferences.pins(in: snapshot.registry,
+                                                      installed: CLIPreferences.installedForBalance(snapshot.loadout?.folders))
         return applied
     }
 
@@ -246,9 +247,15 @@ final class FrameStore {
     /// The global reading lists the known projects: their two files are read, and a project no longer listed is dropped.
     private func followProjects(_ dirs: [String]) async {
         let wanted = Set(dirs.flatMap { [FrameScope.shared($0), FrameScope.local($0)] })
-        for file in snapshot.rules.keys where file != .global && !wanted.contains(file) {
+        // A read of a dropped file may still be in flight (the refresh asks for every known file beside the global one): its
+        // generation moves on, so its late answer is dropped instead of bringing the file back.
+        let dropped = Set(snapshot.rules.keys).union(states.keys.compactMap { if case .rules(let file) = $0 { file } else { nil } })
+            .filter { $0 != .global && !wanted.contains($0) }
+        for file in dropped {
             snapshot.rules[file] = nil
             states[.rules(file)] = nil
+            generations[.rules(file), default: 0] += 1
+            reading.remove(.rules(file))
         }
         let fresh = wanted.filter { snapshot.rules[$0] == nil && states[.rules($0)] != .loading }
         await withTaskGroup(of: Void.self) { group in

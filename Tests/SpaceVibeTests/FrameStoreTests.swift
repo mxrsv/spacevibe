@@ -313,8 +313,70 @@ struct FrameWritesTests {
         store.stop()
     }
 
+    @Test("an Undo run from the Journal window leaves the main window's session stack, so a later Z never reaches the core")
+    func journalUndoLeavesMainStack() async {
+        let (core, store, writes, toasts) = await setUp()
+        await writes.perform(.removeItem(id: "claude:skill:a", label: "Removed a"))
+        #expect(toasts.undoStack.count == 1 && toasts.current?.action != nil)
+        let journal = store.makeWrites(toasts: ToastCenter(announce: false))
+        #expect(await journal.undoFromJournal(FrameTestData.entry("e1"), label: "Removed a", store: store, main: writes))
+        #expect(toasts.undoStack.isEmpty && toasts.current == nil, "the toast that offered the same Undo is gone too")
+        core.reset()
+        toasts.undoKey()
+        #expect(core.calls.isEmpty)
+        store.stop()
+    }
+
+    @Test("the Journal window's Undo re-reads Clean's scan once Clean has read one, and never starts a first one")
+    func journalUndoRereadsClean() async {
+        let (_, store, _, _) = await setUp()
+        #expect(!FrameWrite.journalSources(store).contains(.clean))
+        store.cleanScanner = { FrameTestData.cleanScan() }
+        await store.readClean()
+        #expect(FrameWrite.journalSources(store).contains(.clean))
+        store.stop()
+    }
+
+    @Test("rule writes pend per file: a project's Shared and Local files never share a pending key")
+    func ruleControlsCarryScope() {
+        let shared = FrameScope.shared("/p"), local = FrameScope.local("/p")
+        let pairs: [(FrameWrite, FrameWrite)] = [
+            (.changeVerdict("Bash", from: .allow, to: .ask, in: shared, label: ""), .changeVerdict("Bash", from: .allow, to: .ask, in: local, label: "")),
+            (.removeRule("Bash", verdict: .allow, in: shared, label: ""), .removeRule("Bash", verdict: .allow, in: local, label: "")),
+            (.addRule("Bash", verdict: .allow, in: shared, label: ""), .addRule("Bash", verdict: .allow, in: local, label: "")),
+            (.setCapability(.run, to: .ask, in: shared, label: ""), .setCapability(.run, to: .ask, in: local, label: "")),
+        ]
+        for (a, b) in pairs { #expect(a.control != b.control) }
+        #expect(FrameWrite.changeVerdict("Bash", from: .allow, to: .ask, in: local, label: "").control == FrameWrite.verdictControl("Bash", in: local))
+    }
+
     private func eventually(_ done: () -> Bool) async -> Bool {
         for _ in 0..<200 where !done() { try? await Task.sleep(for: .milliseconds(5)) }
         return done()
+    }
+}
+
+/// The project files the global reading follows (RB-V1 build-review finding 7).
+@Suite("Frame store: project files")
+@MainActor
+struct FrameStoreProjectTests {
+    @Test("a project file the global reading dropped stays dropped when its own read answers late")
+    func droppedProjectStaysDropped() async {
+        let core = FrameFakeCore()
+        let store = FrameStore(core: core)
+        await store.start()
+        store.stop()
+        #expect(store.snapshot.rules[.shared("/p")] != nil)
+        // The project is no longer known; the refresh asks for its files beside the global one, and those answer late.
+        core.projects = []
+        let gate = PendingGate()
+        core.onCall = { name in if name.hasSuffix(":/p") { await gate.wait() } }
+        let refresh = Task { await store.refresh(force: true) }
+        for _ in 0..<400 where store.snapshot.rules[.shared("/p")] != nil { try? await Task.sleep(for: .milliseconds(5)) }
+        #expect(store.snapshot.rules[.shared("/p")] == nil, "the global reading answered first and dropped the project")
+        await gate.open()
+        await refresh.value
+        #expect(Set(store.snapshot.rules.keys) == [.global])
+        #expect(store.states[.rules(.shared("/p"))] == nil && !store.reading.contains(.rules(.local("/p"))))
     }
 }

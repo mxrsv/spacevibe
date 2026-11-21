@@ -94,12 +94,20 @@ final class EquipPageState {
 
     // MARK: Logo toggles and tiles
 
+    /// A write on the row runs: any of its logos or tiles, or a shared-file removal of it.
+    func isRowBusy(_ row: EquipListRow) -> Bool { !pendingToggles(row).isEmpty }
+
     /// A logo or tile pressed: copy, remove, or ask first when another CLI reads the file (RD-R11). Nothing changes on screen
     /// before the core answers (AR4). Returns the write's task (tests wait on it).
+    ///
+    /// While any write on the row runs, no press on it starts another: two logos turned off quickly would each be judged
+    /// against the world before either landed, and together take the last copy without `Remove…` (D53). The press is judged
+    /// again from the store's world now (a write's re-read lands before its pending ends), never from the row it was drawn
+    /// with.
     @discardableResult
-    func press(_ toggle: CLIToggleState, on row: EquipListRow, from anchor: Anchor) -> Task<Void, Never>? {
-        // A second press while the write runs is ignored (the toggle shows it pending).
-        guard let model, !pendingToggles(row).contains(toggle.cli.id) else { return nil }
+    func press(_ drawn: CLIToggleState, on drawnRow: EquipListRow, from anchor: Anchor) -> Task<Void, Never>? {
+        guard let model, !isRowBusy(drawnRow), let row = list().row(drawnRow.id),
+              let toggle = row.toggles.first(where: { $0.cli.id == drawn.cli.id }) else { return nil }
         let registry = model.store.snapshot.registry
         let control = EquipControl.toggle(row.id, toggle.cli.id)
         switch EquipToggles.intent(toggle, row: row.row, readers: row.readers) {
@@ -132,7 +140,12 @@ final class EquipPageState {
         return Task { @MainActor in
             let copied = copyFirst ? removal.savable : []
             if !copied.isEmpty {
-                guard await model.writes.perform(.copyTo(row.row, targets: copied, registry: registry, control: control)) else { return }
+                // A refused copy stops before the removal, and the toast says the item stayed.
+                let refused: @MainActor (String) -> Void = { sentence in
+                    model.writes.report(EquipSheet.copyRefused(row.name, reason: sentence), tone: .danger)
+                }
+                guard await model.writes.perform(.copyTo(row.row, targets: copied, registry: registry, control: control),
+                                                 refused: refused) else { return }
             }
             await model.writes.perform(.removeMembers([row.row], members: removal.members, registry: registry, control: control,
                                                       shared: true, copiedTo: copied))
@@ -176,8 +189,16 @@ final class EquipPageState {
         return Task { @MainActor in
             switch current.mode {
             case .add:
-                for step in EquipSheet.additions(current, rows: list.all, order: order) {
-                    guard await model.writes.perform(.copyTo(step.row, targets: step.targets, registry: registry, control: control)) else { break }
+                // One copy per row; a refused row never stops the others, and one toast says how many were added and why
+                // the rest were not ("Added 2 of 3; 1 refused: …").
+                let steps = EquipSheet.additions(current, rows: list.all, order: order)
+                var refusals: [String] = []
+                for step in steps {
+                    await model.writes.perform(.copyTo(step.row, targets: step.targets, registry: registry, control: control),
+                                               refused: { refusals.append($0) })
+                }
+                if let summary = EquipSheet.addSummary(total: steps.count, refusals: refusals) {
+                    model.writes.report(summary.sentence, tone: summary.tone)
                 }
             case .remove:
                 if let removal = EquipSheet.removal(current, rows: list.all) {

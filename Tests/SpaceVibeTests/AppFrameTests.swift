@@ -212,4 +212,28 @@ struct AppFrameTests {
         }
         #expect(FramePage.allCases.filter { !$0.hasInspector } == [.clean, .limits])
     }
+
+    // MARK: RB-V1 build-review findings
+
+    @Test("plain-letter keys never act while text is edited: Z typed in the search field is the field's, not Undo")
+    func plainKeysWaitForTextFields() {
+        // The search field's field editor is an NSTextView, the window's first responder while it is edited.
+        let editor = NSTextView()
+        #expect(!FramePlainKeys.undoMayAct(modifiers: [], isModal: false, firstResponder: editor))
+        #expect(!FramePlainKeys.rowLetterMayAct(isModal: false, firstResponder: editor))
+        #expect(FramePlainKeys.undoMayAct(modifiers: [], isModal: false, firstResponder: NSView()))
+        #expect(FramePlainKeys.undoMayAct(modifiers: [], isModal: false, firstResponder: nil))
+        #expect(!FramePlainKeys.undoMayAct(modifiers: [.shift], isModal: false, firstResponder: nil))
+        #expect(!FramePlainKeys.undoMayAct(modifiers: [], isModal: true, firstResponder: nil))
+        #expect(FramePlainKeys.rowLetterMayAct(isModal: false, firstResponder: NSView()))
+    }
+
+    @Test("RD-R16: Remove, Add to… and Change to Ask have menu shortcuts: distinct, not reserved, not plain letters, no text-editing key")
+    func rowActionShortcuts() {
+        let shortcuts = [FrameShortcut.remove, FrameShortcut.addTo, FrameShortcut.changeToAsk]
+        #expect(Set(shortcuts).count == 3 && shortcuts.allSatisfy { !$0.isPlainKey && !FrameShortcut.reserved.contains($0) })
+        #expect(!shortcuts.contains(FrameShortcut(KeyEquivalent.delete.character)), "⌘⌫ deletes to the line start in a text field")
+        #expect(shortcuts.allSatisfy { $0 != FrameShortcut("k") && $0 != FrameShortcut("c", modifiers: [.command, .shift]) })
+        #expect(FrameShortcut.remove.description == "⇧⌘⌫" && FrameShortcut.addTo.description == "⇧⌘A" && FrameShortcut.changeToAsk.description == "⌥⌘A")
+    }
 }

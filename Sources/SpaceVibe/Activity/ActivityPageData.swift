@@ -352,13 +352,17 @@ struct ActivityPageData: Sendable {
             : "Stopped \(NumberWording.plural(rows.count, "session")). This can't be undone."
     }
 
-    /// The refused-write sentence when some of several Stops were refused: how many were stopped, then the first refusal in
-    /// the core's words. Nil when every one was stopped.
-    static func partialStop(total: Int, refused: [(pid: Int, reason: String)]) -> String? {
+    /// The sentence when some of several Stops were refused: which pids stopped and which did not, then the first refusal in
+    /// the core's words ("Stopped 1 of 2 sessions: pid 48211. Not stopped: pid 47990. <reason>"). Nil when every one was
+    /// stopped.
+    static func partialStop(stopped: [Int], refused: [(pid: Int, reason: String)]) -> String? {
         guard let first = refused.first else { return nil }
-        let stopped = total - refused.count
-        let more = refused.count > 1 ? " \(NumberWording.count(refused.count - 1)) more were refused too." : ""
-        return "Stopped \(NumberWording.count(stopped)) of \(NumberWording.plural(total, "session")). pid \(first.pid): \(first.reason)\(more)"
+        let total = stopped.count + refused.count
+        let head = "Stopped \(NumberWording.count(stopped.count)) of \(NumberWording.plural(total, "session"))"
+        let done = stopped.isEmpty ? "" : ": " + CLINames.sentence(stopped.map { "pid \($0)" })
+        let notStopped = CLINames.sentence(refused.map { "pid \($0.pid)" })
+        let why = refused.count > 1 ? "pid \(first.pid): \(first.reason)" : first.reason
+        return "\(head)\(done). Not stopped: \(notStopped). \(why)"
     }
 
     // MARK: Dates

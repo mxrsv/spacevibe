@@ -70,9 +70,10 @@ final class FrameWrites {
         do { outcome = .success(try await write.run(core)) } catch { outcome = .failure(error) }
         switch outcome {
         case .success(.entry(let entry)):
-            toasts.show(write.label, asyncUndo: { [weak self] in await self?.undo(entry, label: write.label, touches: write.touches) })
+            toasts.show(write.label, journalEntries: [entry.id],
+                        asyncUndo: { [weak self] in await self?.undo(entry, label: write.label, touches: write.touches) })
         case .success(.entryToast(let entry, let label)):
-            toasts.show(label, asyncUndo: { [weak self] in await self?.undo(entry, label: label, touches: write.touches) })
+            toasts.show(label, journalEntries: [entry.id], asyncUndo: { [weak self] in await self?.undo(entry, label: label, touches: write.touches) })
         case .success(.nothingToChange):
             toasts.show(Self.nothingToChange)
         case .success(.done):
@@ -82,7 +83,8 @@ final class FrameWrites {
             if entries.isEmpty {
                 toasts.show(label, tone: tone)
             } else {
-                toasts.show(label, tone: tone, asyncUndo: { [weak self] in await self?.undo(entries, label: label, touches: write.touches) })
+                toasts.show(label, tone: tone, journalEntries: entries.map(\.id),
+                            asyncUndo: { [weak self] in await self?.undo(entries, label: label, touches: write.touches) })
             }
         case .success(.notice(let sentence)):
             toasts.show(sentence)
@@ -93,6 +95,17 @@ final class FrameWrites {
         await store.reread(write.touches.union([.journal]))
         if case .success = outcome { return true }
         return false
+    }
+
+    /// A sentence about several writes together, after they ran (Add to…'s "Added 2 of 3; 1 refused: …"): the toast only,
+    /// no Undo of its own (each write that landed already put its Undo on the session stack).
+    func report(_ sentence: String, tone: ToastTone) {
+        toasts.show(sentence, tone: tone)
+    }
+
+    /// The Journal entry `id` was undone from another window: this window's session stack drops its Undo (`ToastCenter`).
+    func forgetUndo(journalEntry id: String) {
+        toasts.forgetUndo(journalEntry: id)
     }
 
     // MARK: Reads before a write
@@ -155,26 +168,29 @@ extension FrameWrite {
         }
     }
 
+    /// The pending key of a verdict change: the file's scope too, since a project's Shared and Local files share its folder.
+    static func verdictControl(_ rule: String, in file: FrameScope) -> String { "verdict:\(file.scope.rawValue):\(file.dir ?? ""):\(rule)" }
+
     static func changeVerdict(_ rule: String, from: CoreVerdict, to: CoreVerdict, in file: FrameScope, label: String) -> FrameWrite {
-        FrameWrite(control: "verdict:\(file.dir ?? ""):\(rule)", label: label, touches: [.rules(file)]) {
+        FrameWrite(control: verdictControl(rule, in: file), label: label, touches: [.rules(file)]) {
             .entry(try await $0.rulesChangeVerdict(scope: file.scope, dir: file.dir, rule: rule, from: from, to: to).entry)
         }
     }
 
     static func removeRule(_ rule: String, verdict: CoreVerdict, in file: FrameScope, label: String) -> FrameWrite {
-        FrameWrite(control: "removeRule:\(file.dir ?? ""):\(rule)", label: label, touches: [.rules(file)]) {
+        FrameWrite(control: "removeRule:\(file.scope.rawValue):\(file.dir ?? ""):\(rule)", label: label, touches: [.rules(file)]) {
             .entry(try await $0.rulesRemove(scope: file.scope, dir: file.dir, verdict: verdict, rule: rule).entry)
         }
     }
 
     static func addRule(_ rule: String, verdict: CoreVerdict, in file: FrameScope, label: String) -> FrameWrite {
-        FrameWrite(control: "addRule:\(file.dir ?? "")", label: label, touches: [.rules(file)]) {
+        FrameWrite(control: "addRule:\(file.scope.rawValue):\(file.dir ?? "")", label: label, touches: [.rules(file)]) {
             .entry(try await $0.rulesAdd(scope: file.scope, dir: file.dir, verdict: verdict, rule: rule).entry)
         }
     }
 
     static func setCapability(_ capability: CoreCapability, to verdict: CoreVerdict, in file: FrameScope, label: String) -> FrameWrite {
-        FrameWrite(control: "capability:\(file.dir ?? ""):\(capability.rawValue)", label: label, touches: [.rules(file)]) { core in
+        FrameWrite(control: "capability:\(file.scope.rawValue):\(file.dir ?? ""):\(capability.rawValue)", label: label, touches: [.rules(file)]) { core in
             let result = try await core.rulesSetCapability(scope: file.scope, dir: file.dir, capability: capability, verdict: verdict)
             return result.entry.map(FrameWriteOutcome.entry) ?? .nothingToChange
         }
@@ -214,13 +230,14 @@ extension FrameWrite {
     }
 
     /// `Remove N selected`: the rows shown and ticked (`FrameWorld.removalSet`), removed as one change with one Undo
-    /// (`loadout.removeMany`). The label counts rows, not copies; the call passes every member id of each row, or only
-    /// those in `members` when given.
+    /// (`loadout.removeMany`). The label counts rows, not copies; the call passes `ids` as given when given (members of
+    /// other rows included, `RowRemoval.members`), else every member id of each row, or only those in `members`.
     ///
     /// The toast is the mock's `removeIds` sentence: each kind with its word ("Removed Hook lint-staged.sh from Claude Code",
     /// "Removed 3 Skills from Codex"), and ". settings.json was edited" when a Hook went, since its removal edits that file.
-    static func removeMany(_ rows: [FrameRow], members: Set<String>? = nil, registry: [CoreRegistryCLI], control: String = "removeMany") -> FrameWrite {
-        let ids = rows.flatMap(\.memberIDs).filter { members?.contains($0) ?? true }
+    static func removeMany(_ rows: [FrameRow], members: Set<String>? = nil, ids given: [String]? = nil, registry: [CoreRegistryCLI],
+                           control: String = "removeMany") -> FrameWrite {
+        let ids = given ?? rows.flatMap(\.memberIDs).filter { members?.contains($0) ?? true }
         let what = selection(rows, namesKind: true)
         let edits = rows.contains { $0.kind == .hook } ? edited("settings.json") : ""
         return FrameWrite(control: control, label: "Removed \(what)\(edits)", touches: loadoutSources) { core in

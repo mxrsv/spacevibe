@@ -145,4 +145,34 @@ struct FindingsTests {
         #expect(groups.map(\.severity) == [.critical, .attention, .attention])
         #expect(groups.map(\.findings.count).reduce(0, +) == world(snapshot).findings.count)
     }
+
+    @Test("Balance never offers what Add to cannot do: a project item, or a CLI with no folder SpaceVibe copies into")
+    func balanceOnlyCopyable() {
+        var facts = FrameFacts()
+        facts.findings.pinned = ["claude", "codex"]
+        let project = D.item("checkout", project: "/w/payments", cells: ["claude": D.sessions(40), "codex": .missing])
+        let mine = D.item("deploy", cells: ["claude": D.sessions(9), "codex": .missing], folder: "/h/.claude/skills", realPath: "/h/.claude/skills/deploy")
+        // The most-used item is the project's: it is skipped, the user's own is the finding.
+        #expect(world(D.snapshot(D.loadout([project, mine])), facts: facts).findings.map(\.id) == ["bal:skill::deploy"])
+        // Codex owns no Skills folder SpaceVibe copies into (not installed): no Balance finding at all.
+        var loadout = D.loadout([mine])
+        loadout.folders = [D.folder("/h/.claude/skills", readBy: ["claude"], ownedBy: "claude")]
+        #expect(world(D.snapshot(loadout), facts: facts).findings.isEmpty)
+        loadout.folders.append(D.folder("/h/.codex/skills", readBy: ["codex"], ownedBy: "codex"))
+        #expect(world(D.snapshot(loadout), facts: facts).findings.map(\.id) == ["bal:skill::deploy"])
+    }
+
+    @Test("the default Balance pins skip a CLI that owns no Skills or Subagents folder SpaceVibe copies into")
+    @MainActor
+    func defaultPinsSkipNotInstalled() {
+        let registry = D.registry(count: 4)
+        let prefs = CLIPreferences(defaults: nil)
+        #expect(prefs.pins(in: registry) == ["claude", "codex"], "no readers map read yet: the registry order")
+        let folders = [D.folder("/h/.claude/skills", readBy: ["claude"], ownedBy: "claude"),
+                       D.folder("/h/.cli3/agents", readBy: ["cli3"], ownedBy: "cli3", kind: .agent)]
+        let installed = CLIPreferences.installedForBalance(folders)
+        #expect(installed == ["claude", "cli3"])
+        #expect(prefs.pins(in: registry, installed: installed) == ["claude", "cli3"])
+        #expect(CLIPreferences.installedForBalance([]) == nil && CLIPreferences.installedForBalance(nil) == nil)
+    }
 }

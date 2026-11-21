@@ -23,6 +23,10 @@ struct SharedFileConfirmation: View {
             let what = files.joined(separator: " and ")
             let verb = files.count > 1 ? "are" : "is"
             let get = others.count > 1 ? "get" : "gets"
+            // Another CLI reads the file but keeps the item from a folder of its own: only this CLI loses it.
+            guard !others.isEmpty else {
+                return "\(what) \(verb) read by other CLIs too, but each of them keeps the item from another folder, so only \(cli) loses it."
+            }
             var text = "\(what) \(verb) also how \(CLINames.sentence(others)) \(get) it. Removing it from \(cli) removes it for "
                 + "\(others.count > 1 ? "them" : "it") too."
             if !savable.isEmpty {

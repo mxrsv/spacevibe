@@ -120,6 +120,22 @@ enum EquipSheet {
         }
     }
 
+    /// The toast after `Add to…` when a row was refused: "Added 2 of 3; 1 refused: <the core's sentence>" as the partial
+    /// toast (each row added keeps its Undo on the session stack); nothing added is the refused toast, the core's sentence
+    /// alone for one row. Nil when nothing was refused: each row's own toast stands.
+    static func addSummary(total: Int, refusals: [String]) -> (sentence: String, tone: ToastTone)? {
+        guard let first = refusals.first else { return nil }
+        if total == 1 { return (first, .danger) }
+        let added = total - refusals.count
+        let sentence = "Added \(NumberWording.count(added)) of \(NumberWording.count(total)); \(NumberWording.count(refusals.count)) refused: \(first)"
+        return (sentence, added == 0 ? .danger : .partial)
+    }
+
+    /// The refused copy of "Copy to …, then remove": the core's sentence, then that the item stayed.
+    static func copyRefused(_ name: String, reason: String) -> String {
+        "\(CleanWording.sentence(reason)) \(name) was not removed."
+    }
+
     private static func identity(_ cli: CoreRegistryCLI) -> CLIIdentity { CLIIdentity(id: cli.id, name: cli.name) }
     private static func tilde(_ path: String) -> String { (path as NSString).abbreviatingWithTildeInPath }
 }

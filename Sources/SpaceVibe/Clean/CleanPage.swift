@@ -42,8 +42,10 @@ struct CleanPage: Equatable, Sendable {
         case moving
     }
 
+    /// Only `usage.scan` reads the archive of moved logs' totals (the counts on Skills, Subagents and Hooks); Limits and
+    /// Activity read live files and the status line, so the note never names them.
     static let note = "Skills, Subagents and Hooks go to SpaceVibe's trash; logs and caches to the macOS Trash. Undo brings both back. "
-        + "A moved log keeps only its usage totals, which Limits and Activity still count."
+        + "A moved log keeps only its usage totals, which the usage counts on Skills, Subagents and Hooks still include."
     static let tidyLine = "Every item ran, no session log is older than 30 days, and the caches are empty."
 
     let phase: Phase
@@ -166,7 +168,7 @@ struct CleanPage: Equatable, Sendable {
         let plan = world.clean
         let ticked = Set(self.ticked)
         let rows = plan.agentRows.filter { ticked.contains($0.id) }.map(\.row)
-        let members = rows.flatMap { row in row.kind == .hook ? row.hooks.filter { $0.cli == .claude }.map(\.id) : row.memberIDs }
+        let members = RowRemoval.members(rows, in: world)
         let logs = plan.logs.filter { ticked.contains($0.id) }
         let caches = plan.caches.filter { ticked.contains($0.id) }
         var names: [String: String] = [:]

@@ -35,6 +35,8 @@ struct SettingsFacts: Equatable, Sendable {
     var limits: FrameSourceState?
     var journal: CoreJournalHistory?
     var journalState: FrameSourceState?
+    /// The CLIs the default Balance pins may take (`CLIPreferences.installedForBalance`); nil before `loadout.rows`.
+    var installedForBalance: Set<String>?
 
     init(registry: [CoreRegistryCLI] = [], statuslineAt: Date? = nil, limits: FrameSourceState? = nil,
          journal: CoreJournalHistory? = nil, journalState: FrameSourceState? = nil) {
@@ -53,6 +55,7 @@ struct SettingsFacts: Equatable, Sendable {
         limits = store.states[.limits]
         journal = store.snapshot.journal
         journalState = store.states[.journal]
+        installedForBalance = CLIPreferences.installedForBalance(store.snapshot.loadout?.folders)
     }
 }
 
@@ -74,10 +77,10 @@ struct SettingsCLIRow: Identifiable, Equatable, Sendable {
     var id: String { cli.id }
 
     @MainActor
-    static func rows(registry: [CoreRegistryCLI], preferences: CLIPreferences) -> [SettingsCLIRow] {
+    static func rows(registry: [CoreRegistryCLI], preferences: CLIPreferences, installed: Set<String>? = nil) -> [SettingsCLIRow] {
         let hidden = preferences.hidden(in: registry)
         let shownCount = registry.filter { !hidden.contains($0.id) }.count
-        let pins = preferences.pins(in: registry)
+        let pins = preferences.pins(in: registry, installed: installed)
         return registry.map { cli in
             let isShown = !hidden.contains(cli.id)
             let canBalance = CLIPreferences.canBalance(cli)

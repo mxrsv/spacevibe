@@ -129,12 +129,20 @@ final class ActivityPageState {
         }
         let steps = targets.map { (pid: $0.session.pid, write: FrameWrite.stop(cli: $0.session.cli, sessionID: $0.session.id, label: label)) }
         return FrameWrite(control: Self.stopManyControl, label: label, touches: [.activity]) { core in
+            var stopped: [Int] = []
             var refused: [(pid: Int, reason: String)] = []
             for step in steps {
-                do { _ = try await step.write.run(core) } catch { refused.append((step.pid, (error as? CoreError)?.message ?? CoreError.unexpectedMessage)) }
+                do {
+                    _ = try await step.write.run(core)
+                    stopped.append(step.pid)
+                } catch {
+                    refused.append((step.pid, (error as? CoreError)?.message ?? CoreError.unexpectedMessage))
+                }
             }
-            if let sentence = ActivityPageData.partialStop(total: steps.count, refused: refused) { throw CoreError(sentence, status: 409) }
-            return .done
+            guard let sentence = ActivityPageData.partialStop(stopped: stopped, refused: refused) else { return .done }
+            // Some stopped: the partial toast, never the refusal, since something did change (Stop has no Undo).
+            guard !stopped.isEmpty else { throw CoreError(sentence, status: 409) }
+            return .entries([], label: sentence, isPartial: true)
         }
     }
 

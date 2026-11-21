@@ -39,6 +39,9 @@ struct UndoItem: Identifiable {
     let id: UUID
     let label: String
     let body: Body
+    /// The Journal entries the Undo reverts (a write's), so an Undo run from another window (the Journal) can take the item
+    /// off this stack (`ToastCenter.forgetUndo(journalEntry:)`). Empty for an in-memory Undo.
+    var journalEntries: [String] = []
 
     enum Body {
         /// In-memory, done when it returns (Dismiss in Activity): runs at once, even while a write's Undo is running.
@@ -96,13 +99,27 @@ final class ToastCenter {
     }
 
     /// An Undo that awaits a journal write: while it runs, no other Undo starts.
-    func show(_ message: String, tone: ToastTone = .info, asyncUndo: @escaping @MainActor () async -> Void) {
-        offer(message, tone: tone, sessionUndo: true, body: .async(asyncUndo))
+    /// `journalEntries`: the Journal entries the Undo reverts, so an Undo of one of them elsewhere takes it off the stack.
+    func show(_ message: String, tone: ToastTone = .info, journalEntries: [String] = [], asyncUndo: @escaping @MainActor () async -> Void) {
+        offer(message, tone: tone, sessionUndo: true, body: .async(asyncUndo), journalEntries: journalEntries)
     }
 
-    private func offer(_ message: String, tone: ToastTone, sessionUndo: Bool, body: UndoItem.Body) {
+    /// The Journal entry `id` was undone elsewhere (the Journal window): every Undo that would revert it leaves the stack, and
+    /// a toast still offering it is hidden, so a later `Z` or the button never asks the core to undo it again (it would
+    /// refuse).
+    func forgetUndo(journalEntry id: String) {
+        let gone = undoStack.filter { $0.journalEntries.contains(id) }.map(\.id)
+        undoStack.removeAll { $0.journalEntries.contains(id) }
+        if let item = currentUndo, item.journalEntries.contains(id) {
+            currentUndo = nil
+            dismiss(id: item.id)
+        }
+        for item in gone { dismiss(id: item) }
+    }
+
+    private func offer(_ message: String, tone: ToastTone, sessionUndo: Bool, body: UndoItem.Body, journalEntries: [String] = []) {
         let id = UUID()
-        let item = UndoItem(id: id, label: message, body: body)
+        let item = UndoItem(id: id, label: message, body: body, journalEntries: journalEntries)
         // The toast's button takes its item off the stack first, so a later `Z` cannot replay it.
         let action = ToastAction.undo { [weak self] in self?.run(item) }
         currentUndo = item

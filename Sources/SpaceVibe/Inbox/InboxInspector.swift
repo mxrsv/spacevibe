@@ -23,7 +23,7 @@ struct InboxInspector: View {
                 case .failingHook(let item, let errors): hook(item, errorsLastWeek: errors, actions: actions)
                 case .row(let item) where item.kind == .hook:
                     hook(item, errorsLastWeek: world.facts.findings.hookErrorsLastWeek?[item.id], actions: actions)
-                case .row(let item), .balance(let item, _, _): self.item(item, actions: actions)
+                case .row(let item), .balance(let item, _, _): self.item(item, row: row, actions: actions)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -85,7 +85,7 @@ struct InboxInspector: View {
                       iconInk: ColorRole.stateAttention)
         InspectorActions(actions: [
             InspectorAction(id: "ask", title: InboxAction.changeToAsk.title,
-                            isLoading: actions.writes.isPending("verdict:\(file.dir ?? ""):\(rule.rule)")) { actions.perform(.changeToAsk, on: row) },
+                            isLoading: actions.isPending(.changeToAsk, row)) { actions.perform(.changeToAsk, on: row) },
         ])
     }
 
@@ -109,7 +109,7 @@ struct InboxInspector: View {
     // MARK: Skill or Subagent
 
     @ViewBuilder
-    private func item(_ item: FrameRow, actions: InboxActions) -> some View {
+    private func item(_ item: FrameRow, row: InboxRowModel, actions: InboxActions) -> some View {
         let isAgent = item.kind == .agent
         InspectorTitle(item.name) {
             FrameGlyph(isAgent ? .subagents : .skills, side: SizeRole.icon20, ink: isAgent ? ColorRole.toneSubagents : ColorRole.toneSkills)
@@ -117,14 +117,15 @@ struct InboxInspector: View {
         if let description = item.items.first?.description, !description.isEmpty {
             InspectorNote(description)
         }
-        InspectorActions(actions: [
-            InspectorAction(id: "remove", title: "Remove…", icon: .trash, isLoading: actions.writes.isPending("removeMany:\(item.id)"),
-                            isDestructive: true) { actions.remove([item], control: "removeMany:\(item.id)") },
-        ])
+        InspectorActions(actions: InboxInspectorFacts.itemActions(row).map { action in
+            InspectorAction(id: action.id, title: action.isDestructive ? "Remove…" : action.title,
+                            icon: action.isDestructive ? .trash : nil, isLoading: actions.isPending(action, row),
+                            isDestructive: action.isDestructive) { actions.perform(action, on: row) }
+        })
         InspectorSection("CLIs") {
             let states = CLIToggleStates.states(of: item, in: world)
             CLITileGrid(states: states, toggle: { actions.toggleTile($0, row: item) },
-                        pending: actions.writes.isPending("tile:\(item.id)") ? Set(states.map(\.cli.id)) : [])
+                        pending: actions.isItemBusy(item.id) ? Set(states.map(\.cli.id)) : [])
         }
         KeyValueList(facts: InboxInspectorFacts.item(item, world: world, now: now))
         if let path = item.items.first?.path {
@@ -135,6 +136,15 @@ struct InboxInspector: View {
 
 /// The inspector's facts per kind, as label and value. Pure, so the tests read them.
 enum InboxInspectorFacts {
+    /// The buttons of a Skill or Subagent finding's inspector: a Clean up row's `Remove…`; a Balance finding's `Add to <CLI>`
+    /// and Keep only, never a removal (it is the most-used item).
+    static func itemActions(_ row: InboxRowModel) -> [InboxAction] {
+        switch row.finding.subject {
+        case .balance: row.actions.filter { if case .addTo = $0 { true } else { false } } + row.actions.filter { $0 == .keep || $0 == .stopKeeping }
+        default: row.actions.filter(\.isDestructive)
+        }
+    }
+
     static func window(_ pace: WindowPace, entry: CoreLimitsEntry?, now: Date) -> [InspectorFact] {
         let left = pace.over > 0 ? "0% · over by \(InboxWording.percent(pace.over))" : InboxWording.percent(pace.left ?? 0)
         let time = pace.timeLeft.map { "\(Int($0.rounded()))%" } ?? "No window length"

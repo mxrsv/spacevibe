@@ -124,6 +124,14 @@ struct FrameDialogLogicTests {
         #expect(alone.copyTitle == nil)
     }
 
+    @Test("the shared-file confirmation when no other CLI loses it: a whole sentence, never an empty list of names")
+    func sharedFileNoOtherLoser() {
+        let wording = SharedFileConfirmation.Wording(cli: "Codex", files: ["~/.agents/skills/pdf-extract"], losers: ["Codex"], savable: [])
+        #expect(wording.sentence == "~/.agents/skills/pdf-extract is read by other CLIs too, but each of them keeps the item from another "
+            + "folder, so only Codex loses it.")
+        #expect(wording.removeTitle == "Remove for 1 CLI" && wording.copyTitle == nil)
+    }
+
     @Test("the remove confirmation names every reader and counts the items")
     func removeConfirmation() {
         #expect(RemoveConfirmation.title(1) == "Remove 1 item?" && RemoveConfirmation.title(8) == "Remove 8 items?")

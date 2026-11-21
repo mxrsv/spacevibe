@@ -6,7 +6,8 @@ import Observation
 struct CleanRequest: Equatable, Sendable {
     /// Never ran and Dead rows: `loadout.removeMany` into SpaceVibe's trash (CL-R1, one Journal entry).
     let rows: [FrameRow]
-    /// Their member ids: every member of a Skill or Subagent, a Hook's Claude Code members only (D25).
+    /// Their member ids: every member of a Skill or Subagent, a Hook's Claude Code members only (D25), with every member
+    /// that shares a file with them, other rows' links included (`RowRemoval.members`), or the engine refuses.
     let members: [String]
     /// Log buckets and cache ids: `clean.move` into the macOS Trash (CL-R5, one Journal entry).
     let logs: [CoreCleanLogPick]

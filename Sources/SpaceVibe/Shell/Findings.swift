@@ -118,7 +118,7 @@ enum Findings {
     /// "Inbox findings" block of the reference mock's `world`.
     static func all(
         rows: [FrameRow], wideAllows: [(rule: CoreRule, file: FrameScope)], windows: [WindowPace], sessions: [CoreActivitySession],
-        shownCLIs: [String], facts: FindingFacts
+        shownCLIs: [String], facts: FindingFacts, folders: [CoreReadersFolder] = []
     ) -> (open: [InboxFinding], kept: [InboxFinding]) {
         var found: [InboxFinding] = []
         let quiet = rows.filter { !$0.isRecentlyAdded && !$0.isPlugin && !$0.isProject && !$0.isHookSpaceVibeDoesNotWrite }
@@ -128,7 +128,7 @@ enum Findings {
         for row in quiet where row.status == .neverRan {
             found.append(InboxFinding(id: row.id, job: .cleanUp, severity: .attention, subject: .row(row)))
         }
-        if let balance = balance(rows: rows, pinned: facts.pinned.filter(shownCLIs.contains)) { found.append(balance) }
+        if let balance = balance(rows: rows, pinned: facts.pinned.filter(shownCLIs.contains), folders: folders) { found.append(balance) }
         for row in rows where row.kind == .hook {
             guard let errors = facts.hookErrorsLastWeek?[row.id], errors > 0 else { continue }
             found.append(InboxFinding(id: "\(row.id):fail", job: .control, severity: .attention, subject: .failingHook(row, errors: errors)))
@@ -148,10 +148,17 @@ enum Findings {
 
     /// One Balance finding at most: the most-used item, by sessions in the pinned CLIs that have it, missing in a pinned CLI;
     /// none with fewer than two pins ("Inferred, not decided": Balance finding). A row with an unknown cell is never judged.
-    static func balance(rows: [FrameRow], pinned: [String]) -> InboxFinding? {
+    /// Only what `Add to <CLI>` can do is offered: never a plugin or project item (the engine copies neither, "Inferred, not
+    /// decided": Project items), and never into a CLI that has no folder of the kind SpaceVibe copies into (`folders`, the
+    /// readers map: not installed, or no such folder). Without a readers map the engine is left to refuse.
+    static func balance(rows: [FrameRow], pinned: [String], folders: [CoreReadersFolder] = []) -> InboxFinding? {
         guard pinned.count >= 2 else { return nil }
-        let scored = rows.filter { $0.kind != .hook && !$0.isPlugin && !$0.cells.values.contains(.unknown) }.compactMap { row -> (FrameRow, String, Int)? in
-            guard let missing = pinned.first(where: { row.cell($0) == .missing }) else { return nil }
+        func canCopy(_ row: FrameRow, into cli: String) -> Bool {
+            folders.isEmpty || folders.contains { $0.ownedBy == cli && $0.kind == row.kind && $0.copyTarget }
+        }
+        let offered = rows.filter { $0.kind != .hook && !$0.isPlugin && !$0.isProject && !$0.cells.values.contains(.unknown) }
+        let scored = offered.compactMap { row -> (FrameRow, String, Int)? in
+            guard let missing = pinned.first(where: { row.cell($0) == .missing && canCopy(row, into: $0) }) else { return nil }
             let sessions = pinned.compactMap { row.cell($0).count }.reduce(0, +)
             return sessions > 0 ? (row, missing, sessions) : nil
         }

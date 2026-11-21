@@ -63,6 +63,13 @@ final class CLIPreferences {
     /// Only a CLI that holds Skills or Subagents can be compared in Balance.
     nonisolated static func canBalance(_ cli: CoreRegistryCLI) -> Bool { cli.supports.skill || cli.supports.agent }
 
+    /// The CLIs that own a Skills or Subagents folder SpaceVibe copies into, from `loadout.rows`' readers map (it lists each
+    /// installed CLI's own folders); nil without a map.
+    nonisolated static func installedForBalance(_ folders: [CoreReadersFolder]?) -> Set<String>? {
+        guard let folders, !folders.isEmpty else { return nil }
+        return Set(folders.filter { $0.copyTarget && ($0.kind == .skill || $0.kind == .agent) }.map(\.ownedBy))
+    }
+
     /// The hidden ids among `registry`; never every one of them (an older defaults value cannot break the Show guard).
     func hidden(in registry: [CoreRegistryCLI]) -> Set<String> {
         let ids = registry.map(\.id)
@@ -74,9 +81,15 @@ final class CLIPreferences {
 
     /// The pinned CLIs in registry order: the chosen ones that can be compared, at most three; before any choice, the first
     /// two that can.
-    func pins(in registry: [CoreRegistryCLI]) -> [String] {
+    ///
+    /// `installed`: the CLIs that own a folder SpaceVibe copies Skills or Subagents into (`installedForBalance`, from the
+    /// readers map); the default skips any other, so Balance never starts by comparing against a CLI that is not on this Mac
+    /// or holds neither. Nil (no `loadout.rows` read yet) leaves the registry's order alone.
+    func pins(in registry: [CoreRegistryCLI], installed: Set<String>? = nil) -> [String] {
         let eligible = registry.filter(Self.canBalance)
-        guard let chosenPins else { return Array(eligible.prefix(Self.minPins).map(\.id)) }
+        guard let chosenPins else {
+            return Array(eligible.filter { installed?.contains($0.id) ?? true }.prefix(Self.minPins).map(\.id))
+        }
         return Array(eligible.map(\.id).filter(chosenPins.contains).prefix(Self.maxPins))
     }
 
@@ -97,8 +110,8 @@ final class CLIPreferences {
 
     /// Pins or unpins one CLI for Balance; nil when it changed or already was so.
     @discardableResult
-    func setPinned(_ isPinned: Bool, for id: String, in registry: [CoreRegistryCLI]) -> Refusal? {
-        var pins = pins(in: registry)
+    func setPinned(_ isPinned: Bool, for id: String, in registry: [CoreRegistryCLI], installed: Set<String>? = nil) -> Refusal? {
+        var pins = pins(in: registry, installed: installed)
         if isPinned {
             guard let cli = registry.first(where: { $0.id == id }), Self.canBalance(cli) else { return .cannotBalance }
             if pins.contains(id) { return nil }

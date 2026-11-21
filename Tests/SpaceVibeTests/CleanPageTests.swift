@@ -160,6 +160,24 @@ struct CleanPageTests {
         #expect(request.groupNames["logs:codex"] == "Codex session logs")
     }
 
+    @Test("the request names every member that shares a ticked row's file, another row's link included, and asks first")
+    func requestNamesLinks() {
+        var snapshot = InboxBuildReviewTests.linkWorld().snapshot
+        snapshot.clean = FrameTestData.cleanScan(items: ["skill::foo": 4_096])
+        let world = FrameWorld(snapshot: snapshot, now: FrameTestData.now)
+        let inputs = CleanInputs(world: world, figure: world.figure(for: .clean, loading: [], failed: []), now: FrameTestData.now)
+        let shown = CleanPage(inputs, ticked: ["skill::foo"])
+        #expect(shown.ticked == ["skill::foo"])
+        #expect(shown.request(world).members == ["claude:skill:foo", "codex:skill:bar"])
+        #expect(shown.sharedRows(world).map(\.id) == ["skill::foo"], "Codex would keep a dangling link: the readers are named first")
+    }
+
+    @Test("the band's note names only what keeps a moved log's totals: the usage counts, not Limits or Activity")
+    func noteIsTrue() {
+        #expect(!CleanPage.note.contains("Limits") && !CleanPage.note.contains("Activity"))
+        #expect(CleanPage.note.hasSuffix("which the usage counts on Skills, Subagents and Hooks still include."))
+    }
+
     @Test("at 2 CLIs no file is shared, so removal never asks; at 10 a shared ~/.agents/skills file names its readers")
     func confirmation() {
         let two = S.world(.normal, clis: 2)

@@ -31,8 +31,10 @@ enum EquipFrame {
         guard list.canRemove(row) else { return [] }
         let busy = state.isPending(EquipControl.sheet(list.kind.page))
         return [
-            FrameRowAction(id: "addTo", title: "Add to…", isEnabled: !busy) { state.openSheet(.add, rows: [row.id]) },
-            FrameRowAction(id: "remove", title: "Remove…", isDestructive: true, isEnabled: !busy) { state.openSheet(.remove, rows: [row.id]) },
+            FrameRowAction(id: "addTo", title: "Add to…", shortcut: .addTo, isEnabled: !busy) { state.openSheet(.add, rows: [row.id]) },
+            FrameRowAction(id: "remove", title: "Remove…", shortcut: .remove, isDestructive: true, isEnabled: !busy) {
+                state.openSheet(.remove, rows: [row.id])
+            },
         ]
     }
 }

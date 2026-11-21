@@ -34,6 +34,9 @@ struct InboxConfirmation {
     let write: FrameWrite
     /// The rows it removes, unticked once it lands.
     let rowIDs: [String]
+    /// `FrameRouter.revision` when it opened: a route changed from outside since (the glance widget) closes it, so it never
+    /// comes back over another page or selection.
+    var routeRevision = 0
 }
 
 /// What the Inbox reads: the store's world and its state for the page, or a fixed set for a shot.
@@ -81,7 +84,8 @@ extension FramePageContent {
                              showsKept: state.showsKept, hasHost: { host.hostApp($0) != nil }, query: model.search.query,
                              now: inputs.now)
         let selection = fixed == nil ? model.router.route.selection : inputs.selection
-        let actions = InboxActions(model: model, state: state, page: page, world: inputs.world, host: host)
+        var actions = InboxActions(model: model, state: state, page: page, world: inputs.world, host: host)
+        if fixed == nil { actions.liveWorld = { model.store.world() } }
         let selected = page.row(selection)
         let narrow = !FindingRowLayout.showsEvidence(listWidth: state.listWidth)
         return FramePageContent(
@@ -92,7 +96,7 @@ extension FramePageContent {
             inspector: AnyView(InboxInspector(row: selected, world: inputs.world, now: inputs.now, actions: actions,
                                               hasRows: !page.rows.isEmpty || !page.kept.isEmpty)),
             overlayActions: selected.map { AnyView(InboxOverlayActions(row: $0, actions: actions)) },
-            dialog: state.confirming.map { confirmation in
+            dialog: state.confirming.flatMap { $0.routeRevision == model.router.revision ? $0 : nil }.map { confirmation in
                 FrameDialog(id: "inbox.confirm", cancel: actions.cancelConfirmation) {
                     InboxConfirmationDialog(confirmation: confirmation, actions: actions)
                 }
@@ -122,6 +126,12 @@ struct InboxActions {
     /// The window's toast center, for the notices that are not writes (a copy, a missing terminal app). Views set it from the
     /// environment (`using(_:)`).
     var toasts: ToastCenter?
+    /// The store's world now (nil for a shot's fixed world): a press re-derives what it does from it, so a press drawn before
+    /// a write landed acts on the world after it.
+    var liveWorld: (@MainActor () -> FrameWorld)?
+
+    /// The world a press acts on: the store's now, or the fixed one.
+    var currentWorld: FrameWorld { liveWorld?() ?? world }
 
     var writes: FrameWrites { model.writes }
 
@@ -144,9 +154,24 @@ struct InboxActions {
         switch action {
         case .keep: writes.isPending("keep:\(row.id)")
         case .stopKeeping: writes.isPending("unkeep:\(row.id)")
-        case .remove: writes.isPending("removeMany:\(row.id)")
+        case .remove: writes.isPending(Self.removeControl(row.id))
+        case .addTo:
+            if case .balance(let item, _, _) = row.finding.subject { writes.isPending(Self.addControl(item.id)) } else { false }
+        case .changeToAsk:
+            if case .rule(let rule, let file) = row.finding.subject { writes.isPending(FrameWrite.verdictControl(rule.rule, in: file)) } else { false }
         default: false
         }
+    }
+
+    /// The pending keys of one item row's writes: its Remove, its Balance Add, its tiles.
+    static func removeControl(_ rowID: String) -> String { "removeMany:\(rowID)" }
+    static func addControl(_ rowID: String) -> String { "copyTo:\(rowID)" }
+    static func tileControl(_ rowID: String) -> String { "tile:\(rowID)" }
+
+    /// A write on the item runs (its Remove, Add or a tile): no tile of it starts another until the core answered and the
+    /// store read it again, so two quick presses never act on the same world (D53).
+    func isItemBusy(_ rowID: String) -> Bool {
+        [Self.removeControl(rowID), Self.addControl(rowID), Self.tileControl(rowID)].contains(where: writes.isPending)
     }
 
     func select(_ id: String) {
@@ -173,10 +198,10 @@ struct InboxActions {
             Task { await writes.perform(.unkeep(findingID: finding.id)) }
         case .remove:
             guard case .row(let item) = finding.subject else { return }
-            remove([item], control: "removeMany:\(row.id)")
+            remove([item], control: Self.removeControl(row.id))
         case .addTo(let cli, _):
-            guard case .balance(let item, _, _) = finding.subject else { return }
-            Task { await writes.perform(.copyTo(item, targets: [cli], registry: world.snapshot.registry)) }
+            guard case .balance(let item, _, _) = finding.subject, !isItemBusy(item.id) else { return }
+            Task { await writes.perform(.copyTo(item, targets: [cli], registry: world.snapshot.registry, control: Self.addControl(item.id))) }
         case .copyCommand(let command):
             copy(command)
         case .changeToAsk:
@@ -200,40 +225,55 @@ struct InboxActions {
         remove(rows, control: "removeMany")
     }
 
-    /// At once with Undo when no file is shared; otherwise the confirmation names every reader first (RD-R11).
+    /// At once with Undo when no file is shared; otherwise the confirmation names every reader first (RD-R11). The removal
+    /// names every member sharing a file with the rows, other rows' links included (`RowRemoval.members`), so the engine
+    /// takes what the confirmation said instead of refusing.
     func remove(_ rows: [FrameRow], control: String) {
         guard !rows.isEmpty else { return }
+        let world = currentWorld
         let wording = InboxWording(world: world, now: Date())
-        let write = FrameWrite.removeMany(rows, members: InboxWording.removableMembers(rows), registry: world.snapshot.registry, control: control)
+        let write = FrameWrite.removeMany(rows, ids: RowRemoval.members(rows, in: world), registry: world.snapshot.registry, control: control)
         let ids = rows.map(\.id)
         guard rows.contains(where: wording.asksBeforeRemoving) else {
             run(write, unticking: ids)
             return
         }
         state.confirming = InboxConfirmation(items: rows.map { Self.item($0, losers: wording.losers($0).map(wording.name)) },
-                                             write: write, rowIDs: ids)
+                                             write: write, rowIDs: ids, routeRevision: model.router.revision)
     }
 
-    /// A tile turned on or off in the inspector (RD-R11): on copies into that CLI's folder; off removes every file it reads
-    /// the item from, asking first when another CLI reads one of them.
-    func toggleTile(_ tile: CLIToggleState, row: FrameRow) {
-        // A second press while the row's tile write runs is ignored (the tiles show it pending).
-        guard !writes.isPending("tile:\(row.id)") else { return }
+    /// A tile turned on or off in the inspector (RD-R11): exactly what the row's logo does on Skills or Subagents
+    /// (`RowRemoval.toggle`), derived from the world now: on copies into that CLI's folder; off removes what that CLI reads
+    /// the item from, or asks first, naming every CLI that loses it, when another CLI reads one of those files. The last
+    /// copy is not a toggle (D53).
+    @discardableResult
+    func toggleTile(_ tile: CLIToggleState, row: FrameRow) -> Task<Void, Never>? {
+        // While any write on the item runs, no tile of it starts another (the tiles show it pending).
+        guard !isItemBusy(row.id) else { return nil }
+        let world = currentWorld
+        let row = world.rows.first { $0.id == row.id } ?? row
+        guard let state = CLIToggleStates.states(of: row, in: world).first(where: { $0.cli.id == tile.cli.id }) else { return nil }
         let registry = world.snapshot.registry
-        guard tile.isOn else {
-            Task { await writes.perform(.copyTo(row, targets: [tile.cli.id], registry: registry, control: "tile:\(row.id)")) }
-            return
-        }
-        let readers = world.readers(of: row)
-        let removed = readers.map { $0.turningOff(tile.cli.id) } ?? []
-        let losers = world.losers(of: row, removing: removed).value ?? [tile.cli.id]
-        let write = FrameWrite.removeFrom(row, clis: losers, registry: registry, control: "tile:\(row.id)")
-        guard tile.sharedWith.isEmpty else {
+        let control = Self.tileControl(row.id)
+        let write: FrameWrite
+        switch RowRemoval.toggle(state, row: row, in: world) {
+        case .none:
+            return nil
+        case .add(let cli):
+            write = .copyTo(row, targets: [cli], registry: registry, control: control)
+        case .removeFrom(let cli):
+            write = .removeFrom(row, clis: [cli], registry: registry, control: control)
+        case .removeMembers(_, let members):
+            write = .removeMembers([row], members: members, registry: registry, control: control)
+        case .confirm(let removal):
             let wording = InboxWording(world: world, now: Date())
-            state.confirming = InboxConfirmation(items: [Self.item(row, losers: losers.map(wording.name))], write: write, rowIDs: [])
-            return
+            self.state.confirming = InboxConfirmation(
+                items: [Self.item(row, losers: removal.losers.map(wording.name))],
+                write: .removeMembers([row], members: removal.members, registry: registry, control: control, shared: true),
+                rowIDs: [], routeRevision: model.router.revision)
+            return nil
         }
-        Task { await writes.perform(write) }
+        return Task { await writes.perform(write) }
     }
 
     func confirm() {
@@ -244,7 +284,12 @@ struct InboxActions {
         }
     }
 
-    func cancelConfirmation() { state.confirming = nil }
+    /// Cancel, and Esc through the frame (`FrameDialog.cancel`): nothing while the confirmed write runs, so the dialog
+    /// stays until the core answered.
+    func cancelConfirmation() {
+        guard !isConfirming else { return }
+        state.confirming = nil
+    }
 
     var isConfirming: Bool { state.confirming.map { writes.isPending($0.write.control) } ?? false }
 

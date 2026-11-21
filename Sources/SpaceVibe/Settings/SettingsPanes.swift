@@ -95,7 +95,7 @@ private struct SettingsCLIsPane: View {
 
     var body: some View {
         let registry = context.facts.registry
-        let rows = SettingsCLIRow.rows(registry: registry, preferences: context.cli)
+        let rows = SettingsCLIRow.rows(registry: registry, preferences: context.cli, installed: context.facts.installedForBalance)
         if rows.isEmpty {
             StatusBanner(.problem(.attention), title: "No CLIs yet", detail: "SpaceVibe lists the CLIs once the main window has read them.")
         } else {
@@ -105,7 +105,7 @@ private struct SettingsCLIsPane: View {
                 }
             }
         }
-        SettingsFootnote(SettingsCLIRow.footnote(pinCount: context.cli.pins(in: registry).count))
+        SettingsFootnote(SettingsCLIRow.footnote(pinCount: context.cli.pins(in: registry, installed: context.facts.installedForBalance).count))
     }
 }
 
@@ -126,7 +126,8 @@ private struct SettingsCLIRowView: View {
             .disabled(!row.canChangeShow)
             Text("Balance").typeRole(.quiet).foregroundStyle(ColorRole.ink3).accessibilityHidden(true)
             FrameSwitch("Compare \(row.cli.name) in Balance", isOn: row.isPinned) {
-                if let refusal = context.cli.setPinned(!row.isPinned, for: row.id, in: registry) {
+                if let refusal = context.cli.setPinned(!row.isPinned, for: row.id, in: registry,
+                                                            installed: context.facts.installedForBalance) {
                     context.toast(SettingsCLIRow.refusal(refusal, name: row.cli.name), .danger)
                 }
             }

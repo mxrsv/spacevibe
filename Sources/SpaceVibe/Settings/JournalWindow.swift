@@ -71,10 +71,25 @@ extension FrameWrite {
         }
     }
 
-    /// Every source an undone entry may have changed: the item lists, the Keep list and every rules file the store reads.
+    /// Every source an undone entry may have changed: the item lists, the Keep list, every rules file the store reads, and
+    /// Clean's scan once Clean has read one (an undone Clean move brings logs and caches back; never a first scan here).
     @MainActor
     static func journalSources(_ store: FrameStore) -> Set<FrameSource> {
-        Set([.inventory, .loadout, .kept, .rules(.global)]).union(store.snapshot.rules.keys.map(FrameSource.rules))
+        var sources = Set([.inventory, .loadout, .kept, .rules(.global)]).union(store.snapshot.rules.keys.map(FrameSource.rules))
+        if store.snapshot.clean != nil { sources.insert(.clean) }
+        return sources
+    }
+}
+
+extension FrameWrites {
+    /// The Journal window's Undo of one entry, through this window's write path; once the core accepted it, the entry's
+    /// Undo leaves `main`'s session stack (the main window's toast, ⌘Z and Z), which would otherwise run it again and be
+    /// refused.
+    @discardableResult
+    func undoFromJournal(_ entry: CoreJournalEntry, label: String, store: FrameStore, main: FrameWrites?) async -> Bool {
+        let undone = await perform(.journalUndo(entry, label: label, touches: FrameWrite.journalSources(store)))
+        if undone { main?.forgetUndo(journalEntry: entry.id) }
+        return undone
     }
 }
 
@@ -170,6 +185,7 @@ struct JournalWindow: View {
         guard let store else { return }
         let writes = writes ?? store.makeWrites(toasts: toasts)
         self.writes = writes
-        Task { await writes.perform(.journalUndo(row.entry, label: row.label, touches: FrameWrite.journalSources(store))) }
+        let main = model?.writes
+        Task { await writes.undoFromJournal(row.entry, label: row.label, store: store, main: main) }
     }
 }

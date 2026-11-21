@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// A menu shortcut: a key and its modifiers (Command by default).
@@ -23,8 +24,16 @@ struct FrameShortcut: Hashable, Sendable, CustomStringConvertible {
 
     var description: String {
         let marks: [(EventModifiers, String)] = [(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")]
-        return marks.filter { modifiers.contains($0.0) }.map(\.1).joined() + key.uppercased()
+        let glyph = key == KeyEquivalent.delete.character ? "⌫" : key.uppercased()
+        return marks.filter { modifiers.contains($0.0) }.map(\.1).joined() + glyph
     }
+
+    /// The row actions' menu shortcuts (RD-R16 Keyboard: every row action is a menu command with a shortcut), one per verb
+    /// wherever it appears. Command with Shift or Option, never a plain letter, and none a text field uses for editing
+    /// (⌘⌫ deletes to the line start, so Remove is ⇧⌘⌫, as Finder's Empty Trash).
+    static let remove = FrameShortcut(KeyEquivalent.delete.character, modifiers: [.command, .shift])
+    static let addTo = FrameShortcut("a", modifiers: [.command, .shift])
+    static let changeToAsk = FrameShortcut("a", modifiers: [.command, .option])
 
     /// What the frame's own commands hold (`FrameCommands`): ⌘1 to ⌘8, ⌘I, ⌘R, ⌘,, ⌘F and the two Undo keys, and the plain
     /// letters the frame reads itself (RD39): j and k move the selection, Z undoes, A toggles the focused logo. A row action
@@ -79,6 +88,26 @@ struct FrameRowAction: Identifiable {
             guard let shortcut = action.shortcut, shortcut.isPlainKey, action.isEnabled else { return false }
             return shortcut.key.lowercased().first == key
         }
+    }
+}
+
+/// The frame's plain-letter keys (Z for Undo, a row action's letter such as S for Stop, RD39): they act only when no text is
+/// being edited. SwiftUI hands a key press to every `onKeyPress` from the focused view up to the window root before a text
+/// field inserts the character, so a handler that is an ancestor of the toolbar's search field would see its typing; the
+/// frame asks this first.
+enum FramePlainKeys {
+    /// A text field or text view has the keyboard: the window's first responder is AppKit's field editor (an `NSText`).
+    static func isEditingText(_ firstResponder: NSResponder?) -> Bool { firstResponder is NSText }
+
+    /// Whether Z may undo now: no modifier, no dialog over the window, no text being edited.
+    static func undoMayAct(modifiers: EventModifiers, isModal: Bool, firstResponder: NSResponder?) -> Bool {
+        modifiers.isEmpty && !isModal && !isEditingText(firstResponder)
+    }
+
+    /// Whether a row action's plain letter may act now: no dialog, no text being edited (the modifiers are
+    /// `FrameRowAction.plainKey`'s to judge).
+    static func rowLetterMayAct(isModal: Bool, firstResponder: NSResponder?) -> Bool {
+        !isModal && !isEditingText(firstResponder)
     }
 }
 

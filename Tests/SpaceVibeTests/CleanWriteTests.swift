@@ -219,4 +219,29 @@ struct CleanWriteTests {
         #expect(!core.calls.contains("clean.scan"))
         store.stop()
     }
+
+    @Test("Esc on a running Clean confirmation does nothing; a route changed from outside closes a waiting one")
+    func confirmationEscAndRoute() async {
+        let core = CleanFakeCore()
+        core.blocksUntilCancelled = true
+        let model = FrameModel(core: core, toasts: ToastCenter(announce: false))
+        let state = CleanPageState()
+        let inputs = CleanSynthetic.inputs(.normal, clis: 2)
+        let actions = CleanActions(model: model, state: state, page: CleanPage(inputs), world: inputs.world)
+        state.confirming = CleanConfirmation(items: [], request: request(), routeRevision: model.router.revision)
+        #expect(FramePageContent.clean(model: model, fixed: inputs, state: state).dialog != nil)
+        actions.confirm()
+        for _ in 0..<400 where !core.calls.contains(where: { $0.hasPrefix("clean.move") }) { try? await Task.sleep(for: .milliseconds(5)) }
+        #expect(actions.isConfirming)
+        FramePageContent.clean(model: model, fixed: inputs, state: state).dialog?.cancel()
+        #expect(state.confirming != nil, "Esc reaches the dialog's cancel through the frame; it must wait for the move")
+        actions.cancelMove()
+        for _ in 0..<400 where state.confirming != nil { try? await Task.sleep(for: .milliseconds(5)) }
+        #expect(state.confirming == nil)
+        // A confirmation waiting for its answer closes when the glance widget routes elsewhere.
+        state.confirming = CleanConfirmation(items: [], request: request(), routeRevision: model.router.revision)
+        model.router.go(to: .session("claude:s1"))
+        model.router.go(to: FrameRoute(page: .clean))
+        #expect(FramePageContent.clean(model: model, fixed: inputs, state: state).dialog == nil)
+    }
 }

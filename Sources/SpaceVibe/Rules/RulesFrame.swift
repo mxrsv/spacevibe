@@ -47,9 +47,11 @@ enum RulesFrame {
         let pending = state.isPending(RulesPageState.removeControl(list.file))
         var out: [FrameRowAction] = []
         if row.isWideAllow {
-            out.append(FrameRowAction(id: "changeToAsk", title: changeToAskTitle) { state.change(row.rule, to: .ask, fileName: list.fileName) })
+            out.append(FrameRowAction(id: "changeToAsk", title: changeToAskTitle, shortcut: .changeToAsk) {
+                state.change(row.rule, to: .ask, fileName: list.fileName)
+            })
         }
-        out.append(FrameRowAction(id: "remove", title: removeTitle, isDestructive: row.isWideAllow, isEnabled: !pending) {
+        out.append(FrameRowAction(id: "remove", title: removeTitle, shortcut: .remove, isDestructive: row.isWideAllow, isEnabled: !pending) {
             state.remove(row.rule, fileName: list.fileName)
         })
         return out

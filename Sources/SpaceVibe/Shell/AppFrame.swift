@@ -110,7 +110,8 @@ private struct FrameWindow: View {
                         // A row action's plain letter (S for Stop, RD39) acts only while the list has the focus, so typing
                         // in the search field never fires it; the Item menu shows those actions without the key.
                         .onKeyPress(characters: .letters) { press in
-                            guard !modal, let action = FrameRowAction.plainKey(press.characters, modifiers: press.modifiers,
+                            guard FramePlainKeys.rowLetterMayAct(isModal: modal, firstResponder: NSApp.keyWindow?.firstResponder),
+                                  let action = FrameRowAction.plainKey(press.characters, modifiers: press.modifiers,
                                                                                in: rowActions?.actions ?? []) else { return .ignored }
                             action.perform()
                             return .handled
@@ -175,9 +176,11 @@ private struct FrameWindow: View {
             case .overlays, .nothing: chrome.closeOverlays()
             }
         }
-        // Z undoes the newest write (RD39); a text field takes the letter first, so typing a z never undoes. A dialog waits.
+        // Z undoes the newest write (RD39). This root is an ancestor of the toolbar's search field, and SwiftUI offers a key
+        // press here before the field inserts it, so a z typed while text is edited is left to the field. A dialog waits.
         .onKeyPress(keys: ["z"]) { press in
-            guard press.modifiers.isEmpty, !modal, toasts.canUndoByKey else { return .ignored }
+            guard FramePlainKeys.undoMayAct(modifiers: press.modifiers, isModal: modal, firstResponder: NSApp.keyWindow?.firstResponder),
+                  toasts.canUndoByKey else { return .ignored }
             toasts.undoKey()
             return .handled
         }

@@ -81,7 +81,8 @@ struct FrameWorld: Sendable {
             WholeToolRule.allows(in: snapshot.rules[file]!, file: file).map { (rule: $0, file: file) }
         }
         sessions = (snapshot.activity?.sessions ?? []).filter { ids.contains($0.cli.rawValue) }
-        let found = Findings.all(rows: rows, wideAllows: wideAllows, windows: windows, sessions: sessions, shownCLIs: ids, facts: facts.findings)
+        let found = Findings.all(rows: rows, wideAllows: wideAllows, windows: windows, sessions: sessions, shownCLIs: ids, facts: facts.findings,
+                                 folders: snapshot.loadout?.folders ?? [])
         findings = found.open
         keptFindings = found.kept
         clean = CleanPlan(candidates: candidates, kept: facts.findings.kept, scan: snapshot.clean,

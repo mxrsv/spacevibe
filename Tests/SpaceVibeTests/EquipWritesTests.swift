@@ -6,21 +6,32 @@ import Testing
 /// with what it was sent. A refusal answers 409 on every write.
 final class EquipFakeCore: UnservedCore, @unchecked Sendable {
     let registry: [CoreRegistryCLI]
-    let rows: CoreLoadoutRows
     var refuses = false
+    /// A write whose line contains one of these is refused (409), the others answer.
+    var refusing: Set<String> = []
+    /// Awaited inside every write before it answers: a test holds a write pending with it.
+    var onWrite: (@Sendable () async -> Void)?
     private let lock = NSLock()
     private var _writes: [String] = []
+    private var _rows: CoreLoadoutRows
     var writes: [String] { lock.withLock { _writes } }
+    /// What `loadout.rows` answers; a test sets the world after a write.
+    var rows: CoreLoadoutRows {
+        get { lock.withLock { _rows } }
+        set { lock.withLock { _rows = newValue } }
+    }
 
     init(clis: Int, kind: CoreKind = .skill) {
         registry = EquipShotData.registry(count: clis)
-        rows = EquipShotData.loadout(kind, specs: kind == .skill ? EquipShotData.skills : EquipShotData.subagents, registry: registry,
-                                     now: Date())
+        _rows = EquipShotData.loadout(kind, specs: kind == .skill ? EquipShotData.skills : EquipShotData.subagents, registry: registry,
+                                      now: Date())
     }
 
-    private func write(_ line: String) throws -> CoreJournalEntry {
+    private func write(_ line: String) async throws -> CoreJournalEntry {
         lock.withLock { _writes.append(line) }
+        if let onWrite { await onWrite() }
         if refuses { throw CoreError("Couldn’t remove commit-helper: ~/.claude/skills changed since SpaceVibe read it. Nothing changed.", status: 409) }
+        if refusing.contains(where: line.contains) { throw CoreError("Codex already has it, so nothing was copied.", status: 409) }
         return FrameTestData.entry("e\(writes.count)")
     }
 
@@ -35,14 +46,25 @@ final class EquipFakeCore: UnservedCore, @unchecked Sendable {
     override func journalHistory() async throws -> CoreJournalHistory { CoreJournalHistory(entries: []) }
     override func findingsKept() async throws -> CoreKeptFindings { CoreKeptFindings(kept: []) }
     override func loadoutCopyTo(id: String, targets: [String]) async throws -> CoreCopyToResult {
-        CoreCopyToResult(entry: try write("copyTo \(id) \(targets)"), alsoReaders: [])
+        CoreCopyToResult(entry: try await write("copyTo \(id) \(targets)"), alsoReaders: [])
     }
     override func loadoutRemoveFrom(id: String, clis: [String]) async throws -> CoreRemoveFromResult {
-        CoreRemoveFromResult(entry: try write("removeFrom \(id) \(clis)"), lost: clis, stillHave: [])
+        CoreRemoveFromResult(entry: try await write("removeFrom \(id) \(clis)"), lost: clis, stillHave: [])
     }
     override func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult {
-        CoreRemoveManyResult(entry: try write("removeMany \(ids)"), lost: ["claude", "opencode"])
+        CoreRemoveManyResult(entry: try await write("removeMany \(ids)"), lost: ["claude", "opencode"])
     }
+}
+
+/// Holds a fake core's write until the test opens it, so the write is pending while the test presses again.
+actor PendingGate {
+    private var isOpen = false
+
+    func wait() async {
+        while !isOpen { try? await Task.sleep(for: .milliseconds(2)) }
+    }
+
+    func open() { isOpen = true }
 }
 
 /// Every write path of the Skills and Subagents page, over the fake engine (build-review list, RB-R2): a logo or tile turned
@@ -192,6 +214,89 @@ struct EquipWritesTests {
         #expect(list.kind.noun == "Subagent" && list.figure == .count(1, tone: .attention))
         #expect(list.all.first?.name == "test-runner" || list.all.first?.name == "code-reviewer")
         #expect(list.neverRan.map(\.name) == ["db-migrator"])
+    }
+
+    // MARK: RB-V1 build-review findings
+
+    private func eventually(_ done: () -> Bool) async -> Bool {
+        for _ in 0..<400 where !done() { try? await Task.sleep(for: .milliseconds(5)) }
+        return done()
+    }
+
+    @Test("D53: two logos of one row turned off quickly; the second press starts nothing while the first write runs")
+    func secondLogoWaits() async throws {
+        let (core, _, state, _) = await setUp()
+        let gate = PendingGate()
+        core.onWrite = { await gate.wait() }
+        let (row, claude) = try #require(toggle(state, "skill::sql-explainer", "claude"))
+        let codex = try #require(row.toggles.first { $0.cli.id == "codex" })
+        #expect(claude.isToggle && codex.isToggle, "two files: neither logo is the last copy before a write")
+        let first = state.press(claude, on: row, from: .row)
+        #expect(await eventually { core.writes.count == 1 })
+        #expect(state.press(codex, on: row, from: .row) == nil, "the row has a write running")
+        await gate.open()
+        await first?.value
+        #expect(core.writes == ["removeFrom claude:skill:sql-explainer [\"claude\"]"])
+    }
+
+    @Test("D53: a logo drawn before a write landed is judged on the world after it: the last copy is not removed")
+    func staleLogoUsesPostWriteWorld() async throws {
+        let (core, _, state, _) = await setUp()
+        let (row, claude) = try #require(toggle(state, "skill::sql-explainer", "claude"))
+        let codex = try #require(row.toggles.first { $0.cli.id == "codex" })
+        // What the core answers once Claude Code's copy is gone: only Codex's file is left.
+        var after = core.rows
+        after.items = after.items.filter { $0.id != "claude:skill:sql-explainer" }.map { item in
+            guard item.id == "codex:skill:sql-explainer" else { return item }
+            var copy = item
+            copy.cliCells?["claude"] = .missing
+            return copy
+        }
+        core.rows = after
+        await state.press(claude, on: row, from: .row)?.value
+        #expect(state.press(codex, on: row, from: .row) == nil, "Codex now holds the last copy: Remove… is the way")
+        #expect(core.writes == ["removeFrom claude:skill:sql-explainer [\"claude\"]"])
+    }
+
+    @Test("Add to… for several rows: a refused row never stops the rest; one partial toast says Added N of M and why")
+    func sheetAddContinuesPastARefusal() async {
+        let (core, _, state, toasts) = await setUp()
+        core.refusing = ["review-pr"]
+        state.openSheet(.add, rows: ["skill::changelog-writer", "skill::review-pr", "skill::api-docs"])
+        state.sheetToggle("codex")
+        await state.confirmSheet()?.value
+        #expect(core.writes == ["copyTo claude:skill:changelog-writer [\"codex\"]", "copyTo claude:skill:review-pr [\"codex\"]",
+                                "copyTo claude:skill:api-docs [\"codex\"]"])
+        #expect(toasts.current?.message == "Added 2 of 3; 1 refused: Codex already has it, so nothing was copied.")
+        #expect(toasts.current?.tone == .partial && toasts.undoStack.count == 2 && state.sheet == nil)
+    }
+
+    @Test("Add to… wording: one refused row alone is the refusal; all refused is a refusal; none refused leaves each row's toast")
+    func addSummary() {
+        #expect(EquipSheet.addSummary(total: 3, refusals: []) == nil)
+        #expect(EquipSheet.addSummary(total: 1, refusals: ["No."])?.sentence == "No." && EquipSheet.addSummary(total: 1, refusals: ["No."])?.tone == .danger)
+        #expect(EquipSheet.addSummary(total: 2, refusals: ["No.", "No."])?.tone == .danger)
+    }
+
+    @Test("Copy to …, then remove: a refused copy says the item was not removed")
+    func sharedCopyRefusedSays() async throws {
+        let (core, _, state, toasts) = await setUp(clis: 6)
+        core.refuses = true
+        let (row, claude) = try #require(toggle(state, "skill::commit-helper", "claude"))
+        state.press(claude, on: row, from: .tile)
+        await state.confirmShared(copyFirst: true)?.value
+        #expect(core.writes.count == 1 && toasts.current?.tone == .danger && toasts.undoStack.isEmpty)
+        #expect(toasts.current?.message.hasSuffix("Nothing changed. commit-helper was not removed.") == true)
+    }
+
+    @Test("RD-R16: Add to… and Remove… on a row each have a menu shortcut the frame does not hold")
+    func rowShortcuts() async throws {
+        let (_, _, state, _) = await setUp()
+        let list = state.list()
+        let row = try #require(list.row("skill::sql-explainer"))
+        let actions = EquipFrame.actions(for: row, list: list, state: state)
+        #expect(actions.map(\.shortcut) == [FrameShortcut.addTo, FrameShortcut.remove])
+        #expect(actions.allSatisfy { $0.menuShortcut != nil } && FrameRowAction.conflicts(in: actions).isEmpty)
     }
 
     @Test("the frame region draws Skills and Subagents, not the Not built yet state")

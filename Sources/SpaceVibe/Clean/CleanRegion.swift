@@ -15,7 +15,7 @@ extension FramePageContent {
             toolbarControls: AnyView(CleanScanAgainButton(page: page, isMeasuring: inputs.isMeasuring, actions: actions)),
             primary: page.primary == .hidden ? nil : AnyView(CleanRemoveButton(page: page, actions: actions)),
             body: AnyView(CleanList(page: page, selection: selection, state: state, actions: actions, measuresOnOpen: fixed == nil)),
-            dialog: state.confirming.map { confirmation in
+            dialog: state.confirming.flatMap { $0.routeRevision == model.router.revision ? $0 : nil }.map { confirmation in
                 FrameDialog(id: "clean.confirm", cancel: actions.cancelConfirmation) {
                     CleanConfirmationDialog(confirmation: confirmation, actions: actions)
                 }

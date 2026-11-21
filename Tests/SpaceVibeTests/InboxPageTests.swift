@@ -293,3 +293,145 @@ struct InboxActionsTests {
         #expect(model.router.route == FrameRoute.window("codex:primary"))
     }
 }
+
+/// The RB-V1 build-review findings on the Inbox: Balance offers no removal, removals and tiles name what the engine needs
+/// (links from other rows, shared files), a press acts on the world after a write, a running dialog ignores Esc, and a route
+/// changed from outside closes the dialog.
+@Suite("Inbox build-review fixes")
+@MainActor
+struct InboxBuildReviewTests {
+    typealias S = InboxSynthetic
+    typealias D = FrameTestData
+
+    /// Codex's `bar` is a link to Claude Code's never-ran `foo` (two rows: the link's SKILL.md has no name), the layout of the
+    /// engine's `TestRemoveFromSeesALinkInAnotherRow`. `bar` ran, so only `foo` is a finding.
+    nonisolated static func linkWorld() -> FrameWorld {
+        let foo = D.item("foo", cells: ["claude": D.sessions(0), "codex": .missing], folder: "/h/.claude/skills", realPath: "/h/.claude/skills/foo")
+        let bar = D.item("bar", cli: .codex, owner: "link", cells: ["claude": .missing, "codex": D.sessions(5)], folder: "/h/.codex/skills",
+                         realPath: "/h/.claude/skills/foo")
+        var loadout = D.loadout([foo, bar])
+        loadout.folders = [D.folder("/h/.claude/skills", readBy: ["claude"], ownedBy: "claude"),
+                           D.folder("/h/.codex/skills", readBy: ["codex"], ownedBy: "codex")]
+        return FrameWorld(snapshot: D.snapshot(loadout), now: D.now)
+    }
+
+    @MainActor
+    final class Models { var all: [FrameModel] = [] }
+    private let models = Models()
+
+    private func actions(_ world: FrameWorld, core: FrameFakeCore = FrameFakeCore()) -> (FrameFakeCore, FrameModel, InboxPageState, InboxActions) {
+        let model = FrameModel(core: core, toasts: ToastCenter(announce: false))
+        models.all.append(model)
+        let page = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), now: S.now)
+        let state = InboxPageState()
+        return (core, model, state, InboxActions(model: model, state: state, page: page, world: world, host: InboxShots.host(.normal)))
+    }
+
+    private func eventually(_ done: () -> Bool) async -> Bool {
+        for _ in 0..<400 where !done() { try? await Task.sleep(for: .milliseconds(5)) }
+        return done()
+    }
+
+    @Test("Balance: the inspector offers Add to <CLI> and Keep only, never Remove…; a Clean up row offers Remove…")
+    func balanceInspector() throws {
+        let item = D.item("deploy", cells: ["claude": D.sessions(9), "codex": .missing])
+        var facts = FrameFacts()
+        facts.findings.pinned = ["claude", "codex"]
+        let world = FrameWorld(snapshot: D.snapshot(D.loadout([item])), facts: facts, now: D.now)
+        let page = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), now: D.now)
+        let balance = try #require(page.rows.first { $0.finding.job == .balance })
+        #expect(InboxInspectorFacts.itemActions(balance) == [.addTo(cli: "codex", title: "Add to Codex"), .keep])
+        let normal = InboxPage(world: S.world(.normal, clis: 2), figure: .count(0, tone: nil), now: S.now)
+        let never = try #require(normal.row("skill::pdf-extract"))
+        #expect(InboxInspectorFacts.itemActions(never) == [.remove(title: "Remove from Claude Code and Codex", asks: false)])
+    }
+
+    @Test("a row another row's link reaches: Remove names the link too, after the confirmation names its readers")
+    func removeNamesLinks() async throws {
+        let world = Self.linkWorld()
+        let foo = try #require(world.rows.first { $0.id == "skill::foo" })
+        #expect(RowRemoval.members([foo], in: world) == ["claude:skill:foo", "codex:skill:bar"])
+        let (core, _, state, actions) = actions(world)
+        actions.remove([foo], control: InboxActions.removeControl(foo.id))
+        #expect(state.confirming?.items.first?.losers == ["Claude", "Codex"], "Codex would keep a dangling link")
+        actions.confirm()
+        #expect(await eventually { core.count("loadout.removeMany") == 1 })
+        #expect(core.sent["loadout.removeMany"] == "[\"claude:skill:foo\", \"codex:skill:bar\"]")
+    }
+
+    @Test("a tile turned off on a file another CLI reads: the confirmation, then one removeMany of exactly its members, never removeFrom")
+    func sharedTile() async throws {
+        let world = S.world(.normal, clis: 10)
+        let item = try #require(world.rows.first { $0.id == "skill::pdf-extract" })
+        let codex = try #require(CLIToggleStates.states(of: item, in: world).first { $0.cli.id == "codex" })
+        guard case .confirm(let removal) = RowRemoval.toggle(codex, row: item, in: world) else {
+            Issue.record("a shared file asks first")
+            return
+        }
+        let (core, _, state, actions) = actions(world)
+        #expect(actions.toggleTile(codex, row: item) == nil && state.confirming != nil && core.calls.isEmpty)
+        actions.confirm()
+        #expect(await eventually { core.count("loadout.removeMany") == 1 })
+        #expect(core.count("loadout.removeFrom") == 0 && core.sent["loadout.removeMany"] == "\(removal.members)")
+    }
+
+    @Test("D53: a tile drawn before a write landed is judged on the world after it: the last copy is not removed")
+    func staleTile() async throws {
+        let world = S.world(.normal, clis: 2)
+        let item = try #require(world.rows.first { $0.id == "skill::pdf-extract" })
+        let tiles = CLIToggleStates.states(of: item, in: world)
+        let claude = try #require(tiles.first { $0.cli.id == "claude" })
+        let codex = try #require(tiles.first { $0.cli.id == "codex" })
+        #expect(claude.isToggle && codex.isToggle)
+        let (core, _, _, made) = actions(world)
+        var actions = made
+        await actions.toggleTile(claude, row: item)?.value
+        #expect(core.count("loadout.removeFrom") == 1)
+        // The store's world after Claude Code's copy went: Codex holds the last copy.
+        var built = S.snapshot(.normal, clis: 2)
+        built.snapshot.loadout?.items.removeAll { $0.key == "skill::pdf-extract" && $0.cli == .claude }
+        let after = FrameWorld(snapshot: built.snapshot, facts: built.facts, now: S.now)
+        actions.liveWorld = { after }
+        #expect(actions.toggleTile(codex, row: item) == nil)
+        #expect(core.count("loadout.removeFrom") == 1)
+    }
+
+    @Test("Esc on a running confirmation does nothing: the dialog stays until the core answered")
+    func escWhileRunning() async throws {
+        let gate = PendingGate()
+        let core = FrameFakeCore()
+        core.onCall = { name in if name == "loadout.removeMany" { await gate.wait() } }
+        let world = S.world(.normal, clis: 10)
+        let (_, model, state, actions) = actions(world, core: core)
+        let row = try #require(InboxPage(world: world, figure: .count(0, tone: nil), now: S.now).row("skill::pdf-extract"))
+        actions.perform(row.actions.last!, on: row)
+        actions.confirm()
+        #expect(await eventually { actions.isConfirming })
+        let content = FramePageContent.inbox(model: model, fixed: InboxInputs(world: world, figure: .count(0, tone: nil), now: S.now),
+                                             host: InboxShots.host(.normal), state: state)
+        content.dialog?.cancel()
+        #expect(state.confirming != nil, "Esc reaches the dialog's cancel through the frame; it must wait for the write")
+        await gate.open()
+        #expect(await eventually { state.confirming == nil })
+    }
+
+    @Test("a route changed from outside (the glance widget) closes the dialog; it never comes back stale")
+    func routeClosesDialog() throws {
+        let world = S.world(.normal, clis: 10)
+        let (_, model, state, actions) = actions(world)
+        let row = try #require(InboxPage(world: world, figure: .count(0, tone: nil), now: S.now).row("skill::pdf-extract"))
+        actions.perform(row.actions.last!, on: row)
+        let fixed = InboxInputs(world: world, figure: .count(0, tone: nil), now: S.now)
+        #expect(FramePageContent.inbox(model: model, fixed: fixed, host: InboxShots.host(.normal), state: state).dialog != nil)
+        model.router.go(to: .window("codex:primary"))
+        model.router.go(to: FrameRoute(page: .inbox))
+        #expect(FramePageContent.inbox(model: model, fixed: fixed, host: InboxShots.host(.normal), state: state).dialog == nil)
+    }
+
+    @Test("RD-R16: Remove, Add to and Change to Ask each have a menu shortcut, not a plain letter")
+    func rowShortcuts() {
+        #expect(InboxAction.remove(title: "Remove…", asks: true).shortcut == .remove)
+        #expect(InboxAction.addTo(cli: "codex", title: "Add to Codex").shortcut == .addTo)
+        #expect(InboxAction.changeToAsk.shortcut == .changeToAsk)
+    }
+}

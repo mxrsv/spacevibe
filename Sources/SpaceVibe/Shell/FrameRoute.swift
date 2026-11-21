@@ -50,7 +50,12 @@ struct FrameRoute: Equatable, Sendable {
 @MainActor
 @Observable
 final class FrameRouter {
-    private(set) var route: FrameRoute
+    private(set) var route: FrameRoute {
+        didSet { if route != oldValue { revision += 1 } }
+    }
+    /// Counts route changes. A page's dialog records it when it opens and is closed by any change after (the glance widget
+    /// routes from outside the window while the dialog covers it), so it never comes back over another page or selection.
+    private(set) var revision = 0
 
     init(_ route: FrameRoute = FrameRoute()) {
         self.route = route

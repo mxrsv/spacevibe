@@ -36,7 +36,8 @@ type Roots struct {
 	Gemini string
 	// AgentsSkills is $HOME/.agents/skills, the skills folder several CLIs share. Codex reads it beside
 	// $CODEX_HOME/skills (codex-cli 0.170.0, plan RB-T0a); Claude Code does not. Inventory reads it as a second
-	// Codex skills folder; no write targets it (docs/internals/inventory.md#readers-map).
+	// Codex skills folder. The per-CLI and batch removals (loadout.removeFrom, loadout.removeMany) remove from it; no
+	// copy ever goes into it (docs/internals/inventory.md#readers-map).
 	AgentsSkills string
 	// Trash is where Clean moves logs and caches (clean.move, CL-R5): $HOME/.Trash, the macOS Trash of the home
 	// volume. Under SPACEVIBE_TEST=1 it is <data>/test-trash instead, never a folder derived from HOME, so no test can

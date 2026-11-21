@@ -28,7 +28,7 @@ enum HooksFrame {
     @MainActor
     static func actions(for row: HooksListRow, state: HooksPageState) -> [FrameRowAction] {
         guard row.isWritable else { return [] }
-        return [FrameRowAction(id: "remove", title: removeTitle, isDestructive: true,
+        return [FrameRowAction(id: "remove", title: removeTitle, shortcut: .remove, isDestructive: true,
                                isEnabled: !state.isPending(HooksRemoval.control(for: row))) { state.remove(row) }]
     }
 

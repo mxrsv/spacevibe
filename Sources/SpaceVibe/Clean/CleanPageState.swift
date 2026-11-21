@@ -6,6 +6,8 @@ import Observation
 struct CleanConfirmation {
     let items: [RemoveConfirmation.Item]
     let request: CleanRequest
+    /// `FrameRouter.revision` when it opened: a route changed from outside since (the glance widget) closes it.
+    var routeRevision = 0
 }
 
 /// Clean's own view state (AR3: never in the store): the ticked rows, the open lock popover, the removal waiting for its
@@ -114,7 +116,7 @@ struct CleanActions {
         guard shared.isEmpty else {
             let wording = InboxWording(world: world, now: Date())
             state.confirming = CleanConfirmation(items: request.rows.map { InboxActions.item($0, losers: wording.losers($0).map(wording.name)) },
-                                                 request: request)
+                                                 request: request, routeRevision: model.router.revision)
             return
         }
         run(request)
@@ -128,7 +130,12 @@ struct CleanActions {
         }
     }
 
-    func cancelConfirmation() { state.confirming = nil }
+    /// Cancel, and Esc through the frame (`FrameDialog.cancel`): nothing while the confirmed write runs (the move's own
+    /// Cancel is in the band), so the dialog stays until the core answered.
+    func cancelConfirmation() {
+        guard !isConfirming else { return }
+        state.confirming = nil
+    }
 
     var isConfirming: Bool { state.confirming != nil && writes.isPending(FrameWrite.cleanControl) }
 
