@@ -52,9 +52,11 @@ final class FrameWrites {
 
     func isPending(_ control: String) -> Bool { pending.contains(control) }
 
-    /// Runs one write; true when the core accepted it. A control that is already pending starts nothing.
+    /// Runs one write; true when the core accepted it. A control that is already pending starts nothing. `refused`, when
+    /// given, takes the core's sentence instead of the refused-write toast: a form shows it next to its field (Rules'
+    /// Add Rule sheet).
     @discardableResult
-    func perform(_ write: FrameWrite) async -> Bool {
+    func perform(_ write: FrameWrite, refused: (@MainActor (String) -> Void)? = nil) async -> Bool {
         guard !pending.contains(write.control) else { return false }
         pending.insert(write.control)
         defer { pending.remove(write.control) }
@@ -70,12 +72,25 @@ final class FrameWrites {
         case .success(.done):
             toasts.show(write.label)
         case .failure(let error):
-            toasts.show(AppEnvironment.message(error), tone: .danger)
+            if let refused { refused(AppEnvironment.message(error)) } else { toasts.show(AppEnvironment.message(error), tone: .danger) }
         }
         // A refusal re-reads too: the core may have refused because the file moved under the page.
         await store.reread(write.touches.union([.journal]))
         if case .success = outcome { return true }
         return false
+    }
+
+    // MARK: Reads before a write
+
+    /// `rules.preview`: what a capability write to `file` would replace and write, before anything is written. It writes
+    /// nothing, so it is not a `FrameWrite`.
+    func preview(_ capability: CoreCapability, to verdict: CoreVerdict, in file: FrameScope) async throws -> CoreCapabilityPreview {
+        try await core.rulesPreview(scope: file.scope, dir: file.dir, capability: capability, verdict: verdict)
+    }
+
+    /// `rules.check`: whether a rule string has a shape Claude Code reads, and the sentence a write would refuse it with.
+    func check(rule: String) async throws -> CoreRuleCheck {
+        try await core.rulesCheck(rule: rule)
     }
 
     private func undo(_ entry: CoreJournalEntry, label: String, touches: Set<FrameSource>) async {

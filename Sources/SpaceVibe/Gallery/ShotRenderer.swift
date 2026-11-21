@@ -36,6 +36,12 @@ enum ShotRenderer {
                     try HooksFrameShots.run(into: directory)
                     exit(0)
                 }
+                // Rules draws each of its page states from in-memory data (RB-R4, `RulesFrameShots`).
+                if screen == FramePage.rules.rawValue {
+                    try requireSyntheticHome(environment)
+                    try RulesFrameShots.run(into: directory)
+                    exit(0)
+                }
                 // Skills and Subagents draw each of their page states from in-memory data (RB-R2, `EquipFrameShots`).
                 if let kind = [EquipKind.skills, .subagents].first(where: { $0.page.rawValue == screen }) {
                     try requireSyntheticHome(environment)

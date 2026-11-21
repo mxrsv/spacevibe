@@ -73,9 +73,13 @@ struct InspectorFact: Hashable, Identifiable, Sendable {
 /// pair as one line ("Project, payments-web").
 struct KeyValueList: View {
     let facts: [InspectorFact]
+    /// The key column's width: `keyWidth` in an inspector, `wideKeyWidth` for longer keys on a page.
+    var keyColumn: CGFloat = KeyValueList.keyWidth
 
     /// The key column (`grid-template-columns: 84px …`).
     static let keyWidth: CGFloat = 84
+    /// A page's settings list, whose keys are longer ("Approval policy"; the mock's Rules `160px`).
+    static let wideKeyWidth: CGFloat = 160
 
     var body: some View {
         VStack(alignment: .leading, spacing: SpaceRole.step6) {
@@ -83,7 +87,7 @@ struct KeyValueList: View {
                 HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step8) {
                     Text(fact.key)
                         .foregroundStyle(ColorRole.ink3)
-                        .frame(width: Self.keyWidth, alignment: .leading)
+                        .frame(width: keyColumn, alignment: .leading)
                     Text(verbatim: fact.value)
                         .foregroundStyle(ColorRole.ink)
                         .fixedSize(horizontal: false, vertical: true)

@@ -8,6 +8,7 @@ extension FramePageContent {
         case .skills: SkillsFrame.content(model: model)
         case .subagents: SubagentsFrame.content(model: model)
         case .hooks: HooksFrame.content(model: model)
+        case .rules: RulesFrame.content(model: model)
         case .limits: LimitsRegion.content(model)
         case .activity: ActivityPage.content(model)
         default: .notBuilt(page)

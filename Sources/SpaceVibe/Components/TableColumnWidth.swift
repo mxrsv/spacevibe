@@ -23,4 +23,10 @@ enum TableColumnWidth {
     static let headerHeight: CGFloat = 30
     /// Below this list width the Status column folds into the row's sub-line (the mock's `ctx.wide`, `mw >= 940`).
     static let statusColumnMinListWidth: CGFloat = 940
+    /// Rules: a rule's permission, glyph and word (`104px`).
+    static let permission: CGFloat = 104
+    /// Rules: a capability's name (`120px`).
+    static let capabilityName: CGFloat = 120
+    /// Rules: a capability's Allow / Ask / Deny dial (`190px`).
+    static let capabilityDial: CGFloat = 190
 }
