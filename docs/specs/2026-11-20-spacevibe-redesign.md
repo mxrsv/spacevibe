@@ -71,7 +71,7 @@ Pending items of the third readiness review, all accepted by the owner on 2026-1
 | RD36 | Show Terminal stays: it brings the app that runs the session to the front with the shipped `HostAppResolver` (GW5), starts no process and needs no Automation permission; with no host app (tmux, screen, ssh) the button is disabled with "Terminal app not found". | "ok approve chốt" (2026-11-21) | RD-R4 | Activity inspector; Inbox waiting finding |
 | RD37 | Content glyphs use Phosphor Bold and state glyphs Phosphor Fill; this supersedes D72's Duotone content glyphs. Page icons stay SpaceVibe's own Bold set (RD23). | "ok approve chốt" (2026-11-21) | RD-R3 | every page |
 | RD38 | The icon library stays Phosphor plus SpaceVibe's own set; no SF Symbols. | "ok approve chốt" (2026-11-21) | RD-R3 | every page |
-| RD39 | Keys: ↑↓ and j/k move the selection (D11), A toggles the focused logo (D69), S stops (asks), Z and ⌘Z undo (GLOSSARY Undo), ⌘1–⌘8 open the pages; every command is also in the menu bar. The v5 status-bar hints retire with the status bar; the Undo hint lives in the toast. | "ok approve chốt" (2026-11-21) | RD-R9 | "not shown" line (keys) |
+| RD39 | Keys: ↑↓ and j/k move the selection (D11), A toggles the focused logo (D69), S stops (asks), Z and ⌘Z undo (GLOSSARY Undo), ⌘1–⌘8 open the pages in sidebar order (⌘1 Inbox, ⌘2 Clean, ⌘3 Skills, ⌘4 Subagents, ⌘5 Hooks, ⌘6 Rules, ⌘7 Limits, ⌘8 Activity), which replaces D70's "Limits keeps ⌘3"; every command is also in the menu bar. The v5 status-bar hints retire with the status bar; the Undo hint lives in the toast. | "ok approve chốt" (2026-11-21) | RD-R9 | "not shown" line (keys) |
 | RD40 | Narrows RD20: a list has checkboxes where a bulk action exists (remove, stop); Keep and Dismiss act on one row at a time. | "ok approve chốt" (2026-11-21) | RD-R11 | Inbox Balance, Control and Watch rows; Activity Failures |
 
 Earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
@@ -205,6 +205,10 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Search (⌘F):** filters the page's list by name, description, command and path; no match shows "No <items> match" with Clear Search. Listed in the mock's "not shown"; D49 relies on it.
 - **Balance finding:** one finding at most, the most-used item missing in a pinned CLI; none when fewer than two CLIs are pinned.
 - **Open at login:** a new Settings switch, not in the shipped app, off by default; it adds a login item that the user approves in System Settings (W24 applies to the build). No owner decision of its own.
+- **Project rules in Inbox:** a whole-tool allow in any known project's Shared or Local file is a Control finding like a global one; its `Change to Ask` writes that project file. The Rules hero and the sidebar count every file and say where ("2 rules allow a whole tool · 1 in Global, 1 in a project").
+- **Adding to a shared folder:** a CLI that reads the same folder (OpenCode and Amp read `~/.claude/skills`) gets the item too; the toast names them ("… read the same folder, so they have it too"), as removal names the CLIs that lose it.
+- **Session glyphs in Activity:** exactly `SessionStateGlyph`: working, waiting and done in their own session inks (GW20), unmeasurable grey, idle a dot; done is an idle session with a log write in the last 10 minutes (GW8); an ended row (kept 15 minutes) has no glyph.
+- **Journal window:** Settings › Data › Show Journal lists `journal.history` (at most 200, newest first) with an Undo per row; an undone row reads "Undone"; a refused Undo (409) shows the error toast and writes nothing; empty reads "No changes yet"; an unreadable journal shows an error, never an empty list. Declared in the mock's "not shown".
 - **Limits selection:** a Window row can be selected (highlight only, no inspector); the widget and its popover open Limits with that row selected (LC-R7).
 - **Keep is stored:** kept findings survive a restart, in a list in the app's data folder (`~/.spacevibe`); the build plan's RB-E5.
 - **Page × state cells drawn as Normal on purpose:** listed in the mock's `MOCK.na` with their behaviour (Moving only on Clean, Hooks never ask, Limits writes nothing, no shared file at 2 CLIs, the Settings window has no scan); the mock's `consistency.js` fails on any other such cell.
@@ -214,7 +218,6 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 - **Pinning:** Balance pins live in Settings › CLIs only, two to three, and only for CLIs that hold Skills or Subagents; the All CLIs menu no longer pins.
 - **Plugin-owned Never ran items:** counted in the Skills hero (a fact), listed read-only in Clean (CL-R1), never an Inbox finding.
 - **Row state icons:** grey inside rows (severity once per group, RD10) except Activity's waiting hand, which stays amber; FE-C3 asks for coloured state icons everywhere.
-- **Session state glyphs:** one set in the app, the shipped `SessionStateGlyph` (working, waiting, done, unmeasurable; idle is a dot), as RD34 carries the widget.
 - **Sidebar Activity figure:** the waiting count when a session waits, otherwise the running count.
 - **Dead Hook runs:** a dead Hook shows the runs the logs hold (they can be above 0 if the script was deleted after running); unverified against the engine.
 - **Keep on watch findings:** a kept Window or waiting session comes back when its state changes (a new Window, a new wait).
@@ -258,6 +261,8 @@ From the [2026-11-06 ledger](2026-11-06-reins-linear-identity-decisions.md). Row
 | D24, D41 | Row-end warning icon with a Remove / Open file popover; the fix within one hover or click | Row actions on the selected row and the inspector (RD-R4), logo toggles in the row (RD-R11) | owner yes 2026-11-21 |
 | D58 | Row warning icons keep their state tones | Severity once per group, row icons grey (RD10) | recorded (RD10) |
 | D60 (clause 1) | A number appears once | Sidebar values repeat each page's hero (RD10) | recorded (RD10) |
+| D70 (keys clause) | Limits keeps ⌘3 only | ⌘1–⌘8 in sidebar order, Limits ⌘7 (RD39) | recorded (RD39) |
+| D25 | SpaceVibe writes only to Claude Code and Codex | Kept for the engine (Out of scope); the mock's writes into a third CLI's folder are illustration for a later spec, as is the PRODUCT.md write limit | kept |
 | D11 | `j`/`k` navigation | Kept, with ↑↓ (RD39) | owner yes 2026-11-21 |
 
 PRODUCT.md lines this spec changes, updated at the cut-over (RB-X1), owner yes 2026-11-21: "primary datum … at 20px; everything else 13px or smaller" (the scale is 11–40 pt, RD-R5); "a number shows once … never repeated in another card" (sidebar values repeat the hero, RD10); "a problem shown in a row offers its fix in the same row … (the warning popover with Remove)" (Skills and Subagents rows fix through their logo toggles; removal of the whole item is the inspector's `Remove…`); "Balance the two CLIs" (pinned CLIs, RD-R10).
