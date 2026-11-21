@@ -219,7 +219,30 @@ Each line comes from the mock or from an agent's choice, not from the owner:
   - Pinned Balance; PRODUCT.md "Balance the two CLIs" changes to "pinned CLIs" (owner wording needed).
   - `Add to…` copies by default.
   - "Not supported" joins the glossary.
-- **Superseded documents:** this spec, once approved, supersedes `docs/DESIGN-LANGUAGE.md` (v5; the countdown spec is carried, not superseded, RD33) and the layout and visual decisions of the 2026-11-06 ledger. The exact D-ids still need to be listed with the owner, so none is narrowed silently.
+- **Superseded documents:** this spec, once approved, supersedes `docs/DESIGN-LANGUAGE.md` (v5) and the ledger decisions listed in "Ledger decisions this spec replaces" below; the countdown spec is carried, not superseded (RD33).
+
+## Ledger decisions this spec replaces
+
+From the [2026-11-06 ledger](2026-11-06-reins-linear-identity-decisions.md). Rows marked "owner yes pending" narrow or reverse a decision the owner made and are not in force until the owner says yes (W20). D53, D57, D69 and D70 stay (RD21).
+
+| Ledger | What it said | Replaced by | State |
+| --- | --- | --- | --- |
+| D3, D4 | Linear desktop app as the one reference | Native macOS 26 frame (RD4, RD5) | recorded (RD4) |
+| D7 | Inter stays | SF Pro, figures in SF Pro Rounded (RD6) | recorded (RD22) |
+| D17, D45, D54, D56, D61, D67 | List-plus-pane, bento and split layouts | Native lists with a trailing inspector (RD4) | owner yes pending |
+| D20 | Sidebar icons white, row icons grey | Category tone on sidebar and row icons (RD12) | recorded (RD22) |
+| D21, D31 | Badge on a lit logo | Full logo; the tile carries the check (RD-R11) | recorded (RD22) |
+| D23 | No count column in the list | Sessions column with a thin bar (RD-R11) | owner yes pending |
+| D26, D43, D46 | Agents page with tabs Skills, Subagents, Hooks, Rules | Four sidebar pages (RD19) | recorded (RD19, owner's guess taken) |
+| D27, D33–D37 | Filter menu, chips, Group by, Order by | `All / Never ran`, `All CLIs`, Sessions sort (RD22) | recorded (RD22) |
+| D28 | Bottom bar: add the selection to one CLI in one click | Per-CLI sheet `Add to…` / `Remove from…` (RD-R11) | owner yes pending |
+| D29, D30 | Tab head and row line styling | New tokens and blocks (RD-R3) | owner yes pending |
+| D32, D72 | MingCute category icons; Phosphor Duotone content glyphs | SpaceVibe's own Bold set for page icons (RD23); content glyph weight pending ("Inferred, not decided") | partly recorded (RD23) |
+| D51 | Attention queue strip on Agents | Inbox page (RD3) | owner yes pending |
+| D59 | Limits: one card, one band per CLI | One card per CLI, fixed order (RD-R10) | owner yes pending |
+| D60 | No reset tick on bars | Pace tick (RD22) | recorded (RD22) |
+| D66 | Spacing tokens of the mock kit | Spacing of the redesign Tokens page (RD-R3) | owner yes pending |
+| D68 | 2026-11-07 frozen mock as build reference | This spec's reference mock | recorded (RD1, RD-A1) |
 
 ## Needs new engine data or contracts
 
