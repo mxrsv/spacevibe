@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The reset countdown's mark (spec `docs/specs/2026-11-19-limit-reset-countdown.md`, LC10, LC-R5, LC-R6): the CLI logo inside
-/// a ring that drains over the countdown's lead. The ring takes the window's tone (LC9) on the faint `fg4` track. Still: it
+/// a ring that drains over the countdown's lead. The ring takes the window's tone (LC9) on the set's faint track (`fg4` in v5). Still: it
 /// moves only when the controller draws it again, once a second (LC7, GW-R11). Decorative: the pill or row says it in words.
 struct GlanceCountdownRing: View {
     let cli: CoreLimitsCLI
@@ -9,10 +9,12 @@ struct GlanceCountdownRing: View {
     let share: Double
     let tone: BarTone
 
+    @Environment(\.glanceTokens) private var tokens
+
     var body: some View {
         let inset = Metrics.Glance.ringStroke / 2
         ZStack {
-            Circle().inset(by: inset).stroke(Palette.fg4, lineWidth: Metrics.Glance.ringStroke)
+            Circle().inset(by: inset).stroke(tokens.ringTrack, lineWidth: Metrics.Glance.ringStroke)
             Circle().inset(by: inset)
                 .trim(from: 0, to: min(1, max(0, share)))
                 .stroke(tone.fill, style: StrokeStyle(lineWidth: Metrics.Glance.ringStroke, lineCap: .round))
@@ -42,14 +44,15 @@ struct GlanceCountdownPill: View {
     let action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.glanceTokens) private var tokens
     @State private var hovering = false
 
     var body: some View {
         let shape = Capsule()
         Button(action: action) {
             content
-                .background(shape.fill(hovering ? Palette.sel : Color.clear))
-                .blockSurface(Palette.bgPop, edge: Palette.hair2, radius: Metrics.Glance.stripRadius)
+                .background(shape.fill(hovering ? tokens.hoverFill : Color.clear))
+                .blockSurface(tokens.ground, edge: tokens.edge, radius: Metrics.Glance.stripRadius)
                 .contentShape(shape)
         }
         .buttonStyle(.plain)
@@ -67,8 +70,8 @@ struct GlanceCountdownPill: View {
         case .horizontal:
             HStack(spacing: Metrics.Glance.pillSpacing) {
                 ring
-                Text(clock).spaceVibeText(.metaLabel, tone: clockTone).lineLimit(1).lineBox(.metaLabel)
-                Text(label).spaceVibeText(.small, tone: .tertiary).lineLimit(1).lineBox(.small)
+                Text(clock).glanceText(.label, tone: clockTone, tokens: tokens).lineLimit(1).glanceLineBox(.label, tokens: tokens)
+                Text(label).glanceText(.small, tone: .tertiary, tokens: tokens).lineLimit(1).glanceLineBox(.small, tokens: tokens)
             }
             .padding(Metrics.Glance.pillPadding)
         case .vertical:
@@ -76,7 +79,7 @@ struct GlanceCountdownPill: View {
                 ring
                 VStack(spacing: 0) {
                     ForEach(Array(clock.split(separator: ":").enumerated()), id: \.offset) { _, part in
-                        Text(String(part)).spaceVibeText(.smallLabel, tone: clockTone).lineLimit(1).lineBox(.smallLabel)
+                        Text(String(part)).glanceText(.smallLabel, tone: clockTone, tokens: tokens).lineLimit(1).glanceLineBox(.smallLabel, tokens: tokens)
                     }
                 }
             }
@@ -90,10 +93,12 @@ struct GlanceCountdownPill: View {
 struct GlanceLimitsGroup<Content: View>: View {
     @ViewBuilder var content: Content
 
+    @Environment(\.glanceTokens) private var tokens
+
     var body: some View {
         VStack(spacing: 0) { content }
             .padding(.vertical, Metrics.Glance.limitsWellPadding)
-            .background(RoundedRectangle(cornerRadius: Metrics.Radius.block, style: Metrics.Radius.cornerStyle).fill(Palette.hover))
+            .background(RoundedRectangle(cornerRadius: Metrics.Radius.block, style: Metrics.Radius.cornerStyle).fill(tokens.wellFill))
             .padding(.top, Metrics.Glance.limitsGroupGap)
             .accessibilityElement(children: .contain)
     }
@@ -115,6 +120,7 @@ struct GlanceLimitRow: View {
     let action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.glanceTokens) private var tokens
     @State private var hovering = false
 
     var body: some View {
@@ -124,15 +130,15 @@ struct GlanceLimitRow: View {
                 GlanceCountdownRing(cli: cli, share: share, tone: ringTone)
                 VStack(alignment: .leading, spacing: Metrics.Glance.rowLineSpacing) {
                     HStack(spacing: Metrics.Glance.rowColumnSpacing) {
-                        Text(name).spaceVibeText(.metaLabel, tone: .primary).lineLimit(1).lineBox(.metaLabel)
+                        Text(name).glanceText(.label, tone: .primary, tokens: tokens).lineLimit(1).glanceLineBox(.label, tokens: tokens)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(clock).spaceVibeText(.metaLabel, tone: clockTone).lineLimit(1).lineBox(.metaLabel).fixedSize()
+                        Text(clock).glanceText(.label, tone: clockTone, tokens: tokens).lineLimit(1).glanceLineBox(.label, tokens: tokens).fixedSize()
                     }
-                    Text(detail).spaceVibeText(.small, tone: .tertiary).lineLimit(1).truncationMode(.tail).lineBox(.small)
+                    Text(detail).glanceText(.small, tone: .tertiary, tokens: tokens).lineLimit(1).truncationMode(.tail).glanceLineBox(.small, tokens: tokens)
                 }
             }
             .padding(Metrics.Glance.limitRowPadding)
-            .background(shape.fill(hovering ? Palette.sel : Color.clear))
+            .background(shape.fill(hovering ? tokens.hoverFill : Color.clear))
             .contentShape(shape)
         }
         .buttonStyle(.plain)

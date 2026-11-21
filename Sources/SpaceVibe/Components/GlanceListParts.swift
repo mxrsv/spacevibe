@@ -7,11 +7,13 @@ struct GlanceListSurface<Content: View>: View {
     var width: CGFloat? = Metrics.Glance.listWidth
     @ViewBuilder var content: Content
 
+    @Environment(\.glanceTokens) private var tokens
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) { content }
             .padding(Metrics.Glance.listPadding)
             .frame(width: width, alignment: .leading)
-            .blockSurface(Palette.bgPop, edge: Palette.hair2, radius: Metrics.Radius.window)
+            .blockSurface(tokens.ground, edge: tokens.edge, radius: Metrics.Radius.window)
             .accessibilityElement(children: .contain)
     }
 }
@@ -33,6 +35,7 @@ struct GlanceSessionRow: View {
     let action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.glanceTokens) private var tokens
     @State private var hovering = false
 
     var body: some View {
@@ -41,7 +44,7 @@ struct GlanceSessionRow: View {
             HStack(spacing: Metrics.Glance.rowColumnSpacing) {
                 CLIMark(cli, size: .glyph)
                 VStack(alignment: .leading, spacing: Metrics.Glance.rowLineSpacing) {
-                    line(title, role: .metaLabel, tone: .primary)
+                    line(title, role: .label, tone: .primary)
                     line(detail, role: .small, tone: .tertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -55,7 +58,7 @@ struct GlanceSessionRow: View {
                 }
             }
             .padding(Metrics.Glance.rowPadding)
-            .background(shape.fill(hovering ? Palette.sel : Color.clear))
+            .background(shape.fill(hovering ? tokens.hoverFill : Color.clear))
             .contentShape(shape)
         }
         .buttonStyle(.plain)
@@ -73,7 +76,7 @@ struct GlanceSessionRow: View {
     private var hintLine: some View {
         if hovering {
             HStack(spacing: Metrics.Glance.hintSpacing) {
-                SpaceVibeIcon(content: .open, size: .small, ink: Palette.fg3)
+                SpaceVibeIcon(content: .open, size: .small, ink: tokens.hintInk)
                 line(hint(), role: .small, tone: .tertiary)
             }
             .frame(maxWidth: Metrics.Glance.hintMaxWidth, alignment: .trailing)
@@ -82,8 +85,8 @@ struct GlanceSessionRow: View {
         }
     }
 
-    private func line(_ text: String, role: SpaceVibeType, tone: TextTone) -> some View {
-        Text(text).spaceVibeText(role, tone: tone).lineLimit(1).truncationMode(.tail).lineBox(role)
+    private func line(_ text: String, role: GlanceTokens.TextRole, tone: TextTone) -> some View {
+        Text(text).glanceText(role, tone: tone, tokens: tokens).lineLimit(1).truncationMode(.tail).glanceLineBox(role, tokens: tokens)
     }
 }
 
@@ -92,11 +95,13 @@ struct GlanceSessionRow: View {
 struct GlanceListNote: View {
     let text: String
 
+    @Environment(\.glanceTokens) private var tokens
+
     var body: some View {
         Text(text)
-            .spaceVibeText(.meta, tone: .secondary)
+            .glanceText(.note, tone: .secondary, tokens: tokens)
             .fixedSize(horizontal: false, vertical: true)
-            .lineBox(.meta)
+            .glanceLineBox(.note, tokens: tokens)
             .padding(Metrics.Glance.noteInsets)
     }
 }

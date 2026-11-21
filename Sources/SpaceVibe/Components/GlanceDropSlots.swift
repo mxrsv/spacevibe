@@ -6,6 +6,8 @@ import SwiftUI
 struct GlanceDropSlots: View {
     let outlines: [GlanceDropOutline]
     let canvas: CGSize
+    /// The widget's tokens (`GlanceTokens`): the shipped set unless the redesign's switch is on.
+    var tokens: GlanceTokens = .v5
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -17,23 +19,25 @@ struct GlanceDropSlots: View {
         }
         .frame(width: canvas.width, height: canvas.height, alignment: .topLeading)
         .accessibilityHidden(true)
+        .environment(\.glanceTokens, tokens)
     }
 }
 
 /// One drop slot, the widget's own size and shape: a dashed capsule on a faint fill, or, for the slot a release picks, a
-/// solid edge in `fg` on a stronger fill.
+/// solid edge in the text ink on a stronger fill.
 struct GlanceDropSlot: View {
     let isTarget: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.glanceTokens) private var tokens
 
     var body: some View {
         let edge = StrokeStyle(lineWidth: Metrics.Glance.slotStroke, dash: isTarget ? [] : Metrics.Glance.slotDash)
         Capsule(style: Metrics.Radius.cornerStyle)
-            .fill(isTarget ? Palette.trackHi : Palette.sel)
+            .fill(isTarget ? tokens.slotTargetFill : tokens.slotFill)
             .overlay {
                 Capsule(style: Metrics.Radius.cornerStyle)
-                    .strokeBorder(isTarget ? Palette.fg : Palette.fg.opacity(Metrics.Glance.slotEdgeOpacity), style: edge)
+                    .strokeBorder(isTarget ? tokens.slotTargetEdge : tokens.slotEdge, style: edge)
             }
             .animation(reduceMotion ? nil : .easeOut(duration: Metrics.Motion.quick), value: isTarget)
     }

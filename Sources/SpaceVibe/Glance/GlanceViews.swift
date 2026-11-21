@@ -9,6 +9,8 @@ struct GlanceStripView: View {
     /// Why the sessions could not be read (`GlanceFeed.failure`). The entries are then the last read: they fade, their rings
     /// stop, and VoiceOver reads the sentence.
     var failure: String?
+    /// The widget's surface and text tokens (`GlanceTokens`, RD34): the shipped set unless the redesign's switch is on.
+    var tokens: GlanceTokens = .v5
     let open: (GlanceEntry) -> Void
 
     var body: some View {
@@ -30,6 +32,7 @@ struct GlanceStripView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(GlanceWording.widgetName)
         .accessibilityValue(failure ?? "")
+        .environment(\.glanceTokens, tokens)
     }
 }
 
@@ -57,8 +60,15 @@ struct GlanceListView: View {
     /// The clock the Limits group reads.
     var now = Date()
     var openLimit: (GlanceCountdownWindow) -> Void = { _ in }
+    /// The widget's surface and text tokens (`GlanceTokens`, RD34).
+    var tokens: GlanceTokens = .v5
 
     var body: some View {
+        content.environment(\.glanceTokens, tokens)
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if entries.isEmpty, limits.isEmpty {
             GlanceListSurface(width: width) { GlanceListNote(text: failure ?? note) }
         } else {
@@ -105,6 +115,8 @@ struct GlanceCountdownPillView: View {
     let window: GlanceCountdownWindow
     let now: Date
     let axis: GlanceAxis
+    /// The widget's surface and text tokens (`GlanceTokens`, RD34).
+    var tokens: GlanceTokens = .v5
     let open: (GlanceCountdownWindow) -> Void
 
     var body: some View {
@@ -112,5 +124,6 @@ struct GlanceCountdownPillView: View {
                             clock: GlanceCountdownWording.clock(window, now: now), clockTone: window.tone.textTone,
                             label: GlanceCountdownWording.label(window.kind), axis: axis,
                             accessibilityName: GlanceCountdownWording.spoken(window, now: now)) { open(window) }
+            .environment(\.glanceTokens, tokens)
     }
 }

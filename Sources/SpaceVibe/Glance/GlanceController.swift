@@ -36,6 +36,9 @@ final class GlanceController {
 
     /// The app's shell, set once at launch: the click fallback focuses a session on its Activity page (GW6).
     var shell: ShellModel?
+    /// The redesign's frame, set by `AppFrame` when it appears (only with `SPACEVIBE_REDESIGN=1`): a click that falls back to
+    /// SpaceVibe then sets the frame's one route (AR5, GW6, LC-R7) instead of the v5 shell's.
+    weak var frame: FrameRouter?
 
     private let preferences: GlancePreferences
     private let countdown: LimitsCountdownPreferences
@@ -43,6 +46,8 @@ final class GlanceController {
     private let makeLimits: @MainActor () -> LimitsModel
     private let limitsReadInterval: Duration
     private let screens: @MainActor () -> [GlanceScreen]
+    /// The surface and text tokens every widget view draws with (RD34): the redesign's only with its switch on.
+    let tokens: GlanceTokens
     private(set) var feed: GlanceFeed?
     private(set) var limitsFeed: GlanceLimitsFeed?
     private var openMainWindow: () -> Void = {}
@@ -70,12 +75,13 @@ final class GlanceController {
     private var drawn = GlanceEntries.empty
 
     /// `makeCore` and `makeLimits` are asked once, at `start`; the app's Go core and its one `LimitsModel` when nil.
-    /// `limitsReadInterval` and `screens` are for tests: the widget reads every `GlanceLimitsFeed.readInterval` and places
+    /// `limitsReadInterval`, `screens` and `surface` are for tests: the widget reads every `GlanceLimitsFeed.readInterval` and places
     /// itself on the connected screens.
     init(preferences: GlancePreferences? = nil, countdown: LimitsCountdownPreferences? = nil,
          makeCore: (@MainActor () -> any CoreService)? = nil, makeLimits: (@MainActor () -> LimitsModel)? = nil,
          limitsReadInterval: Duration = GlanceLimitsFeed.readInterval,
-         screens: (@MainActor () -> [GlanceScreen])? = nil) {
+         screens: (@MainActor () -> [GlanceScreen])? = nil, surface: LaunchMode.Surface = LaunchMode.surface()) {
+        tokens = .forSurface(surface)
         self.preferences = preferences ?? .shared
         self.countdown = countdown ?? .shared
         self.makeCore = makeCore ?? { AppEnvironment.shared.goCore }
@@ -179,6 +185,7 @@ final class GlanceController {
     private func showLimits(_ window: GlanceCountdownWindow) {
         NSApp.activate()
         openMainWindow()
+        if routeIntoFrame(.limits(windowID: window.id)) { return }
         guard let limits = limitsFeed?.limits else { return }
         shell?.openLimits(windowID: window.id, in: limits)
     }
@@ -187,7 +194,27 @@ final class GlanceController {
     private func showActivity(_ itemID: String) {
         NSApp.activate()
         openMainWindow()
+        if routeIntoFrame(.activity(itemID: itemID)) { return }
         shell?.openActivity(sessionItemID: itemID)
+    }
+
+    /// Where a click that falls back to SpaceVibe lands.
+    enum Destination: Equatable {
+        /// The Limits page with that Window selected (`cli:windowID`, LC-R7).
+        case limits(windowID: String)
+        /// The Activity page with that session selected (`cli:sessionID`, GW6).
+        case activity(itemID: String)
+    }
+
+    /// Sets the redesign frame's one route (AR5) when the frame is there; false leaves the click to the v5 shell.
+    @discardableResult
+    func routeIntoFrame(_ destination: Destination) -> Bool {
+        guard let frame else { return false }
+        switch destination {
+        case .limits(let windowID): frame.go(to: .window(windowID))
+        case .activity(let itemID): frame.go(to: .session(itemID))
+        }
+        return true
     }
 
     // MARK: Panels
@@ -214,7 +241,7 @@ final class GlanceController {
         drawn = holdsOrder ? feed.entries.keepingOrder(of: drawn) : feed.entries
 
         surfaces.stripHost.rootView = GlanceStripView(strip: GlanceStrip(entries: drawn, slot: placed.slot), isOnScreen: onScreen,
-                                                      failure: feed.failure, open: { route.open($0) })
+                                                      failure: feed.failure, tokens: tokens, open: { route.open($0) })
         let stripSize = Self.whole(surfaces.stripHost.fittingSize)
         layoutPill(counting.first, now: now, slot: placed.slot, stripSize: stripSize)
         defer { armTick() }
@@ -239,7 +266,7 @@ final class GlanceController {
         func list(width: CGFloat?, rowsHeight: CGFloat?, limits: [GlanceCountdownWindow] = counting) -> GlanceListView {
             GlanceListView(entries: entries, note: note, failure: feed.failure, width: width, rowsHeight: rowsHeight, isOnScreen: onScreen,
                            hint: { route.destination(of: $0) }, open: { route.open($0) },
-                           limits: limits, now: now, openLimit: { [weak self] in self?.showLimits($0) })
+                           limits: limits, now: now, openLimit: { [weak self] in self?.showLimits($0) }, tokens: tokens)
         }
         // The list's own size first, unscrolled; a bare sentence wider than a list wraps at the list's width.
         surfaces.measureHost.rootView = list(width: nil, rowsHeight: nil)
@@ -305,7 +332,7 @@ final class GlanceController {
             if overPill { anchorHover(pill: false) }
             return
         }
-        surfaces.pillHost.rootView = GlanceCountdownPillView(window: window, now: now, axis: slot.axis,
+        surfaces.pillHost.rootView = GlanceCountdownPillView(window: window, now: now, axis: slot.axis, tokens: tokens,
                                                              open: { [weak self] in self?.showLimits($0) })
         let size = Self.whole(surfaces.pillHost.fittingSize)
         pillOffset = slot.pillFrame(for: size, beside: CGRect(origin: .zero, size: stripSize))
@@ -527,7 +554,7 @@ final class GlanceController {
             }()
             drag.overlays[screen.id] = overlay
             overlay.host.rootView = GlanceDropSlots(outlines: drag.session.outlines(on: screen, target: drag.target),
-                                                    canvas: screen.visibleFrame.size)
+                                                    canvas: screen.visibleFrame.size, tokens: tokens)
             if overlay.panel.frame != screen.visibleFrame { overlay.panel.setFrame(screen.visibleFrame, display: true) }
             if !overlay.panel.isVisible { overlay.panel.orderFrontRegardless() }
         }

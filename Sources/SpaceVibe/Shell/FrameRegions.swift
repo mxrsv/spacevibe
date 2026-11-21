@@ -5,6 +5,7 @@ extension FramePageContent {
     static func region(_ page: FramePage, model: FrameModel) -> FramePageContent {
         switch page {
         case .hooks: HooksFrame.content(model: model)
+        case .limits: LimitsRegion.content(model)
         default: .notBuilt(page)
         }
     }

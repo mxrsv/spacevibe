@@ -29,7 +29,12 @@ import SwiftUI
 /// - `glance-list-limits-empty`: no session and a counting window: the sentence above the group.
 @MainActor
 enum GlanceShots {
-    static func run(into directory: URL) throws {
+    /// The set this run draws with.
+    private static var tokens = GlanceTokens.v5
+
+    /// `tokens`: the redesign's set with `SPACEVIBE_REDESIGN=1` (RD34), the shipped one otherwise.
+    static func run(into directory: URL, tokens: GlanceTokens = .v5) throws {
+        self.tokens = tokens
         let all = entries(GlanceShotData.all)
         let many = entries(GlanceShotData.many)
         try ShotHarness.check(Set(all.all.map(\.state)) == Set(GlanceState.allCases), "the state set holds every glance state")
@@ -79,7 +84,7 @@ enum GlanceShots {
     @ViewBuilder
     private static func group(_ entries: GlanceEntries, slot: GlanceSlot, pill window: GlanceCountdownWindow?) -> some View {
         let bar = strip(entries, slot: slot)
-        let pill = window.map { GlanceCountdownPillView(window: $0, now: GlanceLimitsShotData.now, axis: slot.axis, open: { _ in }) }
+        let pill = window.map { GlanceCountdownPillView(window: $0, now: GlanceLimitsShotData.now, axis: slot.axis, tokens: tokens, open: { _ in }) }
         switch slot.pillSide {
         case .leading: HStack(spacing: GlanceLayout.pillGap) { pill; bar }
         case .trailing: HStack(spacing: GlanceLayout.pillGap) { bar; pill }
@@ -93,7 +98,7 @@ enum GlanceShots {
     }
 
     private static func strip(_ entries: GlanceEntries, slot: GlanceSlot, failure: String? = nil) -> GlanceStripView {
-        GlanceStripView(strip: GlanceStrip(entries: entries, slot: slot), isOnScreen: true, failure: failure, open: { _ in })
+        GlanceStripView(strip: GlanceStrip(entries: entries, slot: slot), isOnScreen: true, failure: failure, tokens: tokens, open: { _ in })
     }
 
     /// The list as the controller sizes it when it fits: rows at the list's width, a bare sentence at its own.
@@ -101,7 +106,7 @@ enum GlanceShots {
         GlanceListView(entries: entries.all, note: GlanceWording.noSession, failure: failure,
                        width: entries.isEmpty && limits.isEmpty ? nil : Metrics.Glance.listWidth,
                        isOnScreen: true, hint: { _ in GlanceWording.activity }, open: { _ in },
-                       limits: limits, now: GlanceLimitsShotData.now)
+                       limits: limits, now: GlanceLimitsShotData.now, tokens: tokens)
     }
 
     /// A list taller than the cap, scrolled to the top, sized as `GlanceController` sizes it: the pinned Limits group keeps its
@@ -111,7 +116,7 @@ enum GlanceShots {
         return GlanceListView(entries: entries.all, note: GlanceWording.noSession, width: Metrics.Glance.listWidth,
                               rowsHeight: Metrics.Glance.listMaxHeight - 2 * Metrics.Glance.listPadding - group,
                               isOnScreen: true, hint: { _ in GlanceWording.activity }, open: { _ in },
-                              limits: limits, now: GlanceLimitsShotData.now)
+                              limits: limits, now: GlanceLimitsShotData.now, tokens: tokens)
     }
 
     private static func height(_ view: some View) -> CGFloat {

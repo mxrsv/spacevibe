@@ -22,6 +22,10 @@ struct ShareMeter: View {
     enum Tone: Hashable, Sendable {
         /// A plain share: `ink2` in rows, `ink` on the hero.
         case plain
+        /// `ink2` at every height: a Limits Window on pace, whose 6 pt meter is not a hero (the mock's `.mtr.big`).
+        case secondary
+        /// `ink3`: a share shown but not judged (a Limits reading too old to judge, RD30).
+        case quiet
         /// Data compared by eye (`dataBar`, Clean's selected amount).
         case data
         case attention
@@ -77,6 +81,8 @@ struct ShareMeter: View {
     private var fill: Color {
         switch tone {
         case .plain: height == .hero ? ColorRole.ink : ColorRole.ink2
+        case .secondary: ColorRole.ink2
+        case .quiet: ColorRole.ink3
         case .data: ColorRole.dataBar
         case .attention: ColorRole.attentionBar
         case .critical: ColorRole.criticalBar

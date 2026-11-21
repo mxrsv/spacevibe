@@ -35,6 +35,8 @@ struct AppFrame: View {
             .frameLookRoot(forced: forcedLook)
             .environment(chrome)
             .focusedSceneValue(\.frameCommandTarget, FrameCommandTarget(model: model, chrome: chrome))
+            // The glance widget's click and its countdown pill route into this frame (GW6, LC-R7, AR5).
+            .onAppear { GlanceController.shared.frame = model.router }
             .task { await model.store.start() }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 Task { await model.store.refresh() }

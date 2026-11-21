@@ -38,6 +38,8 @@ enum ShotRenderer {
                 if let pages = framePages(forScreen: screen) {
                     try requireSyntheticHome(environment)
                     try writeFrame(on: pages, into: directory)
+                    // Limits adds its page in every state from synthetic readings (RB-R6).
+                    if screen == FramePage.limits.rawValue { try LimitsFrameShots.run(into: directory) }
                     // As the v5 `shell` run adds its gallery, the frame's adds the design system and the blocks.
                     if screen == "shell" { try writeFrameGalleries(into: directory) }
                     exit(0)
@@ -55,7 +57,10 @@ enum ShotRenderer {
             case "activity": try requireSyntheticHome(environment); try ActivityTabShots.run(into: directory)
             case "limits": try requireSyntheticHome(environment); try LimitsShots.run(into: directory)
             case "settings": try SettingsShots.run(into: directory)
-            case "glance": try requireSyntheticHome(environment); try GlanceShots.run(into: directory)
+            case "glance":
+                try requireSyntheticHome(environment)
+                // With the switch on the widget draws the redesign's surface and text tokens (RD34).
+                try GlanceShots.run(into: directory, tokens: .forSurface(LaunchMode.surface(environment: environment)))
             default: throw ShotHarness.Failure("unknown SPACEVIBE_SHOT_SCREEN \(screen) (shell, skills, subagents, hooks, rules, activity, limits, settings or glance)")
             }
 
