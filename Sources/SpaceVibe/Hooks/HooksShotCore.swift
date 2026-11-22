@@ -178,7 +178,8 @@ final class HooksShotCore: CoreService, @unchecked Sendable {
         hook("h9", cli: .codex, event: "SessionStart", command: "~/.codex/hooks/load-context.sh", cells: codexUnmeasurable),
     ]
 
-    /// The mock's break-ui changes (`src/x-data.js`) plus 50 more Hooks spread over every event.
+    /// The mock's break-ui changes (`src/x-data.js`) plus 50 more Hooks spread over every event, a quoted script path with
+    /// spaces and 100 more on PreToolUse, so its node holds a three-digit count (RB-F3).
     static let worst: [CoreInventoryHook] = {
         var hooks = sample
         hooks[0] = hook("h1", event: "PreToolUse", matcher: "Edit|Write|MultiEdit|NotebookEdit", command: "sh '$HOME/.claude/scripts/block-env-edit.sh'", dead: true, cells: counted(0))
@@ -196,6 +197,12 @@ final class HooksShotCore: CoreService, @unchecked Sendable {
         hooks += (0..<50).map { index in
             hook("w\(index)", event: all[index % all.count], command: "~/.claude/hooks/a-very-long-hook-name-that-keeps-going-\(index).sh",
                  avg: 10 + index, cells: counted(index * 37))
+        }
+        hooks.append(hook("wq", event: "PreToolUse", matcher: "Edit|Write",
+                          command: "NODE_OPTIONS='--max-old-space-size=8192' npx --yes tsx \"$CLAUDE_PROJECT_DIR/.claude/hooks/kiểm tra – 北京.ts\"",
+                          avg: 240, cells: counted(1_006, errors: 3)))
+        hooks += (0..<100).map { index in
+            hook("wp\(index)", event: "PreToolUse", command: "~/.claude/hooks/pre-tool-\(index).sh", avg: 12, cells: counted(index))
         }
         return hooks
     }()

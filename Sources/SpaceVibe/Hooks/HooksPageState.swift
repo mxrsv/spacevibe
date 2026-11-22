@@ -52,11 +52,19 @@ final class HooksPageState {
 
     func isPending(_ control: String) -> Bool { model?.writes.isPending(control) ?? false }
 
-    /// `Copy Command`: the whole command to the clipboard. Not a write, so no Undo (the mock's `say('Copied to the clipboard')`).
+    /// `Copy Command`: the whole command to the clipboard. Not a write, so no Undo (the mock's `say('Copied to the clipboard')`);
+    /// a command whose credentials the core masked says so (S-R3).
     func copyCommand(_ row: HooksListRow, toasts: ToastCenter) {
+        copyToPasteboard(row.command)
+        toasts.show(Self.copiedMessage(for: row.command))
+    }
+
+    static func copiedMessage(for command: String) -> String { ToastText.copiedCommand(command, plain: copiedToast) }
+
+    /// Puts text on the pasteboard; a test replaces it so it never touches the real one.
+    @ObservationIgnored var copyToPasteboard: (String) -> Void = { text in
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(row.command, forType: .string)
-        toasts.show(Self.copiedToast)
+        NSPasteboard.general.setString(text, forType: .string)
     }
 
     static let copiedToast = "Copied to the clipboard"

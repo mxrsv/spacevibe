@@ -93,7 +93,8 @@ struct LimitsCardList: View {
             CLILogo(CLIIdentity(id: card.cliID, name: card.name), size: SizeRole.logo20)
             Text(card.name).typeRole(.bodyMedium).foregroundStyle(ColorRole.ink).lineLimit(1)
             if let plan = card.plan {
-                Text(plan).typeRole(.quiet).foregroundStyle(ColorRole.ink3).lineLimit(1).truncationMode(.tail)
+                // A long plan name is cut by the width; its tooltip holds it whole (break-ui, RB-F3).
+                Text(plan).typeRole(.quiet).foregroundStyle(ColorRole.ink3).lineLimit(1).truncationMode(.tail).help(plan)
             }
             Spacer(minLength: SpaceRole.step12)
             if card.isUnmeasurable {

@@ -114,7 +114,7 @@ private struct ActivityToolbarControls: View {
     }
 }
 
-/// The toolbar's destructive slot (the mock's `.dst.slot`): `Stop N sessions…` while rows are ticked, an empty slot
+/// The toolbar's destructive slot (the mock's `.dst.slot`): `Stop N…` while rows are ticked, an empty slot
 /// otherwise, so the controls beside it never move (FE-L1, RD-R17 Layout).
 private struct ActivityStopButton: View {
     let context: ActivityPageContext
@@ -125,7 +125,8 @@ private struct ActivityStopButton: View {
             Button { context.state.requestStop(data.picks) } label: { PushButtonLabel(title, icon: .stopCircle) }
                 .buttonStyle(PushButtonStyle(.destructive, isLoading: context.model.writes.isPending(ActivityPageState.stopManyControl)))
                 .focusEffectDisabled()
-                .help(title)
+                .help(data.primaryHelp ?? title)
+                .accessibilityLabel(data.primaryHelp ?? title)
         } else {
             Color.clear.accessibilityHidden(true)
         }

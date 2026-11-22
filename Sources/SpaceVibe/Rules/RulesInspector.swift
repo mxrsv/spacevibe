@@ -60,10 +60,7 @@ struct RulesAddSheet: View {
     let fileName: String
 
     var body: some View {
-        let text = Binding(get: { state.addDraft?.text ?? "" }, set: { value in
-            state.addDraft?.text = value
-            state.addDraft?.refusal = nil
-        })
+        let text = Binding(get: { state.addDraft?.text ?? "" }, set: { state.setAddText($0) })
         let isEmpty = draft.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         DialogSheet(title: "Add Rule", note: RulesWriteWording.addPreview(draft.text, as: draft.verdict, to: fileName),
                     isWorking: draft.isChecking, cancel: { state.closeAdd() }) {
@@ -71,8 +68,10 @@ struct RulesAddSheet: View {
                 TextInputField(placeholder: "Bash(git log:*)", text: text, label: "Rule", isMono: true, message: draft.refusal) {
                     state.submitAdd(fileName: fileName)
                 }
-                PermissionDial(selection: draft.verdict, label: "Permission") { state.addDraft?.verdict = $0 }
+                PermissionDial(selection: draft.verdict, label: "Permission") { state.setAddVerdict($0) }
             }
+            // What the check and the write send is what the sheet shows: nothing in it changes until they answer.
+            .disabled(draft.isChecking)
             .padding(.top, SpaceRole.step8)
         } confirm: {
             Button { state.submitAdd(fileName: fileName) } label: { Text("Add Rule").frame(maxWidth: .infinity) }

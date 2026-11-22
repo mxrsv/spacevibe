@@ -229,6 +229,20 @@ struct SettingsWindowTests {
         #expect(todayRows[0].time == "2:02 PM")
     }
 
+    @Test("a Journal entry from another year carries the year; this year's do not (break-ui, RB-F3)")
+    func journalYear() {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let now = utc.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: 14, minute: 30))!
+        let entries = [("a", "2026-11-10T09:00:00Z"), ("b", "2025-11-10T09:00:00Z"), ("c", "2025-12-30T09:00:00Z")].map {
+            CoreJournalEntry(id: $0.0, at: $0.1, label: "Removed \($0.0)", undone: false, count: 1)
+        }
+        let list = JournalList(history: CoreJournalHistory(entries: entries), state: .ready, now: now, calendar: utc)
+        guard case .rows(let rows) = list.content else { Issue.record("rows expected"); return }
+        #expect(rows.map(\.time) == ["Nov 10", "Dec 30, 2025", "Nov 10, 2025"])
+        #expect(JournalList.labelLines == 2, "a long label wraps to two lines, its tooltip holds it whole")
+    }
+
     @Test("Undo from the Journal runs journal.undo, toasts without Undo, re-reads the Journal; a 409 shows the refusal")
     func journalUndo() async {
         let core = FrameFakeCore()

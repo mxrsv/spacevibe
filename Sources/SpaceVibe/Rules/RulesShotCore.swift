@@ -14,6 +14,9 @@ final class RulesShotCore: CoreService, @unchecked Sendable {
         case codexError
         /// Claude Code knows no project.
         case noProjects
+        /// `rules.check` and `rules.setCapability` never answer: the Add Rule sheet while it checks, a capability dial while
+        /// its write runs (RB-F3).
+        case slow
     }
 
     let scenario: Scenario
@@ -78,7 +81,8 @@ final class RulesShotCore: CoreService, @unchecked Sendable {
     }
 
     func rulesCheck(rule: String) async throws -> CoreRuleCheck {
-        rule.contains("(") && !rule.hasSuffix(")")
+        if scenario == .slow { try await Task.sleep(for: .seconds(3600)) }
+        return rule.contains("(") && !rule.hasSuffix(")")
             ? CoreRuleCheck(valid: false, message: "That rule has an opening parenthesis without a closing one.") : CoreRuleCheck(valid: true, message: nil)
     }
 
@@ -90,7 +94,8 @@ final class RulesShotCore: CoreService, @unchecked Sendable {
     }
 
     func rulesSetCapability(scope: CoreRuleScope, dir: String?, capability: CoreCapability, verdict: CoreVerdict) async throws -> CoreSetCapabilityResult {
-        CoreSetCapabilityResult(entry: try entry("Set \(capability.rawValue)").entry)
+        if scenario == .slow { try await Task.sleep(for: .seconds(3600)) }
+        return CoreSetCapabilityResult(entry: try entry("Set \(capability.rawValue)").entry)
     }
 
     func rulesAdd(scope: CoreRuleScope, dir: String?, verdict: CoreVerdict, rule: String) async throws -> CoreEntryResult {

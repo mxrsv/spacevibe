@@ -30,6 +30,9 @@ final class RulesPageState {
     var addDraft: RulesAddDraft?
     /// Verdict changes under way, by their write control: what each is writing.
     private(set) var changing: [String: CoreVerdict] = [:]
+    /// Capability changes under way, by file and capability (`capabilityKey`): the verdict each is writing, for the dial's
+    /// pending step (FE-L2).
+    private(set) var capabilityChanging: [String: CoreVerdict] = [:]
 
     @ObservationIgnored private weak var model: FrameModel?
     /// The project the Project scope opens on: the one shown last.
@@ -115,7 +118,7 @@ final class RulesPageState {
     /// A press on a capability's dial. Nothing is written: `rules.preview` says what would change, the popover shows it.
     /// The same press again closes it. A same-value press still previews: it reads "Nothing to change" and writes nothing.
     func requestPreview(_ row: RulesCapabilityRow, to verdict: CoreVerdict) {
-        guard let model, row.isEditable else { return }
+        guard let model, row.isEditable, pendingCapability(row.id) == nil else { return }
         if let preview, preview.capability == row.id, preview.verdict == verdict, preview.file == file {
             closePreview()
             return
@@ -146,7 +149,23 @@ final class RulesPageState {
         let text = RulesPreviewText(row: row, preview: answer, fileName: fileName)
         closePreview()
         guard !text.isNothing, request.file == file else { return }
-        run(.setCapability(request.capability, to: request.verdict, in: request.file, label: text.doneLabel), model: model)
+        // Pending before this returns (`FrameWrites.start`): the dial shows the step it is moving to and takes no press until
+        // the write is done.
+        let write = FrameWrite.setCapability(request.capability, to: request.verdict, in: request.file, label: text.doneLabel)
+        guard let task = model.writes.start(write) else { return }
+        let key = Self.capabilityKey(request.capability, in: request.file)
+        capabilityChanging[key] = request.verdict
+        Task { @MainActor in
+            _ = await task.value
+            capabilityChanging[key] = nil
+        }
+    }
+
+    /// The verdict a pending change of `capability` in the file shown is writing; nil when none is pending.
+    func pendingCapability(_ capability: CoreCapability) -> CoreVerdict? { capabilityChanging[Self.capabilityKey(capability, in: file)] }
+
+    private static func capabilityKey(_ capability: CoreCapability, in file: FrameScope) -> String {
+        "\(file.scope.rawValue):\(file.dir ?? ""):\(capability.rawValue)"
     }
 
     // MARK: Rule writes
@@ -203,10 +222,6 @@ final class RulesPageState {
 
     func isPending(_ control: String) -> Bool { model?.writes.isPending(control) ?? false }
 
-    private func run(_ write: FrameWrite, model: FrameModel) {
-        Task { @MainActor in await model.writes.perform(write) }
-    }
-
     // MARK: Add Rule
 
     func openAdd() {
@@ -230,6 +245,21 @@ final class RulesPageState {
     func closeAdd() {
         guard addDraft?.isChecking != true else { return }
         addDraft = nil
+    }
+
+    /// The sheet's field. Ignored while the check or the write runs: the write sends the rule and verdict it was started
+    /// with, so the sheet never shows one thing while another is written (CLICK-PATH Q-003); the field and the dial are
+    /// disabled then too.
+    func setAddText(_ text: String) {
+        guard addDraft?.isChecking == false else { return }
+        addDraft?.text = text
+        addDraft?.refusal = nil
+    }
+
+    /// The sheet's dial; ignored while the check or the write runs, as `setAddText`.
+    func setAddVerdict(_ verdict: CoreVerdict) {
+        guard addDraft?.isChecking == false else { return }
+        addDraft?.verdict = verdict
     }
 
     /// The sheet's `Add Rule`: `rules.check` first, then `rules.add` to the file the sheet was opened for. A refusal of

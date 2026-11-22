@@ -42,8 +42,9 @@ struct ActivityPageTests {
     }
 
     private func failure(_ key: String, cli: CoreCLI = .claude, kind: CoreFailureKind = .command, title: String = "pnpm lint",
-                         count: Int = 1, exit: Int? = 1, last: String? = "2027-01-15T07:00:00.000Z", laterPass: String? = nil) -> CoreActivityFailure {
-        CoreActivityFailure(kind: kind, cli: cli, key: key, title: title, count: count, exit: exit, reason: "Lint errors in 3 files",
+                         count: Int = 1, exit: Int? = 1, last: String? = "2027-01-15T07:00:00.000Z", laterPass: String? = nil,
+                         reason: String = "Lint errors in 3 files") -> CoreActivityFailure {
+        CoreActivityFailure(kind: kind, cli: cli, key: key, title: title, count: count, exit: exit, reason: reason,
                             projects: ["web"], sessions: 2, first: nil, last: last, laterPass: laterPass,
                             hook: kind == .hook ? CoreActivityHookRef(hash: "h", event: "PostToolUse") : nil)
     }
@@ -178,7 +179,7 @@ struct ActivityPageTests {
         let data = ActivityPageData(base)
         #expect(data.stoppableIDs == ["claude:b", "claude:a", "codex:c"])
         #expect(data.picks.map(\.id) == ["claude:a", "codex:c"])
-        #expect(data.headerCheck == .mixed && data.primaryTitle == "Stop 2 sessions…")
+        #expect(data.headerCheck == .mixed && data.primaryTitle == "Stop 2…" && data.primaryHelp == "Stop 2 sessions…")
         var hidden = base
         hidden.scope = "claude"
         #expect(ActivityPageData(hidden).picks.map(\.id) == ["claude:a"])
@@ -327,6 +328,31 @@ struct ActivityPageTests {
         let cut = ActivityFailureRow(failure("f9", title: String(repeating: "x", count: 119) + "\u{2026}"), cliName: "Claude", now: now, calendar: Self.utc)
         state.copyCommand(cut, toasts: toasts)
         #expect(copied.count == 1 && toasts.current?.message.contains("only has its start") == true)
+    }
+
+    @Test("a failure without a reason has no stray separator, no empty Reason fact and no trailing comma (break-ui, RB-F3)",
+          arguments: ["", "  ", "\n"])
+    func emptyReason(reason: String) {
+        let row = ActivityFailureRow(failure("f1", reason: reason), cliName: "Claude", now: now, calendar: Self.utc)
+        #expect(row.reason == nil)
+        #expect(row.subLine == "exit 1 · 2 sessions · today")
+        #expect(!row.facts.map(\.key).contains("Reason"))
+        #expect(row.facts.map(\.key) == ["Failed", "Sessions", "Last"])
+        #expect(row.spoken == "pnpm lint, Claude, failed 1 time")
+        let given = ActivityFailureRow(failure("f2"), cliName: "Claude", now: now, calendar: Self.utc)
+        #expect(given.facts.map(\.key) == ["Failed", "Reason", "Sessions", "Last"] && given.spoken.hasSuffix(", Lint errors in 3 files"))
+    }
+
+    @Test("Copy Command says so when the command it copies had credentials masked (S-R3)")
+    func copyMasked() {
+        let toasts = ToastCenter(announce: false)
+        let state = ActivityPageState()
+        var copied: [String] = []
+        state.copyToPasteboard = { copied.append($0) }
+        var base = input([], failures: [failure("f1", title: "curl -H 'Authorization: Bearer •••' https://api.example.com")])
+        base.tab = .failures
+        state.copyCommand(ActivityPageData(base).failures[0], toasts: toasts)
+        #expect(copied.count == 1 && toasts.current?.message == ToastText.copiedMasked)
     }
 
     // MARK: Page state

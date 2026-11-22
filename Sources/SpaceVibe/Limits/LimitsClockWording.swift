@@ -4,11 +4,20 @@ import Foundation
 /// `LimitsWording`, which the shipped page keeps: a reset's clock time ("3:12 PM", "Mon 9:00 AM", "Dec 1"), the time to it
 /// ("42s", "42m", "4h 06m", "4d 18h") and a reading's age ("12 min ago", "7 hours ago").
 enum LimitsClockWording {
-    /// Today "3:12 PM", within six days "Mon 9:00 AM", later "Dec 1" (the mock's `reset`).
+    /// Today "3:12 PM", within six days "Mon 9:00 AM", later "Dec 1" (the mock's `reset`), and "Nov 10, 2025" in another
+    /// year than `now`'s, so a Journal entry from last year never reads as this year's (break-ui, RB-F3).
     static func clock(_ date: Date, now: Date, calendar: Calendar = .current) -> String {
         let days = date.timeIntervalSince(now) / 86_400
         let format: String
-        if calendar.isDate(date, inSameDayAs: now) { format = "h:mm a" } else if abs(days) < 6 { format = "EEE h:mm a" } else { format = "MMM d" }
+        if calendar.isDate(date, inSameDayAs: now) {
+            format = "h:mm a"
+        } else if abs(days) < 6 {
+            format = "EEE h:mm a"
+        } else if calendar.isDate(date, equalTo: now, toGranularity: .year) {
+            format = "MMM d"
+        } else {
+            format = "MMM d, yyyy"
+        }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.calendar = calendar

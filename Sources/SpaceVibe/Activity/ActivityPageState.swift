@@ -199,7 +199,7 @@ final class ActivityPageState {
             return
         }
         copyToPasteboard(row.failure.title)
-        toasts.show("Copied the command.")
+        toasts.show(ToastText.copiedCommand(row.failure.title, plain: "Copied the command."))
     }
 
     /// Hides a failure until SpaceVibe quits or it fails again. Not a write to any file: its Undo stays on its own toast

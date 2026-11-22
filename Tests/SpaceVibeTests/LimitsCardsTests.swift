@@ -289,6 +289,9 @@ struct LimitsCardsTests {
         #expect(LimitsClockWording.clock(at(0, 15, 12), now: now, calendar: calendar) == "3:12 PM")
         #expect(LimitsClockWording.clock(at(4, 9, 0), now: now, calendar: calendar) == "Mon 9:00 AM")
         #expect(LimitsClockWording.clock(at(12, 0, 0), now: now, calendar: calendar) == "Dec 1")
+        // Another year than now's carries it (RB-F3); a reset next week across New Year still reads its weekday.
+        #expect(LimitsClockWording.clock(at(-365, 9, 0), now: now, calendar: calendar) == "Nov 19, 2025")
+        #expect(LimitsClockWording.clock(at(50, 9, 0), now: now, calendar: calendar) == "Jan 8, 2027")
         #expect(LimitsClockWording.span(42) == "42s")
         #expect(LimitsClockWording.span(42 * 60) == "42m")
         #expect(LimitsClockWording.span(246 * 60) == "4h 06m")

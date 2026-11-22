@@ -82,8 +82,14 @@ struct InboxInspector: View {
         KeyValueList(facts: InboxInspectorFacts.rule(rule, file: file, world: world))
         InspectorNote(RulesWriteWording.wholeToolWarning, icon: .warningFill, iconInk: ColorRole.stateAttention)
         InspectorSection("Permission") {
-            PermissionDial(selection: rule.verdict, label: "Permission") { actions.changeVerdict(rule, in: file, to: $0) }
-                .disabled(actions.isPending(.changeToAsk, row))
+            // Pending at the control while a change writes (FE-L2): the step it is moving to shows the pending mark and no
+            // step takes a press until the write is done.
+            // A change of the same rule started on another page has no step to show: the dial is then disabled instead.
+            let pending = actions.pendingVerdict(rule, in: file)
+            PermissionDial(selection: rule.verdict, label: "Permission", pending: pending) {
+                actions.changeVerdict(rule, in: file, to: $0)
+            }
+            .disabled(pending == nil && actions.isPending(.changeToAsk, row))
         }
     }
 

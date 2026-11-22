@@ -7,7 +7,9 @@ import Foundation
 ///
 /// 1. Split the command into words: an environment assignment (`KEY=value`, its value quoted or not, kept whole), a
 ///    single-quoted or double-quoted run, or a run of non-space characters. Strip one quote from each end of a word. A word that
-///    still holds a space (a quoted `-c` body) is split once more the same way.
+///    still holds a space (a quoted `-c` body) is split once more the same way, unless it is one quoted script path: it starts
+///    like a path (`/`, `~`, `./`, `../`, `$VAR/`, `${VAR}/`), ends in a script extension, holds no shell operator and does not
+///    follow a body flag (`-c`, `-lc`, `-e`), so `tsx "$DIR/hooks/kiểm tra – 北京.ts"` keeps its whole file name (RB-F3).
 /// 2. Assignments (`^[A-Za-z_][A-Za-z0-9_]*=`) are dropped, at either level: `NODE_ENV=production FOO=1 ./x.sh` runs `x.sh`.
 /// 3. The first word ending in a script extension (`.sh`, `.bash`, `.zsh`, `.py`, `.mjs`, `.cjs`, `.js`, `.ts`, `.rb`, `.pl`)
 ///    is the name, without its folders.
@@ -31,15 +33,28 @@ enum HookLabel {
     private static let variable = pattern(#"^["']?\$"#)
     private static let folders = pattern(#"^.*/"#)
     private static let version = pattern(#"@[0-9.]+\z"#)
+    private static let pathStart = pattern(#"^(~|\.{1,2}/|/|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?/)"#)
+    private static let shellOperator = pattern(#"&&|\|\||[;|`]|\$\("#)
+    private static let bodyFlag = pattern(#"^-[A-Za-z]*[ce]\z"#)
 
     static func of(_ command: String) -> String {
-        let flat = words(command)
-            .flatMap { $0.contains(" ") ? words($0) : [$0] }
+        let top = words(command)
+        let flat = top.indices
+            .flatMap { index -> [String] in
+                let word = top[index]
+                let isBody = index > 0 && matches(bodyFlag, top[index - 1])
+                return word.contains(" ") && (isBody || !isQuotedScriptPath(word)) ? words(word) : [word]
+            }
             .filter { !matches(assignment, $0) }
         if let file = flat.first(where: { matches(script, $0) }) { return replacing(folders, in: file) }
         let tool = flat.first { !launchers.contains($0) && !$0.hasPrefix("-") && !matches(variable, $0) }
         let name = replacing(version, in: replacing(folders, in: tool ?? flat.first ?? command))
         return String(name.prefix(maxLength))
+    }
+
+    /// A quoted word that is one script's path with spaces in it, not a `-c` body: kept whole.
+    private static func isQuotedScriptPath(_ word: String) -> Bool {
+        matches(pathStart, word) && matches(script, word) && !matches(shellOperator, word)
     }
 
     /// The words of `text`, quotes stripped. An assignment is dropped here, while its quoted value is still whole, so its spaces

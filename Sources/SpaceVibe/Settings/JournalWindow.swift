@@ -6,6 +6,8 @@ import SwiftUI
 /// reads "No changes yet"; a journal that could not be read shows the error, never an empty list. Pure, so tests pin it.
 struct JournalList: Equatable {
     static let cap = 200
+    /// A row's label wraps to two lines, its tooltip holds it whole (break-ui, RB-F3).
+    static let labelLines = 2
     static let emptyTitle = "No changes yet"
     static let emptyText = "Every change SpaceVibe makes is listed here, with Undo."
     static let failureTitle = "The Journal could not be read"
@@ -15,7 +17,8 @@ struct JournalList: Equatable {
         let entry: CoreJournalEntry
         /// "Removed ponytail"; a change the core named nothing reads "Change".
         let label: String
-        /// "2:02 PM", "Fri 4:00 PM", "Nov 10" (the redesign's time wording, `LimitsClockWording`).
+        /// "2:02 PM", "Fri 4:00 PM", "Nov 10", "Nov 10, 2025" before this year (the redesign's time wording,
+        /// `LimitsClockWording`).
         let time: String
 
         var id: String { entry.id }
@@ -162,7 +165,9 @@ struct JournalWindow: View {
             SpaceVibeScrollView {
                 RowGroup {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                        SettingsRow(row.label, detail: row.time, index: index) { trailing(row, store: store) }
+                        SettingsRow(row.label, detail: row.time, index: index, titleLines: JournalList.labelLines) {
+                            trailing(row, store: store)
+                        }
                     }
                 }
             }

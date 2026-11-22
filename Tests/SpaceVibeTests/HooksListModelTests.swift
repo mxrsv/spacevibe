@@ -266,9 +266,24 @@ struct HooksListModelTests {
         view = view.togglingAll(list.suggested)
         let ticked = Self.model(hooks, view: view)
         #expect(ticked.allSuggestedTicked && ticked.removal.count == 3)
-        #expect(HooksFrame.removeSelectedTitle(ticked.removal.count) == "Remove 3 selected")
+        #expect(HooksFrame.removeSelectedTitle(ticked.removal.count) == "Remove 3")
         #expect(HooksFrame.removeSelectedTitle(0) == "Select rows to remove")
         #expect(view.togglingAll(list.suggested).ticked.isEmpty)
+    }
+
+    @Test("Copy Command copies the command whole and says so when the core masked a credential in it (S-R3)")
+    func copyCommand() throws {
+        let masked = "curl -H 'Authorization: Bearer •••' https://hooks.example.com/notify"
+        let hooks = Self.sample + [Self.hook("curl", event: "Stop", command: masked, cells: ["claude": Self.runs(3), "codex": .missing])]
+        let list = Self.model(hooks, view: HooksViewState())
+        let state = HooksPageState()
+        var copied: [String] = []
+        state.copyToPasteboard = { copied.append($0) }
+        let toasts = ToastCenter(announce: false)
+        state.copyCommand(try #require(list.row("hook::curl@claude")), toasts: toasts)
+        #expect(copied == [masked] && toasts.current?.message == ToastText.copiedMasked)
+        state.copyCommand(try #require(list.row("hook::lint@claude")), toasts: toasts)
+        #expect(copied.last == "~/.claude/hooks/lint.sh" && toasts.current?.message == HooksPageState.copiedToast)
     }
 
     @Test("a filter clears the ticks, and a tick the filter hides never reaches a removal")

@@ -5,6 +5,9 @@ import Foundation
 /// names (S-R2), never a real config. Each state is a fixed `ActivityPreview` and, where the mock draws one, the toast.
 enum ActivityShotState: String, CaseIterable, Sendable {
     case normal, empty, scanning, error, worst, write, writefail, dialog, failures, many
+    /// The Failures tab with the break-ui failures, the one without a reason selected (RB-F3: no stray separator, no
+    /// empty Reason).
+    case failuresWorst = "failures-worst"
 
     /// The toast the state shows, in the words and tone the real Stop gives (`ActivityPageState.stopWrite` through
     /// `FrameWrites`): one stopped session's toast (no Undo), or the partial toast when one of two was refused.
@@ -33,7 +36,7 @@ enum ActivityShotState: String, CaseIterable, Sendable {
         case .empty: sessions = []; failures = []
         case .scanning: sessions = []; failures = []; hasReport = false; source = .loading
         case .error: sessions = []; failures = []; hasReport = false; source = .failed("The session logs could not be read.")
-        case .worst: sessions += data.worstSessions; failures += data.worstFailures
+        case .worst, .failuresWorst: sessions += data.worstSessions; failures += data.worstFailures
         case .write:
             sessions = sessions.map { session in
                 guard session.id == "a1" else { return session }
@@ -52,8 +55,9 @@ enum ActivityShotState: String, CaseIterable, Sendable {
         }
         return ActivityPreview(
             clis: registry, sessions: sessions, sessionCLIs: sessionCLIs, failures: failures, hasReport: hasReport, source: source, figure: figure, now: now,
-            tab: self == .failures ? .failures : .sessions,
-            selection: self == .failures ? "claude:hook:f1" : hasReport && !sessions.isEmpty ? "claude:a2" : nil,
+            tab: self == .failures || self == .failuresWorst ? .failures : .sessions,
+            selection: self == .failures ? "claude:hook:f1" : self == .failuresWorst ? "claude:command:f5"
+                : hasReport && !sessions.isEmpty ? "claude:a2" : nil,
             ticked: self == .dialog || self == .worst ? ["claude:a1", "claude:a2"] : [],
             stopAlertIDs: self == .dialog ? ["claude:a1"] : [],
             hostApp: ActivityShotData.hostApp)
@@ -173,6 +177,9 @@ struct ActivityShotData {
                     count: 12_480, exit: nil,
                     reason: "command not found: prettier (run `npm i -g prettier` or add it to devDependencies in package.json)",
                     sessions: 1_204, lastMinutes: 3),
+            // The core gave no reason: the quiet line and the inspector leave it out (RB-F3).
+            failure("f5", kind: .command, cli: .claude, title: "make deploy-preview", count: 2, exit: 2, reason: "", sessions: 1,
+                    lastMinutes: 90),
         ]
     }
 }

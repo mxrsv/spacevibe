@@ -81,8 +81,9 @@ enum SettingsWindowShots {
             refusal: state == .refused ? LoginItemWording.refused(turningOn: true, reason: "Operation not permitted") : nil)
     }
 
-    /// Rows (one undone, one with a very long label), empty, unreadable, and still reading. The rows are dated from the
-    /// moment of the shot, as the window reads them (`JournalList` against now): just now, earlier today, three days ago.
+    /// Rows (one undone, one with a very long label in two lines, one from last year with its year), empty, unreadable, and
+    /// still reading. The rows are dated from the moment of the shot, as the window reads them (`JournalList` against now):
+    /// just now, earlier today, three days ago, a year ago.
     static func journalStates(now: Date = Date()) -> [(String, SettingsFacts)] {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -93,6 +94,8 @@ enum SettingsWindowShots {
             CoreJournalEntry(id: "j1", at: ago(3 * 24 * 60),
                              label: "Removed 12 Skills, Subagent review-every-pull-request-before-it-merges-into-the-main-branch and 3 Hooks",
                              undone: false, count: 16),
+            CoreJournalEntry(id: "j0", at: ago(366 * 24 * 60), label: "Added Bash(git log:*) as Allow in ~/.claude/settings.json",
+                             undone: false, count: 1),
         ]
         return [
             ("rows", SettingsFacts(journal: CoreJournalHistory(entries: entries), journalState: .ready)),

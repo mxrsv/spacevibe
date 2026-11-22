@@ -19,6 +19,9 @@ struct LifecycleNode: Identifiable, Hashable, Sendable {
 
     var id: String { event }
 
+    /// From 100 Hooks the count needs more than the 22 pt disc: the disc grows into a capsule around it.
+    var growsDisc: Bool { count >= 100 }
+
     /// What VoiceOver reads (RD-R16 "Hooks node has a label and its state"): "PreToolUse: 3 Hooks, one is dead".
     var spoken: String {
         let hooks = NumberWording.plural(count, "Hook")
@@ -36,9 +39,11 @@ struct LifecycleNode: Identifiable, Hashable, Sendable {
 /// RD-R16); an event with no Hook is quiet. A node is a toggle: pressing it shows only that event's Hooks, pressing it again
 /// shows all. Each node is a VoiceOver button with its count, state and whether it is the filter.
 ///
-/// An event's name is never cut (`UserPromptSubmit` whole). The nodes share the strip's width as the mock's `flex:1` does
-/// while every name fits; when they do not (ten events and more beside the hero), each node takes its name's width and the
-/// strip scrolls sideways instead (a headless shot, which has no scroll view, cuts it at the edge).
+/// An event's name is never cut by truncation (`UserPromptSubmit` whole). The nodes share the strip's width as the mock's
+/// `flex:1` does while every name fits; when they do not (ten events and more beside the hero), each node takes its name's
+/// width and the strip scrolls sideways instead. Then the trailing edge fades out over `fadeWidth` (RB-F3: never a name cut
+/// mid-glyph at a hard edge), and the row ends with as much room, so the last name scrolls clear of the fade. A headless shot
+/// has no scroll view: it shows what fits, faded at the same edge.
 struct LifecycleStrip: View {
     let nodes: [LifecycleNode]
     /// The event the list is filtered to, if any.
@@ -47,16 +52,39 @@ struct LifecycleStrip: View {
     @Environment(\.isShotRendering) private var isShotRendering
     /// The strip's own width, measured: what the nodes share inside the scroll view.
     @State private var room: CGFloat = 0
+    /// The row's width before its end room, measured: wider than `room` when the names do not fit.
+    @State private var lineWidth: CGFloat = 0
+
+    /// How far the trailing fade reaches, and the room the row ends with when it overflows.
+    static let fadeWidth = SpaceRole.step24
+
+    /// Whether the row runs past the strip, so the trailing edge fades. Pure, for the tests.
+    static func overflows(lineWidth: CGFloat, room: CGFloat) -> Bool { room > 0 && lineWidth > room + 0.5 }
 
     var body: some View {
         Group {
             if isShotRendering {
-                // A headless shot has no scroll view: the strip takes the width it is given and cuts what does not fit.
-                line(minWidth: nil).clipped()
+                // A headless shot has no scroll view: every node at its share when the names fit, otherwise the names at
+                // their widths, cut at the edge under the fade.
+                ViewThatFits(in: .horizontal) {
+                    line(minWidth: nil)
+                    line(minWidth: nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .clipped()
+                        .mask { LifecycleEdgeFade() }
+                }
             } else {
-                ScrollView(.horizontal, showsIndicators: false) { line(minWidth: room > 0 ? room : nil) }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { room = $0 }
+                let overflows = Self.overflows(lineWidth: lineWidth, room: room)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    line(minWidth: room > 0 ? room : nil)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { lineWidth = $0 }
+                        .padding(.trailing, overflows ? Self.fadeWidth : 0)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { room = $0 }
+                .mask {
+                    if overflows { LifecycleEdgeFade() } else { Rectangle() }
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -70,6 +98,18 @@ struct LifecycleStrip: View {
                 LifecycleNodeButton(node: node, isChosen: chosen == node.event, isFirst: index == 0,
                                     isLast: index == nodes.count - 1) { pick(node.event) }
             }
+        }
+    }
+}
+
+/// The strip's mask while its row runs past it: opaque, then fading to nothing over the trailing `fadeWidth`. Only the
+/// alpha counts in a mask, so the ink is any opaque role.
+private struct LifecycleEdgeFade: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            Rectangle()
+            LinearGradient(colors: [ColorRole.ink, ColorRole.ink.opacity(0)], startPoint: .leading, endPoint: .trailing)
+                .frame(width: LifecycleStrip.fadeWidth)
         }
     }
 }
@@ -192,15 +232,19 @@ private struct LifecycleNodeStyle: ButtonStyle {
                 .frame(height: ringWidth)
         }
 
+        /// A 22 pt disc up to 99; from 100 it grows sideways into a capsule around the whole count (RB-F3: "1,006" never
+        /// spills out of its disc), the same height, ring and badge.
         private var disc: some View {
-            ZStack {
-                Circle().fill(isChosen ? ColorRole.ink : ColorRole.canvasSurface)
-                if !isChosen { Circle().strokeBorder(ring, lineWidth: ringWidth) }
-                FigureText(NumberWording.count(node.count), role: .quietMedium)
-                    .foregroundStyle(isChosen ? ColorRole.canvasSurface : figureInk)
-                    .lineLimit(1)
-            }
-            .frame(width: discSide, height: discSide)
+            FigureText(NumberWording.count(node.count), role: .quietMedium)
+                .foregroundStyle(isChosen ? ColorRole.canvasSurface : figureInk)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, node.growsDisc ? SpaceRole.step6 : 0)
+                .frame(minWidth: discSide, minHeight: discSide, maxHeight: discSide)
+                .background {
+                    Capsule().fill(isChosen ? ColorRole.ink : ColorRole.canvasSurface)
+                    if !isChosen { Capsule().strokeBorder(ring, lineWidth: ringWidth) }
+                }
             .overlay(alignment: .topTrailing) {
                 if let badge {
                     ZStack {

@@ -383,11 +383,16 @@ struct InboxActionsTests {
         #expect(InboxInspectorFacts.rule(rule, file: file, world: world).map(\.value)
                 == ["Run commands", "Global", "~/.claude/settings.json"])
         actions.changeVerdict(rule, in: file, to: .allow)
+        #expect(actions.pendingVerdict(rule, in: file) == nil, "the same verdict starts nothing")
         actions.changeVerdict(rule, in: file, to: .deny)
+        // The dial's pending step (FE-L2, RB-F3): the verdict it is moving to, from the press until the write is done.
+        #expect(actions.pendingVerdict(rule, in: file) == .deny)
         actions.changeVerdict(rule, in: file, to: .ask)
+        #expect(actions.pendingVerdict(rule, in: file) == .deny, "a second press while the first runs changes nothing")
         #expect(await eventually { !core.sent("rules.changeVerdict").isEmpty })
         #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash allow deny"],
                 "the same verdict writes nothing; a second press while the first runs is dropped")
+        #expect(await eventually { actions.pendingVerdict(rule, in: file) == nil })
     }
 }
 

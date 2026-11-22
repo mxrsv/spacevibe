@@ -52,9 +52,15 @@ enum HooksFrame {
     /// The selected project row's action cell (the mock's `Read-only (project)`).
     static let projectReadOnly = "Read-only (project)"
 
-    /// The primary slot's title: what it removes, or what to do first.
+    /// The primary slot's title: what it removes, or what to do first. Short enough never to be cut in the 196 slot (RD52:
+    /// "Remove 104"); the tooltip and VoiceOver say the whole thing (`removeSelectedHelp`).
     static func removeSelectedTitle(_ count: Int) -> String {
-        count > 0 ? "Remove \(NumberWording.count(count)) selected" : "Select rows to remove"
+        count > 0 ? "Remove \(NumberWording.count(count))" : "Select rows to remove"
+    }
+
+    /// "Remove 104 selected Hooks".
+    static func removeSelectedHelp(_ count: Int) -> String {
+        count > 0 ? "Remove \(NumberWording.count(count)) selected \(count == 1 ? "Hook" : "Hooks")" : "Select rows to remove"
     }
 }
 
@@ -76,7 +82,8 @@ struct HooksRemoveSelectedButton: View {
             .buttonStyle(PushButtonStyle(.destructive, isLoading: state.isPending(HooksRemoval.selectedControl)))
             .focusEffectDisabled()
             .disabled(rows.isEmpty)
-            .help(HooksFrame.removeSelectedTitle(rows.count))
+            .help(HooksFrame.removeSelectedHelp(rows.count))
+            .accessibilityLabel(HooksFrame.removeSelectedHelp(rows.count))
         }
     }
 }

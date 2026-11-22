@@ -215,8 +215,14 @@ struct ActivityFailureRow: Identifiable, Equatable, Sendable {
     var exitText: String { failure.exit.map { "exit \($0)" } ?? "no exit code" }
     var countText: String { "\(NumberWording.count(failure.count))×" }
 
+    /// The core's reason, nil when it gave none (or only white space): then no separator and no Reason line stand empty.
+    var reason: String? {
+        let text = failure.reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : failure.reason
+    }
+
     var subLine: String {
-        [exitText, NumberWording.plural(failure.sessions, "session"), lastDay, passedDay, failure.reason]
+        [exitText, NumberWording.plural(failure.sessions, "session"), lastDay, passedDay, reason]
             .compactMap { $0 }.joined(separator: " · ")
     }
 
@@ -229,13 +235,15 @@ struct ActivityFailureRow: Identifiable, Equatable, Sendable {
     var facts: [InspectorFact] {
         [
             InspectorFact(key: "Failed", value: NumberWording.plural(failure.count, "time") + (failure.exit.map { " · exit \($0)" } ?? "")),
-            InspectorFact(key: "Reason", value: failure.reason),
+            reason.map { InspectorFact(key: "Reason", value: $0) },
             InspectorFact(key: "Sessions", value: NumberWording.count(failure.sessions)),
             InspectorFact(key: "Last", value: [lastDay, passedDay].compactMap { $0 }.joined(separator: " · ")),
-        ]
+        ].compactMap { $0 }
     }
 
-    var spoken: String { "\(title), \(cliName), failed \(NumberWording.plural(failure.count, "time")), \(failure.reason)" }
+    var spoken: String {
+        ([title, cliName, "failed \(NumberWording.plural(failure.count, "time"))"] + [reason].compactMap { $0 }).joined(separator: ", ")
+    }
 }
 
 /// Everything the Activity page draws, derived once from `ActivityPageInput` (plan AR3: pure, page state is an input, the
@@ -336,9 +344,17 @@ struct ActivityPageData: Sendable {
         CheckboxValue.header(ticked: stoppableIDs.filter(input.ticked.contains).count, total: stoppableIDs.count)
     }
 
-    /// The toolbar's destructive button while rows are ticked: `Stop 2 sessions…`.
+    /// The toolbar's destructive button while rows are ticked: `Stop 2…`, short enough never to be cut in the 196 slot
+    /// (RD52: "Stop 1,006"); the ellipsis stays, because a confirmation follows. The tooltip and VoiceOver say
+    /// `primaryHelp`.
     var primaryTitle: String? {
         guard input.tab == .sessions, !picks.isEmpty else { return nil }
+        return "Stop \(NumberWording.count(picks.count))…"
+    }
+
+    /// `Stop 1,006 sessions…`.
+    var primaryHelp: String? {
+        guard primaryTitle != nil else { return nil }
         return "Stop \(NumberWording.plural(picks.count, "session"))…"
     }
 

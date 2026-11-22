@@ -81,6 +81,27 @@ struct HookLabelTests {
         #expect(HookLabel.of("sh '$HOME/日本語/レビュー.sh'") == "レビュー.sh")
     }
 
+    @Test("a quoted script path with spaces keeps its whole file name (break-ui, RB-F3)", arguments: [
+        ("CLAUDE_HOOK_LOG=\"$HOME/Library/Logs/Claude Hooks/pre tool.jsonl\" npx --yes tsx \"$CLAUDE_PROJECT_DIR/.claude/hooks/kiểm tra – 北京.ts\"",
+         "kiểm tra – 北京.ts"),
+        ("NODE_OPTIONS='--max-old-space-size=8192' npx --yes tsx \"$CLAUDE_PROJECT_DIR/.claude/hooks/kiểm tra – 北京.ts\" --matcher 'Edit|Write'",
+         "kiểm tra – 北京.ts"),
+        ("python3 '~/My Hooks/guard rail.py' --strict", "guard rail.py"),
+        ("sh \"${HOME}/bin/format on save.sh\"", "format on save.sh"),
+        ("node \"./hooks/log prompt.mjs\"", "log prompt.mjs"),
+        ("bash \"/opt/hooks/My Scripts/check.sh\"", "check.sh"),
+    ])
+    func quotedPathWithSpaces(command: String, label: String) {
+        #expect(HookLabel.of(command) == label)
+    }
+
+    @Test("a quoted -c or -e body that starts like a path is still split into its words")
+    func quotedBodies() {
+        #expect(HookLabel.of("bash -c '/usr/bin/env python3 hook.py'") == "hook.py")
+        #expect(HookLabel.of("sh -lc '$HOME/bin/a.sh && $HOME/bin/b.sh'") == "a.sh")
+        #expect(HookLabel.of("bash -c '~/bin/run.sh --fix x.ts'") == "run.sh")
+    }
+
     @Test("a long tool name is cut at 40 characters; a script name is not")
     func length() {
         let tool = String(repeating: "x", count: 60)

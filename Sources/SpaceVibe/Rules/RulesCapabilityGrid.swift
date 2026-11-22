@@ -40,7 +40,8 @@ struct RulesCapabilityGrid: View {
     private func dial(_ row: RulesCapabilityRow) -> some View {
         let isOpen = state.preview.map { $0.capability == row.id && $0.file == list.file } ?? false
         // The track spans the 190 column (the mock's grid cell stretches `.dial`), its steps at the leading end.
-        return PermissionDial(selection: row.selection, label: row.label, lockedWord: row.isMixed ? "Mixed" : nil, fillsWidth: true) { verdict in
+        return PermissionDial(selection: row.selection, label: row.label, lockedWord: row.isMixed ? "Mixed" : nil,
+                              pending: state.pendingCapability(row.id), fillsWidth: true) { verdict in
             state.requestPreview(row, to: verdict)
         }
         .disabled(!row.isEditable && !row.isMixed)

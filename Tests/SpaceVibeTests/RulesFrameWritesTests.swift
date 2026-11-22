@@ -63,8 +63,13 @@ final class RulesFakeCore: UnservedCore, @unchecked Sendable {
     }
     override func rulesSetCapability(scope: CoreRuleScope, dir: String?, capability: CoreCapability, verdict: CoreVerdict) async throws -> CoreSetCapabilityResult {
         record("rules.setCapability \(scope.rawValue) \(dir ?? "") \(capability.rawValue) \(verdict.rawValue)")
+        if let delay = lock.withLock({ capabilityDelay }) { try await Task.sleep(for: delay) }
         return CoreSetCapabilityResult(entry: try answer("Set").entry)
     }
+    /// How long `rules.check` and `rules.setCapability` take before they answer: a sheet or a dial a test can press while
+    /// they run.
+    var checkDelay: Duration?
+    var capabilityDelay: Duration?
     override func rulesChangeVerdict(scope: CoreRuleScope, dir: String?, rule: String, from: CoreVerdict, to: CoreVerdict) async throws -> CoreEntryResult {
         record("rules.changeVerdict \(scope.rawValue) \(dir ?? "") \(rule) \(from.rawValue) \(to.rawValue)")
         if let delay = lock.withLock({ verdictDelay }) { try await Task.sleep(for: delay) }
@@ -78,6 +83,7 @@ final class RulesFakeCore: UnservedCore, @unchecked Sendable {
     }
     override func rulesCheck(rule: String) async throws -> CoreRuleCheck {
         record("rules.check \(rule)")
+        if let delay = lock.withLock({ checkDelay }) { try await Task.sleep(for: delay) }
         return lock.withLock { check }
     }
     override func rulesAdd(scope: CoreRuleScope, dir: String?, verdict: CoreVerdict, rule: String) async throws -> CoreEntryResult {
@@ -326,6 +332,53 @@ struct RulesFrameWritesTests {
         #expect(await eventually { state.addDraft == nil })
         #expect(core.sent("rules.add") == ["rules.add global  allow Bash(git log:*)"])
         #expect(toasts.current?.message == "Added Bash(git log:*) as Allow in ~/.claude/settings.json" && toasts.current?.action?.title == "Undo")
+        model.store.stop()
+    }
+
+    @Test("the capability dial shows the step it is moving to while rules.setCapability runs, and opens no preview then (FE-L2)")
+    func capabilityPending() async throws {
+        let (core, model, state, _) = await setUp()
+        core.capabilityDelay = .milliseconds(300)
+        let list = try #require(state.list())
+        let push = try #require(list.capabilities.first)
+        #expect(state.pendingCapability(.push) == nil)
+        state.requestPreview(push, to: .deny)
+        #expect(await eventually { if case .ready = state.preview?.phase { true } else { false } })
+        state.confirmPreview(push, fileName: list.fileName)
+        #expect(state.pendingCapability(.push) == .deny, "pending before confirm returns")
+        core.reset()
+        state.requestPreview(push, to: .allow)
+        #expect(state.preview == nil && core.calls.isEmpty, "a press while the write runs previews nothing")
+        #expect(await eventually { state.pendingCapability(.push) == nil })
+        #expect(core.sent("rules.setCapability") == ["rules.setCapability global  push deny"])
+        model.store.stop()
+    }
+
+    @Test("Add Rule: while the check runs the field and the dial take no change, so the write sends what the sheet shows (Q-003)")
+    func addFrozenWhileChecking() async throws {
+        let (core, model, state, _) = await setUp()
+        core.checkDelay = .milliseconds(200)
+        state.openAdd()
+        state.setAddText("Bash(git log:*)")
+        state.setAddVerdict(.allow)
+        state.submitAdd(fileName: "~/.claude/settings.json")
+        #expect(state.addDraft?.isChecking == true)
+        state.setAddVerdict(.deny)
+        state.setAddText("Read")
+        #expect(state.addDraft?.verdict == .allow && state.addDraft?.text == "Bash(git log:*)", "the sheet keeps what it sends")
+        #expect(await eventually { state.addDraft == nil })
+        #expect(core.sent("rules.add") == ["rules.add global  allow Bash(git log:*)"])
+        model.store.stop()
+    }
+
+    @Test("Add Rule: the field and the dial change the draft while nothing runs, and a new text clears the refusal")
+    func addEdits() async {
+        let (_, model, state, _) = await setUp()
+        state.openAdd()
+        state.addDraft?.refusal = "Refused"
+        state.setAddText("Bash")
+        state.setAddVerdict(.deny)
+        #expect(state.addDraft?.text == "Bash" && state.addDraft?.verdict == .deny && state.addDraft?.refusal == nil)
         model.store.stop()
     }
 

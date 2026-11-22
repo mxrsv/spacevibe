@@ -46,7 +46,7 @@ struct ActivityFailuresList: View {
                         .foregroundStyle(ColorRole.ink3)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                        .help(row.failure.reason)
+                        .help(row.subLine)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 FigureText(row.countText, role: .pageTitle)

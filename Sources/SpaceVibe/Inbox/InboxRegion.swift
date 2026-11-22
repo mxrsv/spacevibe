@@ -10,6 +10,9 @@ final class InboxPageState {
     var ticked: Set<String> = []
     var showsKept = false
     var confirming: InboxConfirmation?
+    /// Verdict changes under way from the rule inspector's dial or Change to Ask, by their write control: what each is
+    /// writing, for the dial's pending step (FE-L2).
+    var changing: [String: CoreVerdict] = [:]
 
     static func of(_ model: FrameModel) -> InboxPageState {
         model.pageState(InboxPageState.self) { InboxPageState() }
@@ -308,11 +311,11 @@ struct InboxActions {
 
     var isConfirming: Bool { state.confirming.map { writes.isPending($0.write.control) } ?? false }
 
-    /// A command or an id to the clipboard: not a write, so no Undo.
+    /// A command or an id to the clipboard: not a write, so no Undo. A command whose credentials the core masked says so (S-R3).
     func copy(_ text: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        toasts?.show("Copied to the clipboard")
+        toasts?.show(ToastText.copiedCommand(text, plain: "Copied to the clipboard"))
     }
 
     func tryAgain() { Task { await model.store.refresh(force: true) } }
@@ -322,8 +325,21 @@ struct InboxActions {
     func changeVerdict(_ rule: CoreRule, in file: FrameScope, to verdict: CoreVerdict) {
         guard rule.verdict != verdict, !writes.isPending(FrameWrite.verdictControl(rule.rule, in: file)) else { return }
         let label = "Changed \(rule.rule) from \(PermissionDial.title(rule.verdict)) to \(PermissionDial.title(verdict)) in \(InboxWording.settingsFile(file))"
-        // Pending before this returns (`FrameWrites.start`), so a press in the same main-actor turn finds the write running.
-        writes.start(.changeVerdict(rule.rule, from: rule.verdict, to: verdict, in: file, label: label))
+        // Pending before this returns (`FrameWrites.start`), so a press in the same main-actor turn finds the write running;
+        // the dial shows the step it is moving to until the write is done.
+        let write = FrameWrite.changeVerdict(rule.rule, from: rule.verdict, to: verdict, in: file, label: label)
+        guard let task = writes.start(write) else { return }
+        let state = state
+        state.changing[write.control] = verdict
+        Task { @MainActor in
+            _ = await task.value
+            state.changing[write.control] = nil
+        }
+    }
+
+    /// The verdict a pending change of `rule` is writing, for its dial; nil when none is pending.
+    func pendingVerdict(_ rule: CoreRule, in file: FrameScope) -> CoreVerdict? {
+        state.changing[FrameWrite.verdictControl(rule.rule, in: file)]
     }
 
     func showInFinder(_ path: String) {

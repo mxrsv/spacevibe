@@ -12,6 +12,17 @@ enum ToastText {
     /// The write toast's usual action.
     static let undoTitle = "Undo"
 
+    /// What the core puts in place of a recognisable credential in the commands it reports (`redact.Mark`, S-R3).
+    static let credentialMark = "•••"
+
+    /// Copy Command's toast when the command the app holds had credentials masked: the copy has the mark, not the secret.
+    static let copiedMasked = "Copied the command with its credentials masked as •••; put them back before you run it."
+
+    /// Copy Command's toast: `plain` (each page's own wording), or `copiedMasked` when `command` holds the core's mark.
+    static func copiedCommand(_ command: String, plain: String) -> String {
+        command.contains(credentialMark) ? copiedMasked : plain
+    }
+
     /// What VoiceOver hears for a toast: the sentence, then the action it offers, so Undo is known to be in reach
     /// ("Removed ponytail. Undo available.").
     static func spoken(_ message: String, action: String?) -> String {

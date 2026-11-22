@@ -65,7 +65,11 @@ enum RulesFrame {
     /// d: w })`).
     static func buttonKind(_ action: FrameRowAction) -> PushButtonStyle.Kind { action.isDestructive ? .destructive : .quiet }
 
-    static func removeSelectedTitle(_ count: Int) -> String { "Remove \(NumberWording.count(count)) selected" }
+    /// Short enough never to be cut in the 196 slot (RD52: "Remove 104"); the tooltip and VoiceOver say the whole thing.
+    static func removeSelectedTitle(_ count: Int) -> String { "Remove \(NumberWording.count(count))" }
+
+    /// "Remove 104 selected rules".
+    static func removeSelectedHelp(_ count: Int) -> String { "Remove \(NumberWording.plural(count, "selected rule"))" }
 }
 
 /// The toolbar's controls (the mock's `rulesCliBtn`, `segCtl('rules', …)`): the CLI pop-up, and on Claude Code's page the
@@ -119,7 +123,8 @@ struct RulesPrimaryButton: View {
             }
             .buttonStyle(PushButtonStyle(.destructive, isLoading: state.isPending(RulesPageState.removeControl(list.file))))
             .focusEffectDisabled()
-            .help(RulesFrame.removeSelectedTitle(count))
+            .help(RulesFrame.removeSelectedHelp(count))
+            .accessibilityLabel(RulesFrame.removeSelectedHelp(count))
         }
     }
 }

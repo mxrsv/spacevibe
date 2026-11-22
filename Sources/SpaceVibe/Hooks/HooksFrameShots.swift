@@ -6,7 +6,8 @@ import SwiftUI
 ///
 /// - `normal`, `normal-1000`, `normal-1600` (window widths), `selected` (a dead Hook selected, its inspector and row action),
 ///   `ticked` (Select N Suggested pressed), `event` (the strip filtered to PreToolUse), `many` (10 CLIs: same shape);
-/// - `empty`, `scanning`, `error` (Codex folder unreadable), `failed` (nothing could be read), `worst` (break-ui data);
+/// - `empty`, `scanning`, `error` (Codex folder unreadable), `failed` (nothing could be read), `worst` (break-ui data: a
+///   three-digit node, a quoted script path with spaces), `worst-1000` (the strip faded at its trailing edge);
 /// - `write` (a dead Hook removed: the toast with Undo), `refused` (the core's refusal toast), `copied` (Copy Command's toast).
 ///
 /// Every shot first selects what the page selects on opening (RD44). `scanning` shows skeleton rows and no judged row;
@@ -41,6 +42,8 @@ enum HooksFrameShots {
         Shot(name: "error", scenario: .error),
         Shot(name: "failed", scenario: .failed),
         Shot(name: "worst", scenario: .worst),
+        // The strip at its narrowest beside the hero: names past the edge fade out (RB-F3).
+        Shot(name: "worst-1000", scenario: .worst, width: 1000),
         Shot(name: "write", scenario: .normal) { model, state in await remove(deadHook, model: model, state: state) },
         // Copy Command's toast (not a write: no Undo). The shot shows the page's own sentence without touching the clipboard.
         Shot(name: "copied", scenario: .normal, toast: HooksPageState.copiedToast) { model, _ in model.router.select(deadHook) },

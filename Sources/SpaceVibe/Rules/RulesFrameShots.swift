@@ -5,9 +5,11 @@ import SwiftUI
 /// (`mock.html?page=rules&state=<state>`). Files are `frame-rules-<name>-<look>-<appearance>.png`:
 ///
 /// - `normal`, `normal-1000`, `normal-1600`, `selected` (the whole-tool `Bash` and its inspector), `ticked` (two rules:
-///   `Remove 2 selected`), `project` (payments-web's Local file), `many` (10 CLIs: the strip and `+N more CLIs`);
+///   `Remove 2`), `project` (payments-web's Local file), `many` (10 CLIs: the strip and `+N more CLIs`);
 /// - `dialog` (the preview Push and deploy → Deny, the mock's `dialog`), `nothing` (a same-value press: "Nothing to change"),
-///   `add` (the Add Rule sheet with a draft), `add-refused` (the shape refused next to the field);
+///   `add` (the Add Rule sheet with a draft), `add-refused` (the shape refused next to the field), `add-checking` (the sheet
+///   while `rules.check` runs: nothing in it takes a change), `pending` (Push and deploy → Deny still writing: the dial's
+///   pending step);
 /// - `codex` (Codex read only in its own terms), `codex-error` (`config.toml` unreadable), `other` (a CLI with no reading:
 ///   Unmeasurable);
 /// - `empty`, `scanning`, `failed`, `problem` (settings.json does not parse: read only), `no-projects`, `worst`;
@@ -48,6 +50,22 @@ enum RulesFrameShots {
             state.openAdd()
             state.addDraft?.text = "Bash(git log:*"
             state.submitAdd(fileName: "~/.claude/settings.json")
+            try? await Task.sleep(for: .milliseconds(50))
+        },
+        // While the check runs the field and the dial are disabled, the button shows its pending state (RB-F3, Q-003).
+        Shot(name: "add-checking", scenario: .slow) { _, state in
+            state.openAdd()
+            state.setAddText("Bash(git log:*)")
+            state.setAddVerdict(.allow)
+            state.submitAdd(fileName: "~/.claude/settings.json")
+            try? await Task.sleep(for: .milliseconds(50))
+        },
+        // A confirmed capability change still writing: its dial shows the pending step (RB-F3, FE-L2).
+        Shot(name: "pending", scenario: .slow) { model, state in
+            await preview(.push, to: .deny, model: model, state: state)
+            if let row = state.list()?.capabilities.first(where: { $0.id == .push }) {
+                state.confirmPreview(row, fileName: "~/.claude/settings.json")
+            }
             try? await Task.sleep(for: .milliseconds(50))
         },
         Shot(name: "codex", scenario: .normal) { _, state in state.pick(cli: RulesReadOnlyPage.codexID) },

@@ -260,14 +260,18 @@ struct SettingsRow<Lead: View, Trailing: View>: View {
     let title: String
     var detail: String?
     let index: Int
+    /// How many lines the title may take. Above one (a Journal entry's label), the title wraps and its tooltip holds it whole,
+    /// so no label is ever only cut.
+    var titleLines = 1
     @ViewBuilder var lead: Lead
     @ViewBuilder var trailing: Trailing
 
-    init(_ title: String, detail: String? = nil, index: Int, @ViewBuilder lead: () -> Lead,
+    init(_ title: String, detail: String? = nil, index: Int, titleLines: Int = 1, @ViewBuilder lead: () -> Lead,
          @ViewBuilder trailing: () -> Trailing) {
         self.title = title
         self.detail = detail
         self.index = index
+        self.titleLines = titleLines
         self.lead = lead()
         self.trailing = trailing()
     }
@@ -276,7 +280,12 @@ struct SettingsRow<Lead: View, Trailing: View>: View {
         HStack(spacing: SpaceRole.step12) {
             lead
             VStack(alignment: .leading, spacing: 0) {
-                Text(title).typeRole(.bodyText).foregroundStyle(ColorRole.ink).lineLimit(1)
+                Text(title)
+                    .typeRole(.bodyText)
+                    .foregroundStyle(ColorRole.ink)
+                    .lineLimit(titleLines)
+                    .fixedSize(horizontal: false, vertical: titleLines > 1)
+                    .help(titleLines > 1 ? title : "")
                 if let detail, !detail.isEmpty {
                     Text(detail)
                         .typeRole(.quiet)
@@ -298,8 +307,8 @@ struct SettingsRow<Lead: View, Trailing: View>: View {
 }
 
 extension SettingsRow where Lead == EmptyView {
-    init(_ title: String, detail: String? = nil, index: Int, @ViewBuilder trailing: () -> Trailing) {
-        self.init(title, detail: detail, index: index, lead: { EmptyView() }, trailing: trailing)
+    init(_ title: String, detail: String? = nil, index: Int, titleLines: Int = 1, @ViewBuilder trailing: () -> Trailing) {
+        self.init(title, detail: detail, index: index, titleLines: titleLines, lead: { EmptyView() }, trailing: trailing)
     }
 }
 
