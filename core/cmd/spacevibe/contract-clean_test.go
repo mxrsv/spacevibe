@@ -55,11 +55,21 @@ func cleanCases(t *testing.T) {
 				}
 				Caches []struct{ ID string }
 			}
-			Items []struct{ Key string }
+			Items []struct {
+				Key   string
+				Bytes int64
+			}
 		}
 		decodeInto(t, c.ok(c.call("1", "clean.scan", `{}`)), &res)
 		if len(res.CLIs) != 2 || res.CLIs[0].Logs.State != "measured" || len(res.CLIs[0].Logs.Buckets) == 0 || len(res.CLIs[0].Caches) != 1 || len(res.Items) == 0 {
 			t.Fatalf("scan %+v", res)
+		}
+		// The transcript masks these sizes (diskMask, see diskSized), so their shape is checked here: every item occupies
+		// whole 512-byte blocks and none is empty.
+		for _, item := range res.Items {
+			if item.Bytes <= 0 || item.Bytes%512 != 0 {
+				t.Errorf("item %s has size %d, want whole allocated blocks", item.Key, item.Bytes)
+			}
 		}
 		c.wantError(c.call("2", "clean.scan", `{"cli":"claude"}`), -32602)
 		c.finish("clean_scan")
