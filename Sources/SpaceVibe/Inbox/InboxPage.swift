@@ -15,9 +15,6 @@ enum InboxAction: Equatable, Sendable {
     case copyCommand(String)
     /// A Rule that allows a whole tool: its verdict becomes Ask in the file it sits in.
     case changeToAsk
-    /// A Window finding: Limits opens with that Window selected (`FrameRoute.window`). Not drawn in the mock, which offers
-    /// Keep only; the build plan's RB-R1 line asks for the route.
-    case showInLimits(windowID: String)
     /// A waiting session: its host app comes to the front (RD36, GW5).
     case showTerminal(pid: Int)
     /// A waiting session with no host app (tmux, screen, ssh): the same button, disabled (RD36).
@@ -32,7 +29,6 @@ enum InboxAction: Equatable, Sendable {
         case .addTo: "addTo"
         case .copyCommand: "copyCommand"
         case .changeToAsk: "changeToAsk"
-        case .showInLimits: "showInLimits"
         case .showTerminal, .terminalNotFound: "showTerminal"
         }
     }
@@ -44,7 +40,6 @@ enum InboxAction: Equatable, Sendable {
         case .remove(let title, _), .addTo(_, let title): title
         case .copyCommand: "Copy Command"
         case .changeToAsk: "Change to Ask"
-        case .showInLimits: "Show in Limits"
         case .showTerminal: "Show Terminal"
         case .terminalNotFound: "Terminal app not found"
         }
@@ -53,8 +48,11 @@ enum InboxAction: Equatable, Sendable {
     var isDestructive: Bool { if case .remove = self { true } else { false } }
     var isEnabled: Bool { self != .terminalNotFound }
 
+    /// Keep and Stop Keeping are the quiet button beside the finding's own fix (the mock's `.rb.q`, RD46).
+    var isQuiet: Bool { self == .keep || self == .stopKeeping }
+
     /// Keep and Stop Keeping share ⌘K (a row has one of them); Remove, Add to, Change to Ask, Copy Command and Show Terminal
-    /// take the frame's shared row shortcuts (RD-R16); Show in Limits is a menu command without a key.
+    /// take the frame's shared row shortcuts (RD-R16).
     var shortcut: FrameShortcut? {
         switch self {
         case .keep, .stopKeeping: FrameShortcut("k")
@@ -63,7 +61,6 @@ enum InboxAction: Equatable, Sendable {
         case .changeToAsk: .changeToAsk
         case .copyCommand: .copyCommand
         case .showTerminal, .terminalNotFound: .showTerminal
-        case .showInLimits: nil
         }
     }
 }
@@ -187,8 +184,9 @@ struct InboxPage: Equatable, Sendable {
 
     /// The open rows in page order.
     var rows: [InboxRowModel] { groups.flatMap(\.rows) }
-    /// The rows the arrow keys walk: the open rows, then the kept ones while shown.
-    var order: [String] { rows.map(\.id) + (showsKept ? kept.map(\.id) : []) }
+    /// The rows the arrow keys walk and RD44 selects the first of: the open rows, then the kept ones while shown; none while
+    /// scanning or failed, when no list is drawn.
+    var order: [String] { showsList ? rows.map(\.id) + (showsKept ? kept.map(\.id) : []) : [] }
     /// "New findings land here." under the hero: nothing open, and the page is not scanning or failed.
     var isClear: Bool { showsList && groups.isEmpty && !isSearchMiss }
 

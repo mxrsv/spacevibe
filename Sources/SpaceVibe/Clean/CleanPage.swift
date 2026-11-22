@@ -138,9 +138,11 @@ struct CleanPage: Equatable, Sendable {
             let pick: CleanSectionModel.Pick = offered.isEmpty ? .none : offered.allSatisfy(tickedSet.contains) ? .clear : .select(offered.count)
             return CleanSectionModel(section: kind, title: title, rows: rows, suggested: offered, pick: pick, skeletons: 0)
         }
+        // The first scan counts: each CLI the scan covers lists its log row with "Counting files…" (the mock's scanning).
+        let logRows = phase == .measuring && plan.logs.isEmpty ? rowsOf.countingLogs() : plan.logs.map(rowsOf.logs)
         sections = phase == .failed ? [] : [
             section(.agents, "Skills, Subagents and Hooks", plan.agentRows.map(rowsOf.agent), suggested: plan.suggestedAgents),
-            section(.logs, "Session logs", plan.logs.map(rowsOf.logs), suggested: plan.suggestedLogs),
+            section(.logs, "Session logs", logRows, suggested: plan.suggestedLogs),
             section(.caches, "Caches", plan.caches.map(rowsOf.cache), suggested: plan.suggestedCaches),
         ].compactMap { $0 }
         let unverified = plan.notOffered.map(wording.name)
@@ -184,6 +186,29 @@ struct CleanPage: Equatable, Sendable {
         let wording = InboxWording(world: world, now: Date())
         return request(world).rows.filter(wording.asksBeforeRemoving)
     }
+
+    /// The confirmation's lines for one press of `Remove …`: every ticked equipment row with every CLI that loses it, and
+    /// every ticked log and cache section the same press moves to the macOS Trash, so the dialog names each target and what
+    /// happens to it (FE-I), not only the shared files. The shared rows come first (they are why it asks), then the logs and
+    /// caches, then the rest, so the five lines the dialog shows before "and N more" never hide a whole kind.
+    func confirmationItems(_ world: FrameWorld) -> [RemoveConfirmation.Item] {
+        let plan = world.clean
+        let ticked = Set(self.ticked)
+        let wording = InboxWording(world: world, now: Date())
+        let rows = request(world).rows
+        let item = { (row: FrameRow) in InboxActions.item(row, losers: wording.losers(row).map(wording.name)) }
+        let shared = rows.filter(wording.asksBeforeRemoving).map(item)
+        let rest = rows.filter { !wording.asksBeforeRemoving($0) }.map(item)
+        let logs = plan.logs.filter { ticked.contains($0.id) }.map { log in
+            RemoveConfirmation.Item(id: log.id, name: "\(world.cliName(log.cli)) session logs", icon: .fileText, losers: [log.cli],
+                                    detail: "\(NumberWording.plural(log.files, "file")) older than \(log.ageDays) days, to the macOS Trash")
+        }
+        let caches = plan.caches.filter { ticked.contains($0.id) }.map { cache in
+            RemoveConfirmation.Item(id: cache.id, name: CleanRows.path(cache.cache.path), icon: .folderSimple, losers: [cache.cli],
+                                    detail: "\(world.cliName(cache.cli)) cache, to the macOS Trash")
+        }
+        return shared + logs + caches + rest
+    }
 }
 
 /// The words of each row (the mock's `agRows`, `lgRows`, `chRows`). Pure.
@@ -205,10 +230,12 @@ struct CleanRows {
         let state = row.status == .dead ? "Dead Hook" : "Never ran \(InboxWording.kindWord(row.kind))"
         let seen = wording.added(row)
         let loaded = wording.loadedBy(row)
+        let measuring = phase == .measuring || world.snapshot.clean == nil
         let size: CleanRowModel.Size = switch (row.kind, agent.bytes) {
+        case (.hook, _) where measuring: .pending
         case (.hook, _): .quiet("edits settings.json")
         case (_, let bytes?): .bytes(NumberWording.bytes(bytes))
-        case (_, nil): phase == .measuring || world.snapshot.clean == nil ? .pending : .quiet("Unmeasurable")
+        case (_, nil): measuring ? .pending : .quiet("Unmeasurable")
         }
         return CleanRowModel(id: agent.id, section: .agents, cli: nil, title: row.name, isMono: row.kind == .hook,
                              sub: [why, state, seen].compactMap { $0 }.joined(separator: " · "),
@@ -236,6 +263,23 @@ struct CleanRows {
         return CleanRowModel(id: cache.id, section: .caches, cli: cache.cli, title: Self.path(cache.cache.path), isMono: true, sub: nil,
                              detail: detail, size: .bytes(NumberWording.bytes(cache.cache.bytes)), isOpen: open.contains(cache.id))
     }
+
+    /// While the first `clean.scan` counts: one log row per shown CLI the scan covers (Claude Code and Codex, RD42), its
+    /// files not counted yet, its size a skeleton, nothing to tick (the mock's scanning "Counting files…").
+    func countingLogs() -> [CleanRowModel] {
+        world.clis.filter { CoreCLI(rawValue: $0.id) != nil && $0.supports.logs }.map { cli in
+            // A running session already holds the logs (the live Activity report): the lock shows before any count.
+            let lock = world.clean.locks.logs[cli.id].map {
+                CleanRowModel.Detail.lock(CleanLockNote(id: "logs:\(cli.id)", lock: $0, isCache: false, activity: world.snapshot.activity))
+            }
+            return CleanRowModel(id: CleanPlan.LogRow.id(cli.id), section: .logs, cli: cli.id, title: "\(cli.name) session logs", isMono: false,
+                                 sub: CleanRows.countingFiles,
+                                 detail: lock ?? .ages(CleanPlan.logAges, selected: world.facts.cleanLogAges[cli.id] ?? CleanPlan.defaultLogAge),
+                                 size: .pending, isOpen: false)
+        }
+    }
+
+    static let countingFiles = "Counting files…"
 
     /// `~/.codex/sessions`: the folder `logs.Walk` reads for that CLI (clean.md "What moves where").
     func logsFolder(_ cli: String) -> String {

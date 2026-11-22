@@ -3,18 +3,18 @@ import SwiftUI
 /// One Clean row (the mock's `.tr` with `28px minmax(0,1fr) 190px 112px`): the checkbox, the name over its quiet line (a log
 /// or cache row leads with its CLI's logo), the detail column (where the item is loaded, the lock, or the age control) and
 /// the size, right-aligned. The detail and size columns keep fixed widths, so a long path or a lock never moves the rows
-/// below (FE-L1). A row that cannot be ticked keeps its checkbox, disabled.
+/// below (FE-L1). A row that cannot be ticked keeps its checkbox, disabled. The page has no inspector, so a row is never
+/// selected: a click on it does nothing, only the checkbox ticks, and Space ticks the row the arrow keys reached.
 struct CleanRowView: View {
     let row: CleanRowModel
     let isTicked: Bool
-    let isSelected: Bool
     let isKeyboardFocused: Bool
     let isMoving: Bool
     let openLock: String?
     let actions: CleanActions
 
     var body: some View {
-        ItemRow(label: row.spoken, isSelected: isSelected, isKeyboardFocused: isKeyboardFocused, select: { actions.press(row) }) {
+        ItemRow(label: row.spoken, isKeyboardFocused: isKeyboardFocused) {
             HStack(spacing: SpaceRole.step12) {
                 CheckboxCell(isTicked ? .on : .off, label: "Select \(row.title)") { actions.toggle(row) }
                     .disabled(!row.isOpen)
@@ -31,7 +31,7 @@ struct CleanRowView: View {
             if let cli = row.cli {
                 CLILogo(CLIIdentity(id: cli, name: actions.world.cliName(cli)), size: SizeRole.logo16)
             }
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: SpaceRole.step2) {
                 MiddleTruncatedText(row.title)
                     .typeRole(row.isMono ? .mono : .bodyMedium)
                     .foregroundStyle(ColorRole.ink)
@@ -65,7 +65,7 @@ struct CleanRowView: View {
             CleanLockButton(note: note, isOpen: openLock == note.id, world: actions.world) { actions.state.toggleLock(note.id) }
         case .ages(let ages, let selected):
             FrameSegmentedControl(segments: ages.map { FrameSegment(id: String($0), title: "\($0)d") }, selection: String(selected),
-                                  label: "Logs older than") { picked in
+                                  label: "Logs older than", size: .small) { picked in
                 if let days = Int(picked), let cli = row.cli { actions.setAge(days, cli: cli) }
             }
             .disabled(isMoving)

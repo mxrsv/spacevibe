@@ -46,7 +46,8 @@ struct ItemRow<Content: View, Actions: View>: View {
     var check: Check?
     /// The name VoiceOver reads for the row.
     let label: String
-    let select: () -> Void
+    /// Nil: the row is never selected (a list with no inspector, Clean): a click does nothing, the pointer stays the arrow.
+    let select: (() -> Void)?
     /// The trailing actions cell's width on every row; nil: the row has no actions and no cell.
     var actionsWidth: CGFloat?
     @ViewBuilder var content: Content
@@ -64,7 +65,7 @@ struct ItemRow<Content: View, Actions: View>: View {
     }
 
     private init(label: String, height: Height, isSelected: Bool, isKeyboardFocused: Bool, check: Check?, cellWidth: CGFloat?,
-                 select: @escaping () -> Void, content: Content, actions: Actions) {
+                 select: (() -> Void)?, content: Content, actions: Actions) {
         self.label = label
         self.height = height
         self.isSelected = isSelected
@@ -98,13 +99,13 @@ struct ItemRow<Content: View, Actions: View>: View {
         .focusBar(FocusBarRule.isShown(ownFocus: isKeyboardFocused, specimen: specimen.contains(.focus)))
         .opacity(isEnabled ? 1 : OpacityRole.disabled)
         .contentShape(Rectangle())
-        .onTapGesture { if isEnabled { select() } }
-        .pointerCursor()
+        .onTapGesture { if isEnabled { select?() } }
+        .pointerStyle(isEnabled && select != nil ? .link : .default)
         .onHover { hovering = $0 }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(label)
-        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
-        .accessibilityAction { select() }
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : select == nil ? [] : .isButton)
+        .accessibilityAction { select?() }
     }
 
     /// Selected wins over hover; a plain row draws no ground.
@@ -119,6 +120,13 @@ extension ItemRow where Actions == EmptyView {
          check: Check? = nil, select: @escaping () -> Void, @ViewBuilder content: () -> Content) {
         self.init(label: label, height: height, isSelected: isSelected, isKeyboardFocused: isKeyboardFocused, check: check,
                   cellWidth: nil, select: select, content: content(), actions: EmptyView())
+    }
+
+    /// A row that is never selected (the mock's `cursor:default` rows of Clean, a page with no inspector): no click target and
+    /// the arrow pointer; only its own controls act. The keyboard focus bar still shows on the row the arrows reached.
+    init(label: String, height: Height = .table, isKeyboardFocused: Bool = false, @ViewBuilder content: () -> Content) {
+        self.init(label: label, height: height, isSelected: false, isKeyboardFocused: isKeyboardFocused, check: nil,
+                  cellWidth: nil, select: nil, content: content(), actions: EmptyView())
     }
 }
 

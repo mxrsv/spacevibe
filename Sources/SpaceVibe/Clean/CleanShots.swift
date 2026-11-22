@@ -12,8 +12,9 @@ import SwiftUI
 ///   unreadable), `worst-2`, `worst-10` (huge counts, long and right-to-left names, a long cache path, an unreadable usage
 ///   archive and a stranded move);
 /// - `moving-2` (progress at the control, Cancel), `write-2` (the toast with Undo), `partial-2` (the mock's "Moved 2 of 3"),
-///   `refused-2` (every row locked: nothing moved), `dialog-10` (a shared `~/.agents/skills` file: the confirmation names
-///   every reader). At 2 CLIs no file is shared, so Clean never asks (mock `MOCK.na`).
+///   `refused-2` (every row locked: nothing moved), `dialog-10` (a shared `~/.agents/skills` file and Codex's logs: the
+///   confirmation names every reader and the logs it moves). Every toast is in the write path's own words (`CleanWording`,
+///   `FrameWrites.showRefused`). At 2 CLIs no file is shared, so Clean never asks (mock `MOCK.na`).
 @MainActor
 enum CleanShots {
     struct Shot {
@@ -45,24 +46,42 @@ enum CleanShots {
         Shot(name: "moving-2", state: .normal,
              move: CleanMoveRun.Snapshot(isRunning: true, progress: CoreCleanProgress(phase: "moving", done: 760, total: 1_310, bytes: 452_000_000)),
              prepare: suggested),
-        Shot(name: "write-2", state: .normal) { _, _, toasts in
-            toasts.show("Removed 3 Skills and Subagent release-captain to SpaceVibe's trash and moved 780 MB of logs and caches to the macOS Trash",
-                        asyncUndo: {})
+        Shot(name: "write-2", state: .normal) { _, world, toasts in
+            // `Remove …` on every suggested row, in `FrameWrite.clean`'s words with what the move reported.
+            let page = CleanPage(CleanSynthetic.inputs(.normal, clis: 2), ticked: Set(world.clean.suggestedAgents + world.clean.suggestedLogs
+                + world.clean.suggestedCaches))
+            let request = page.request(world)
+            let moved = world.clean.selectedBytes(Set(request.logs.map { CleanPlan.LogRow.id($0.cli) } + request.caches)) ?? 0
+            let label = CleanWording.done(what: FrameWrite.selection(request.rows), moved: moved,
+                                          editsSettings: request.rows.contains { $0.kind == .hook })
+            toasts.show(label, journalEntries: ["shot"], asyncUndo: {})
         },
-        Shot(name: "partial-2", state: .normal) { _, _, toasts in
-            toasts.show("Moved 2 of 3. ~/.codex/cache stayed in place: Codex has 1 open session, so its caches are in use. Undo puts back what moved.",
-                        tone: .partial, asyncUndo: {})
+        Shot(name: "partial-2", state: .normal) { _, world, toasts in
+            // A session opened after the scan: `clean.move` left Codex's cache in place (`CleanWording.partial`, the mock's
+            // "Moved 2 of 3").
+            let caches = world.clean.caches
+            let request = CleanRequest(rows: [], members: [], logs: [CoreCleanLogPick(cli: "codex", olderThanDays: CleanPlan.defaultLogAge)],
+                                       caches: ["claude:debug", "codex:cache"],
+                                       groupNames: Dictionary(uniqueKeysWithValues: caches.map { ($0.id, CleanRows.path($0.cache.path)) }))
+            let result = CoreCleanMoveResult(
+                entry: nil, moved: CoreCleanAmount(files: 1_322, bytes: 792_000_000),
+                groups: [CoreCleanGroup(id: "logs:codex", moved: CoreCleanAmount(files: 1_310, bytes: 780_000_000), stayed: 0, reason: nil),
+                         CoreCleanGroup(id: "claude:debug", moved: CoreCleanAmount(files: 12, bytes: 12_000_000), stayed: 0, reason: nil),
+                         CoreCleanGroup(id: "codex:cache", moved: CoreCleanAmount(files: 0, bytes: 0), stayed: 7,
+                                        reason: CleanLocks.cachesHeld("Codex", by: [CleanSynthetic.codexUnmeasurable.id]).message)],
+                cancelled: false, trash: nil)
+            let label = CleanWording.partial(result, request: request, removedRows: 0, what: nil) ?? ""
+            toasts.show(label, tone: .partial, journalEntries: ["shot"], asyncUndo: {})
         },
         Shot(name: "refused-2", state: .normal) { _, _, toasts in
-            toasts.show("Claude Code has 1 running session, so its logs stay until it ends. Nothing was moved.", tone: .danger)
+            // The core's 409 for a picked row that is locked now (`clean/service.go`), in the refused-write toast.
+            FrameWrites.showRefused(CleanLocks.logsHeld("Claude Code", by: ["s-waiting"]).message + " Nothing was moved.", on: toasts) {}
         },
         Shot(name: "dialog-10", state: .normal, clis: 10) { state, world, _ in
-            state.ticked = Set(world.clean.suggestedAgents)
+            // The suggested equipment and Codex's logs: the dialog names the shared file's readers and the logs it moves too.
+            state.ticked = Set(world.clean.suggestedAgents + world.clean.suggestedLogs)
             let page = CleanPage(CleanSynthetic.inputs(.normal, clis: 10), ticked: state.ticked)
-            let wording = InboxWording(world: world, now: CleanSynthetic.now)
-            let request = page.request(world)
-            state.confirming = CleanConfirmation(items: request.rows.map { InboxActions.item($0, losers: wording.losers($0).map(wording.name)) },
-                                                 request: request)
+            state.confirming = CleanConfirmation(items: page.confirmationItems(world), request: page.request(world))
         },
     ]
 

@@ -11,10 +11,11 @@ struct InboxList: View {
 
     @Environment(FrameChrome.self) private var chrome
     @Environment(ToastCenter.self) private var toasts
+    @Environment(\.materialLook) private var look
 
     var body: some View {
         let actions = actions.using(toasts)
-        let evidence = FindingRowLayout.showsEvidence(listWidth: state.listWidth)
+        let evidence = FindingRowLayout.showsEvidence(chrome: chrome, look: look)
         SpaceVibeScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 PageHero(page.hero, label: page.heroLabel)
@@ -40,23 +41,28 @@ struct InboxList: View {
                         GroupHead(group.title, count: group.rows.count, severity: group.severity) {
                             if !group.suggested.isEmpty { pick(group.suggested) }
                         }
-                        RowGroup {
-                            ForEach(group.rows) { row in rowView(row, evidence: evidence, actions: actions) }
-                        }
+                        RowGroup { rows(group.rows, evidence: evidence, actions: actions) }
                     }
                     lines
                     if page.showsKept {
                         GroupHead("Kept", count: page.kept.count)
-                        RowGroup {
-                            ForEach(page.kept) { row in rowView(row, evidence: evidence, actions: actions) }
-                        }
+                        RowGroup { rows(page.kept, evidence: evidence, actions: actions) }
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { state.listWidth = $0 }
         .frameListKeys(rows: page.order, router: actions.model.router, chrome: chrome)
+        // RD44: the first shown row is selected on opening and whenever the search, Keep or a removal hides the selected one.
+        .frameFirstRowSelection(page: .inbox, rows: page.order, router: actions.model.router)
+        .onKeyPress(.space) { actions.toggleTick(actions.model.router.route.selection) ? .handled : .ignored }
+    }
+
+    /// A group's rows, every other one on the zebra step (the mock's `.tr:nth-child(odd)`).
+    private func rows(_ rows: [InboxRowModel], evidence: Bool, actions: InboxActions) -> some View {
+        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+            rowView(row, evidence: evidence, actions: actions).rowStripe(index.isMultiple(of: 2))
+        }
     }
 
     private func rowView(_ row: InboxRowModel, evidence: Bool, actions: InboxActions) -> some View {
@@ -165,17 +171,28 @@ extension InboxNoteLine where Action == EmptyView {
 /// trash glyph, the real count; disabled with "Select rows to remove" until a row is ticked; pending while the removal runs.
 struct InboxRemoveButton: View {
     let page: InboxPage
-    let narrow: Bool
     let actions: InboxActions
     @Environment(ToastCenter.self) private var toasts
+    @Environment(FrameChrome.self) private var chrome
+    @Environment(\.materialLook) private var look
 
     var body: some View {
-        let title = page.primary.title(narrow: narrow) ?? ""
+        let title = page.primary.title(narrow: !FindingRowLayout.showsEvidence(chrome: chrome, look: look)) ?? ""
         let count = page.ticked.count
         Button { actions.using(toasts).removeTicked() } label: { PushButtonLabel(title, icon: .trash) }
             .buttonStyle(PushButtonStyle(.destructive, isLoading: actions.writes.isPending("removeMany")))
             .focusEffectDisabled()
             .disabled(count == 0)
             .help(count == 0 ? "Select rows to remove" : title)
+    }
+}
+
+extension FindingRowLayout {
+    /// Whether the evidence column shows, from the main column's width as the mock measures it (`mw`: the window less the
+    /// sidebar and a docked inspector, `FrameChrome.listWidth`), never from the list's own width inside the page padding,
+    /// which is 32 pt narrower and loses the column and "Select rows to remove" at 1280 pt.
+    @MainActor
+    static func showsEvidence(chrome: FrameChrome, look: MaterialLook) -> Bool {
+        showsEvidence(listWidth: chrome.listWidth(sidebar: FrameRole.sidebarWidth(look), inspector: FramePage.inbox.inspectorWidth.points))
     }
 }

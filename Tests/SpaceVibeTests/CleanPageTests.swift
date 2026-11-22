@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import SpaceVibe
 
@@ -106,8 +107,49 @@ struct CleanPageTests {
         let measuring = page(.scanning)
         #expect(measuring.phase == .measuring && measuring.hero == .scanning && measuring.barText == "Measuring…")
         #expect(measuring.primary == .measuring && measuring.primary.isLoading && !measuring.canScanAgain)
-        #expect(measuring.sections.contains { $0.section == .logs && $0.skeletons > 0 })
+        // The mock's scanning: each CLI the scan covers lists its log row, "Counting files…", the size a skeleton.
+        let logs = try? #require(measuring.sections.first { $0.section == .logs })
+        #expect(logs?.skeletons == 0 && logs?.rows.map(\.title) == ["Claude Code session logs", "Codex session logs"])
+        #expect(logs?.rows.allSatisfy { $0.sub == "Counting files…" && $0.size == .pending } == true)
+        #expect(logs?.rows.last?.detail == .ages([30, 90, 180], selected: 90))
+        if case .lock(let note) = logs?.rows.first?.detail { #expect(note.title == "In use by 1 session") } else {
+            Issue.record("Claude Code's running session holds its logs before any count")
+        }
+        let hook = measuring.rows.first { $0.id == "hook::h1" }
+        #expect(hook?.size == .pending, "no figure, not even a Hook's note, while measuring")
+        #expect(measuring.sections.contains { $0.section == .caches && $0.skeletons > 0 })
         #expect(measuring.rows.allSatisfy { !$0.isOpen })
+        let many = page(.scanning, clis: 10)
+        #expect(many.sections.first { $0.section == .logs }?.rows.count == 2, "only the CLIs clean.scan covers (RD42)")
+    }
+
+    @Test("the confirmation names every target of the press: shared equipment with its readers, then each ticked log and cache")
+    func confirmationNamesEverything() {
+        let world = S.world(.normal, clis: 10)
+        let ticked = Set(world.clean.suggestedAgents + world.clean.suggestedLogs + ["claude:debug"])
+        let page = CleanPage(S.inputs(.normal, clis: 10), ticked: ticked)
+        let items = page.confirmationItems(world)
+        #expect(items.first?.id == "skill::pdf-extract", "the shared file it asks about leads")
+        #expect(items[1].id == "logs:codex", "the logs come before the rest, so the five shown lines name every kind")
+        #expect(items.filter { $0.detail == nil }.allSatisfy { !$0.losers.isEmpty })
+        let log = items.first { $0.id == "logs:codex" }
+        #expect(log?.name == "Codex session logs" && log?.detail == "1,310 files older than 90 days, to the macOS Trash")
+        #expect(items.contains { $0.id == "claude:debug" } == false, "a locked cache is never ticked, so never named")
+        #expect(items.count == page.request(world).rows.count + page.request(world).logs.count + page.request(world).caches.count)
+    }
+
+    @Test("Clean rows are never selected: no click target; Space ticks only the open row the arrow keys reached")
+    @MainActor
+    func rowsNotSelected() {
+        let row = ItemRow(label: "Codex session logs") { EmptyView() }
+        #expect(row.select == nil && !row.isSelected)
+        let model = FrameModel(core: UnservedCore(), toasts: ToastCenter(announce: false))
+        let state = CleanPageState()
+        let page = page(.normal)
+        let actions = CleanActions(model: model, state: state, page: page, world: S.world(.normal, clis: 2))
+        #expect(actions.toggleFocused("logs:codex") && state.ticked == ["logs:codex"])
+        #expect(!actions.toggleFocused("logs:claude"), "locked by a running session")
+        #expect(!actions.toggleFocused(nil) && state.ticked == ["logs:codex"])
     }
 
     @Test("a failed first scan: ? Unmeasurable, the core's sentence with Try Again, nothing listed")

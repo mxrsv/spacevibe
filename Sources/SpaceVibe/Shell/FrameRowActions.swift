@@ -64,6 +64,8 @@ struct FrameRowAction: Identifiable {
     /// Drawn with the destructive role (Remove, Stop…).
     var isDestructive = false
     var isEnabled = true
+    /// Drawn as the quiet button (the mock's `.rb.q`): Keep and Stop Keeping beside a finding's own fix (RD46).
+    var isQuiet = false
     let perform: @MainActor () -> Void
 
     /// Shortcuts in `actions` that the frame already holds or that two actions share. Empty for a valid list.
@@ -176,8 +178,9 @@ extension View {
 }
 
 extension FrameRowAction {
-    /// The button it is on the selected row: the red tint for Remove and Stop, a neutral control otherwise (FE-E2).
-    var buttonKind: PushButtonStyle.Kind { isDestructive ? .destructive : .control }
+    /// The button it is on the selected row: the red tint for Remove and Stop, the quiet button for Keep (RD46), a neutral
+    /// control otherwise (FE-E2).
+    var buttonKind: PushButtonStyle.Kind { isDestructive ? .destructive : isQuiet ? .quiet : .control }
 
     /// The button's tooltip: the title, with the menu shortcut when it has one ("Keep (⌘K)").
     var tooltip: String { shortcut.map { "\(title) (\($0))" } ?? title }

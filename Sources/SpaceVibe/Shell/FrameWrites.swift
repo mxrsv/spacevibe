@@ -143,10 +143,15 @@ final class FrameWrites {
     /// The refused-write toast with Reload beside Dismiss (the mock's `writefail`): Reload reads the sources the write touched
     /// again, so a file that changed under the page shows as it is now before the user tries again.
     private func showRefused(_ message: String, touches: Set<FrameSource>) {
-        toasts.show(message, tone: .danger, action: ToastAction(title: Self.reloadTitle) { [weak self] in
+        Self.showRefused(message, on: toasts) { [weak self] in
             guard let self else { return }
             Task { await self.store.reread(touches.union([.journal])) }
-        })
+        }
+    }
+
+    /// The refused-write toast itself, so a page's shot draws exactly what a refusal shows.
+    static func showRefused(_ message: String, on toasts: ToastCenter, reload: @escaping @MainActor () -> Void) {
+        toasts.show(message, tone: .danger, action: ToastAction(title: reloadTitle, run: reload))
     }
 
     /// The refused-write toast's action.
@@ -269,13 +274,18 @@ extension FrameWrite {
     static func removeMany(_ rows: [FrameRow], members: Set<String>? = nil, ids given: [String]? = nil, registry: [CoreRegistryCLI],
                            control: String = "removeMany") -> FrameWrite {
         let ids = given ?? rows.flatMap(\.memberIDs).filter { members?.contains($0) ?? true }
+        return FrameWrite(control: control, label: removedMany(rows, lost: [], registry: registry), touches: loadoutSources) { core in
+            let result = try await core.loadoutRemoveMany(ids: ids)
+            return .entryToast(result.entry, label: removedMany(rows, lost: result.lost, registry: registry))
+        }
+    }
+
+    /// The toast of `removeMany` once the core named who lost the rows: "Removed Hook lint-staged.sh from Claude Code.
+    /// settings.json was edited".
+    static func removedMany(_ rows: [FrameRow], lost: [String], registry: [CoreRegistryCLI]) -> String {
         let what = selection(rows, namesKind: true)
         let edits = rows.contains { $0.kind == .hook } ? edited("settings.json") : ""
-        return FrameWrite(control: control, label: "Removed \(what)\(edits)", touches: loadoutSources) { core in
-            let result = try await core.loadoutRemoveMany(ids: ids)
-            let label = result.lost.isEmpty ? "Removed \(what)" : "Removed \(what) from \(names(result.lost, registry))"
-            return .entryToast(result.entry, label: label + edits)
-        }
+        return (lost.isEmpty ? "Removed \(what)" : "Removed \(what) from \(names(lost, registry))") + edits
     }
 
     /// Removes these rules of one file in one edit (`rules.removeMany`); a selection over several files is one write per

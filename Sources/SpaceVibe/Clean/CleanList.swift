@@ -7,7 +7,6 @@ import SwiftUI
 /// the whole window (`CleanConfirmationDialog`).
 struct CleanList: View {
     let page: CleanPage
-    let selection: String?
     let state: CleanPageState
     let actions: CleanActions
     /// A shot draws fixed data and reads nothing.
@@ -51,7 +50,7 @@ struct CleanList: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frameListKeys(rows: page.order, router: actions.model.router, chrome: chrome)
-        .onKeyPress(.space) { actions.toggleSelected() ? .handled : .ignored }
+        .onKeyPress(.space) { actions.toggleFocused(chrome.keyboardRow) ? .handled : .ignored }
         .task { if measuresOnOpen { await actions.measure() } }
     }
 
@@ -59,16 +58,17 @@ struct CleanList: View {
     private func sectionView(_ section: CleanSectionModel, actions: CleanActions) -> some View {
         GroupHead(section.title) { pick(section, actions: actions) }
         if section.skeletons > 0 {
-            SkeletonRows(count: section.skeletons).groupSurface()
+            RowGroup { SkeletonRows(count: section.skeletons) }
         } else {
-            VStack(spacing: 0) {
-                ForEach(section.rows) { row in
-                    CleanRowView(row: row, isTicked: state.ticked.contains(row.id), isSelected: selection == row.id,
+            // Every other row on the zebra step (the mock's `.tr:nth-child(odd)`).
+            RowGroup {
+                ForEach(Array(section.rows.enumerated()), id: \.element.id) { index, row in
+                    CleanRowView(row: row, isTicked: state.ticked.contains(row.id),
                                  isKeyboardFocused: chrome.keyboardRow == row.id, isMoving: page.phase == .moving,
                                  openLock: state.openLock, actions: actions)
+                        .rowStripe(index.isMultiple(of: 2))
                 }
             }
-            .groupSurface()
         }
     }
 

@@ -58,23 +58,15 @@ struct CleanActions {
         return copy
     }
 
-    func select(_ id: String) { model.router.select(id) }
-
-    /// A click on an open row ticks it (its whole width is the hit area, FE-K6); any row takes the selection, so the arrow
-    /// keys start from it.
-    func press(_ row: CleanRowModel) {
-        select(row.id)
-        if row.isOpen { state.toggle(row.id) }
-    }
-
+    /// The checkbox: Clean's rows are never selected (no inspector, the mock's `cursor:default`), so only it ticks a row.
     func toggle(_ row: CleanRowModel) {
         guard row.isOpen else { return }
         state.toggle(row.id)
     }
 
-    /// Space on the selected row.
-    func toggleSelected() -> Bool {
-        guard let row = page.row(model.router.route.selection), row.isOpen else { return false }
+    /// Space on the row the arrow keys reached (`FrameChrome.keyboardRow`, the one with the focus bar): ticks it when open.
+    func toggleFocused(_ id: String?) -> Bool {
+        guard let row = page.row(id), row.isOpen else { return false }
         state.toggle(row.id)
         return true
     }
@@ -112,11 +104,8 @@ struct CleanActions {
     func remove() {
         let request = page.request(world)
         guard !request.isEmpty, !writes.isPending(FrameWrite.cleanControl) else { return }
-        let shared = page.sharedRows(world)
-        guard shared.isEmpty else {
-            let wording = InboxWording(world: world, now: Date())
-            state.confirming = CleanConfirmation(items: request.rows.map { InboxActions.item($0, losers: wording.losers($0).map(wording.name)) },
-                                                 request: request, routeRevision: model.router.revision)
+        guard page.sharedRows(world).isEmpty else {
+            state.confirming = CleanConfirmation(items: page.confirmationItems(world), request: request, routeRevision: model.router.revision)
             return
         }
         run(request)

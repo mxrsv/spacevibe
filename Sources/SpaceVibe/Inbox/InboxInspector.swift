@@ -73,20 +73,18 @@ struct InboxInspector: View {
 
     // MARK: Rule
 
+    /// The mock's `ruleInspector`: the rule, its Capability, Scope and File, the whole-tool warning, and the Allow / Ask /
+    /// Deny dial (RD46), which writes the rule's own file with Undo and waits while that write runs.
     @ViewBuilder
     private func rule(_ rule: CoreRule, file: FrameScope, row: InboxRowModel, actions: InboxActions) -> some View {
         InspectorTitle("Rule") { FrameGlyph(.rules, side: SizeRole.icon20, ink: ColorRole.toneRules) }
         CommandBlock(rule.rule)
-        KeyValueList(facts: [
-            InspectorFact(key: "Scope", value: file.dir == nil ? "Global" : "Project · \(InboxWording.place(file))"),
-            InspectorFact(key: "File", value: InboxWording.settingsFile(file), isMono: true),
-        ])
-        InspectorNote("A bare tool name allows every call of that tool. Ask or narrow it.", icon: .warningFill,
-                      iconInk: ColorRole.stateAttention)
-        InspectorActions(actions: [
-            InspectorAction(id: "ask", title: InboxAction.changeToAsk.title,
-                            isLoading: actions.isPending(.changeToAsk, row)) { actions.perform(.changeToAsk, on: row) },
-        ])
+        KeyValueList(facts: InboxInspectorFacts.rule(rule, file: file, world: world))
+        InspectorNote(RulesWriteWording.wholeToolWarning, icon: .warningFill, iconInk: ColorRole.stateAttention)
+        InspectorSection("Permission") {
+            PermissionDial(selection: rule.verdict, label: "Permission") { actions.changeVerdict(rule, in: file, to: $0) }
+                .disabled(actions.isPending(.changeToAsk, row))
+        }
     }
 
     // MARK: Hook
@@ -94,7 +92,8 @@ struct InboxInspector: View {
     @ViewBuilder
     private func hook(_ item: FrameRow, errorsLastWeek: Int?, actions: InboxActions) -> some View {
         let hook = item.hooks.first
-        InspectorTitle(item.name) { FrameGlyph(.hooks, side: SizeRole.icon20, ink: ColorRole.toneHooks) }
+        // A Hook's name is its script, in mono as the mock's `hookInspector` title.
+        InspectorTitle(item.name, isMono: true) { FrameGlyph(.hooks, side: SizeRole.icon20, ink: ColorRole.toneHooks) }
         if let hook {
             let matcher = hook.matcher.map { " · Matcher \($0)" } ?? ""
             InspectorNote("\(hook.event)\(matcher) · \(world.cliName(hook.cli.rawValue))")
@@ -166,6 +165,16 @@ enum InboxInspectorFacts {
             facts.append(InspectorFact(key: "Source", value: "\(source.title)\(age)"))
         }
         return facts
+    }
+
+    /// Capability (the engine's grid of the rule's own file; "No capability" for a rule outside the six), Scope and File.
+    static func rule(_ rule: CoreRule, file: FrameScope, world: FrameWorld) -> [InspectorFact] {
+        let capability = world.snapshot.rules[file]?.grid.first { cell in cell.rules.contains { $0.id == rule.id } }
+        return [
+            InspectorFact(key: "Capability", value: capability?.label ?? "No capability"),
+            InspectorFact(key: "Scope", value: file.dir == nil ? "Global" : "Project · \(InboxWording.place(file))"),
+            InspectorFact(key: "File", value: InboxWording.settingsFile(file), isMono: true),
+        ]
     }
 
     static func session(_ session: CoreActivitySession) -> [InspectorFact] {

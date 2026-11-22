@@ -36,14 +36,21 @@ struct InboxPageTests {
     @Test("groups by job in page order, severity once at the head, Select N Suggested on Clean up only")
     func groups() {
         let (page, _) = page(.normal)
-        #expect(page.groups.map(\.job) == [.cleanUp, .control, .watch], "no Balance without two pins")
-        #expect(page.groups.map(\.severity) == [.critical, .attention, .attention])
+        #expect(page.groups.map(\.job) == [.cleanUp, .balance, .control, .watch], "Claude Code and Codex pinned, as the mock")
+        #expect(page.groups.map(\.severity) == [.critical, .none, .attention, .attention])
         let clean = page.groups[0]
         #expect(clean.suggested == clean.rows.map(\.id) && !clean.suggested.isEmpty)
         let rest = page.groups.dropFirst().allSatisfy { $0.suggested.isEmpty }
         #expect(rest)
         #expect(page.heroLabel == "need you")
-        #expect(page.isBalanceOff)
+        #expect(!page.isBalanceOff)
+        let balance = page.groups[1].rows.first
+        #expect(balance?.title == "test-runner" && balance?.evidence == "Missing in Codex")
+        #expect(balance?.actions == [.keep, .addTo(cli: "codex", title: "Add to Codex")])
+        // Fewer than two pins: no Balance group, the "Balance is off" line instead (the `balance-off-2` shot).
+        let world = S.world(.normal, clis: 2, pinned: false)
+        let off = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), now: S.now)
+        #expect(off.isBalanceOff && !off.groups.contains { $0.job == .balance })
     }
 
     @Test("nothing is ticked at first; Remove N selected counts ticked rows shown, ignores ticks on other rows")
@@ -97,7 +104,7 @@ struct InboxPageTests {
         let window = page.rows.first { $0.id.hasPrefix("W:codex:") }
         #expect(window?.title == "Codex · 5-hour Window" && window?.sub == "Faster than time passes")
         #expect(window?.evidence.hasPrefix("77% left · resets ") == true)
-        #expect(window?.actions == [.keep, .showInLimits(windowID: "codex:primary")])
+        #expect(window?.actions == [.keep], "RD46: a Window finding offers Keep only, as the mock (no Show in Limits)")
         let session = row(page, "S:claude:s-waiting")
         #expect(session?.glyph == InboxRowGlyph(icon: .chatCircleDots, ink: .sessionWaiting))
         #expect(session?.sub == "Claude Code session · payments-web" && session?.evidence == "Waiting 4 min")
@@ -114,6 +121,47 @@ struct InboxPageTests {
             #expect(FrameRowAction.conflicts(in: row.actions.map { FrameRowAction(id: $0.id, title: $0.title, shortcut: $0.shortcut) {} }).isEmpty)
         }
         #expect(InboxAction.keep.shortcut == FrameShortcut("k") && InboxAction.stopKeeping.shortcut == FrameShortcut("k"))
+    }
+
+    @Test("RD46: Keep and Stop Keeping are the quiet button; the fix beside them keeps its own role")
+    func quietKeep() {
+        #expect(InboxAction.keep.isQuiet && InboxAction.stopKeeping.isQuiet)
+        #expect(!InboxAction.changeToAsk.isQuiet && !InboxAction.remove(title: "Remove", asks: false).isQuiet)
+        let quiet = FrameRowAction(id: "keep", title: "Keep", isQuiet: true) {}
+        let remove = FrameRowAction(id: "remove", title: "Remove", isDestructive: true) {}
+        let ask = FrameRowAction(id: "ask", title: "Change to Ask") {}
+        #expect(quiet.buttonKind == .quiet && remove.buttonKind == .destructive && ask.buttonKind == .control)
+    }
+
+    @Test("RD44: the first shown row is selected on opening, and again when the search hides the selected one; none while scanning")
+    @MainActor
+    func firstRow() {
+        let (page, _) = page(.normal)
+        let router = FrameRouter()
+        router.keepSelection(onPage: .inbox, among: page.order)
+        #expect(router.route.selection == page.rows.first?.id && router.route.selection == "hook::h1")
+        router.select("R::global:allow:Bash")
+        let world = S.world(.normal, clis: 2)
+        let searched = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), query: FrameSearchQuery("pdf"),
+                                 now: S.now)
+        router.keepSelection(onPage: .inbox, among: searched.order)
+        #expect(router.route.selection == "skill::pdf-extract")
+        let (scanning, _) = self.page(.scanning)
+        #expect(scanning.order.isEmpty, "no list while scanning: nothing to select, the inspector stays empty")
+    }
+
+    @Test("H1: the evidence column and \"Select rows to remove\" follow the main column, not the list inside the page padding")
+    @MainActor
+    func evidenceWidth() {
+        let chrome = FrameChrome()
+        chrome.pageHasInspector = true
+        chrome.setWindowWidth(1280)
+        // 1280 less the sidebar and the docked inspector: 704 (Glass) and 720 (Solid), both at least the mock's 700.
+        #expect(FindingRowLayout.showsEvidence(chrome: chrome, look: .glass) && FindingRowLayout.showsEvidence(chrome: chrome, look: .solid))
+        chrome.setWindowWidth(1100)
+        #expect(!FindingRowLayout.showsEvidence(chrome: chrome, look: .glass))
+        chrome.setWindowWidth(1000)
+        #expect(FindingRowLayout.showsEvidence(chrome: chrome, look: .glass), "below 1100 the overlay inspector takes no column")
     }
 
     // MARK: States
@@ -285,12 +333,33 @@ struct InboxActionsTests {
         #expect(state.ticked.isEmpty)
     }
 
-    @Test("Show in Limits routes to Limits with the Window selected (AR5)")
-    func showInLimits() async {
-        let (_, model, _, actions, page) = await setUp(clis: 2)
-        let window = page.rows.first { $0.id.hasPrefix("W:") }!
-        actions.perform(.showInLimits(windowID: "codex:primary"), on: window)
-        #expect(model.router.route == FrameRoute.window("codex:primary"))
+    @Test("Space ticks the selected row when it can be removed, as its checkbox does; other rows ignore it")
+    func spaceTicks() async {
+        let (_, _, state, actions, _) = await setUp(clis: 2)
+        #expect(actions.toggleTick("skill::pdf-extract") && state.ticked == ["skill::pdf-extract"])
+        #expect(actions.toggleTick("skill::pdf-extract") && state.ticked.isEmpty)
+        #expect(!actions.toggleTick("R::global:allow:Bash") && !actions.toggleTick(nil) && state.ticked.isEmpty)
+    }
+
+    @Test("RD46 rule inspector: Capability, Scope and File; the dial writes the rule's own file once while that write runs")
+    func ruleDial() async throws {
+        let core = RulesFakeCore()
+        let model = FrameModel(core: core, toasts: ToastCenter(announce: false))
+        let world = S.world(.normal, clis: 2)
+        let page = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), now: S.now)
+        let actions = InboxActions(model: model, state: InboxPageState(), page: page, world: world, host: InboxShots.host(.normal))
+        guard case .rule(let rule, let file) = try #require(page.row("R::global:allow:Bash")).finding.subject else {
+            Issue.record("not a rule finding")
+            return
+        }
+        #expect(InboxInspectorFacts.rule(rule, file: file, world: world).map(\.value)
+                == ["Run commands", "Global", "~/.claude/settings.json"])
+        actions.changeVerdict(rule, in: file, to: .allow)
+        actions.changeVerdict(rule, in: file, to: .deny)
+        actions.changeVerdict(rule, in: file, to: .ask)
+        #expect(await eventually { !core.sent("rules.changeVerdict").isEmpty })
+        #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash allow deny"],
+                "the same verdict writes nothing; a second press while the first runs is dropped")
     }
 }
 

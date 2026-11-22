@@ -145,6 +145,9 @@ struct CleanPlan: Equatable, Sendable {
 
     /// The age (days) a log row shows before the page picks another.
     static let defaultLogAge = 90
+    /// The ages `clean.scan` counts logs into (clean.md "What moves where"): what a log row's age control offers while the
+    /// first scan still counts.
+    static let logAges = [30, 90, 180]
 
     let agentRows: [AgentRow]
     let logs: [LogRow]

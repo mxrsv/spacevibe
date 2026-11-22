@@ -9,12 +9,11 @@ extension FramePageContent {
         let inputs = fixed ?? .live(model.store)
         let page = CleanPage(inputs, ticked: state.ticked, move: inputs.move ?? state.run.snapshot)
         let actions = CleanActions(model: model, state: state, page: page, world: inputs.world)
-        let selection = model.router.route.selection
         return FramePageContent(
             help: FramePage.clean.help,
             toolbarControls: AnyView(CleanScanAgainButton(page: page, isMeasuring: inputs.isMeasuring, actions: actions)),
             primary: page.primary == .hidden ? nil : AnyView(CleanRemoveButton(page: page, actions: actions)),
-            body: AnyView(CleanList(page: page, selection: selection, state: state, actions: actions, measuresOnOpen: fixed == nil)),
+            body: AnyView(CleanList(page: page, state: state, actions: actions, measuresOnOpen: fixed == nil)),
             dialog: state.confirming.flatMap { $0.routeRevision == model.router.revision ? $0 : nil }.map { confirmation in
                 FrameDialog(id: "clean.confirm", cancel: actions.cancelConfirmation) {
                     CleanConfirmationDialog(confirmation: confirmation, actions: actions)
@@ -35,7 +34,8 @@ struct CleanConfirmationDialog: View {
     }
 }
 
-/// Scan Again (the mock's `rescan`): `clean.scan` on demand, pending while it reads, disabled while measuring or moving.
+/// Scan Again (the mock's `rescan`): `clean.scan` on demand, disabled while it measures or a move runs, with no spinner of
+/// its own: the hero's `…`, the band's "Measuring…" and the slot's `Measuring…` already show the scan.
 struct CleanScanAgainButton: View {
     let page: CleanPage
     let isMeasuring: Bool
@@ -45,7 +45,7 @@ struct CleanScanAgainButton: View {
     var body: some View {
         let label = "Scan Again"
         Button { actions.using(toasts).scanAgain() } label: { SpaceVibeIcon(frame: .arrowClockwise, size: .control) }
-            .buttonStyle(PushButtonStyle(.icon, isLoading: isMeasuring))
+            .buttonStyle(PushButtonStyle(.icon))
             .focusEffectDisabled()
             .disabled(!page.canScanAgain || isMeasuring)
             .help(label)

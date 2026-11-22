@@ -4,14 +4,19 @@ import SwiftUI
 /// in-memory readings of `InboxSynthetic`, at 2 and 10 CLIs, in both looks and appearances, beside the mock's same state
 /// (`mock.html?page=inbox&state=<state>&nclis=<n>`). Files are `frame-inbox-<shot>-<look>-<appearance>.png`:
 ///
+/// A shot with no selection of its own selects the first row shown, as the page does on opening (RD44).
+///
 /// - `normal-2`, `normal-10`, `normal-1000` (window width: no evidence column, overlay inspector), `normal-1600`;
 /// - `selected-2`, `selected-10` (a Never ran Skill selected: its row actions and the CLI tiles), `session-2` (the waiting
-///   session: Show Terminal), `window-2` (the Window behind pace), `rule-2`, `hook-2` (a failing Hook), `ticked-2`
-///   (`Select N Suggested` pressed: `Remove 6 selected`), `kept-2` (Show Kept open);
+///   session: Show Terminal), `window-2` (the Window behind pace: Keep only), `rule-2` (the dial and the Capability), `hook-2`
+///   (a failing Hook), `balance-2` (Claude Code and Codex pinned, the Balance finding selected: Add to Codex),
+///   `balance-off-2` (fewer than two pins: "Balance is off"), `ticked-2` (`Select N Suggested` pressed: `Remove 6 selected`),
+///   `kept-2` (Show Kept open);
 /// - `empty-2` (Clear, one kept finding), `scanning-2`, `error-2` (Codex folder unreadable), `worst-2`, `worst-10` (break-ui
 ///   data: long and right-to-left names, huge counts, a Window over the limit, no host app);
-/// - `write-2` (a removal's toast with Undo), `refused-2` (the core's refusal), `dialog-10` (a shared `~/.agents/skills` file:
-///   the confirmation names every reader). At 2 CLIs no file is shared, so removal never asks (mock `MOCK.na`).
+/// - `write-2` (a removal's toast with Undo, in `FrameWrite.removedMany`'s words), `refused-2` (the core's 409 sentence in
+///   `FrameWrites.showRefused`'s toast, with Reload), `dialog-10` (a shared `~/.agents/skills` file: the confirmation names
+///   every reader). At 2 CLIs no file is shared, so removal never asks (mock `MOCK.na`).
 @MainActor
 enum InboxShots {
     struct Shot {
@@ -19,6 +24,8 @@ enum InboxShots {
         let state: InboxSynthetic.State
         var clis = 2
         var width: CGFloat = 1280
+        /// Claude Code and Codex pinned (Balance on).
+        var pinned = true
         var selection: (FrameWorld) -> String? = { _ in nil }
         var prepare: @MainActor (InboxPageState, FrameWorld, ToastCenter) -> Void = { _, _, _ in }
     }
@@ -36,6 +43,8 @@ enum InboxShots {
         Shot(name: "window-2", state: .normal, selection: { world in world.findings.first { $0.job == .watch && $0.id.hasPrefix("W:") }?.id }),
         Shot(name: "rule-2", state: .normal, selection: { _ in "R::global:allow:Bash" }),
         Shot(name: "hook-2", state: .normal, selection: { _ in "hook::h4:fail" }),
+        Shot(name: "balance-2", state: .normal, selection: { world in world.findings.first { $0.job == .balance }?.id }),
+        Shot(name: "balance-off-2", state: .normal, pinned: false),
         Shot(name: "ticked-2", state: .normal) { state, world, _ in
             state.pickSuggested(InboxPage(world: world, figure: figure(world), now: InboxSynthetic.now).groups.first?.suggested ?? [])
         },
@@ -45,12 +54,15 @@ enum InboxShots {
         Shot(name: "error-2", state: .error),
         Shot(name: "worst-2", state: .worst, selection: { _ in "S:claude:s-waiting" }),
         Shot(name: "worst-10", state: .worst, clis: 10),
-        Shot(name: "write-2", state: .normal) { _, _, toasts in
-            toasts.show("Removed Hook lint-staged.sh from Claude Code", asyncUndo: {})
+        Shot(name: "write-2", state: .normal) { _, world, toasts in
+            // What `FrameWrites` shows once the core removed the Hook from Claude Code (`removeMany`'s toast, with Undo).
+            let rows = world.rows.filter { $0.id == "hook::h1" }
+            toasts.show(FrameWrite.removedMany(rows, lost: ["claude"], registry: world.snapshot.registry), journalEntries: ["shot"], asyncUndo: {})
         },
         Shot(name: "refused-2", state: .normal) { _, _, toasts in
-            toasts.show("Nothing changed. Couldn’t remove lint-staged.sh: ~/.claude/settings.json changed since SpaceVibe read it.",
-                        tone: .danger)
+            // The core's 409 when the file changed under the edit (`mutate/file-edit.go`), in the refused-write toast.
+            FrameWrites.showRefused("~/.claude/settings.json changed while SpaceVibe was editing it, so it was left alone. Try again.",
+                                    on: toasts) {}
         },
         Shot(name: "dialog-10", state: .normal, clis: 10) { state, world, _ in
             guard let row = world.rows.first(where: { $0.id == skill }) else { return }
@@ -79,20 +91,36 @@ enum InboxShots {
     }
 
     private static func write(_ shot: Shot, look: MaterialLook, choice: AppearanceChoice, into directory: URL) throws {
-        let world = InboxSynthetic.world(shot.state, clis: shot.clis)
+        let world = InboxSynthetic.world(shot.state, clis: shot.clis, pinned: shot.pinned)
         let toasts = ToastCenter(announce: false)
         let state = InboxPageState()
-        state.listWidth = shot.width - FrameRole.sidebarWidth(look) - (shot.width >= SpaceRole.inspectorOverlayBelowWindowWidth
-            ? FramePage.inbox.inspectorWidth.points : 0)
         shot.prepare(state, world, toasts)
-        let inputs = InboxInputs(world: world, figure: figure(world), now: InboxSynthetic.now, selection: shot.selection(world))
+        // What the page does on opening (RD44, `frameFirstRowSelection`), which `ImageRenderer` never runs.
+        let shown = InboxPage(world: world, figure: figure(world), ticked: state.ticked, showsKept: state.showsKept, now: InboxSynthetic.now)
+        let selection = FrameFirstRow.selection(current: shot.selection(world), rows: shown.order)
+        let inputs = InboxInputs(world: world, figure: figure(world), now: InboxSynthetic.now, selection: selection)
         let env = AppEnvironment.shared
-        let view = AppFrame(page: .inbox, env: env, look: look, sidebarValues: sidebar(world)) { page, model in
+        let view = AppFrame(page: .inbox, env: env, look: look, sidebarValues: sidebar(world, state: shot.state)) { page, model in
             page == .inbox ? .inbox(model: model, fixed: inputs, host: host(shot.state), state: state) : .notBuilt(page)
         }
         .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)), toasts: toasts, env: env)
         .frame(width: shot.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: "frame-inbox-\(shot.name)-\(look)", choice: choice, to: directory)
+    }
+
+    /// The sidebar of an Inbox shot: the same world with the Clean scan the store reads at launch (RD45), so Clean shows its
+    /// figure as on every page.
+    static func sidebar(_ world: FrameWorld, state: InboxSynthetic.State) -> FrameSidebarValues {
+        let clean: CleanSynthetic.State = switch state {
+        case .empty: .empty
+        case .scanning: .scanning
+        case .error: .error
+        case .worst: .worst
+        default: .normal
+        }
+        var snapshot = world.snapshot
+        snapshot.clean = CleanSynthetic.scan(clean)
+        return sidebar(FrameWorld(snapshot: snapshot, facts: world.facts, now: InboxSynthetic.now))
     }
 
     /// The sidebar's values from the same world (AR3: hero and sidebar read one figure).

@@ -2,16 +2,14 @@ import AppKit
 import Observation
 import SwiftUI
 
-/// The Inbox's own view state (AR3: never in the store): the ticked rows, whether kept findings are listed, the removal
-/// waiting for its confirmation and the list's width. Nothing is ticked at first (RD41). One per `FrameModel`
-/// (`FrameModel.pageState`).
+/// The Inbox's own view state (AR3: never in the store): the ticked rows, whether kept findings are listed and the removal
+/// waiting for its confirmation. Nothing is ticked at first (RD41). One per `FrameModel` (`FrameModel.pageState`).
 @MainActor
 @Observable
 final class InboxPageState {
     var ticked: Set<String> = []
     var showsKept = false
     var confirming: InboxConfirmation?
-    var listWidth: CGFloat = 0
 
     static func of(_ model: FrameModel) -> InboxPageState {
         model.pageState(InboxPageState.self) { InboxPageState() }
@@ -87,11 +85,10 @@ extension FramePageContent {
         var actions = InboxActions(model: model, state: state, page: page, world: inputs.world, host: host)
         if fixed == nil { actions.liveWorld = { model.store.world() } }
         let selected = page.row(selection)
-        let narrow = !FindingRowLayout.showsEvidence(listWidth: state.listWidth)
         return FramePageContent(
             help: FramePage.inbox.help,
             searchItems: InboxPage.searchItems,
-            primary: page.primary == .hidden ? nil : AnyView(InboxRemoveButton(page: page, narrow: narrow, actions: actions)),
+            primary: page.primary == .hidden ? nil : AnyView(InboxRemoveButton(page: page, actions: actions)),
             body: AnyView(InboxList(page: page, selection: selection, state: state, actions: actions)),
             inspector: AnyView(InboxInspector(row: selected, world: inputs.world, now: inputs.now, actions: actions,
                                               hasRows: !page.rows.isEmpty || !page.kept.isEmpty)),
@@ -146,7 +143,7 @@ struct InboxActions {
     func rowActions(_ row: InboxRowModel) -> [FrameRowAction] {
         row.actions.map { action in
             FrameRowAction(id: action.id, title: action.title, shortcut: action.shortcut, isDestructive: action.isDestructive,
-                           isEnabled: action.isEnabled && !isPending(action, row)) { perform(action, on: row) }
+                           isEnabled: action.isEnabled && !isPending(action, row), isQuiet: action.isQuiet) { perform(action, on: row) }
         }
     }
 
@@ -174,8 +171,16 @@ struct InboxActions {
         [Self.removeControl(rowID), Self.addControl(rowID), Self.tileControl(rowID)].contains(where: writes.isPending)
     }
 
-    func select(_ id: String) {
+    func select(_ id: String?) {
         model.router.select(id)
+    }
+
+    /// Space on the selected row (the arrow keys select as they move): ticks or unticks it when it can be removed, as its
+    /// checkbox does.
+    func toggleTick(_ id: String?) -> Bool {
+        guard let row = page.row(id), row.isRemovable else { return false }
+        state.toggleTick(row.id)
+        return true
     }
 
     func perform(_ action: InboxAction, on row: InboxRowModel) {
@@ -206,10 +211,7 @@ struct InboxActions {
             copy(command)
         case .changeToAsk:
             guard case .rule(let rule, let file) = finding.subject else { return }
-            let label = "Changed \(rule.rule) from Allow to Ask in \(InboxWording.settingsFile(file))"
-            Task { await writes.perform(.changeVerdict(rule.rule, from: .allow, to: .ask, in: file, label: label)) }
-        case .showInLimits(let windowID):
-            model.router.go(to: .window(windowID))
+            changeVerdict(rule, in: file, to: .ask)
         case .showTerminal(let pid):
             if let app = host.hostApp(pid), host.activate(app) { return }
             toasts?.show("Terminal app not found", tone: .danger)
@@ -304,6 +306,15 @@ struct InboxActions {
 
     func tryAgain() { Task { await model.store.refresh(force: true) } }
 
+    /// The rule inspector's dial (the mock's `ruleInspector`, RD46): the rule's verdict becomes `verdict` in its own file,
+    /// with Undo. Nothing while that rule's write runs, so a second quick press never sends a `from` the file no longer holds.
+    func changeVerdict(_ rule: CoreRule, in file: FrameScope, to verdict: CoreVerdict) {
+        guard rule.verdict != verdict, !writes.isPending(FrameWrite.verdictControl(rule.rule, in: file)) else { return }
+        let label = "Changed \(rule.rule) from \(PermissionDial.title(rule.verdict)) to \(PermissionDial.title(verdict)) in \(InboxWording.settingsFile(file))"
+        // Pending before this returns (`FrameWrites.start`), so a press in the same main-actor turn finds the write running.
+        writes.start(.changeVerdict(rule.rule, from: rule.verdict, to: verdict, in: file, label: label))
+    }
+
     func showInFinder(_ path: String) {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: (path as NSString).expandingTildeInPath)])
     }
@@ -312,7 +323,7 @@ struct InboxActions {
         Task { if await writes.perform(write) { state.ticked.subtract(ids) } }
     }
 
-    static func item(_ row: FrameRow, losers: [String]) -> RemoveConfirmation.Item {
+    nonisolated static func item(_ row: FrameRow, losers: [String]) -> RemoveConfirmation.Item {
         let icon: FrameIcon = row.kind == .hook ? .hooks : row.kind == .agent ? .subagents : .skills
         return RemoveConfirmation.Item(id: row.id, name: row.name, icon: icon, losers: losers)
     }

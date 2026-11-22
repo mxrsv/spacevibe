@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The confirmation before a removal from Inbox or Clean touches a shared file (DS-R10 "remove confirmation"; RD-R11 "every
 /// other removal path names the readers too"; the mock's `rmConfirm`): "Remove N items?", one line per item naming every CLI
-/// that loses it, at most 5 lines and "and N more items", the Undo promise, Cancel (the default) and the red-tinted `Remove N`.
+/// that loses it (or, for a Clean log or cache section, what moves where), at most 5 lines and "and N more items", the Undo promise, Cancel (the default) and the red-tinted `Remove N`.
 struct RemoveConfirmation: View {
     struct Item: Identifiable, Hashable {
         let id: String
@@ -11,6 +11,9 @@ struct RemoveConfirmation: View {
         let icon: FrameIcon
         /// Every CLI that loses the item, hidden ones included (spec "Inferred": a hidden CLI is still named).
         let losers: [String]
+        /// The line under the name when it is not "From <CLIs>": what the same press does to a log or cache section of Clean
+        /// ("1,310 files older than 90 days, to the macOS Trash"), so the dialog names every target (FE-I).
+        var detail: String?
     }
 
     let items: [Item]
@@ -25,7 +28,7 @@ struct RemoveConfirmation: View {
                     isWorking: isWorking, cancel: cancel) {
             VStack(alignment: .leading, spacing: SpaceRole.step10) {
                 ForEach(capped.shown) { item in
-                    DialogListLine(name: item.name, detail: Self.fromLine(item.losers)) {
+                    DialogListLine(name: item.name, detail: item.detail ?? Self.fromLine(item.losers)) {
                         FrameGlyph(item.icon, side: SizeRole.icon16, ink: ColorRole.ink3)
                     }
                 }

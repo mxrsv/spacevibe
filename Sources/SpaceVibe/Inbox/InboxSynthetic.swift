@@ -120,8 +120,9 @@ enum InboxSynthetic {
     static let longName = "migrate-tailwind-utility-classes-across-the-whole-monorepo-and-every-storybook-story"
     static let project = "/Users/someone/Development/payments-web"
 
-    /// The engine readings of one state at `count` CLIs (2 or 10), with the facts the store would fill.
-    static func snapshot(_ state: State, clis count: Int) -> (snapshot: FrameSnapshot, facts: FrameFacts) {
+    /// The engine readings of one state at `count` CLIs (2 or 10), with the facts the store would fill. `pinned`: Claude Code
+    /// and Codex are pinned, as the mock's Settings default (`UI.pin`), so Balance compares them; false shows "Balance is off".
+    static func snapshot(_ state: State, clis count: Int, pinned: Bool = true) -> (snapshot: FrameSnapshot, facts: FrameFacts) {
         let registry = registry(count)
         let unreadable: Set<String> = state == .error ? ["codex"] : []
         let worst = state == .worst
@@ -152,7 +153,9 @@ enum InboxSynthetic {
             Hook(hash: "h4", command: "pnpm prettier --write \"$CLAUDE_FILE\"", runs: 1_204, errorsLastWeek: 2),
         ]
         if state == .empty {
-            list = list.filter { $0.name == "changelog-writer" || $0.name == "code-review" || $0.name == "test-runner" }
+            // Everything is fixed: test-runner is in both pinned CLIs too, so Balance has nothing to say.
+            list = list.filter { $0.name == "changelog-writer" || $0.name == "code-review" }
+                + [Item(name: "test-runner", kind: .agent, description: "Runs the tests that cover a change.", on: ["claude": 88, "codex": 12])]
             hookList = []
         }
         if worst {
@@ -171,9 +174,12 @@ enum InboxSynthetic {
         let local = FrameScope.local(project)
         let localBash = CoreRule(id: "local:allow:Bash", scope: .local, dir: project, file: "settings.local.json", verdict: .allow, rule: "Bash",
                                  tool: "Bash", specifier: nil, wide: true)
+        // A bare `Bash` allow is the Run commands capability, as the engine's grid places it.
         func rules(_ list: [CoreRule], _ file: FrameScope) -> CoreRulesSnapshot {
-            CoreRulesSnapshot(projectDirs: [project], globalRuleCount: 1, scope: file.scope, dir: file.dir, fileLabel: "settings.json", exists: true,
-                              problems: [], rules: list, grid: [], codex: RulesSynthetic.codex(), notReadable: false, globalNotReadable: false)
+            let grid = list.isEmpty ? [] : [CoreCapabilityCell(capability: .run, label: "Run commands", state: .allow, editable: true, rules: list)]
+            return CoreRulesSnapshot(projectDirs: [project], globalRuleCount: 1, scope: file.scope, dir: file.dir, fileLabel: "settings.json",
+                                     exists: true, problems: [], rules: list, grid: grid, codex: RulesSynthetic.codex(), notReadable: false,
+                                     globalNotReadable: false)
         }
 
         func window(_ id: String, minutes: Int, used: Double, minutesLeft: Double) -> CoreLimitWindow {
@@ -203,6 +209,7 @@ enum InboxSynthetic {
             limits: state == .empty ? CoreLimitsResult(limits: []) : limits, activity: activity, journal: CoreJournalHistory(entries: []))
         var facts = FrameFacts()
         facts.findings.hookErrorsLastWeek = FindingFacts.hookErrorsLastWeek(in: loadout)
+        if pinned { facts.findings.pinned = ["claude", "codex"] }
         if state == .empty {
             // Everything is fixed but one Never ran Skill, which is kept: `Clear`, and `1 kept, not counted` (RD-A9).
             facts.findings.kept = ["skill::changelog-writer"]
@@ -210,8 +217,8 @@ enum InboxSynthetic {
         return (snapshot, facts)
     }
 
-    static func world(_ state: State, clis count: Int) -> FrameWorld {
-        let built = snapshot(state, clis: count)
+    static func world(_ state: State, clis count: Int, pinned: Bool = true) -> FrameWorld {
+        let built = snapshot(state, clis: count, pinned: pinned)
         return FrameWorld(snapshot: built.snapshot, facts: built.facts, now: now)
     }
 }
