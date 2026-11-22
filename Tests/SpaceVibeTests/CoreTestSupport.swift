@@ -13,6 +13,7 @@ class UnservedCore: CoreService, @unchecked Sendable {
     func loadoutRows() async throws -> CoreLoadoutRows { throw unserved() }
     func activityRead() async throws -> CoreActivityReport { throw unserved() }
     func activitySubscribe() -> AsyncThrowingStream<CoreActivityReport, Error> { AsyncThrowingStream { $0.finish(throwing: CoreError("not served by this fake", status: 500)) } }
+    func activityRefresh() async {}
     func activityStop(cli: CoreCLI, id: String) async throws -> CoreStopResult { throw unserved() }
     func loadoutCopyToOther(id: String) async throws -> CoreEntryResult { throw unserved() }
     func loadoutRemoveItem(id: String) async throws -> CoreEntryResult { throw unserved() }

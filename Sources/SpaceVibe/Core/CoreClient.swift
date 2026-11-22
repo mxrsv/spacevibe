@@ -74,6 +74,8 @@ final class CoreClient: CoreService, @unchecked Sendable {
 
     func activityRead() async throws -> CoreActivityReport { try await connection.call("activity.read") }
 
+    func activityRefresh() async { await connection.refreshActivity() }
+
     func activitySubscribe() -> AsyncThrowingStream<CoreActivityReport, Error> {
         AsyncThrowingStream { continuation in
             let sink = CoreActivitySink(continuation)

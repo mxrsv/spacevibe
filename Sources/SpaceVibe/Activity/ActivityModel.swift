@@ -5,7 +5,7 @@ import Observation
 /// The Activity screen's state: the latest report, the live feed, and the Stop flow.
 ///
 /// Reads go through the Go core (`env.goCore`). The live page
-/// follows `activitySubscribe`: a full snapshot first, then a full report whenever it changed (the core polls every 3 s,
+/// follows `activitySubscribe`: a full snapshot first, then a full report whenever it changed (the core polls slowly, `CoreConnection.activityPollMs`,
 /// so nothing here does). The loop is driven by the view's `.task(id:)`: subscribed while the Activity tab is the active one,
 /// subscribed until the first report has landed otherwise (the sidebar badge needs it even when the tab is hidden), and not
 /// at all after that. `readOnce` is a single `activity.read` for Refresh, Try again and the shots.

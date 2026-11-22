@@ -4,7 +4,9 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"spacevibe.dev/core/internal/activity"
 	"spacevibe.dev/core/internal/config"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/proc"
@@ -30,5 +32,27 @@ func TestSubscribeAfterCloseIsRefused(t *testing.T) {
 	got, ok := coreerr.As(err)
 	if !ok || got != errClosed {
 		t.Fatalf("err = %v, want the fixed closed error", err)
+	}
+}
+
+// The subscribe interval is optional, defaults to the 3 s poll and is bounded: a caller cannot ask for a busy loop or an
+// interval so long the page looks frozen.
+func TestSubscribeIntervalBounds(t *testing.T) {
+	ms := func(v int) subscribeParams { return subscribeParams{IntervalMs: &v} }
+	if d, err := (subscribeParams{}).interval(); err != nil || d != activity.WatchInterval {
+		t.Fatalf("default = %v, %v; want %v", d, err, activity.WatchInterval)
+	}
+	if d, err := ms(20_000).interval(); err != nil || d != 20*time.Second {
+		t.Fatalf("20000 = %v, %v", d, err)
+	}
+	for _, v := range []int{0, 999, 60_001, -1} {
+		if _, err := ms(v).interval(); err == nil {
+			t.Errorf("intervalMs %d was accepted", v)
+		}
+	}
+	for _, v := range []int{1000, 60_000} {
+		if _, err := ms(v).interval(); err != nil {
+			t.Errorf("intervalMs %d refused: %v", v, err)
+		}
 	}
 }

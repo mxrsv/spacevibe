@@ -21,9 +21,12 @@ protocol CoreService: Sendable {
 
     func activityRead() async throws -> CoreActivityReport
     /// `activity.subscribe` and `activity.unsubscribe` as one stream: the first element is the full snapshot, later ones
-    /// are full reports pushed when the report changed (a poll every 3 s), and ending or cancelling the iteration
+    /// are full reports pushed when the report changed (a slow poll, `CoreConnection.activityPollMs`), and ending or cancelling the iteration
     /// unsubscribes. A failed subscription ends the stream with the error.
     func activitySubscribe() -> AsyncThrowingStream<CoreActivityReport, Error>
+    /// Asks the running subscription for a report now, for a moment someone looks (the window comes forward, the pointer
+    /// reaches the widget): the report reaches every subscriber's stream. No subscriber, no read.
+    func activityRefresh() async
     /// Asks one running session to end. Not undoable: the screen confirms first. The pid is never a parameter.
     func activityStop(cli: CoreCLI, id: String) async throws -> CoreStopResult
 
@@ -79,4 +82,9 @@ extension CoreService {
     func cleanMove(logs: [CoreCleanLogPick], caches: [String], progress: (@Sendable (CoreCleanProgress) -> Void)?) async throws -> CoreCleanMoveResult {
         throw CoreError("clean.move is not served here", status: 500)
     }
+}
+
+extension CoreService {
+    /// A core with no subscription to refresh (a shot core, a fake).
+    func activityRefresh() async {}
 }

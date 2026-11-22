@@ -6,6 +6,11 @@ enum CoreWire {
     /// Params of a method that takes none: the object `{}`.
     struct NoParams: Encodable {}
 
+    /// Params of `activity.subscribe`: how often the core polls, in milliseconds (core-protocol.md, "Activity subscription").
+    struct SubscribeParams: Encodable {
+        let intervalMs: Int
+    }
+
     private struct Request<P: Encodable>: Encodable {
         let jsonrpc = "2.0"
         let id: Int?

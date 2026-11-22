@@ -29,12 +29,33 @@ func (w *watch) stop() {
 	<-w.done
 }
 
+// subscribeParams is `activity.subscribe`'s optional member: the poll interval in milliseconds.
+type subscribeParams struct {
+	IntervalMs *int `json:"intervalMs"`
+}
+
+// interval is the poll interval the params ask for, WatchInterval when they ask for none.
+func (p subscribeParams) interval() (time.Duration, error) {
+	if p.IntervalMs == nil {
+		return activity.WatchInterval, nil
+	}
+	d := time.Duration(*p.IntervalMs) * time.Millisecond
+	if d < activity.MinWatchInterval || d > activity.MaxWatchInterval {
+		return 0, coreerr.New("intervalMs must be between 1000 and 60000.")
+	}
+	return d, nil
+}
+
 // activitySubscribe returns the full report and starts the poll that pushes activity/report when the encoded
 // report differs from the last one sent on this connection. The baseline is the very report returned here, so a
 // change between the two reads is not lost. A second subscribe replaces the first and returns a fresh snapshot.
 func (s *Services) activitySubscribe(ctx context.Context, call rpc.Call) (any, error) {
-	var p none
+	var p subscribeParams
 	if err := rpc.DecodeParams(call.Params, &p); err != nil {
+		return nil, err
+	}
+	interval, err := p.interval()
+	if err != nil {
 		return nil, err
 	}
 	report, err := s.activity.Read(ctx)
@@ -63,13 +84,13 @@ func (s *Services) activitySubscribe(ctx context.Context, call rpc.Call) (any, e
 	s.watching = w
 	go func() {
 		defer close(w.done)
-		s.poll(wctx, call, last)
+		s.poll(wctx, call, last, interval)
 	}()
 	return report, nil
 }
 
-func (s *Services) poll(ctx context.Context, call rpc.Call, last []byte) {
-	ticker := time.NewTicker(activity.WatchInterval)
+func (s *Services) poll(ctx context.Context, call rpc.Call, last []byte, interval time.Duration) {
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {

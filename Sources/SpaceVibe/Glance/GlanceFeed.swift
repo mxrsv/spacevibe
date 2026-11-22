@@ -57,6 +57,14 @@ final class GlanceFeed {
         }
     }
 
+    /// A read now, for the pointer reaching the widget: the core polls slowly, and this is the moment someone looks. Does nothing
+    /// while the feed is off, so a stopped widget never wakes the core.
+    func refreshNow() {
+        guard isRunning else { return }
+        let core = core
+        Task { await core.activityRefresh() }
+    }
+
     /// Ends the loop and its stream, and clears what was shown. A second call does nothing more.
     func stop() {
         loop?.cancel()

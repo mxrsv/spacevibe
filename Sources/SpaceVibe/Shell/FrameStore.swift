@@ -116,7 +116,7 @@ final class FrameStore {
         guard isStarted else { return }
         if !force, let last = lastRefresh, now.timeIntervalSince(last) < Self.refreshInterval { return }
         lastRefresh = now
-        if subscription == nil { subscribe() }
+        if subscription == nil { subscribe() } else { await core.activityRefresh() }
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.readEverything(refreshProjects: force) }
             if force { group.addTask { await self.readClean() } }

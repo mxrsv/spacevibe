@@ -9,6 +9,10 @@ private final class FakeGlanceCore: UnservedCore, @unchecked Sendable {
     private var continuation: AsyncThrowingStream<CoreActivityReport, Error>.Continuation?
     private var _subscriptions = 0
     private var _ended = 0
+    private var _refreshes = 0
+
+    var refreshes: Int { lock.withLock { _refreshes } }
+    override func activityRefresh() async { lock.withLock { _refreshes += 1 } }
 
     var subscriptions: Int { lock.withLock { _subscriptions } }
     var ended: Int { lock.withLock { _ended } }
@@ -69,6 +73,23 @@ struct GlanceFeedTests {
         #expect(feed.entries.all.map(\.sessionID) == ["b", "a"], "waiting sorts before working (GW-R3)")
         #expect(feed.failure == nil && core.subscriptions == 1)
         feed.stop()
+    }
+
+    @Test("refreshNow asks the core for a read while the feed runs, and never when it is off")
+    func refreshNowOnlyWhileRunning() async throws {
+        let core = FakeGlanceCore()
+        let feed = GlanceFeed(core: core)
+        feed.refreshNow()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(core.refreshes == 0, "a stopped widget must not wake the core")
+        feed.start()
+        try await settle("the subscription") { core.subscriptions == 1 }
+        feed.refreshNow()
+        try await settle("the refresh") { core.refreshes == 1 }
+        feed.stop()
+        feed.refreshNow()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(core.refreshes == 1)
     }
 
     @Test("a failed stream shows the core's sentence, keeps the last entries, subscribes again, and a snapshot clears it")

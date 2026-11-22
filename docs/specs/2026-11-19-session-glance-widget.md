@@ -8,7 +8,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) job 4 (Watch: sessions running). Reads th
 
 - **Outcome:** a tiny widget that floats over every app and shows, per live Claude Code and Codex session, what state it is in, so the owner can glance at it without opening SpaceVibe.
 - **User:** the owner, running several sessions in parallel while working in a browser or editor.
-- **Success:** with 2-3 real sessions running and another app in front, the widget changes a session's icon within one poll (3 s) of the state change, and a click brings forward the app that hosts the session. The owner checks it by eye against the mock.
+- **Success:** with 2-3 real sessions running and another app in front, the widget changes a session's icon within one poll (20 s, GW23) of the state change, or at once when the pointer reaches the widget, and a click brings forward the app that hosts the session. The owner checks it by eye against the mock.
 - **Constraint:** the widget reads only the existing `ActivityReport` (`activity.subscribe`), plus `limits.read` for the countdown (GW21). It adds no request (S-R5) and starts no process (S-R4). It never takes focus, and outside its own frame it never blocks clicks.
 
 ## Decisions
@@ -24,7 +24,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) job 4 (Watch: sessions running). Reads th
 | GW7 | The icon set follows Orca, for both the state groups and the glyphs ([Orca reference](#orca-reference)). | "dùng bộ icon giống orca", then "Cả trạng thái lẫn hình icon" |
 | GW8 | Done means `idle` with a log write in the last 10 minutes. After that the session reads as idle. | "Xong = vừa rảnh trong 10 phút" |
 | GW9 | An `unmeasurable` session keeps a faint grey icon. Hover gives the reason. | "Icon xám mờ" |
-| GW10 | An `ended` session leaves the widget at the next poll. | "Bỏ khỏi widget ngay" |
+| GW10 | An `ended` session leaves the widget at the next poll (GW23). | "Bỏ khỏi widget ngay" |
 | GW11 | With no live session, a faint mark stays on screen. | "Giữ một dấu mờ" |
 | GW12 | At most 6 icons, then `+N`. Waiting sessions first, then running. | "Tối đa 6 chấm + '+N'" |
 | GW13 | The widget is dragged between preset drop slots: 8 per screen (4 corners and the middle of each edge), on any connected screen. | "đặt sẵn các vị trí có thể thả vào", "có thể drag qua lại giữa các màn hình", "8 ô: góc + giữa 4 cạnh" |
@@ -37,6 +37,7 @@ Parent: [PRODUCT.md](../../PRODUCT.md) job 4 (Watch: sessions running). Reads th
 | GW20 | Picked on the mock: collapsed form A (state glyph beside the CLI logo), Phosphor Bold glyphs, the muted tone ("Trầm"). | "ok theo đề xuất chọn thư viện Phosphor" |
 | GW21 | The widget also shows the limit reset countdown of the [limit-reset-countdown spec](2026-11-19-limit-reset-countdown.md) (LC1). It sits in a pill of its own beside the widget (LC10), so the widget's size is unchanged. This widens GW18 (Settings also holds the weekly countdown lead, LC3), GW-R1, GW-R5 and GW-R11 as marked below. | "thêm vào đếm ngược trong widget và cả app main" (2026-11-19) |
 | GW22 | The state colours get brighter than the muted tone of GW20: the "Sáng rõ" step picked on the mock (OKLCH lightness and chroma raised, hue kept). The owner picked it knowing that working and waiting now sit close to Orca's yellow and orange, which GW19 had steered away from; GW19's own glyph library still keeps the widget apart. | "tôi muốn color của status agent được sáng hơn tone hiện tại", then "chọn sáng rõ" (2026-11-20) |
+| GW23 | The core's poll is slow, 20 s, not 3 s, because the data does not need to be live and the app should stay light when it sits in the background. The moments someone looks read at once: the pointer entering the widget, the app coming forward, opening the Activity page. This narrows GW-R1's and the Success line's "within one poll (3 s)" to "within 20 s, or at once on a look". | "với số liệu này không poll liên tục, ví dụ dữ liệu nó không cần realtime nhiều" (2026-11-22); picked "Poll thưa + theo sự kiện" |
 
 ## Orca reference
 
@@ -87,7 +88,7 @@ Orca keeps the agent's brand icon separate from the state glyph, so the two sit 
 | With real sessions in iTerm (or Ghostty) and VS Code, a click brings that app forward. A session inside tmux opens Activity at that session. | GW-R6 |
 | Drag to a second screen, quit and relaunch: the widget is back in the same slot. With that screen disconnected, it falls back to the main screen (see Inferred). | GW-R7 |
 | A full-screen app on its own Space still shows the widget. Typing in the front app is never interrupted while the widget updates. | GW-R7, GW-R8 |
-| With the window closed, a session changing state changes its icon within 3 s. | GW-R1, GW-R9 |
+| With the window closed, a session changing state changes its icon within 20 s, and at once when the pointer enters the widget (GW23). | GW-R1, GW-R9, GW23 |
 | With the switch off, nothing floats and the core is not polling. | GW-R10 |
 | With Reduce Motion on, the ring is still. | GW-R11 |
 | `scripts/test.sh` passes, including the style boundary, icon policy and hue policy tests. | all |

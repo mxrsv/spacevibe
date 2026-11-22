@@ -118,4 +118,26 @@ struct CoreActivitySubscribersTests {
             client.connection.beforeUnsubscribe = nil
         }
     }
+
+    @Test("a refresh without a subscriber sends nothing and does not start the core", .timeLimit(.minutes(1)))
+    func refreshWithoutSubscriberIsSilent() async throws {
+        try await withFakeCore { client, methods in
+            await client.connection.refreshActivity(now: Date().addingTimeInterval(60))
+            #expect(methods().isEmpty, "no initialize, no subscribe")
+        }
+    }
+
+    @Test("a refresh asks the core for a read and the answer reaches every subscriber; one inside the gap is skipped", .timeLimit(.minutes(1)))
+    func refreshReadsOnceAndReachesEverySink() async throws {
+        try await withFakeCore { client, methods in
+            let widget = Reader(client.activitySubscribe())
+            defer { widget.end() }
+            #expect(await eventually { widget.reports.values == [Self.oneSession] })
+            await client.connection.refreshActivity()
+            #expect(methods().filter { $0 == "activity.subscribe" }.count == 1, "the subscribe a moment ago is the read")
+            await client.connection.refreshActivity(now: Date().addingTimeInterval(CoreConnection.refreshGap + 1))
+            #expect(await eventually { widget.reports.values == [Self.oneSession, Self.noSession] })
+            #expect(methods().filter { $0 == "activity.subscribe" }.count == 2)
+        }
+    }
 }

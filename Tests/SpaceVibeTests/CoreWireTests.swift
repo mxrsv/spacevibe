@@ -4,6 +4,14 @@ import Testing
 
 @Suite("CoreWire")
 struct CoreWireTests {
+    @Test("activity.subscribe carries the slow poll interval the connection asks for")
+    func subscribeCarriesTheInterval() throws {
+        let line = try CoreWire.line(id: 7, method: "activity.subscribe", params: CoreWire.SubscribeParams(intervalMs: CoreConnection.activityPollMs))
+        let text = String(decoding: line, as: UTF8.self)
+        #expect(text.contains("\"intervalMs\":20000"), "\(text)")
+        #expect(CoreConnection.activityPollMs >= 1_000 && CoreConnection.activityPollMs <= 60_000, "inside the core's bounds")
+    }
+
     @Test("every recorded response decodes through the client's own reply and error paths")
     func transcriptResponses() throws {
         var decoded = 0

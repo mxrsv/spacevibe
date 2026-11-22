@@ -10,8 +10,14 @@ import (
 	"spacevibe.dev/core/internal/roots"
 )
 
-// WatchInterval is how often a subscription polls (docs/internals/core-protocol.md, "Activity subscription").
-const WatchInterval = 3 * time.Second
+// WatchInterval is how often a subscription polls when `activity.subscribe` names no interval
+// (docs/internals/core-protocol.md, "Activity subscription"). MinWatchInterval and MaxWatchInterval bound the
+// interval a caller may ask for.
+const (
+	WatchInterval    = 3 * time.Second
+	MinWatchInterval = time.Second
+	MaxWatchInterval = time.Minute
+)
 
 // Service is the Activity methods over one engine: activity.read, the activity.subscribe poll and activity.stop.
 // Reads and polls share the engine, so folded offsets are never repeated.

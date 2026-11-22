@@ -48,6 +48,8 @@ final class CoreConnection: @unchecked Sendable {
     private var subscribing: Set<ObjectIdentifier> = []
     /// One `activity.subscribe` or `activity.unsubscribe` on the pipe at a time (see "Activity").
     private let activityTurn = ActivityTurn()
+    /// When the core last answered an `activity.subscribe`, the shell's own or a refresh: a refresh right after one is skipped.
+    private var lastActivityRead: Date?
     private var sent: [String: Int] = [:]
     private var identity: CoreInitializeResult?
 
@@ -143,6 +145,14 @@ final class CoreConnection: @unchecked Sendable {
         return token
     }
 
+    /// How often the core polls for the one subscription. The data does not need to be realtime and the poll is the app's only
+    /// work while its window is closed (`ps`, `lsof` and the session logs), so it is slow; a moment the owner looks at the
+    /// screen asks for a read at once instead (`refreshActivity`).
+    static let activityPollMs = 20_000
+    /// A refresh inside this long of the core's last answer is skipped: a pointer crossing the widget back and forth, or an
+    /// activation right after a subscribe, does not read twice.
+    static let refreshGap: TimeInterval = 2
+
     /// How long the last subscriber's removal waits before `activity.unsubscribe` is sent. A tab or window that comes back inside
     /// it keeps the running subscription instead of having to subscribe again.
     static let unsubscribeDelay: Duration = .seconds(1)
@@ -191,13 +201,16 @@ final class CoreConnection: @unchecked Sendable {
             sink.reset()
             do {
                 let line = try await session.request(
-                    id: id, method: "activity.subscribe", line: try CoreWire.line(id: id, method: "activity.subscribe", params: CoreWire.NoParams()), isRead: true
+                    id: id, method: "activity.subscribe",
+                    line: try CoreWire.line(id: id, method: "activity.subscribe", params: CoreWire.SubscribeParams(intervalMs: Self.activityPollMs)),
+                    isRead: true
                 )
                 guard let report = try? CoreWire.reply(CoreActivityReport.self, from: line) else {
                     throw CoreError(CoreWire.undecodableMessage, status: 500)
                 }
                 let others = lock.withLock { () -> [CoreActivitySink] in
                     failures = 0
+                    lastActivityRead = Date()
                     return sinks.values.filter { ObjectIdentifier($0) != key && !subscribing.contains(ObjectIdentifier($0)) }
                 }
                 sink.deliver(report)
@@ -210,6 +223,31 @@ final class CoreConnection: @unchecked Sendable {
                 throw CoreWire.error(from: failure.error)
             }
         }
+    }
+
+    /// Reads the activity report now, for the sinks already subscribed: the same `activity.subscribe` a new subscriber sends, so
+    /// the answer is the core's new baseline and goes to every sink. Does nothing without a subscriber or a live core, and
+    /// never starts the core: a refresh must not turn a stopped widget on. A failure is dropped; the poll goes on.
+    func refreshActivity(now: Date = Date()) async {
+        let wanted = lock.withLock { () -> Bool in
+            guard !sinks.isEmpty, session?.isAlive == true else { return false }
+            if let last = lastActivityRead, now.timeIntervalSince(last) < Self.refreshGap { return false }
+            return true
+        }
+        guard wanted else { return }
+        await activityTurn.take()
+        defer { activityTurn.pass() }
+        let current: CoreSession? = lock.withLock { sinks.isEmpty ? nil : session }
+        guard let current, current.isAlive else { return }
+        let id = lock.withLock { () -> Int in defer { nextID += 1 }; return nextID }
+        guard let line = try? CoreWire.line(id: id, method: "activity.subscribe", params: CoreWire.SubscribeParams(intervalMs: Self.activityPollMs)),
+              let answer = try? await current.request(id: id, method: "activity.subscribe", line: line, isRead: true),
+              let report = try? CoreWire.reply(CoreActivityReport.self, from: answer) else { return }
+        let all = lock.withLock { () -> [CoreActivitySink] in
+            lastActivityRead = Date()
+            return Array(sinks.values)
+        }
+        for sink in all { sink.push(report) }
     }
 
     private func deliver(_ report: CoreActivityReport) {

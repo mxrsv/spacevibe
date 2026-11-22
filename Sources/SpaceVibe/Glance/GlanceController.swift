@@ -387,7 +387,10 @@ final class GlanceController {
         if let strip { overStrip = strip }
         if let pill { overPill = pill }
         let inside = overStrip || overPill
-        if inside != before { pointer(.anchorHover(inside)) }
+        if inside != before {
+            if inside { feed?.refreshNow() }
+            pointer(.anchorHover(inside))
+        }
     }
 
     /// The pointer entered or left the anchor (the strip or the pill) or the list (`surface`).
