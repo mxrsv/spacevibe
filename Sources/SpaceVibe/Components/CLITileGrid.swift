@@ -7,8 +7,9 @@ import SwiftUI
 ///
 /// A tile is the same toggle as the row's logo and takes the same `CLIToggleState`, so the two never disagree. On: the heat
 /// fill, the logo, the short name, the session count and the green check on a group-coloured disc (RD15). Never ran adds the
-/// amber dot at the top left on the owning CLI. Off: a dashed edge and "Add". Not supported: a flat zebra tile with a dash, no
-/// button. A plugin's item: a lock instead of the check. Text takes the heat inks, so it reads 4.5:1 on every step, Increase
+/// amber dot at the top left on the owning CLI. Off: a dashed edge and "Add". An unreadable CLI: the same dashed tile with a `?`,
+/// no button. Not supported: a flat zebra tile with a dash, no button. A plugin's item: a lock instead of the check where it is
+/// lit, nothing on an off tile. Text takes the heat inks, so it reads 4.5:1 on every step, Increase
 /// Contrast included (DS2). Hover lifts the tile 1 pt and pressing scales it; Reduce Motion drops both (DS-R9).
 struct CLITileGrid: View {
     let states: [CLIToggleState]
@@ -144,10 +145,15 @@ private struct CLITileFace: View {
                 .foregroundStyle(nameInk)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            Text(verbatim: state.tileFigure)
-                .typeRole(figureRole)
-                .foregroundStyle(figureInk)
-                .lineLimit(1)
+            if state.tileFigureIsUnknown {
+                FrameGlyph(.question, side: SizeRole.icon12, ink: figureInk)
+                    .frame(height: figureRole.lineHeight)
+            } else {
+                Text(verbatim: state.tileFigure)
+                    .typeRole(figureRole)
+                    .foregroundStyle(figureInk)
+                    .lineLimit(1)
+            }
         }
         .padding(.horizontal, SpaceRole.step2)
         .frame(width: width, height: BlockRole.tileHeight)
@@ -178,9 +184,9 @@ private struct CLITileFace: View {
     private func ground(_ shape: RoundedRectangle) -> some View {
         switch state.presence {
         case .on: shape.fill(Self.heatFill(step))
-        case .off:
+        case .off, .unreadable:
             shape.strokeBorder(ColorRole.ink3.opacity(OpacityRole.dim), style: StrokeStyle(lineWidth: 1, dash: [SpaceRole.step4, SpaceRole.step2]))
-        case .notSupported, .unreadable: shape.fill(ColorRole.zebraFill)
+        case .notSupported: shape.fill(ColorRole.zebraFill)
         }
     }
 

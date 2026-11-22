@@ -3,8 +3,9 @@ import SwiftUI
 /// The per-CLI sheet (DS-R10 "sheet"; RD-R11 "Bulk and Remove…"; the mock's `bulkSheet`) opened by `Add to…`, `Remove from…`
 /// and an item's `Remove…`: the title, an Add to / Remove from switch, one line per CLI with its checkbox, logo, name, count
 /// and the real folder with who else reads it, the shared-file warning, then Cancel (default) and the button that counts every
-/// CLI that changes (`PerCLISheetModel.confirmTitle`). Nothing is ticked at first; a "via" line is shown dimmed and cannot be
-/// ticked. The list scrolls past five lines so the buttons stay in reach (RD-R16).
+/// CLI that changes (`PerCLISheetModel.confirmTitle`). Nothing is ticked at first; a click anywhere on a line ticks it (the
+/// mock's `.pk`); a "via" line is shown dimmed once and cannot be ticked. The list scrolls past five lines so the buttons stay
+/// in reach (RD-R16).
 struct PerCLISheet: View {
     let model: PerCLISheetModel
     var isWorking = false
@@ -48,14 +49,17 @@ struct PerCLISheet: View {
                 DialogListLine(name: lineName(line), detail: line.detail, detailIsPath: line.via.isEmpty,
                                isEnabled: line.isTickable) {
                     HStack(spacing: SpaceRole.step4) {
+                        // A via line is dimmed once, as a whole (`DialogListLine`): its box is not faded again, only inert.
                         CheckboxCell(model.ticked.contains(line.id) && line.isTickable ? .on : .off, label: line.cli.name) {
                             toggle(line.id)
                         }
-                        .disabled(!line.isTickable)
+                        .allowsHitTesting(line.isTickable)
+                        .focusable(line.isTickable)
                         CLILogo(line.cli, size: SizeRole.logo16)
                     }
                     .frame(height: SizeRole.hitCell)
                 }
+                .modifier(PerCLISheetLineToggle(isTickable: line.isTickable) { toggle(line.id) })
             }
         }
         .padding(.vertical, SpaceRole.step6)
@@ -87,4 +91,22 @@ private struct ModeSwitch: View {
     static let segments = [FrameSegment(id: id(.add), title: "Add to"), FrameSegment(id: id(.remove), title: "Remove from")]
 
     static func id(_ mode: PerCLISheetModel.Mode) -> String { mode == .add ? "add" : "remove" }
+}
+
+/// The whole line is the checkbox's hit area (the mock's `.pk` with `data-a="bkcli"`): a click anywhere on it ticks, with the
+/// pointing hand. A via line takes no click and keeps the arrow.
+private struct PerCLISheetLineToggle: ViewModifier {
+    let isTickable: Bool
+    let toggle: () -> Void
+
+    func body(content: Content) -> some View {
+        if isTickable {
+            content
+                .contentShape(Rectangle())
+                .onTapGesture { toggle() }
+                .pointerCursor()
+        } else {
+            content
+        }
+    }
 }

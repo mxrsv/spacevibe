@@ -35,11 +35,9 @@ private struct EquipInspectorBody: View {
             InspectorSection("CLIs") { EquipTileCell(row: row, state: state) }
             KeyValueList(facts: EquipInspectorFacts.facts(row, clis: list.clis, now: Date()))
             if let path = row.row.items.first?.path {
-                Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) } label: {
-                    PushButtonLabel("Show in Finder", icon: .folderOpen, size: .small)
-                }
-                .buttonStyle(PushButtonStyle(.control, size: .small))
-                .focusEffectDisabled()
+                InspectorActions(actions: [InspectorAction(id: "finder", title: "Show in Finder", icon: .folderOpen) {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+                }])
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -62,16 +60,20 @@ private struct EquipInspectorBody: View {
     @ViewBuilder
     private var action: some View {
         if let owner = EquipInspectorFacts.readOnlyLine(row) {
+            // The mock's `.rb.lk` in the action column: the button's height and body text, no ground, `ink3`.
             HStack(spacing: SpaceRole.step6) {
                 FrameGlyph(.lockSimple, side: SizeRole.icon14, ink: ColorRole.ink3)
-                Text(owner).typeRole(.quiet).foregroundStyle(ColorRole.ink3).lineLimit(1)
+                Text(owner).typeRole(.bodyText).foregroundStyle(ColorRole.ink3).lineLimit(1).truncationMode(.middle)
             }
+            .frame(maxWidth: .infinity, minHeight: PushButtonStyle.Size.column.height, alignment: .leading)
             .accessibilityElement(children: .combine)
         } else {
-            Button { state.openSheet(.remove, rows: [row.id]) } label: { PushButtonLabel("Remove…", icon: .trash, size: .small) }
-                .buttonStyle(PushButtonStyle(.destructive, size: .small, isLoading: state.isPending(EquipControl.sheet(list.kind.page))))
-                .focusEffectDisabled()
-                .disabled(!list.canRemove(row))
+            InspectorActions(actions: [
+                InspectorAction(id: "remove", title: "Remove…", icon: .trash, isEnabled: list.canRemove(row),
+                                isLoading: state.isPending(EquipControl.sheet(list.kind.page)), isDestructive: true) {
+                    state.openSheet(.remove, rows: [row.id])
+                },
+            ])
         }
     }
 }

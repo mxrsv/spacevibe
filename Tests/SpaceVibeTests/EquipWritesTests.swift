@@ -339,6 +339,30 @@ struct EquipWritesTests {
         #expect(actions.allSatisfy { $0.menuShortcut != nil } && FrameRowAction.conflicts(in: actions).isEmpty)
     }
 
+    @Test("the refused shot's toast names the item and CLI it pressed, never an item the page shows as already on")
+    func refusedShotWording() async throws {
+        let skills = EquipShotCore(.refused, kind: .skill)
+        let rows = try await skills.loadoutRows()
+        // changelog-writer lives only in Claude Code's folder: Codex is off for it, so "add it to Codex" is a real press.
+        let changelog = rows.items.filter { $0.name == "changelog-writer" }
+        #expect(!changelog.isEmpty && changelog.allSatisfy { $0.cliCells?["codex"] == .missing })
+        do {
+            _ = try await skills.loadoutCopyTo(id: "claude:skill:changelog-writer", targets: ["codex"])
+            Issue.record("the refused shot's core accepted a write")
+        } catch {
+            #expect(AppEnvironment.message(error) == "Couldn\u{2019}t add changelog-writer to Codex: ~/.codex/skills/changelog-writer "
+                + "already exists and is not a SpaceVibe copy. Nothing changed.")
+        }
+        let subagents = EquipShotCore(.refused, kind: .agent)
+        do {
+            _ = try await subagents.loadoutRemoveFrom(id: "codex:agent:release-captain", clis: ["codex"])
+            Issue.record("the refused shot's core accepted a write")
+        } catch {
+            #expect(AppEnvironment.message(error)
+                == "Couldn\u{2019}t remove release-captain: ~/.codex/agents/release-captain changed since SpaceVibe read it. Nothing changed.")
+        }
+    }
+
     @Test("the frame region draws Skills and Subagents, not the Not built yet state")
     func region() async {
         let (_, model, _, _) = await setUp()

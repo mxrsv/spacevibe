@@ -11,7 +11,7 @@ import SwiftUI
 ///   the anchored confirmation), `inspop-six-illustration` (the same from the inspector's tile), `menu-six-illustration`
 ///   (`All CLIs` open);
 /// - `empty`, `scanning`, `error` (Codex folder unreadable), `failed` (nothing could be read), `worst-ten-illustration`;
-/// - `write` (a CLI turned on: the toast with Undo), `refused` (the core's refusal toast).
+/// - `write` (a CLI turned on: the toast with Undo), `refused` (the core's refusal toast, naming the item the shot pressed).
 ///
 /// The confirmation and the menu are system popovers, which `ImageRenderer` does not draw: those shots show the page under
 /// them until the harness captures a window.
@@ -57,9 +57,13 @@ enum EquipFrameShots {
             Shot(name: "scanning", scenario: .scanning),
             Shot(name: "error", scenario: .error),
             Shot(name: "failed", scenario: .failed),
-            Shot(name: "worst-ten-illustration", scenario: .worst) { _, state in state.select(state.list().all.first?.id) },
+            // The mock's worst state selects the first row whose name is longer than 40 (`defSel`, `c-inbox-equip.js`).
+            Shot(name: "worst-ten-illustration", scenario: .worst) { _, state in
+                let all = state.list().all
+                state.select((all.first { $0.name.count > 40 } ?? all.first)?.id)
+            },
             Shot(name: "write", scenario: .normal) { _, state in await press(used, cli: "codex", from: .row, state: state, add: true) },
-            Shot(name: "refused", scenario: .refused) { _, state in await press(never, cli: "codex", from: .row, state: state, add: true) },
+            Shot(name: "refused", scenario: .refused) { _, state in await refuse(kind.kind, state: state) },
         ]
     }
 
@@ -112,6 +116,23 @@ enum EquipFrameShots {
         guard let row, let toggle = row.toggles.first(where: { $0.cli.id == cli }) else { return }
         await state.press(toggle, on: row, from: anchor)?.value
     }
+
+    /// The refused write of the mock's `writefail`: Skills adds a skill Codex does not have (`changelog-writer`, Claude Code only)
+    /// to Codex; Subagents removes `release-captain` (Codex only, so its last copy: through `Remove…`). The core's sentence names
+    /// that item, so the toast never names one the page shows as already on.
+    private static func refuse(_ kind: CoreKind, state: EquipPageState) async {
+        if kind == .skill {
+            await press(refusedSkill, cli: "codex", from: .row, state: state, add: false)
+        } else {
+            state.select(refusedSubagent)
+            state.openSheet(.remove, rows: [refusedSubagent])
+            state.sheetToggle("codex")
+            await state.confirmSheet()?.value
+        }
+    }
+
+    static let refusedSkill = "skill::changelog-writer"
+    static let refusedSubagent = "agent::release-captain"
 
     /// Presses a lit logo of a shared file: it only opens the confirmation.
     private static func ask(_ id: String, cli: String, from anchor: EquipPageState.Anchor, state: EquipPageState) {

@@ -105,7 +105,21 @@ final class EquipShotCore: CoreService, @unchecked Sendable {
 
     // MARK: Writes
 
-    private static let refusal = "Couldn\u{2019}t add pdf-extract to Codex: ~/.codex/skills/pdf-extract already exists and is not a SpaceVibe copy. Nothing changed."
+    /// The refused shot's sentences name the item and CLI the shot really pressed (the mock's `writefail` wording for Skills
+    /// and Subagents), so the toast never names an item the page shows as already on.
+    private func refusedAdd(_ id: String, targets: [String]) -> CoreError {
+        let item = name(of: id)
+        let names = registry.filter { targets.contains($0.id) }.map(\.name)
+        let folder = EquipShotData.folders(kind).first { $0.key == targets.first }?.path ?? "~/.\(targets.first ?? "")"
+        return CoreError("Couldn\u{2019}t add \(item) to \(CLINames.sentence(names)): \(folder)/\(item) already exists and is not a "
+            + "SpaceVibe copy. Nothing changed.", status: 409)
+    }
+
+    private func refusedRemove(_ id: String) async -> CoreError {
+        let item = name(of: id)
+        let path = (try? await loadoutRows())?.items.first { $0.id == id || $0.name == item }?.path ?? item
+        return CoreError("Couldn\u{2019}t remove \(item): \(path) changed since SpaceVibe read it. Nothing changed.", status: 409)
+    }
 
     private func entry(_ label: String) -> CoreJournalEntry {
         CoreJournalEntry(id: "shot-1", at: "2026-11-21T10:00:00.000Z", label: label, undone: false, count: 1)
@@ -114,14 +128,14 @@ final class EquipShotCore: CoreService, @unchecked Sendable {
     private func name(of id: String) -> String { id.split(separator: ":").last.map(String.init) ?? id }
 
     func loadoutCopyTo(id: String, targets: [String]) async throws -> CoreCopyToResult {
-        if scenario == .refused { throw CoreError(Self.refusal, status: 409) }
+        if scenario == .refused { throw refusedAdd(id, targets: targets) }
         let item = name(of: id)
         lock.withLock { added[item, default: []] += targets }
         return CoreCopyToResult(entry: entry("Copied \(kind.rawValue) \(item)"), alsoReaders: [])
     }
 
     func loadoutRemoveFrom(id: String, clis: [String]) async throws -> CoreRemoveFromResult {
-        if scenario == .refused { throw CoreError(Self.refusal, status: 409) }
+        if scenario == .refused { throw await refusedRemove(id) }
         let item = name(of: id)
         let rows = try await loadoutRows()
         let gone = rows.items.filter { item in
@@ -132,7 +146,7 @@ final class EquipShotCore: CoreService, @unchecked Sendable {
     }
 
     func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult {
-        if scenario == .refused { throw CoreError(Self.refusal, status: 409) }
+        if scenario == .refused { throw await refusedRemove(ids.first ?? "") }
         let rows = try await loadoutRows()
         let readers = Set(rows.items.filter { ids.contains($0.id) }.flatMap { item in rows.folders.first { $0.path == item.folder }?.readBy ?? [] })
         lock.withLock { removed.formUnion(ids) }

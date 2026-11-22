@@ -34,7 +34,7 @@ struct CLIToggleState: Hashable, Sendable {
         /// Turning it off would delete the item's last copy (D53, counted by files): a bar under the logo; `Remove…` is the
         /// explicit action.
         case lastCopy
-        /// A plugin or a project owns the item (`owner`: "plugin", "project payments-web"): a lock, read-only.
+        /// A plugin or a project owns the item (`owner`: "plugin", "project payments-web"): read-only, a lock on a lit logo.
         case readOnly(owner: String)
         /// Off, and the CLI owns no folder of the kind SpaceVibe copies into (`folder`: "skills", "agents"; the readers map's
         /// `copyTarget`), so Add would only be refused: faded like Not supported, not a toggle, and its label says why.
@@ -72,11 +72,12 @@ struct CLIToggleState: Hashable, Sendable {
         case lock, link, unknown
     }
 
-    /// The small mark at the logo's corner.
+    /// The small mark at the logo's corner. A plugin's or project's item carries the lock only where it is lit: an off logo or
+    /// tile of it is plain, just not a toggle (the mock's `tglBtn` and `tileInspector` draw no lock on an off one).
     var badge: Badge? {
         if presence == .unreadable { return .unknown }
         switch hold {
-        case .readOnly: return .lock
+        case .readOnly: return isOn ? .lock : nil
         case .via: return isOn ? .link : nil
         case .none, .lastCopy, .noCopyTarget: return nil
         }
@@ -156,6 +157,10 @@ struct CLIToggleState: Hashable, Sendable {
         case .notSupported: NumberWording.missing
         }
     }
+
+    /// The `?` figure is drawn as the question glyph, as the mock's tile draws `ic('question', 12)`: an unreadable CLI and a lit
+    /// one that keeps no log.
+    var tileFigureIsUnknown: Bool { presence == .unreadable || presence == .on(.unmeasurable) }
 
     /// Sessions the heat step counts: only measured sessions of a lit logo.
     var measuredSessions: Int {

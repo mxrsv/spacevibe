@@ -135,7 +135,7 @@ enum EquipShotData {
             if spec.codex != nil { keys.append(spec.agents ? "agents" : "codex") }
             keys += spec.extra.filter(ids.contains)
             let cells = cells(spec, keys: keys, kind: kind, registry: registry, byKey: byKey, now: now, unreadable: unreadable, scanning: scanning)
-            let seen = spec.addedDays.map { ISO8601DateFormatter().string(from: now.addingTimeInterval(-$0 * 86_400)) }
+            let seen = ISO8601DateFormatter().string(from: now.addingTimeInterval(-addedDays(spec) * 86_400))
             for key in keys {
                 guard let folder = byKey[key] else { continue }
                 let path = "\(folder.path)/\(spec.name)"
@@ -156,6 +156,11 @@ enum EquipShotData {
         }
         return CoreLoadoutRows(usage: scanning ? .scanning : .ready, items: items, hooks: [], problems: [], events: [:],
                                roots: ["claude": "~/.claude", "codex": "~/.codex"], countsByScope: [:], rowFlags: [:], folders: readers)
+    }
+
+    /// The item's age: its own, else 3 to 11 months picked from its name, as the mock's `seenOf` gives every item an Added fact.
+    static func addedDays(_ spec: Spec) -> Double {
+        spec.addedDays ?? Double(30 * (3 + spec.name.unicodeScalars.reduce(0) { $0 + Int($1.value) } % 9))
     }
 
     private static func cells(_ spec: Spec, keys: [String], kind: CoreKind, registry: [CoreRegistryCLI], byKey: [String: Folder], now: Date,

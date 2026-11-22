@@ -93,7 +93,10 @@ struct EquipList: View {
                         .frame(maxWidth: .infinity, minHeight: SizeRole.tableRow, alignment: .leading)
                         .padding(.horizontal, SpaceRole.step12)
                 }
-                ForEach(list.visible) { row in rowView(row, list: list) }
+                // The mock's `.tr:nth-child(odd)` inside a `.grp` whose first child is the head line: the 2nd, 4th… row.
+                ForEach(Array(list.visible.enumerated()), id: \.element.id) { index, row in
+                    rowView(row, list: list).rowStripe(!index.isMultiple(of: 2))
+                }
             }
         }
     }

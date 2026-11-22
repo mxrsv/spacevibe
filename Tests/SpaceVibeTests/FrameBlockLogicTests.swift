@@ -125,6 +125,9 @@ struct FrameBlockLogicTests {
         #expect(!CLIToggleState(cli: .codex, presence: .on(.neverRan), ownsFile: false).showsNeverRanDot, "RD16")
         #expect(!CLIToggleState(cli: .codex, presence: .on(.sessions(2))).showsNeverRanDot)
         #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2)), hold: .readOnly(owner: "plugin")).badge == .lock)
+        #expect(CLIToggleState(cli: .codex, presence: .off, hold: .readOnly(owner: "plugin")).badge == nil,
+                "an off logo or tile of a plugin's item carries no lock (mock tglBtn, tileInspector)")
+        #expect(!CLIToggleState(cli: .codex, presence: .off, hold: .readOnly(owner: "plugin")).isToggle)
         #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2)), hold: .via(["Claude Code"])).badge == .link)
         #expect(CLIToggleState(cli: .codex, presence: .unreadable).badge == .unknown)
         #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2))).badge == nil, "a lit logo is the full logo (RD22)")
@@ -147,6 +150,11 @@ struct FrameBlockLogicTests {
         #expect(CLIToggleState(cli: .claude, presence: .on(.pending)).tileFigure == "…")
         #expect(CLIToggleState(cli: .claude, presence: .off).tileFigure == "Add")
         #expect(CLIToggleState(cli: .claude, presence: .notSupported(noun: "Skills")).tileFigure == "—")
+        // The `?` is the question glyph on an unreadable CLI's (dashed) tile and on a lit one that keeps no log.
+        #expect(CLIToggleState(cli: .codex, presence: .unreadable).tileFigureIsUnknown)
+        #expect(CLIToggleState(cli: .codex, presence: .on(.unmeasurable)).tileFigureIsUnknown)
+        #expect(!CLIToggleState(cli: .codex, presence: .off).tileFigureIsUnknown)
+        #expect(!CLIToggleState(cli: .codex, presence: .on(.sessions(3))).tileFigureIsUnknown)
     }
 
     @Test("a row's toggles wrap at 5 per line; the row is the wrapped height from the 6th CLI")
@@ -225,6 +233,35 @@ struct FrameBlockLogicTests {
         #expect(id("amp", "Amp").shortName == "Amp")
         #expect(CLILogo.initial("opencode") == "O" && CLILogo.initial("") == "?")
         #expect(CLILogo.brandMark("claude") == .claude && CLILogo.brandMark("cursor") == nil)
+    }
+
+    @Test("every illustration CLI draws the mock's mark inside its 24 pt box; the brand CLIs have no such mark (RD46)")
+    func illustrationMarks() {
+        let ids = ["cursor", "copilot", "opencode", "amp", "antigravity", "kiro", "qwen", "aider"]
+        #expect(Set(IllustrationCLIMark.allCases.map(\.rawValue)) == Set(ids))
+        let box = CGRect(x: 0, y: 0, width: GlyphBox.side, height: GlyphBox.side).insetBy(dx: -0.5, dy: -0.5)
+        for mark in IllustrationCLIMark.allCases {
+            let bounds = mark.path.boundingRect
+            #expect(!mark.path.isEmpty && bounds.width > 10 && bounds.height > 10, "\(mark)")
+            #expect(box.contains(bounds), "\(mark) leaves its box: \(bounds)")
+        }
+        // The outline marks have a hole the even-odd fill keeps open (the mock's `fill-rule="evenodd"`).
+        for mark in [IllustrationCLIMark.cursor, .amp, .kiro, .qwen] {
+            #expect(!mark.path.contains(CGPoint(x: 12, y: 12), eoFill: true), "\(mark)")
+        }
+        for id in ["claude", "codex", "gemini"] { #expect(IllustrationCLIMark(rawValue: id) == nil) }
+    }
+
+    @Test("an inspector's action column: 32 pt, body text at 400, 12 from the leading edge, whatever the kind")
+    func inspectorColumn() {
+        for kind in [PushButtonStyle.Kind.control, .destructive, .quiet] {
+            let style = PushButtonStyle(kind, size: .column)
+            #expect(style.size.height == SizeRole.controlRegular)
+            #expect(style.typeRole == .bodyText, "\(kind)")
+            #expect(style.sidePadding == SpaceRole.step12, "\(kind)")
+        }
+        #expect(PushButtonStyle(.control, size: .small).size.height == SizeRole.controlSmall)
+        #expect(PushButtonStyle(.destructive, size: .small).typeRole == .quietMedium)
     }
 
     @Test("a group head reads severity, title and count; the hero reads its figure and label")

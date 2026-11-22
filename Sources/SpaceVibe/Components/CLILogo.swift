@@ -2,9 +2,9 @@ import SwiftUI
 
 /// A CLI's logo in the new frame (DS-R6: 16 or 20), bare, never boxed. Claude Code and Codex draw their brand marks
 /// (`Resources/Brand`, the same files as v5's `CLIMark`) as a mask in their `ColorRole` inks (`logoClaude`, `logoCodex`), so
-/// each follows the theme and Increase Contrast; Gemini CLI's mark is drawn in `ink3` as the mock does. A CLI with no bundled
-/// mark shows its initial in `ink2`: a stand-in, not a brand logo, until the registry ships marks (engine support beyond the two
-/// CLIs is out of scope). Decorative: the name sits beside it or in the control's label.
+/// each follows the theme and Increase Contrast; Gemini CLI's mark is drawn in `ink3` as the mock does. The illustration CLIs
+/// (RD42) draw the mock's own symbols (`IllustrationCLIMark`, RD46: not letters). Any other id shows its initial in `ink2`: a
+/// stand-in until the registry ships a mark. Decorative: the name sits beside it or in the control's label.
 struct CLILogo: View {
     let cli: CLIIdentity
     var size: CGFloat = SizeRole.logo20
@@ -23,6 +23,9 @@ struct CLILogo: View {
                     .interpolation(.high)
                     .scaledToFit()
                     .foregroundStyle(Self.ink(cli.id))
+            } else if let mark = IllustrationCLIMark(rawValue: cli.id) {
+                IllustrationCLIMarkShape(mark: mark)
+                    .fill(mark.ink, style: FillStyle(eoFill: true))
             } else {
                 Text(verbatim: Self.initial(cli.name))
                     .typeRole(size >= SizeRole.logo20 ? .bodyMedium : .quietMedium)

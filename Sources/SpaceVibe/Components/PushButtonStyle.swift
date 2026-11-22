@@ -27,10 +27,13 @@ struct PushButtonStyle: ButtonStyle {
     enum Size: Hashable, Sendable {
         /// 32 high, `bodyMedium`: toolbars, dialogs, toasts.
         case regular
-        /// 26 high, `quietMedium`: rows, group heads, the inspector.
+        /// 26 high, `quietMedium`: rows, group heads.
         case small
+        /// 32 high, `bodyText` at 400, the label 12 from the leading edge and a 12 pt icon: one button of an inspector's
+        /// action column (the mock's `.in .bt .rb`; `InspectorActions` fills the column's width).
+        case column
 
-        var height: CGFloat { self == .regular ? SizeRole.controlRegular : SizeRole.controlSmall }
+        var height: CGFloat { self == .small ? SizeRole.controlSmall : SizeRole.controlRegular }
     }
 
     let kind: Kind
@@ -61,6 +64,7 @@ struct PushButtonStyle: ButtonStyle {
     /// The label's type role.
     var typeRole: TypeRole {
         switch kind {
+        case _ where size == .column: .bodyText
         case .quiet, .link: size == .regular ? .bodyText : .quiet
         default: size == .regular ? .bodyMedium : .quietMedium
         }
@@ -70,6 +74,7 @@ struct PushButtonStyle: ButtonStyle {
     var sidePadding: CGFloat {
         switch kind {
         case .icon: 0
+        case _ where size == .column: SpaceRole.step12
         case .primary, .destructive: size == .regular ? SpaceRole.step16 : SpaceRole.step10
         default: SpaceRole.step10
         }

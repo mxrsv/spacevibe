@@ -129,8 +129,10 @@ enum ItemRowLayout {
     static func fillsActions(isSelected: Bool) -> Bool { isSelected }
 }
 
-/// A row's name and its sub-line (the mock's `.nm`): the name in `bodyText` `ink`, cut in the middle with the full text as
-/// its tooltip (RD-R17), and a quiet sub-line in `ink3` that ends in an ellipsis. An optional category icon leads in its tone.
+/// A row's name and its sub-line (the mock's `.nm`): the name in `bodyMedium` `ink` (the mock's `.nm b` at 500), cut in
+/// the middle with the full text as its tooltip (RD-R17), and 2 pt under it a quiet sub-line in `ink3` that ends in an
+/// ellipsis. An optional category icon leads the name line, inline, in its tone (the mock's `cat-` span, 8 apart); the
+/// sub-line starts under the icon, at the cell's leading edge.
 struct ItemRowTitle: View {
     let name: String
     var sub: String?
@@ -138,19 +140,19 @@ struct ItemRowTitle: View {
     var iconInk: Color?
 
     var body: some View {
-        HStack(spacing: SpaceRole.step10) {
-            if let icon { FrameGlyph(icon, side: SizeRole.icon16, ink: iconInk ?? ColorRole.ink3) }
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: SpaceRole.step2) {
+            HStack(spacing: SpaceRole.step8) {
+                if let icon { FrameGlyph(icon, side: SizeRole.icon16, ink: iconInk ?? ColorRole.ink3) }
                 MiddleTruncatedText(name)
-                    .typeRole(.bodyText)
+                    .typeRole(.bodyMedium)
                     .foregroundStyle(ColorRole.ink)
-                if let sub {
-                    Text(sub)
-                        .typeRole(.quiet)
-                        .foregroundStyle(ColorRole.ink3)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
+            }
+            if let sub {
+                Text(sub)
+                    .typeRole(.quiet)
+                    .foregroundStyle(ColorRole.ink3)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
         }
     }

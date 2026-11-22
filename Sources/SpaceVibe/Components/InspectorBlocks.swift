@@ -186,7 +186,8 @@ struct InspectorAction: Identifiable {
     var kind: PushButtonStyle.Kind { isDestructive ? .destructive : isQuiet ? .quiet : .control }
 }
 
-/// The inspector's actions (`.in .bt`): one column of full-width small-height buttons, label leading, in the order given.
+/// The inspector's actions (`.in .bt`): one column of full-width 32 pt buttons in body text, label leading (`PushButtonStyle`'s
+/// `column` size), in the order given.
 /// A disabled one keeps its place and says why in its title ("Terminal app not found").
 struct InspectorActions: View {
     let actions: [InspectorAction]
@@ -195,10 +196,10 @@ struct InspectorActions: View {
         VStack(alignment: .leading, spacing: SpaceRole.step6) {
             ForEach(actions) { action in
                 Button { action.perform() } label: {
-                    PushButtonLabel(action.title, icon: action.icon, size: .small)
+                    PushButtonLabel(action.title, icon: action.icon, size: .column)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(PushButtonStyle(action.kind, size: .small, isLoading: action.isLoading))
+                .buttonStyle(PushButtonStyle(action.kind, size: .column, isLoading: action.isLoading))
                 .focusEffectDisabled()
                 .disabled(!action.isEnabled)
                 .help(action.title)
