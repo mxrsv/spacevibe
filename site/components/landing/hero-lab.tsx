@@ -14,6 +14,5 @@ export function HeroLab() {
   const params = new URLSearchParams(search);
   const layout = LAYOUTS.find((value) => value === params.get("layout")) ?? "now";
   const headline = Number(params.get("headline") ?? 0);
-  const support = params.get("support") === "logos" ? "logos" : "text";
-  return <Hero layout={layout} headline={headline >= 0 && headline < HERO_HEADLINES.length ? headline : 0} support={support} />;
+  return <Hero layout={layout} headline={headline >= 0 && headline < HERO_HEADLINES.length ? headline : 0} />;
 }

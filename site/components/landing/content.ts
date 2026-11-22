@@ -55,8 +55,8 @@ export const HEADER = {
 
 /**
  * The hero is under review (owner, 2026-11-22: a visitor cannot tell at a glance what the app is for).
- * `/` shows `layout: "now"` with the first headline until the owner picks on `/hero-lab`; the unpicked
- * layouts and headlines are then deleted.
+ * The owner picked the logo row on 2026-11-22. `/` shows layout `b` with the second headline, the
+ * recommendation, until the owner confirms layout and headline on `/hero-lab`; the unpicked ones are then deleted.
  */
 export type HeroLayout = "now" | "a" | "b" | "c";
 
@@ -67,10 +67,8 @@ export const HERO_HEADLINES = [
 ] as const;
 
 export const HERO = {
-  // The app is for agent CLIs in general (RD13); the core reads two today (`core/internal/cliregistry`), so the line says which.
-  eyebrow: "A local Mac app for AI coding agents · Claude Code and Codex today",
-  /** With the logo row under the heading, the line above it names only the category. */
-  eyebrowShort: "A local Mac app for AI coding agents",
+  // The app is for agent CLIs in general (RD13), so this line names the category; the row under the heading says which CLIs.
+  eyebrow: "A local Mac app for AI coding agents",
   /**
    * The CLIs the core reads today (`core/internal/cliregistry`), with the marks the app itself ships in
    * `Resources/Brand`. A CLI joins this row in the release that reads it, never before.
@@ -329,6 +327,8 @@ export const DOWNLOAD = {
 } as const;
 
 export const FOOTER = {
+  /** Goes with the CLI marks in the hero: naming a product is not a claim of a tie to its maker. */
+  disclaimer: "SpaceVibe is not affiliated with Anthropic or OpenAI. Claude\u00A0Code and Codex are trademarks of their owners.",
   brand: "SpaceVibe",
   by: "SpaceVibe",
   nav: NAV,

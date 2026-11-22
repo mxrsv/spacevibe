@@ -50,11 +50,11 @@ Built 2026-11-05 in `site/`, viewed with `cd site && npx next dev -p 3100` at `h
 Owner feedback on the first round: the four categories looked alike and the options did not differ. The bands now show one signature crop per category instead of the whole window (Loadout's paired bars, Limits' figure and ruler, Activity's two lanes, Rules' Allow/Ask/Deny pickers) with the sidebar tab the category lives behind beside the caption; only the hero keeps a whole window. Real screens are dark captures of the SwiftUI app on the synthetic fixture home (`site/public/landing/app/`); Agents and Tokens are renders of the tracked mocks and are captioned as design previews (L7). On pick (done 2026-11-22): the other two directions, `/directions` and `DirectionSwitcher` are deleted, the copy lives in `site/components/landing/content.ts`, and `/` is the picked direction.
 
 
-## Hero round (open, 2026-11-22)
+## Hero round (logo row picked; layout and headline open, 2026-11-22)
 
 The owner, on the built page: "khi vào landing không thể biết nhanh app của chúng ta làm việc về gì, phải có nhận diện gì đó tốt hơn". The first viewport today is a question and a cut window whose text is too small to read, so nothing in it says what the app is.
 
-Three layouts and three headlines are built on the review route `/hero-lab` (`?layout=now|a|b|c&headline=0|1|2&support=text|logos`, `noindex`), and shown through the mock `~/scratch/spacevibe-reins/2026-11-22-landing-hero/mock.html` (the stage is the built page on `localhost:4317`). `/` is unchanged until the owner picks.
+Three layouts and three headlines are built on the review route `/hero-lab` (`?layout=now|a|b|c&headline=0|1|2`, `noindex`), and shown through the mock `~/scratch/spacevibe-reins/2026-11-22-landing-hero/mock.html` (the stage is the built page on `localhost:4317`). Since the logo pick below, `/` shows layout B with the second headline, the recommendation, so the owner judges it on the real page; it is not yet a pick.
 
 | Layout | First glance, second glance | What changes |
 | --- | --- | --- |
@@ -66,7 +66,7 @@ Headlines: "Which of your skills actually run?" (today), "See what your coding a
 
 Owner, 2026-11-22, on the headlines: "không nên đặt tiêu đề là chỉ claude code, codex ? vì chúng ta support nhiều agent mà". The headline and the page title therefore name the category (coding agents), never a list of CLIs; the line above the headline says which CLIs the core reads today (two, `core/internal/cliregistry`), so the page does not claim more than the download does. The per-CLI ledger in the bands follows the registry when it grows.
 
-Owner, 2026-11-22: "để kiểu tiêu đề xong thêm một list logo vào cùng dòng với text thì sao". Built as the option `support=logos`: under the heading, one line "Works with" followed by the mark and name of each CLI the core reads today (two); the line above the heading then names only the category. The marks are the ones the app ships in `Resources/Brand`. Open with it: the research note of 2026-11-21 lists the use of the Claude Code and Codex logos as an unsettled trademark question (its open decision 3), and suggests a "not affiliated with Anthropic or OpenAI" line; if this option is picked, that line goes in the footer in the same change.
+Owner, 2026-11-22: "để kiểu tiêu đề xong thêm một list logo vào cùng dòng với text thì sao". Picked the same day: "yes có logo agent vào sự nhận diện đã tốt lên rất rất nhiều". Under the heading, one line "Works with" followed by the mark and name of each CLI the core reads today (two); the line above the heading then names only the category. The marks are the ones the app ships in `Resources/Brand`. The research note of 2026-11-21 lists the use of the Claude Code and Codex logos as an unsettled trademark question (its open decision 3); the footer therefore carries "SpaceVibe is not affiliated with Anthropic or OpenAI. Claude Code and Codex are trademarks of their owners." The text-only variant was removed.
 
 On pick: `/` takes the picked layout and headline; the other layouts, the other headlines, `/hero-lab`, `hero-lab.tsx` and the mock's unpicked options are deleted (FE-P1), and L5 is re-read against the pick.
 
@@ -76,7 +76,7 @@ On pick: `/` takes the picked layout and headline; the other layouts, the other 
 | --- | --- | --- |
 | LP-R1 | `/` is the Two CLIs direction: every band is a question, the real screen, and one block per CLI on what differs. No other direction, switcher or first-generation section remains in `site/`. | L1, L16 |
 | LP-R2 | The planet scene and stars sit behind the hero and the download band only; the page is dark only, English only, Next.js static export with Tailwind, and the CTA goes to GitHub Releases. | L2, L3, L4 |
-| LP-R3 | The hero asks which skills actually run and shows a real app window; Limits is a later band. | L5 |
+| LP-R3 | The first viewport says what the app is before anything else: a line naming the category, the heading, and the marks and names of the CLIs the core reads. Which layout and heading carry that is the open "Hero round"; Limits is a later band. | L5, hero round |
 | LP-R4 | Every shipped screen is a real capture of the app on synthetic data, captioned "demo data". Owed: the Limits and Activity bands show the inspector of an Inbox row, because the redesigned Limits and Activity pages do not render in a headless capture; whole-page captures replace them once those pages can be captured. | L7 |
 | LP-R5 | A page that is not in the download is named and labelled "In development", says it is not in the current download, carries no date and no version, and sits beside a "Watch releases on GitHub" link. It shows no screen until a render in the app's current look exists; that render then takes a dashed frame captioned "Design preview · not in the current download" (L7). The 2026-11-03 Tokens mock was removed from the page on 2026-11-22: the owner pointed at it as "version đã cũ". No form, no email capture. Settings is not on the page. | L6, L8, L9 |
 | LP-R6 | The download band says "Free" and names no licence; the repository link reads "GitHub"; the page says "macOS 15 or later" and "Apple silicon". | L14, L15 |

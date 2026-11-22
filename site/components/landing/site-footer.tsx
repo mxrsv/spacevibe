@@ -31,6 +31,7 @@ export function SiteFooter({ nav = FOOTER.nav }: { readonly nav?: readonly NavLi
           © {year} {FOOTER.by}
         </span>
       </div>
+      <p className="shell mt-5 text-tiny text-ink-2">{FOOTER.disclaimer}</p>
     </footer>
   );
 }

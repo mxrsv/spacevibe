@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Hero lab · SpaceVibe", robots: { in
 
 /**
  * Review scaffolding, not a public page: the hero layouts and headlines side by side with the real header
- * and the first bands under them, chosen by `?layout=now|a|b|c&headline=0|1|2&support=text|logos`. Deleted with the unpicked
+ * and the first bands under them, chosen by `?layout=now|a|b|c&headline=0|1|2`. Deleted with the unpicked
  * options once the owner has picked (landing spec, "Hero round").
  */
 export default function HeroLabPage() {
