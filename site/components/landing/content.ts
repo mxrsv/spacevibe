@@ -69,6 +69,19 @@ export const HERO_HEADLINES = [
 export const HERO = {
   // The app is for agent CLIs in general (RD13); the core reads two today (`core/internal/cliregistry`), so the line says which.
   eyebrow: "A local Mac app for AI coding agents · Claude Code and Codex today",
+  /** With the logo row under the heading, the line above it names only the category. */
+  eyebrowShort: "A local Mac app for AI coding agents",
+  /**
+   * The CLIs the core reads today (`core/internal/cliregistry`), with the marks the app itself ships in
+   * `Resources/Brand`. A CLI joins this row in the release that reads it, never before.
+   */
+  support: {
+    lead: "Works with",
+    clis: [
+      { name: "Claude\u00A0Code", mark: "/landing/brand/claude-spark-clay.svg" },
+      { name: "Codex", mark: "/landing/brand/codex-blossom-white.svg" },
+    ],
+  },
   lede: "SpaceVibe is a local Mac app for Claude Code and Codex CLI. It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",
   /** The lede without its first sentence, for the layouts whose eyebrow already says what the app is. */
   ledeShort: "It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",

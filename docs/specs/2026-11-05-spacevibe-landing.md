@@ -54,7 +54,7 @@ Owner feedback on the first round: the four categories looked alike and the opti
 
 The owner, on the built page: "khi vào landing không thể biết nhanh app của chúng ta làm việc về gì, phải có nhận diện gì đó tốt hơn". The first viewport today is a question and a cut window whose text is too small to read, so nothing in it says what the app is.
 
-Three layouts and three headlines are built on the review route `/hero-lab` (`?layout=now|a|b|c&headline=0|1|2`, `noindex`), and shown through the mock `~/scratch/spacevibe-reins/2026-11-22-landing-hero/mock.html` (the stage is the built page on `localhost:4317`). `/` is unchanged until the owner picks.
+Three layouts and three headlines are built on the review route `/hero-lab` (`?layout=now|a|b|c&headline=0|1|2&support=text|logos`, `noindex`), and shown through the mock `~/scratch/spacevibe-reins/2026-11-22-landing-hero/mock.html` (the stage is the built page on `localhost:4317`). `/` is unchanged until the owner picks.
 
 | Layout | First glance, second glance | What changes |
 | --- | --- | --- |
@@ -65,6 +65,8 @@ Three layouts and three headlines are built on the review route `/hero-lab` (`?l
 Headlines: "Which of your skills actually run?" (today), "See what your coding agents carry." (recommended), "Clean up what your agents never use."
 
 Owner, 2026-11-22, on the headlines: "không nên đặt tiêu đề là chỉ claude code, codex ? vì chúng ta support nhiều agent mà". The headline and the page title therefore name the category (coding agents), never a list of CLIs; the line above the headline says which CLIs the core reads today (two, `core/internal/cliregistry`), so the page does not claim more than the download does. The per-CLI ledger in the bands follows the registry when it grows.
+
+Owner, 2026-11-22: "để kiểu tiêu đề xong thêm một list logo vào cùng dòng với text thì sao". Built as the option `support=logos`: under the heading, one line "Works with" followed by the mark and name of each CLI the core reads today (two); the line above the heading then names only the category. The marks are the ones the app ships in `Resources/Brand`. Open with it: the research note of 2026-11-21 lists the use of the Claude Code and Codex logos as an unsettled trademark question (its open decision 3), and suggests a "not affiliated with Anthropic or OpenAI" line; if this option is picked, that line goes in the footer in the same change.
 
 On pick: `/` takes the picked layout and headline; the other layouts, the other headlines, `/hero-lab`, `hero-lab.tsx` and the mock's unpicked options are deleted (FE-P1), and L5 is re-read against the pick.
 

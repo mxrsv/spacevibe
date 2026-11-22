@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import { AppWindow } from "./app-window";
@@ -10,6 +11,8 @@ import { Scene } from "./scene";
 interface HeroProps {
   readonly layout?: HeroLayout;
   readonly headline?: number;
+  /** How the supported CLIs are named: in the line above the heading, or as a row of marks under it. */
+  readonly support?: "text" | "logos";
 }
 
 const rise = (ms: number) => ({ "--rise": `${ms}ms` }) as CSSProperties;
@@ -23,7 +26,7 @@ const rise = (ms: number) => ({ "--rise": `${ms}ms` }) as CSSProperties;
  * First glance, second glance: now = heading, window; a = heading, jobs; b = the readings, heading;
  * c = the rows and their Remove button, heading.
  */
-export function Hero({ layout = "now", headline = 0 }: HeroProps) {
+export function Hero({ layout = "now", headline = 0, support = "text" }: HeroProps) {
   const lines = HERO_HEADLINES[headline] ?? HERO_HEADLINES[0];
   const split = layout === "b" || layout === "c";
 
@@ -31,7 +34,7 @@ export function Hero({ layout = "now", headline = 0 }: HeroProps) {
     <div className={`flex flex-col items-start ${split ? "max-w-[600px]" : "max-w-[860px]"}`}>
       {layout === "now" ? null : (
         <p className="mb-5 text-sec text-ink-1" data-rise style={rise(40)}>
-          {HERO.eyebrow}
+          {support === "logos" ? HERO.eyebrowShort : HERO.eyebrow}
         </p>
       )}
       <h1 className={`grid font-semibold text-ink-0 ${split ? "text-h1-split" : "text-h1"}`} data-rise style={rise(80)}>
@@ -39,6 +42,17 @@ export function Hero({ layout = "now", headline = 0 }: HeroProps) {
           <span key={line}>{line} </span>
         ))}
       </h1>
+      {support === "logos" && layout !== "now" ? (
+        <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sec text-ink-1" data-rise style={rise(130)}>
+          {HERO.support.lead}
+          {HERO.support.clis.map((cli) => (
+            <span key={cli.name} translate="no" className="inline-flex items-center gap-2 font-medium text-ink-0">
+              <Image src={cli.mark} alt="" width={18} height={18} className="size-[18px]" />
+              {cli.name}
+            </span>
+          ))}
+        </p>
+      ) : null}
       <p className="mt-6 max-w-[520px] text-body text-ink-1" data-rise style={rise(180)}>
         {layout === "now" ? HERO.lede : HERO.ledeShort}
       </p>
