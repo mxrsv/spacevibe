@@ -1,13 +1,12 @@
 /**
- * Every word and number on the landing page. Product truth comes from
- * `../../PRODUCT.md` and the 2026-11-02 product spec in `docs/specs/`; nothing here claims a
- * feature the spec does not. The example rows mirror the synthetic fixture home the
- * app's own tests run against (`core/testdata/fixtures`), so every value is
- * one the engine really produced, and every panel that shows them says "demo data".
- * `site/tests/landing-facts.test.mjs` pins the session title to `core/testdata/fixtures/golden/activity.json`.
- * Illustrative, not engine output: the Rules rows (`RULES`), the Tokens figures (`TOKENS`), the hero panel
- * subset and the file list (a subset of the golden file history, paths shortened to the repo).
+ * Every word and number on the landing page. Product truth comes from `../../PRODUCT.md` and the
+ * landing spec in `docs/specs/` (ledger L1 to L16 and its 2026-11-22 amendments); every claim below
+ * is one the app shows on its own screen or PRODUCT.md states, and nothing here is a number about
+ * real users. `site/tests/landing-facts.test.mjs` checks the Limits wording and that every screen
+ * named here exists.
  */
+
+import type { ShotKey } from "./shots";
 
 // The same `mxrsv/spacevibe` as GITHUB_REPO in scripts/release.sh (settled by the owner on 2026-11-21,
 // SV ledger D-1). Change both together.
@@ -35,10 +34,11 @@ export interface NavLink {
 }
 
 export const NAV = [
-  { href: "#loadout", label: "Loadout" },
+  { href: "#clean", label: "Clean" },
+  { href: "#skills", label: "Skills" },
   { href: "#rules", label: "Rules" },
+  { href: "#limits", label: "Limits" },
   { href: "#activity", label: "Activity" },
-  { href: "#tokens", label: "Tokens" },
 ] as const;
 
 export const HEADER = {
@@ -47,189 +47,109 @@ export const HEADER = {
 } as const;
 
 export const HERO = {
-  headingLines: ["Know what your", "agents carry."] as const,
-  lede:
-    "A local Mac app for Claude Code and Codex CLI. See every skill, subagent and hook each one carries, how often it actually ran and what it may do — then add or remove one in seconds.",
-  cta: { note: "macOS\u00A015 or later · Apple\u00A0silicon", label: "Download for macOS", href: DOWNLOAD_URL },
-} as const;
+  headingLines: ["Which of your skills", "actually run?"] as const,
+  lede: "SpaceVibe is a local Mac app for Claude Code and Codex CLI. It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",
+  cta: { note: "macOS 15 or later · Apple silicon", label: "Download for macOS", href: DOWNLOAD_URL },
+  shot: "inbox",
+} as const satisfies { readonly shot: ShotKey; readonly [key: string]: unknown };
 
-/* ---------------------------------------------------------------- usage states */
+/* ---------------------------------------------------------------- the bands */
 
-/** The five usage states the app must keep visibly different (spec, Loadout). */
-export type UsageCellState =
-  | { readonly state: "counted"; readonly runs: number; readonly errors?: number }
-  | { readonly state: "never" }
-  | { readonly state: "pending" }
-  | { readonly state: "unmeasurable"; readonly reason: string }
-  | { readonly state: "missing" };
+export type BandId = "clean" | "skills" | "rules" | "limits" | "activity";
 
-export type ItemKind = "skill" | "agent" | "hook";
-
-export interface LoadoutRow {
-  readonly name: string;
-  readonly kind: ItemKind;
-  readonly plugin?: boolean;
-  readonly claude: UsageCellState;
-  readonly codex: UsageCellState;
+export interface Band {
+  readonly id: BandId;
+  readonly question: string;
+  readonly answer: string;
+  readonly shot: ShotKey;
+  /** The shot is the inspector alone, so it sits beside the words instead of under them. */
+  readonly narrow?: boolean;
+  readonly caption: string;
 }
 
-const CODEX_HOOKS_UNLOGGED = "Codex does not log hook runs";
+const DEMO = "demo data";
 
-/** Four rows for the hero panel: one of each state that fits a glance. */
-export const HERO_LOADOUT: readonly LoadoutRow[] = [
-  { name: "ponytail", kind: "skill", claude: { state: "counted", runs: 142 }, codex: { state: "missing" } },
-  { name: "impeccable", kind: "skill", claude: { state: "counted", runs: 87 }, codex: { state: "counted", runs: 31 } },
-  { name: "architect", kind: "agent", claude: { state: "never" }, codex: { state: "missing" } },
+/** In the order of the jobs in PRODUCT.md: clean up, balance and control, then watch. */
+export const BANDS: readonly Band[] = [
   {
-    name: "prettier",
-    kind: "hook",
-    claude: { state: "counted", runs: 1204, errors: 17 },
-    codex: { state: "unmeasurable", reason: CODEX_HOOKS_UNLOGGED },
+    id: "clean",
+    question: "What can go, and how much does it free?",
+    answer:
+      "Skills, subagents and hooks that never ran, hooks whose script is gone, and old session logs and caches, each with its size. Tick what goes and remove it in one step; Undo brings it back.",
+    shot: "clean",
+    caption: `Clean · ${DEMO}`,
+  },
+  {
+    id: "skills",
+    question: "What is installed, and how often did it run?",
+    answer:
+      "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other. Subagents and hooks have the same page of their own.",
+    shot: "skills",
+    caption: `Skills · ${DEMO}`,
+  },
+  {
+    id: "rules",
+    question: "What is each CLI allowed to do?",
+    answer:
+      "Claude Code’s rules as Allow, Ask or Deny per capability, with the rule behind each one and a warning on a rule that allows a whole tool. Codex’s sandbox and approvals are shown in its own words.",
+    shot: "rules",
+    caption: `Rules · ${DEMO}`,
+  },
+  {
+    id: "limits",
+    question: "How much of my limit is left?",
+    answer:
+      "Read from Claude Code’s own usage cache, or optionally its status-line capture, and from Codex’s session logs, with no login and no API call. A CLI that keeps no usage file reads as not measurable; SpaceVibe never guesses.",
+    shot: "limits",
+    narrow: true,
+    caption: `A limit window · ${DEMO}`,
+  },
+  {
+    id: "activity",
+    question: "What is running, and what is waiting for me?",
+    answer:
+      "Running, waiting and idle sessions with their current tool and estimated cost, and failed commands grouped with a count. Stop a session from here. Where a CLI cannot be read, SpaceVibe says so instead of guessing.",
+    shot: "activity",
+    narrow: true,
+    caption: `A session · ${DEMO}`,
   },
 ];
 
-export const USAGE_LEGEND = [
-  { state: "counted", label: "Counted", detail: "bar and number" },
-  { state: "never", label: "Never ran", detail: "installed, zero sessions" },
-  { state: "pending", label: "Not counted yet", detail: "logs still being read" },
-  { state: "unmeasurable", label: "Not measurable", detail: "the CLI logs nothing for it" },
-  { state: "missing", label: "Not installed", detail: "add it in place" },
-] as const;
-
-/* ---------------------------------------------------------------- the four tabs */
-
-export const LOADOUT = {
-  id: "loadout",
-  heading: "Every skill, agent and hook, with the number of times it actually ran.",
-  body: "One inventory across both CLIs, joined to usage counted from your local session logs. Installed but never invoked, invoked often, present in one CLI and missing in the other, and exactly which hook commands fire on each event. Adding or removing is one step, with Undo.",
-  filters: ["All", "In one CLI only", "Never ran", "Dead"] as const,
-  rows: [
-    { name: "ponytail", kind: "skill", claude: { state: "counted", runs: 142 }, codex: { state: "missing" } },
-    { name: "impeccable", kind: "skill", claude: { state: "counted", runs: 87 }, codex: { state: "counted", runs: 31 } },
-    { name: "diagnosing-bugs", kind: "skill", claude: { state: "counted", runs: 23 }, codex: { state: "missing" } },
-    { name: "neon-postgres", kind: "skill", plugin: true, claude: { state: "counted", runs: 11 }, codex: { state: "missing" } },
-    { name: "typescript-reviewer", kind: "agent", claude: { state: "counted", runs: 34 }, codex: { state: "missing" } },
-    { name: "security-reviewer", kind: "agent", claude: { state: "counted", runs: 3 }, codex: { state: "counted", runs: 1 } },
-    { name: "architect", kind: "agent", claude: { state: "never" }, codex: { state: "missing" } },
-    {
-      name: "PostToolUse · prettier --write",
-      kind: "hook",
-      claude: { state: "counted", runs: 1204, errors: 17 },
-      codex: { state: "unmeasurable", reason: CODEX_HOOKS_UNLOGGED },
-    },
-    {
-      name: "SessionStart · statusline",
-      kind: "hook",
-      claude: { state: "pending" },
-      codex: { state: "unmeasurable", reason: CODEX_HOOKS_UNLOGGED },
-    },
-  ] satisfies readonly LoadoutRow[],
-} as const;
-
-export type Verdict = "allow" | "ask" | "deny" | "mixed";
-
-export interface RuleRow {
-  readonly capability: string;
-  readonly claude: Verdict;
-  readonly codex: Verdict;
-  /** Concrete rules behind the Claude Code cell, shown for the expanded row. */
-  readonly rules?: readonly { readonly verdict: Exclude<Verdict, "mixed">; readonly rule: string }[];
-}
-
-export const RULES = {
-  id: "rules",
-  heading: "Allow, Ask or Deny for each capability, in each CLI.",
-  body: "Six capabilities, each cell Allow, Ask or Deny, expandable to the concrete rule behind it. Pick a scope: global or one project. Change a cell and the settings file changes with it, and every write keeps a restorable copy.",
-  scopes: ["Global", "spacevibe-academy"] as const,
-  expanded: "Run commands",
-  rows: [
-    { capability: "Read files", claude: "allow", codex: "allow" },
-    { capability: "Edit files", claude: "mixed", codex: "allow" },
-    {
-      capability: "Run commands",
-      claude: "mixed",
-      codex: "ask",
-      rules: [
-        { verdict: "allow", rule: "Bash(git status:*)" },
-        { verdict: "allow", rule: "Bash(pnpm run:*)" },
-        { verdict: "allow", rule: "Bash(node:*)" },
-        { verdict: "deny", rule: "Bash(rm -rf:*)" },
-      ],
-    },
-    { capability: "Network", claude: "mixed", codex: "deny" },
-    { capability: "Push and deploy", claude: "ask", codex: "ask" },
-    { capability: "Secrets (.env)", claude: "deny", codex: "ask" },
-  ] satisfies readonly RuleRow[],
-} as const;
-
-export type SessionState = "running" | "waiting" | "idle" | "unmeasurable";
-
-export interface SessionRow {
-  readonly cli: CLI;
-  readonly title: string;
-  readonly project: string | null;
-  readonly state: SessionState;
-  readonly tool: string | null;
-  readonly usd: number | null;
-  readonly note?: string;
-}
-
-export const ACTIVITY = {
-  id: "activity",
-  heading: "What is running, what failed, and which files were touched.",
-  body: "One lane per CLI: running sessions with their current tool and estimated cost, failed commands grouped with a count, and a file history that names the CLI on every row. Stop a session from here. When a CLI cannot be read, SpaceVibe says so instead of guessing.",
-  sessions: [
-    { cli: "claude", title: "Fix leaderboard rank tie", project: "spacevibe-bench", state: "running", tool: "Bash · pnpm test", usd: 0.886 },
-    { cli: "claude", title: "Add rate limit to /v1/votes", project: "spacevibe-api", state: "idle", tool: null, usd: 1.329 },
-    { cli: "claude", title: "2026-11-02 · c0000002", project: "spacevibe-academy", state: "waiting", tool: "AskUserQuestion", usd: 0.443 },
-    { cli: "codex", title: "Port the rank tie-break to a shared helper", project: "spacevibe-bench", state: "running", tool: null, usd: 4.8 },
-    {
-      cli: "codex",
-      title: "Add /v1/leaderboard cache header",
-      project: "spacevibe-api",
-      state: "unmeasurable",
-      tool: "shell · pnpm test --run",
-      usd: 2.4,
-      note: "Codex logs nothing while a tool runs, so a long command and a wait for approval look the same.",
-    },
-    {
-      cli: "codex",
-      title: "2026-11-02 · pid 52003",
-      project: null,
-      state: "unmeasurable",
-      tool: null,
-      usd: null,
-      note: "Codex writes no log until the first prompt is sent.",
-    },
-  ] satisfies readonly SessionRow[],
-  failures: [
-    { cli: "claude", title: "pnpm tsc --noEmit", count: 8, exit: 2, reason: "lib/leaderboard/rank.ts(41,9): error TS2322: Type 'number | undefined' is not assignable to type 'number'.", laterPass: true },
-    { cli: "claude", title: "git push origin main", count: 3, exit: 1, reason: "Exit 1", laterPass: false },
-  ] as const,
-  files: [
-    { label: "src/leaderboard/rank.ts", edits: 25, clis: ["claude", "codex"] as const },
-    { label: "src/repositories/course.ts", edits: 24, clis: ["claude"] as const },
-    { label: "src/votes/route.ts", edits: 1, clis: ["codex"] as const },
-  ] as const,
-} as const;
-
-/** Tokens per day in thousands, last 14 days. Synthetic, like the rest. */
-export const TOKENS = {
-  id: "tokens",
-  heading: "Tokens and cost for both CLIs, in one local history.",
-  body: "Per day, per model and per project, counted from the same logs. Cache reuse shown as a share. Cost is an estimate and says so; a model with no price reads as not measured, never as 0. No separate tracker, and nothing leaves the machine.",
-  periods: ["Day", "Week", "Month"] as const,
-  measures: ["All tokens", "New only", "Est. cost"] as const,
-  byDay: {
-    claude: [320, 410, 380, 520, 610, 440, 390, 700, 650, 480, 560, 720, 690, 610],
-    codex: [120, 90, 160, 210, 180, 140, 220, 260, 190, 230, 310, 280, 240, 300],
+/** What differs between the two CLIs on each screen, in the app's own words. */
+export const DIFFS: Record<BandId, Record<CLI, string>> = {
+  clean: {
+    claude: "Old session logs, shell snapshots and the debug cache go to the macOS Trash. Logs a running session holds stay locked.",
+    codex: "Old session logs and the cache go the same way, by the age you pick: 30, 90 or 180 days.",
   },
-  cost: [
-    { cli: "claude", model: "opus", share: 0.38, usdPerM: 15 },
-    { cli: "claude", model: "sonnet", share: 0.62, usdPerM: 3 },
-    { cli: "codex", model: "gpt-5", share: 0.85, usdPerM: 1.25 },
-    { cli: "codex", model: "gpt-5-mini", share: 0.15, usdPerM: null },
-  ] as const,
+  skills: {
+    claude: "Counts how often each skill, subagent and hook ran, and which hook commands fire on each event.",
+    codex: "Counts skills and subagents. Codex does not log hook runs, so a hook reads not measurable, never 0.",
+  },
+  rules: {
+    claude: "Allow, Ask or Deny for each capability, editable, with the concrete rules behind each one.",
+    codex: "Sandbox and approval settings in Codex’s own words, shown read only.",
+  },
+  limits: {
+    claude: "Reads the share left in each window from Claude Code’s own usage cache, or from its status-line capture when that is installed.",
+    codex: "Reads it from the last Codex turn, and shows how old that reading is.",
+  },
+  activity: {
+    claude: "Claude Code does not record permission prompts, so a long tool run and a wait for approval look the same.",
+    codex: "Codex logs nothing while a tool runs and writes no log until the first prompt is sent.",
+  },
+};
+
+export const UPCOMING = {
+  id: "next",
+  heading: "Tokens is in development.",
+  label: "In development",
+  previewCaption: "Design preview · not in the current download",
+  item: {
+    name: "Tokens",
+    body: "Tokens and estimated cost per day, model and project for both CLIs, kept as a local history.",
+    shot: "previewTokens",
+  } satisfies { readonly name: string; readonly body: string; readonly shot: ShotKey },
+  watch: { href: `${GITHUB_URL}/releases`, label: "Watch releases on GitHub" },
 } as const;
 
 export const PRIVATE = {

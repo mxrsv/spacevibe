@@ -1,7 +1,7 @@
 # SpaceVibe: landing page standardisation
 
 Date: 2026-11-05
-Status: draft, direction picked. The owner picked Two CLIs at the first gate (L16, 2026-11-05); the "On pick" step has not been done, so `/` is still the first-generation page (see "Deploy gates"). Since SV10 (2026-11-07) the page is the landing of `spacevibe.dev` (SV10), so every hostname below reads `spacevibe.dev`. Requirements, acceptance criteria and the traceability table (W20) are still to be added.
+Status: built, 2026-11-22; not accepted. `/` is the picked direction, Two CLIs (L16), with captures of the redesigned app; the owner's eye approval at 1440 and 390 (L10) and every deploy gate are open. Two captures are owed (LP-R4). The page is the landing of `spacevibe.dev` (SV10), so every hostname below reads `spacevibe.dev`.
 Status as written on 2026-11-05: draft. Decision ledger only, from the owner's grilling on 2026-11-05; the owner confirmed it the same day ("ok") and asked for the mock directions to be built directly in the `site/` dev server. Requirements, acceptance criteria and the traceability table (W20) are added once the owner has picked a direction.
 Handoff 2026-11-05: the owner accepted the layout of the mock round ("layout tạm ổn") and named the app's own screens as the remaining problem ("app stage chưa tốt"): the four categories look alike. The design language v4 that restyles them is not built (its plan says "no Swift written yet") and the palette is still changing (`ec27b4a`, 15:51, after the captures at about 15:15), so the captures in `site/public/landing/app/` are placeholders. (Update 2026-11-20: v4 was replaced by v5, which is built; the shot command is now `SPACEVIBE_SHOT_SCREEN=<screen> scripts/dev-fixture.sh --shots <dir>`, with the screen names listed in [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md#gallery-and-verification).) After v4 lands, re-shoot with `SPACEVIBE_SHOT_SCREEN=<loadout|limits|activity|rules> scripts/dev-fixture.sh --shots <dir>` (limits with `SPACEVIBE_FIXTURE_LIMITS=typical`) and redo the crops by eye from the 2880x1800 captures; the layout code does not change.
 Parent: [SpaceVibe](2026-11-02-spacevibe.md). Earlier record of the first build: site landing plan (record removed 2026-11-22, in git history).
@@ -47,11 +47,61 @@ Built 2026-11-05 in `site/`, viewed with `cd site && npx next dev -p 3100` at `h
 | `/directions/two-clis` | Two CLIs | The real screen, then one block per CLI on what differs between Claude Code and Codex. |
 | `/directions/manual` | Manual | Sticky rail of the four screens; each chapter is question, screen, what SpaceVibe does, what it cannot see. |
 
-Owner feedback on the first round: the four categories looked alike and the options did not differ. The bands now show one signature crop per category instead of the whole window (Loadout's paired bars, Limits' figure and ruler, Activity's two lanes, Rules' Allow/Ask/Deny pickers) with the sidebar tab the category lives behind beside the caption; only the hero keeps a whole window. Real screens are dark captures of the SwiftUI app on the synthetic fixture home (`site/public/landing/app/`); Agents and Tokens are renders of the tracked mocks and are captioned as design previews (L7). On pick: delete the other two directions, `/directions` and `DirectionSwitcher`, move the copy from `site/components/landing/directions/copy.ts` into `content.ts`, and replace `/`.
+Owner feedback on the first round: the four categories looked alike and the options did not differ. The bands now show one signature crop per category instead of the whole window (Loadout's paired bars, Limits' figure and ruler, Activity's two lanes, Rules' Allow/Ask/Deny pickers) with the sidebar tab the category lives behind beside the caption; only the hero keeps a whole window. Real screens are dark captures of the SwiftUI app on the synthetic fixture home (`site/public/landing/app/`); Agents and Tokens are renders of the tracked mocks and are captioned as design previews (L7). On pick (done 2026-11-22): the other two directions, `/directions` and `DirectionSwitcher` are deleted, the copy lives in `site/components/landing/content.ts`, and `/` is the picked direction.
+
+
+## Requirements
+
+| ID | Requirement | Serves |
+| --- | --- | --- |
+| LP-R1 | `/` is the Two CLIs direction: every band is a question, the real screen, and one block per CLI on what differs. No other direction, switcher or first-generation section remains in `site/`. | L1, L16 |
+| LP-R2 | The planet scene and stars sit behind the hero and the download band only; the page is dark only, English only, Next.js static export with Tailwind, and the CTA goes to GitHub Releases. | L2, L3, L4 |
+| LP-R3 | The hero asks which skills actually run and shows a real app window; Limits is a later band. | L5 |
+| LP-R4 | Every shipped screen is a real capture of the app on synthetic data, captioned "demo data". Owed: the Limits and Activity bands show the inspector of an Inbox row, because the redesigned Limits and Activity pages do not render in a headless capture; whole-page captures replace them once those pages can be captured. | L7 |
+| LP-R5 | A page that is not in the download is shown in a dashed frame captioned "Design preview · not in the current download", labelled "In development", with no date and no version, beside a "Watch releases on GitHub" link. No form, no email capture. Settings is not on the page. | L6, L8, L9 |
+| LP-R6 | The download band says "Free" and names no licence; the repository link reads "GitHub"; the page says "macOS 15 or later" and "Apple silicon". | L14, L15 |
+| LP-R7 | Nothing is deployed and no DNS changes without the owner's separate approval; reviews happen locally or on a preview that is not public. | L10, L12 |
+
+## Acceptance
+
+| Check | Requirement |
+| --- | --- |
+| LP-A1 `cd site && npm run build` lists `/` and `/_not-found` only, and `git grep -n directions -- site` finds no route or component. | LP-R1 |
+| LP-A2 `node --test site/tests/*.test.mjs` passes: every screen the page names is a file, every band has a screen and a line per CLI, the Limits copy names the usage cache, no redirect shadows a served route. | LP-R1, LP-R4 |
+| LP-A3 At 1440 and at 390 the page has no horizontal scroll and every image loads. | LP-R2, LP-R3 |
+| LP-A4 `grep -n "licen" site/components/landing/content.ts` is empty and the download band holds "Free", "macOS 15 or later" and "Apple silicon". | LP-R6 |
+| LP-A5 The preview frame carries the dashed outline and its caption; no `<form>` or `<input>` is in `site/out/index.html`. | LP-R5 |
+| LP-A6 The owner approves the page by eye at 1440 and at 390, beside the app. | L10 |
+| LP-A7 No Vercel project, deploy or DNS change was made by an agent. | LP-R7 |
+
+## Traceability (W20)
+
+| Decision, quoted | Requirement | Acceptance check |
+| --- | --- | --- |
+| L1 "với landing page tôi muốn chuẩn hoá phù hợp dành cho [SpaceVibe]" | LP-R1 | LP-A1, LP-A6 |
+| L2 "giữ hành tinh", L3 and L4 | LP-R2 | LP-A3, LP-A6 |
+| L5 (no objection) | LP-R3 | LP-A6 |
+| L6 "q4-b", L8 and L9 "nhận cả 3" | LP-R5 | LP-A5 |
+| L7 "nhận cả 3" | LP-R4 | LP-A2, LP-A6 |
+| L10 "q6-1 và 5", L12 | LP-R7 | LP-A6, LP-A7 |
+| L11 (which review gates run) | process only | none |
+| L13 "ok" (accepts Q12) | LP-R1, as amended under "Inferred, not decided" | LP-A6 |
+| L14, L15 | LP-R6 | LP-A4 |
+| L16 "tôi chọn option B" | LP-R1 | LP-A1 |
+
+## Inferred, not decided
+
+Lines with no owner decision behind them. The build follows them; the owner settles them at LP-A6.
+
+- **The captures show the redesigned app** (`SPACEVIBE_REDESIGN=1`), which is built but not cut over or approved by eye. Source: agent's choice, because the owner rejected the earlier look and the page cannot be deployed before the owner's gates anyway. If the redesign changes before cut-over, the captures are retaken.
+- **Band order is Clean, Skills, Rules, Limits, Activity**, replacing L13's Loadout, Limits, Activity, Rules. Source: the app's pages today and the job order in `PRODUCT.md`; L13 named pages the app no longer has.
+- **"In development" holds Tokens only**, where L8 named Agents and Tokens. Source: the Agents pages (Skills, Subagents, Hooks, Rules) are in the app. L13's "when Agents ships, that release's PR replaces the Rules band" is read as overtaken by the same fact.
+- **The hero window is the Inbox**, not a usage list. Source: agent's choice; the Inbox is where "never ran" is shown first in the redesign, which is the evidence L5 asks the hero to lead with.
+- **The Tokens preview is the 2026-11-03 mock**, drawn in the earlier look. Source: the only tracked render of that page.
 
 ## Deploy gates
 
 Moved here from `AGENTS.md` on 2026-11-20.
 
-- **WEB0, before WEB1.** The owner picks a landing direction (L16 records the pick of 2026-11-05) and `/` is replaced with it, the "On pick" step above. Until then `/` is the first-generation page with a Tokens tab the app does not have, and it must never be deployed.
+- **WEB0, before WEB1.** The owner picks a landing direction (L16) and `/` is replaced with it: done 2026-11-22. What still holds WEB0 open is the owner's eye approval (LP-A6) and the lines under "Inferred, not decided"; until then the page must never be deployed.
 - **WEB1 to WEB3.** Creating the Vercel project, repointing `spacevibe.dev` and the DNS check for the retired product subdomain are the owner's gates, done in that order after WEB0 and after `kyant.dev` is verified. They are tracked in the [go-core plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md) (SV16).

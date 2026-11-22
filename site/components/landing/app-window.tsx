@@ -16,8 +16,6 @@ interface AppWindowProps {
   readonly lights?: boolean;
   /** A page that is not in the download: dashed outline, and the caption says so. */
   readonly preview?: boolean;
-  /** The sidebar tab the screen lives behind, shown beside the caption so the category is recognised in the app. */
-  readonly tab?: ShotKey;
   readonly caption?: string;
   readonly priority?: boolean;
   /** The section cuts the window's bottom edge: no bottom corners and no bottom border. */
@@ -31,9 +29,8 @@ interface AppWindowProps {
  * One app screen, or one region of it, in a frame. The frame is only an edge and a shadow: the pixels
  * are the app's. The caption sits under the frame so it never covers the screen.
  */
-export function AppWindow({ shot, lights = false, preview = false, tab, caption, priority = false, bleed = false, className = "", style }: AppWindowProps) {
+export function AppWindow({ shot, lights = false, preview = false, caption, priority = false, bleed = false, className = "", style }: AppWindowProps) {
   const { src, width, height, alt } = SHOTS[shot];
-  const tabShot = tab ? SHOTS[tab] : null;
   return (
     <figure className={`grid gap-3 ${className}`} style={style}>
       <div
@@ -56,14 +53,7 @@ export function AppWindow({ shot, lights = false, preview = false, tab, caption,
             ))
           : null}
       </div>
-      {caption || tabShot ? (
-        <figcaption className="flex items-center gap-3 text-tiny text-ink-2">
-          {tabShot ? (
-            <Image src={tabShot.src} alt="" width={tabShot.width} height={tabShot.height} className="h-7 w-auto shrink-0" />
-          ) : null}
-          {caption}
-        </figcaption>
-      ) : null}
+      {caption ? <figcaption className="text-tiny text-ink-2">{caption}</figcaption> : null}
     </figure>
   );
 }

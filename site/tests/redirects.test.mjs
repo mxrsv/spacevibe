@@ -77,7 +77,7 @@ test("old Hub routes keep their path on kyant.dev", () => {
 
 test("no rule shadows a route the site serves", () => {
   const served = servedRoutes();
-  assert.ok(served.has("/") && served.has("/directions"), "served routes were derived from app/");
+  assert.ok(served.has("/"), "served routes were derived from app/");
   for (const path of served) {
     const rule = redirectFor(path);
     assert.equal(rule, undefined, `${path} is served by this site but matches ${rule?.source}`);

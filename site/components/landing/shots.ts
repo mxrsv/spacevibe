@@ -1,9 +1,10 @@
 /**
- * The app screens the page shows. The real ones are crops of dark captures of the SwiftUI app on
- * the synthetic fixture home (`scripts/dev-fixture.sh --shots`, 2x): the Loadout window for the hero,
- * one signature region per category (the part of the screen that is only that category), and the
- * sidebar tab each category lives behind (decorative: the caption beside it already names the category). The two `preview*` ones are renders of the tracked mocks
- * in `mocks/` for pages that are still in development; the page labels them as design previews.
+ * The app screens the page shows. The real ones are crops of dark captures of the SwiftUI app
+ * (`SPACEVIBE_REDESIGN=1 SPACEVIBE_SHOT_SCREEN=<page> scripts/dev-fixture.sh --shots <dir>`, 2x, the
+ * `solid-dark` variants, captured 2026-11-22): the whole Inbox window for the hero, the page without its
+ * sidebar for Clean, Skills and Rules, and the inspector alone for a limit window and a session. Their
+ * rows are the app's synthetic illustration data, never a real home. `previewTokens` is a render of the
+ * tracked mock in `mocks/` for a page that is still in development; the page labels it a design preview.
  */
 export interface Shot {
   readonly src: string;
@@ -13,45 +14,41 @@ export interface Shot {
 }
 
 export const SHOTS = {
-  loadout: {
-    src: "/landing/app/loadout.webp",
-    width: 2200,
-    height: 1375,
-    alt: "SpaceVibe Loadout: skills listed with a bar and run count for Claude Code and for Codex, items that never ran at zero, and Add to Codex where a skill is missing.",
+  inbox: {
+    src: "/landing/app/inbox.webp",
+    width: 2560,
+    height: 1800,
+    alt: "SpaceVibe Inbox: 12 need you. Seven rows to clean up, among them skills and a subagent that never ran and hooks whose script is gone, three rows to control and two to watch. The selected skill shows Keep and Remove from Claude Code and Codex, and its files in the inspector.",
   },
-  loadoutRows: {
-    src: "/landing/app/loadout-rows.webp",
-    width: 2000,
-    height: 957,
-    alt: "Loadout skills: an orange bar and count for Claude Code and a teal bar for Codex on each row, red zeros for skills that never ran, a dashed bar for one still being counted, and Add to Codex where a skill is missing.",
+  clean: {
+    src: "/landing/app/clean.webp",
+    width: 2112,
+    height: 1400,
+    alt: "Clean: 780 MB can be cleaned. Seven never-ran or dead skills, subagents and hooks are ticked with their size, Codex session logs older than 90 days are ticked, and Claude Code session logs are locked because one session uses them.",
   },
-  limitsDetail: {
-    src: "/landing/app/limits-detail.webp",
-    width: 2000,
-    height: 584,
-    alt: "Limits: a list of usage windows with the share left, Gemini CLI marked not measurable, and the selected Codex weekly window as 39% left of this window on a ten-segment ruler with its reset time and the age of the reading.",
+  skills: {
+    src: "/landing/app/skills.webp",
+    width: 2112,
+    height: 1240,
+    alt: "Skills: 5 never ran. Each row has the CLIs that carry the skill, a bar and a session count, and when it last ran; the selected skill shows its files and a Remove button.",
   },
-  activityLanes: {
-    src: "/landing/app/activity-lanes.webp",
-    width: 2000,
-    height: 1025,
-    alt: "Activity: one lane per CLI with running, waiting and idle sessions and their estimated cost, Codex sessions tagged not measurable, and failed commands grouped with a count under each lane.",
+  rules: {
+    src: "/landing/app/rules.webp",
+    width: 2112,
+    height: 1180,
+    alt: "Rules for Claude Code: six capabilities, each Allow, Ask, Deny or mixed, above the list of rules. The selected rule allows every call of Bash, and the inspector offers Change to Ask and Remove Rule.",
   },
-  rulesVerdicts: {
-    src: "/landing/app/rules-verdicts.webp",
-    width: 2000,
-    height: 615,
-    alt: "Rules for Claude Code: Read files, Edit files, Run commands, Network, Push and deploy and Secrets each set to Allow, Ask or Deny, or tagged mixed, with the number of rules behind each.",
+  limits: {
+    src: "/landing/app/limits.webp",
+    width: 672,
+    height: 340,
+    alt: "A Codex 5-hour window: 77% left on a bar with a marker for the time left, the reset time, and the source, the last Codex turn two minutes ago.",
   },
-  tabLoadout: { src: "/landing/app/tab-loadout.webp", width: 432, height: 97, alt: "" },
-  tabLimits: { src: "/landing/app/tab-limits.webp", width: 432, height: 97, alt: "" },
-  tabActivity: { src: "/landing/app/tab-activity.webp", width: 432, height: 97, alt: "" },
-  tabRules: { src: "/landing/app/tab-rules.webp", width: 432, height: 97, alt: "" },
-  previewAgents: {
-    src: "/landing/app/preview-agents.webp",
-    width: 1563,
-    height: 919,
-    alt: "Design preview of the Agents page: one card per agent with Rules, Permissions, Hooks, MCP and Model buttons, and a side panel editing Claude Code permissions.",
+  activity: {
+    src: "/landing/app/activity.webp",
+    width: 672,
+    height: 680,
+    alt: "A Claude Code session waiting for an answer: project, process id, age, estimated cost and the question it asked, with Show Terminal and Copy Session Id.",
   },
   previewTokens: {
     src: "/landing/app/preview-tokens.webp",

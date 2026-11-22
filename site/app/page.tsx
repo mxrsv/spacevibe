@@ -1,19 +1,16 @@
-import { ActivityVisual } from "@/components/landing/activity-visual";
-import { ACTIVITY, LOADOUT, RULES, TOKENS } from "@/components/landing/content";
+import { CliBands } from "@/components/landing/cli-bands";
 import { DownloadBand } from "@/components/landing/download-band";
-import { FeatureSection } from "@/components/landing/feature-section";
 import { Hero } from "@/components/landing/hero";
-import { LoadoutVisual } from "@/components/landing/loadout-visual";
 import { PrivateSection } from "@/components/landing/private-section";
-import { RulesVisual } from "@/components/landing/rules-visual";
 import { LANDING_ROOT_ID, ScrollReveal } from "@/components/landing/scroll-reveal";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
-import { TokensVisual } from "@/components/landing/tokens-visual";
+import { Upcoming } from "@/components/landing/upcoming";
 
 /**
- * spacevibe.dev — one page. Hero with the planet scene, one band per tab
- * (Loadout, Rules, Activity, Tokens), the privacy guarantees, the download band.
+ * spacevibe.dev, one page: the hero with the planet scene and the real Inbox, one band per screen
+ * with what differs between the two CLIs, the page still in development, the privacy guarantees and
+ * the download band (landing spec, L13 as amended on 2026-11-22).
  */
 export default function LandingPage() {
   return (
@@ -21,18 +18,8 @@ export default function LandingPage() {
       <SiteHeader />
       <main id="main">
         <Hero />
-        <FeatureSection id={LOADOUT.id} heading={LOADOUT.heading} body={LOADOUT.body}>
-          <LoadoutVisual />
-        </FeatureSection>
-        <FeatureSection id={RULES.id} heading={RULES.heading} body={RULES.body} reverse>
-          <RulesVisual />
-        </FeatureSection>
-        <FeatureSection id={ACTIVITY.id} heading={ACTIVITY.heading} body={ACTIVITY.body}>
-          <ActivityVisual />
-        </FeatureSection>
-        <FeatureSection id={TOKENS.id} heading={TOKENS.heading} body={TOKENS.body} reverse>
-          <TokensVisual />
-        </FeatureSection>
+        <CliBands />
+        <Upcoming />
         <PrivateSection />
         <DownloadBand />
       </main>
