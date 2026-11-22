@@ -50,6 +50,22 @@ Built 2026-11-05 in `site/`, viewed with `cd site && npx next dev -p 3100` at `h
 Owner feedback on the first round: the four categories looked alike and the options did not differ. The bands now show one signature crop per category instead of the whole window (Loadout's paired bars, Limits' figure and ruler, Activity's two lanes, Rules' Allow/Ask/Deny pickers) with the sidebar tab the category lives behind beside the caption; only the hero keeps a whole window. Real screens are dark captures of the SwiftUI app on the synthetic fixture home (`site/public/landing/app/`); Agents and Tokens are renders of the tracked mocks and are captioned as design previews (L7). On pick (done 2026-11-22): the other two directions, `/directions` and `DirectionSwitcher` are deleted, the copy lives in `site/components/landing/content.ts`, and `/` is the picked direction.
 
 
+## Hero round (open, 2026-11-22)
+
+The owner, on the built page: "khi vào landing không thể biết nhanh app của chúng ta làm việc về gì, phải có nhận diện gì đó tốt hơn". The first viewport today is a question and a cut window whose text is too small to read, so nothing in it says what the app is.
+
+Three layouts and three headlines are built on the review route `/hero-lab` (`?layout=now|a|b|c&headline=0|1|2`, `noindex`), and shown through the mock `~/scratch/spacevibe-reins/2026-11-22-landing-hero/mock.html` (the stage is the built page on `localhost:4317`). `/` is unchanged until the owner picks.
+
+| Layout | First glance, second glance | What changes |
+| --- | --- | --- |
+| A | the heading under a line that names the app; the three jobs | adds the eyebrow "A local Mac app for Claude Code and Codex CLI" and three links (Clean up, Control, Watch) above the window |
+| B (recommended) | five readings the app produces; the heading | words left, one panel right with a figure per screen, each a link to its band; no window in the hero |
+| C | the Inbox's never-ran rows at reading size with Remove; the heading | words left, a crop of the real rows right |
+
+Headlines: "Which of your skills actually run?" (today), "See what Claude Code and Codex carry." (recommended), "Clean up what your agents never use."
+
+On pick: `/` takes the picked layout and headline; the other layouts, the other headlines, `/hero-lab`, `hero-lab.tsx` and the mock's unpicked options are deleted (FE-P1), and L5 is re-read against the pick.
+
 ## Requirements
 
 | ID | Requirement | Serves |

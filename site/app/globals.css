@@ -54,6 +54,10 @@
   --text-h1: clamp(46px, 6.1vw, 84px);
   --text-h1--line-height: 0.98;
   --text-h1--letter-spacing: -0.04em;
+  /* The heading beside a panel (hero layouts b and c): it shares the row, so it is smaller than the full-width h1. */
+  --text-h1-split: clamp(40px, 4.4vw, 64px);
+  --text-h1-split--line-height: 1.02;
+  --text-h1-split--letter-spacing: -0.035em;
   --text-h2: clamp(28px, 2.5vw, 36px);
   --text-h2--line-height: 1.15;
   --text-h2--letter-spacing: -0.025em;

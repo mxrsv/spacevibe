@@ -27,6 +27,12 @@ export const SHOTS = {
     phoneShift: 0.175,
     alt: "SpaceVibe Inbox: 12 need you. Seven rows to clean up, among them skills and a subagent that never ran and hooks whose script is gone, three rows to control and two to watch. The selected skill shows Keep and Remove from Claude Code and Codex, and its files in the inspector.",
   },
+  inboxRows: {
+    src: "/landing/app/inbox-rows.webp",
+    width: 1440,
+    height: 760,
+    alt: "The Inbox's Clean up group: seven rows, among them hooks whose script is gone and skills that never ran. The selected skill, pdf-extract, added 41 days ago, offers Keep and Remove from Claude Code and Codex.",
+  },
   clean: {
     src: "/landing/app/clean.webp",
     width: 2112,

@@ -1,18 +1,11 @@
-import { Activity, Check, EyeOff, Gauge, Lock, Puzzle, Shield, Trash2, type LucideIcon } from "lucide-react";
+import { Check, EyeOff, Lock, type LucideIcon } from "lucide-react";
 
 import { AppWindow } from "./app-window";
+import { BAND_ICON } from "./band-icon";
 import { CliDot } from "./cli-dot";
-import { BANDS, CLI_LABEL, DIFFS, type Band, type BandId, type CLI, type Reach } from "./content";
+import { BANDS, CLI_LABEL, DIFFS, type Band, type CLI, type Reach } from "./content";
 
 const CLIS: readonly CLI[] = ["claude", "codex"];
-
-const BAND_ICON: Record<BandId, LucideIcon> = {
-  clean: Trash2,
-  skills: Puzzle,
-  rules: Shield,
-  limits: Gauge,
-  activity: Activity,
-};
 
 /** State colours carry the reach, as in the app: green when all of it is read, amber when a CLI logs nothing for part of it. */
 const REACH: Record<Reach, { readonly icon: LucideIcon; readonly tone: string }> = {
