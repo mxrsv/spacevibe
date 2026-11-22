@@ -147,7 +147,7 @@ private struct MenuPanelLine: View {
         .buttonStyle(.plain)
         .pointerCursor()
         .disabled(!entry.isEnabled)
-        .opacity(entry.isEnabled ? 1 : OpacityRole.dim)
+        .opacity(entry.isEnabled ? 1 : OpacityRole.disabled)
         .onHover(perform: hover)
         .accessibilityLabel(entry.title)
         .accessibilityValue(entry.spokenValue)

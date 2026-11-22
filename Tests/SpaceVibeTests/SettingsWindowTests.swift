@@ -254,9 +254,9 @@ struct SettingsWindowTests {
 
     @Test("the switch block: primary track with a white knob when on, faint track with an ink knob in dark and white in light")
     func switchBlock() {
-        #expect(FrameSwitch.knobInk(isOn: true, dark: true) == ColorRole.onPrimaryAction)
-        #expect(FrameSwitch.knobInk(isOn: false, dark: true) == ColorRole.ink)
-        #expect(FrameSwitch.knobInk(isOn: false, dark: false) == ColorRole.onPrimaryAction)
+        #expect(FrameSwitch.knobInk(isOn: true) == ColorRole.switchKnobOn && FrameSwitch.knobInk(isOn: false) == ColorRole.switchKnobOff)
+        #expect(ColorRoleValues.switchKnobOn == ColorRoleValues.onPrimaryAction)
+        #expect(ColorRoleValues.switchKnobOff.dark == ColorRoleValues.ink.dark && ColorRoleValues.switchKnobOff.light.hex == 0xFFFFFF)
         #expect(FrameSwitch.trackHeight >= SizeRole.controlMini && FrameSwitch.knob < FrameSwitch.trackHeight)
     }
 

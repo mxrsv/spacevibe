@@ -60,6 +60,10 @@ struct RoleContrastTests {
     static let rowButtonHovered = ground("hovered small button", V.groupSurface, (V.controlHoverFill, nil))
     static let rowButtonPressed = ground("pressed small button", V.groupSurface, (V.controlPressedFill, nil))
     static let selectedSegment = ground("selected segment", V.canvasSurface, (V.controlFill, nil), (V.selectionFill, nil))
+    static let hoveredSegment = ground("hovered segment (toolbar)", V.canvasSurface, (V.controlFill, nil), (V.hoverFill, nil))
+    static let hoveredSmallSegment = ground("hovered small segment (age, dial)", V.groupSurface, (V.controlFill, nil), (V.hoverFill, nil))
+    static let chosenSmallSegment = ground("chosen small segment", V.groupSurface, (V.controlFill, nil), (V.chosenSegmentFill, nil))
+    static let chosenToolbarSegment = ground("chosen toolbar segment", V.canvasSurface, (V.controlFill, nil), (V.chosenSegmentFill, nil))
     static let destructiveOnGroup = ground("destructive tint on group", V.groupSurface, (V.stateCritical, V.destructiveTintShare))
     static let destructiveHovered = ground("hovered destructive tint on group", V.groupSurface,
                                            (V.stateCritical, V.destructiveTintHoverShare))
@@ -98,11 +102,19 @@ struct RoleContrastTests {
         ])
         // Controls: labels, secondary labels and the search placeholder, segments.
         let controls = [toolbarControl, toolbarControlHovered, toolbarControlPressed, rowButton, rowButtonHovered, rowButtonPressed]
-        all += text("ink", V.ink, on: controls + [selectedSegment])
-        all += text("controlSecondaryInk", V.controlSecondaryInk, on: controls)
-            + text("controlQuietInk", V.controlQuietInk, on: [toolbarControl, rowButton])
-        // Tile heat (RD-R12).
-        all += tileText()
+        all += text("ink", V.ink, on: controls + [selectedSegment, chosenSmallSegment, chosenToolbarSegment])
+        // RB-F3: every label the blocks draw on a control fill. `controlSecondaryInk`: an unchosen segment (toolbar and small
+        // segmented, the permission dial), a chip's word, the count in a chosen segment. `controlQuietInk`: the search
+        // placeholder and its ⌘F hint, the count in an unchosen segment.
+        all += text("controlSecondaryInk", V.controlSecondaryInk, on: controls + [hoveredSegment, hoveredSmallSegment, selectedSegment,
+                                                                                   chosenSmallSegment])
+            + text("controlQuietInk", V.controlQuietInk, on: [toolbarControl, toolbarControlHovered, rowButton, hoveredSegment,
+                                                              hoveredSmallSegment])
+        // Marks on a control fill (3:1): the menu caret, the search glass, a chip's default glyph.
+        all += marks("controlQuietInk", V.controlQuietInk, on: [toolbarControl, toolbarControlHovered, toolbarControlPressed, rowButton,
+                                                                 rowButtonHovered])
+        // Tile heat (RD-R12), and the CLI logos on it (RD48).
+        all += tileText() + tileLogos()
         // Marks.
         all += marks("stateOk", V.stateOk, on: markGrounds) + marks("stateAttention", V.stateAttention, on: markGrounds)
             + marks("stateCritical", V.stateCritical, on: markGrounds)
@@ -125,7 +137,8 @@ struct RoleContrastTests {
         // Increase Contrast: tracks, hairlines, data steps and control fills reach 3:1 on the group surface (DS-R1).
         for (name, value) in [("faint", V.faint), ("hairline", V.hairline), ("data1", V.data1), ("data2", V.data2),
                               ("data3", V.data3), ("data4", V.data4), ("dataBar", V.dataBar), ("controlFill", V.controlFill),
-                              ("controlHoverFill", V.controlHoverFill), ("controlPressedFill", V.controlPressedFill)] {
+                              ("controlHoverFill", V.controlHoverFill), ("controlPressedFill", V.controlPressedFill),
+                              ("controlEdge", V.controlEdge), ("offTileEdge", V.offTileEdge)] {
             all.append(Pair(ink: name, value: value, ground: group, minimum: 3, variants: increasedOnly))
         }
         return all
@@ -142,6 +155,36 @@ struct RoleContrastTests {
             pairs += text("dataInk", ink, on: [tile]) + text("dataSecondaryInk", secondary, on: [tile])
         }
         return pairs + text("dataZeroInk", V.dataZeroInk, on: [ground("tile on data1", V.data1)])
+    }
+
+    /// RD48: each CLI logo on each heat step, over the disc the tile draws there (the group surface on the two hottest steps
+    /// and on every step under Increase Contrast, clear elsewhere), reads 3:1 in every variant.
+    private static func tileLogos() -> [Pair] {
+        let steps = [("data1", V.data1, V.tileLogoDisc1), ("data2", V.data2, V.tileLogoDisc2), ("data3", V.data3, V.tileLogoDisc3),
+                     ("data4", V.data4, V.tileLogoDisc4)]
+        var pairs: [Pair] = []
+        for (name, fill, disc) in steps {
+            let ground = ground("logo on \(name), over its disc", fill, (disc, nil))
+            pairs += marks("logoClaude", V.logoClaude, on: [ground]) + marks("logoCodex", V.logoCodex, on: [ground])
+        }
+        return pairs
+    }
+
+    @Test("RD48: the logo disc is clear on the cool steps and the group surface where a logo would miss 3:1")
+    func logoDiscs() {
+        for variant in [ColorRoleVariant.dark, .light] {
+            #expect(V.tileLogoDisc1.swatch(variant).alpha == 0 && V.tileLogoDisc2.swatch(variant).alpha == 0, "\(variant)")
+            #expect(V.tileLogoDisc3.swatch(variant) == V.groupSurface.swatch(variant), "\(variant)")
+            #expect(V.tileLogoDisc4.swatch(variant) == V.groupSurface.swatch(variant), "\(variant)")
+        }
+        for variant in Self.increasedOnly {
+            for disc in [V.tileLogoDisc1, V.tileLogoDisc2, V.tileLogoDisc3, V.tileLogoDisc4] {
+                #expect(disc.swatch(variant) == V.groupSurface.swatch(variant), "\(variant)")
+            }
+        }
+        // Without the disc the hot steps miss 3:1 (the mock draws the logo bare): the disc is needed, not decoration.
+        let bare = ColorMath.contrast(Ground(name: "", base: V.data4, tops: [(V.logoClaude, nil)]).rgb(.dark), Ground(name: "", base: V.data4).rgb(.dark))
+        #expect(bare < 3)
     }
 
     @Test("each pair reads at its minimum in every variant", arguments: pairs)

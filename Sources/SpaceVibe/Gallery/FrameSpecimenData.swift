@@ -57,23 +57,21 @@ enum FrameSpecimenData {
 /// blocks' `ColorRole` colours follow the column's colour scheme.
 struct FrameSpecimenColumns<Content: View>: View {
     @ViewBuilder var content: Content
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.materialLook) private var look
 
+    /// One column at the full width, in the appearance it is shown in: each shot (`-dark`, `-light`, `-ic`) is one case, and
+    /// nothing is cut at the right edge as two side-by-side columns were.
     var body: some View {
-        HStack(alignment: .top, spacing: SpaceRole.step16) {
-            column(.dark)
-            column(.light)
-        }
-    }
-
-    private func column(_ scheme: ColorScheme) -> some View {
         VStack(alignment: .leading, spacing: SpaceRole.step16) {
-            Text(scheme == .dark ? "Dark" : "Light").typeRole(.pageTitle).foregroundStyle(ColorRole.ink)
+            Text("\(colorScheme == .dark ? "Dark" : "Light") · \(look == .glass ? "Glass" : "Solid")\(ColorRoleValue.increasesContrast ? " · Increase Contrast" : "")")
+                .typeRole(.pageTitle)
+                .foregroundStyle(ColorRole.ink)
             content
         }
         .padding(SpaceRole.step24)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(ColorRole.canvasSurface)
-        .environment(\.colorScheme, scheme)
     }
 }
 

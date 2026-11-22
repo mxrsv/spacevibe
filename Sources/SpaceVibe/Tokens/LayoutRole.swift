@@ -32,6 +32,8 @@ enum SpaceRole {
     static let emptyStateTop: CGFloat = 72
     /// Below this window width the inspector is an overlay that covers the list (RD-R13).
     static let inspectorOverlayBelowWindowWidth: CGFloat = 1100
+    /// The Glass sidebar's inset from the window edge; 26 = 18 + 8, so its corners are concentric with the window's.
+    static func sidebarInset(_ look: MaterialLook) -> CGFloat { look == .glass ? step8 : 0 }
 }
 
 /// The trailing inspector's width at any window width from `SpaceRole.inspectorOverlayBelowWindowWidth` up: `wide` on the
@@ -62,11 +64,8 @@ enum RadiusRole {
     static let steps: [CornerRole] = [.radius(step4), .radius(step6), .radius(step8), .radius(step10), .radius(step14),
                                       .radius(step18), .capsule]
 
-    static func windowCorner(_ look: MaterialLook) -> CornerRole { .radius(look == .glass ? 26 : 12) }
-    /// The sidebar: a floating 18 in Glass, square and flush in Solid.
+    /// The sidebar: a floating 18 in Glass, square and flush in Solid. (The window's own corner, 26 / 12, is the system's.)
     static func sidebarCorner(_ look: MaterialLook) -> CornerRole { .radius(look == .glass ? step18 : 0) }
-    /// The Glass sidebar's inset from the window edge; 26 = 18 + 8, so the corners are concentric.
-    static func sidebarInset(_ look: MaterialLook) -> CGFloat { look == .glass ? 8 : 0 }
     static func groupCorner(_ look: MaterialLook) -> CornerRole { .radius(look == .glass ? step14 : step10) }
     /// Buttons, toolbar controls, segmented controls and fields.
     static func controlCorner(_ look: MaterialLook) -> CornerRole { look == .glass ? .capsule : .radius(step6) }
@@ -89,12 +88,11 @@ enum SizeRole {
     static let tableRowWrapped: CGFloat = 60
     static let listRow: CGFloat = 44
 
-    /// Segmented controls: regular 32 with 28 segments, small 26 with 22 segments, 2 inside the edge.
-    static let segmentedRegular: CGFloat = 32
-    static let segmentRegular: CGFloat = 28
-    static let segmentedSmall: CGFloat = 26
-    static let segmentSmall: CGFloat = 22
-    static let segmentedInset: CGFloat = 2
+    /// Segmented controls (DS-R5) are a regular or small control: the track is `controlRegular` or `controlSmall`, and its
+    /// segments sit `segmentedInset` inside the edge, so 28 and 22 high.
+    static let segmentedInset = SpaceRole.step2
+    static let segmentRegular = controlRegular - 2 * segmentedInset
+    static let segmentSmall = controlSmall - 2 * segmentedInset
 
     /// Meters (RD-R6): 4 in rows, 6 for the hero and Limits, 3 for progress. The pace tick is 2 wide and stands 2 past the
     /// meter above and below (the mock's `.mtr .tk`).
@@ -113,8 +111,42 @@ enum SizeRole {
     static let icon20: CGFloat = 20
     static let icon40: CGFloat = 40
     static let icons: [CGFloat] = [icon12, icon14, icon16, icon20, icon40]
-    static let logo16: CGFloat = 16
-    static let logo20: CGFloat = 20
+    /// A CLI logo is 16 or 20 (DS-R6): the same values as `icon16` and `icon20`, named so a logo can only take those two.
+    static let logo16 = icon16
+    static let logo20 = icon20
+
+    /// The icon sizes `SpaceVibeIcon(frame:size:)` takes, so a new-frame icon never reaches a v5 size (`IconSize`, `Metrics`):
+    /// each case is one of DS-R6's sizes. The case names match v5's so a call reads the same.
+    enum Icon: CaseIterable, Sendable {
+        /// A sidebar page icon, a pane tab: 20.
+        case row
+        /// Buttons, toolbar controls, fields: 16.
+        case control
+        /// Beside 12 pt text: 14.
+        case inline
+        /// A chevron, a check, a state glyph in a sidebar value: 12.
+        case small
+        /// An empty state's mark: 40.
+        case hero
+
+        var points: CGFloat {
+            switch self {
+            case .row: SizeRole.icon20
+            case .control: SizeRole.icon16
+            case .inline: SizeRole.icon14
+            case .small: SizeRole.icon12
+            case .hero: SizeRole.icon40
+            }
+        }
+    }
+}
+
+/// Stroke widths: the 1 pt edge (a hairline, a control's edge, the dashed Off tile), the checkbox's 1.4 edge (the mock's
+/// `inset 0 0 0 1.4px`) and the selected segment's 0.5 edge (`.seg b.on` `inset 0 0 0 .5px`).
+enum StrokeRole {
+    static let hairline: CGFloat = 1
+    static let checkboxEdge: CGFloat = 1.4
+    static let selectedSegmentEdge: CGFloat = 0.5
 }
 
 /// The only opacities a view uses (DS-R7).
@@ -126,16 +158,23 @@ enum OpacityRole {
     static let ghost = 0.35
 }
 
-/// The `float` shadow of in-content popovers in Solid (DS-R8), with `ColorRole.floatShadow`. The mock's CSS is
-/// `0 16px 34px -10px`: SwiftUI's radius is about half a CSS blur and has no spread.
+/// The one `float` shadow (DS-R8), with `ColorRole.floatShadow`: in-content popovers in Solid and the overlay inspector
+/// (`View.floatShadow(when:)`). The mock's CSS is `0 16px 34px -10px`; SwiftUI's radius is half a CSS blur and it has no
+/// spread, so the one offset is the CSS offset less the spread's 10, which keeps the shadow's visible lower edge where the
+/// mock draws it.
 enum ShadowRole {
-    static let floatBlur: CGFloat = 34
-    static let floatOffsetY: CGFloat = 16
-    static let floatSpread: CGFloat = -10
-    static var floatRadius: CGFloat { floatBlur / 2 }
+    static let floatRadius: CGFloat = 17
+    static let floatY: CGFloat = 6
     /// The light Off knob's shadow (`0 1px 2px`): blur 2, so radius 1, one point down.
     static let switchKnobRadius: CGFloat = 1
     static let switchKnobOffsetY: CGFloat = 1
+}
+
+extension View {
+    /// The one float shadow, or none when `shows` is false.
+    func floatShadow(when shows: Bool = true) -> some View {
+        shadow(color: shows ? ColorRole.floatShadow : .clear, radius: ShadowRole.floatRadius, y: ShadowRole.floatY)
+    }
 }
 
 /// The motion there is (DS-R9): the switch knob, a 1 pt tile lift on hover and a press scale. No loops, no shimmer, no
@@ -145,6 +184,8 @@ enum MotionRole {
     /// Hover and press on a tile.
     static let tileDuration: TimeInterval = 0.12
     static let tileLift: CGFloat = 1
+    /// A meter's fill growing to a new share (FE8 "filling bars"); at once with Reduce Motion.
+    static let meterFillDuration: TimeInterval = 0.12
     static let pressScale: CGFloat = 0.98
     /// A toast sliding in from the bottom edge (opacity only with Reduce Motion).
     static let toastSlideDuration: TimeInterval = 0.2

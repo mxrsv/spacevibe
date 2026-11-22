@@ -21,7 +21,7 @@ struct MenuTrigger: View {
                 case .icon(let icon): FrameGlyph(icon, side: SizeRole.icon14)
                 }
                 MiddleTruncatedText(title)
-                FrameGlyph(.caretDown, side: SizeRole.icon12, ink: ColorRole.ink3)
+                FrameGlyph(.caretDown, side: SizeRole.icon12, ink: ColorRole.controlQuietInk)
             }
         }
         .buttonStyle(PushButtonStyle(.control, isActive: isOpen))

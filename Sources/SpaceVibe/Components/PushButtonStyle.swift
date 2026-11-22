@@ -108,14 +108,14 @@ struct PushButtonStyle: ButtonStyle {
         case .control, .icon: ColorRole.ink
         case .quiet: hovered && enabled ? ColorRole.ink : ColorRole.ink3
         case .link: ColorRole.link
-        case .destructive: enabled ? ColorRole.criticalInk : ColorRole.ink3
+        case .destructive: enabled ? ColorRole.criticalInk : ColorRole.controlQuietInk
         }
     }
 
-    /// The 1 pt edge: a hairline on control fills, the red edge on the destructive tint, none on glass (the glass draws its
-    /// own rim), elsewhere or when disabled.
+    /// The 1 pt edge: a hairline on control fills, the red edge on the destructive tint; on glass only the Increase Contrast
+    /// edge (the glass draws its own rim otherwise, DS-R1); none elsewhere or on a disabled destructive.
     func edge(enabled: Bool, onGlass: Bool = false) -> Color? {
-        guard !onGlass else { return nil }
+        guard !onGlass else { return ColorRole.controlEdge }
         switch kind {
         case .control, .icon: return ColorRole.hairline
         case .destructive: return enabled ? ColorRole.destructiveTintEdge : nil
@@ -159,7 +159,7 @@ private struct PushButtonBody: View {
         }
         .frameGlass(in: corner, interactive: true, solid: .clear, when: onGlass)
         .overlay {
-            if let edge = style.edge(enabled: isEnabled, onGlass: onGlass) { shape.strokeBorder(edge, lineWidth: 1) }
+            if let edge = style.edge(enabled: isEnabled, onGlass: onGlass) { shape.strokeBorder(edge, lineWidth: StrokeRole.hairline) }
         }
         .opacity(isEnabled ? 1 : OpacityRole.disabled)
         .scaleEffect(MotionRole.scale(pressed: pressed, reduceMotion: reduceMotion))
@@ -193,11 +193,11 @@ struct PendingMark: View {
 
     var body: some View {
         ZStack {
-            Circle().stroke(onPrimary ? ColorRole.onPrimaryAction.opacity(OpacityRole.disabled) : ColorRole.ink3, lineWidth: SpaceRole.step2)
+            Circle().stroke(onPrimary ? ColorRole.onPrimaryTrack : ColorRole.ink3, lineWidth: SpaceRole.step2)
             Circle()
                 .trim(from: 0, to: 0.25)
                 .stroke(onPrimary ? ColorRole.onPrimaryAction : ColorRole.ink, style: StrokeStyle(lineWidth: SpaceRole.step2, lineCap: .round))
-                .rotationEffect(.degrees(-135))
+                .rotationEffect(BlockRole.pendingArcRotation)
         }
         .frame(width: SizeRole.icon12, height: SizeRole.icon12)
         .accessibilityHidden(true)

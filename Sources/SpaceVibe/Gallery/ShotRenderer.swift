@@ -162,14 +162,19 @@ enum ShotRenderer {
         (.designSystem, "design-system"), (.frameBlocks, "frame-blocks"), (.frameOverlays, "frame-overlays"),
     ]
 
-    /// `<part>-<look>-<appearance>.png` for each redesign part, in both looks (DS-R8) and appearances. Specimens hold
-    /// synthetic data only, so no synthetic home is needed.
+    /// `<part>-<look>-<appearance>.png` for each redesign part, in both looks (DS-R8) and appearances, and again with the
+    /// Increase Contrast values as `<part>-<look>-ic-<appearance>.png` (DS-R1). Specimens hold synthetic data only, so no
+    /// synthetic home is needed.
     private static func writeFrameGalleries(into directory: URL) throws {
-        for choice in [AppearanceChoice.dark, .light] {
-            for look in frameLooks {
-                for item in frameGalleryParts {
-                    try write(gallery(choice, part: item.part).frameLookRoot(forced: look), name: "\(item.name)-\(look)", choice: choice,
-                              to: directory, fullHeight: true)
+        defer { ColorRoleValue.shotIncreasesContrast = false }
+        for increased in [false, true] {
+            ColorRoleValue.shotIncreasesContrast = increased
+            for choice in [AppearanceChoice.dark, .light] {
+                for look in frameLooks {
+                    for item in frameGalleryParts {
+                        try write(gallery(choice, part: item.part).frameLookRoot(forced: look),
+                                  name: "\(item.name)-\(look)\(increased ? "-ic" : "")", choice: choice, to: directory, fullHeight: true)
+                    }
                 }
             }
         }

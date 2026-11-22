@@ -107,10 +107,18 @@ struct ColorRoleValue: Sendable, Equatable {
         let value = self
         return Color(nsColor: NSColor(name: nil) { appearance in
             let name = appearance.bestMatch(from: ColorRoleVariant.appearanceNames)
-            let variant = ColorRoleVariant(appearanceName: name,
-                                           systemIncreasesContrast: NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast)
+            let variant = ColorRoleVariant(appearanceName: name, systemIncreasesContrast: Self.increasesContrast)
             return value.swatch(variant).nsColor
         })
+    }
+
+    /// Set only by the headless shots (`ShotRenderer`), to draw the Increase Contrast values: SwiftUI resolves a dynamic
+    /// colour from the colour scheme alone, so the high-contrast appearance names never reach it in `ImageRenderer`.
+    nonisolated(unsafe) static var shotIncreasesContrast = false
+
+    /// Whether Increase Contrast values show: the system setting, or a shot that draws them.
+    static var increasesContrast: Bool {
+        shotIncreasesContrast || NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
     }
 
     /// One variant, whatever the appearance: for the specimen, which shows every variant side by side.
@@ -217,6 +225,22 @@ enum ColorRoleValues {
     static let dataSecondaryInk4 = dataInk4
     static let dataZeroInk = onHeat(ink3, increased: ink)
 
+    // RD48: a CLI logo keeps 3:1 on its tile. Where the heat step under it would not give that (the two hottest steps, and
+    // every step under Increase Contrast, whose greys sit near the logos' tones), the logo sits on a small disc of the group
+    // surface, like the success check; elsewhere the disc is clear.
+    private static let clearSwatch = ColorRoleValue.Swatch(hex: 0x000000, alpha: 0)
+    private static let logoDiscWhereNeeded = ColorRoleValue(dark: groupSurface.dark, light: groupSurface.light)
+    private static let logoDiscUnderIncreasedContrast = ColorRoleValue(dark: clearSwatch, light: clearSwatch,
+                                                                       darkIncreased: groupSurface.dark, lightIncreased: groupSurface.light)
+    static let tileLogoDisc1 = logoDiscUnderIncreasedContrast
+    static let tileLogoDisc2 = logoDiscUnderIncreasedContrast
+    static let tileLogoDisc3 = logoDiscWhereNeeded
+    static let tileLogoDisc4 = logoDiscWhereNeeded
+    /// The dashed edge of an Off tile (the mock's `ink3` at 55% over the group surface, as one opaque grey), `faint`'s 3:1
+    /// grey under Increase Contrast.
+    static let offTileEdge = ColorRoleValue.mix(ink3, share: (0.55, 0.55), into: groupSurface,
+                                                increased: (faint.darkIncreased.hex, faint.lightIncreased.hex))
+
     // Lines and fills over a surface. Under Increase Contrast the hairline is `faint`'s opaque grey.
     static let hairline: ColorRoleValue = {
         let line = ColorRoleValue.translucent(dark: 0x14, light: 0x17)
@@ -238,14 +262,38 @@ enum ColorRoleValues {
     /// fills are too strong for the quieter inks.
     static let controlSecondaryInk = ColorRoleValue(dark: ink2.dark, light: ink2.light,
                                                     darkIncreased: ink.darkIncreased, lightIncreased: ink.lightIncreased)
-    static let controlQuietInk = ColorRoleValue(dark: ink3.dark, light: ink3.light,
+    ///
+    /// Light is `#5B616F`, one step darker than `ink3`'s `#5C6270` (RB-F3, DS2's least value change, hue kept): an unchosen
+    /// segment's count on a hovered toolbar segment read 4.45:1 with `ink3`.
+    static let controlQuietInk = ColorRoleValue(dark: ink3.dark, light: .init(hex: 0x5B616F),
                                                 darkIncreased: ink.darkIncreased, lightIncreased: ink.lightIncreased)
+    /// The chosen segment of a segmented control: `selectionFill`, except dark under Increase Contrast, where `sel` over the
+    /// strong control fill put `ink` at 4.32:1 on a chosen small segment; white at 7 % there (DS2's least value change, RB-F3)
+    /// reads 4.51:1. Rows and the sidebar keep `selectionFill`.
+    static let chosenSegmentFill = ColorRoleValue(dark: selectionFill.dark, light: selectionFill.light,
+                                                  darkIncreased: .init(hex: 0xFFFFFF, alpha: Double(0x12) / 255),
+                                                  lightIncreased: selectionFill.lightIncreased)
+    /// The edge every control fill takes under Increase Contrast (DS-R1 "plus a `hair` outline"; the mock's
+    /// `[data-contrast=more] .ctl, .rb, .seg, .age, .dial`), clear otherwise. Solid controls that always draw a hairline keep
+    /// `hairline`, which is the same grey under Increase Contrast.
+    static let controlEdge = ColorRoleValue(dark: clearSwatch, light: clearSwatch,
+                                            darkIncreased: hairline.darkIncreased, lightIncreased: hairline.lightIncreased)
+    /// The pending ring's track on the primary (the mock's `.spin` on `.pri`): white at 42 %.
+    static let onPrimaryTrack = ColorRoleValue(dark: .init(hex: 0xFFFFFF, alpha: Double(0x6B) / 255),
+                                               light: .init(hex: 0xFFFFFF, alpha: Double(0x6B) / 255))
     /// Behind sheets and alerts.
     static let scrimFill = ColorRoleValue(dark: .init(hex: 0x000000, alpha: Double(0x80) / 255),
                                           light: .init(hex: 0x000000, alpha: Double(0x4D) / 255))
     /// The one `float` shadow of in-content popovers in Solid (DS-R8; `ShadowRole` holds its geometry).
     static let floatShadow = ColorRoleValue(dark: .init(hex: 0x000000, alpha: Double(0xAA) / 255),
                                             light: .init(hex: 0x000000, alpha: Double(0xAA) / 255))
+    /// The switch knob (the mock's `.swt::after`): white on the primary; off, `ink` in dark and white in light (design-system
+    /// "Inferred": the light Off knob is white like every light control).
+    static let switchKnobOn = onPrimaryAction
+    static let switchKnobOff = ColorRoleValue(dark: ink.dark, light: .init(hex: 0xFFFFFF))
+    /// Under the white Off knob in light only (`.swt:not(.on)::after` `0 1px 2px #0003`), so the knob still shows on the
+    /// `faint` track, at the disabled opacity too; clear in dark.
+    static let switchKnobOffShadow = ColorRoleValue(dark: clearSwatch, light: .init(hex: 0x000000, alpha: Double(0x33) / 255))
 
     /// The share of `stateCritical` in the destructive tint at rest, hovered and pressed, and in its 1 pt edge (the mock's
     /// `.dst` and `.rb.d`).
@@ -272,11 +320,16 @@ enum ColorRoleValues {
         ("dataInk3", "ink on data-3", dataInk3), ("dataInk4", "ink on data-4", dataInk4),
         ("dataSecondaryInk1", "ink2 on data-1", dataSecondaryInk1), ("dataSecondaryInk2", "ink2 on data-2", dataSecondaryInk2),
         ("dataSecondaryInk3", "name on data-3", dataSecondaryInk3), ("dataSecondaryInk4", "name on data-4", dataSecondaryInk4),
-        ("dataZeroInk", "zero count", dataZeroInk), ("hairline", "hair", hairline), ("zebraFill", "alt", zebraFill),
+        ("dataZeroInk", "zero count", dataZeroInk), ("tileLogoDisc1", "logo disc on data-1", tileLogoDisc1),
+        ("tileLogoDisc2", "logo disc on data-2", tileLogoDisc2), ("tileLogoDisc3", "logo disc on data-3", tileLogoDisc3),
+        ("tileLogoDisc4", "logo disc on data-4", tileLogoDisc4), ("offTileEdge", "off tile edge", offTileEdge),
+        ("hairline", "hair", hairline), ("zebraFill", "alt", zebraFill),
         ("hoverFill", "hover", hoverFill), ("selectionFill", "sel", selectionFill), ("controlFill", "ctl", controlFill),
         ("controlHoverFill", "ctl-h", controlHoverFill), ("controlPressedFill", "ctl-a", controlPressedFill),
         ("controlSecondaryInk", "ink2 on ctl", controlSecondaryInk), ("controlQuietInk", "ink3 on ctl", controlQuietInk),
-        ("scrimFill", "scrim", scrimFill), ("floatShadow", "sh-float", floatShadow),
+        ("controlEdge", "ctl edge (IC hair)", controlEdge), ("chosenSegmentFill", "chosen segment", chosenSegmentFill), ("onPrimaryTrack", "spin track on primary", onPrimaryTrack),
+        ("scrimFill", "scrim", scrimFill), ("floatShadow", "sh-float", floatShadow), ("switchKnobOn", "knob on", switchKnobOn),
+        ("switchKnobOff", "knob off", switchKnobOff), ("switchKnobOffShadow", "knob off shadow", switchKnobOffShadow),
     ]
 }
 
@@ -324,6 +377,11 @@ enum ColorRole {
     static let dataSecondaryInk3 = ColorRoleValues.dataSecondaryInk3.color
     static let dataSecondaryInk4 = ColorRoleValues.dataSecondaryInk4.color
     static let dataZeroInk = ColorRoleValues.dataZeroInk.color
+    static let tileLogoDisc1 = ColorRoleValues.tileLogoDisc1.color
+    static let tileLogoDisc2 = ColorRoleValues.tileLogoDisc2.color
+    static let tileLogoDisc3 = ColorRoleValues.tileLogoDisc3.color
+    static let tileLogoDisc4 = ColorRoleValues.tileLogoDisc4.color
+    static let offTileEdge = ColorRoleValues.offTileEdge.color
     static let hairline = ColorRoleValues.hairline.color
     static let zebraFill = ColorRoleValues.zebraFill.color
     static let hoverFill = ColorRoleValues.hoverFill.color
@@ -333,11 +391,14 @@ enum ColorRole {
     static let controlPressedFill = ColorRoleValues.controlPressedFill.color
     static let controlSecondaryInk = ColorRoleValues.controlSecondaryInk.color
     static let controlQuietInk = ColorRoleValues.controlQuietInk.color
+    static let controlEdge = ColorRoleValues.controlEdge.color
+    static let chosenSegmentFill = ColorRoleValues.chosenSegmentFill.color
+    static let onPrimaryTrack = ColorRoleValues.onPrimaryTrack.color
     static let scrimFill = ColorRoleValues.scrimFill.color
     static let floatShadow = ColorRoleValues.floatShadow.color
-    /// Under the white Off knob of a switch in light (the mock's `.swt:not(.on)::after` `0 1px 2px #0003`), so the knob still
-    /// shows on the `faint` track, at the disabled opacity too.
-    static let switchKnobShadow = Color.black.opacity(0.2)
+    static let switchKnobOn = ColorRoleValues.switchKnobOn.color
+    static let switchKnobOff = ColorRoleValues.switchKnobOff.color
+    static let switchKnobOffShadow = ColorRoleValues.switchKnobOffShadow.color
     /// The destructive button's ground and edge: `stateCritical` at its share, over whatever surface the button sits on.
     static let destructiveTint = stateCritical.opacity(ColorRoleValues.destructiveTintShare)
     static let destructiveTintHover = stateCritical.opacity(ColorRoleValues.destructiveTintHoverShare)

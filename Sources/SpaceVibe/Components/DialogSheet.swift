@@ -127,7 +127,7 @@ struct DialogListLine<Lead: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .opacity(isEnabled ? 1 : OpacityRole.dim)
+        .opacity(isEnabled ? 1 : OpacityRole.disabled)
         .accessibilityElement(children: .combine)
     }
 }

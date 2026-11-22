@@ -95,15 +95,28 @@ struct CLIToggleState: Hashable, Sendable {
         }
     }
 
-    /// How the logo is faded: off at `dim`, Not supported, unreadable and an off logo with nowhere to copy into at `ghost`, lit
-    /// at full.
-    enum Fade: Hashable, Sendable { case none, dim, ghost }
+    /// How the logo is faded, one opacity role per job (DS-R7, RD49), the same on a row's toggle and on a tile: lit at full,
+    /// off at `dim` (brightening to full under the pointer, as the press would make it), an off logo with nowhere to copy into
+    /// and an unreadable one at `disabled` (they take no press), Not supported at `ghost`.
+    enum Fade: Hashable, Sendable {
+        case none, dim, disabled, ghost
+
+        func opacity(hovered: Bool) -> Double {
+            switch self {
+            case .none: 1
+            case .dim: hovered ? 1 : OpacityRole.dim
+            case .disabled: OpacityRole.disabled
+            case .ghost: OpacityRole.ghost
+            }
+        }
+    }
 
     var fade: Fade {
         switch presence {
         case .on: .none
-        case .off: Self.cannotAdd(hold) ? .ghost : .dim
-        case .notSupported, .unreadable: .ghost
+        case .off: Self.cannotAdd(hold) ? .disabled : .dim
+        case .unreadable: .disabled
+        case .notSupported: .ghost
         }
     }
 

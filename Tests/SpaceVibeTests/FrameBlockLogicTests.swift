@@ -74,7 +74,41 @@ struct FrameBlockLogicTests {
         #expect(icon.fill(hovered: true, pressed: true, enabled: true, onGlass: true) == ColorRole.controlPressedFill)
         #expect(icon.fill(hovered: true, pressed: false, enabled: false, onGlass: true) == nil)
         #expect(icon.fill(hovered: false, pressed: false, enabled: true) == ColorRole.controlFill)
-        #expect(icon.edge(enabled: true, onGlass: true) == nil && icon.edge(enabled: true) == ColorRole.hairline)
+        // On glass the only edge is the Increase Contrast one (DS-R1: control fills take a `hair` outline under IC).
+        #expect(icon.edge(enabled: true, onGlass: true) == ColorRole.controlEdge && icon.edge(enabled: true) == ColorRole.hairline)
+        #expect(ColorRoleValues.controlEdge.dark.alpha == 0 && ColorRoleValues.controlEdge.light.alpha == 0)
+        #expect(ColorRoleValues.controlEdge.darkIncreased == ColorRoleValues.hairline.darkIncreased)
+        // A disabled destructive's label is the quiet control ink, which keeps its ratio on the fill under IC.
+        #expect(PushButtonStyle(.destructive).ink(hovered: false, enabled: false) == ColorRole.controlQuietInk)
+    }
+
+    @Test("one segmented control: the small size is the mock's `.age`/`.dial` in both looks, never on glass (DS-R8, RB-F3)")
+    func smallSegmentedControl() {
+        typealias S = FrameSegmentedControl.Size
+        for look in [MaterialLook.glass, .solid] {
+            #expect(S.small.trackCorner(look) == .radius(8) && S.small.segmentCorner(look) == .radius(6), "\(look)")
+            #expect(!S.small.isOnGlass(look), "\(look)")
+        }
+        #expect(S.regular.isOnGlass(.glass) && !S.regular.isOnGlass(.solid))
+        #expect(S.regular.trackCorner(.glass) == .capsule && S.regular.segmentCorner(.solid) == .radius(4))
+        #expect(S.small.typeRole(chosen: false) == .quiet && S.small.typeRole(chosen: true) == .quietMedium)
+        #expect(S.regular.typeRole(chosen: false) == .bodyMedium && S.regular.typeRole(chosen: true) == .bodyMedium)
+        #expect(FrameSegmentedControl.edge(size: .regular, look: .solid) == ColorRole.hairline)
+        #expect(FrameSegmentedControl.edge(size: .small, look: .solid) == ColorRole.controlEdge)
+        #expect(FrameSegmentedControl.edge(size: .regular, look: .glass) == ColorRole.controlEdge)
+        #expect(!FrameSegmentedControl.takesPress(pending: "ask") && FrameSegmentedControl.takesPress(pending: nil))
+        // The permission dial is that control: the same three steps, the pending rule shared.
+        #expect(PermissionDial.segments.map(\.id) == ["allow", "ask", "deny"])
+        #expect(!PermissionDial.takesPress(pending: .ask) && PermissionDial.takesPress(pending: nil))
+    }
+
+    @Test("RD49: one opacity per job; an Off logo fades the same on a row's toggle and on a tile")
+    func fadeRoles() {
+        typealias F = CLIToggleState.Fade
+        #expect(F.dim.opacity(hovered: false) == OpacityRole.dim && F.dim.opacity(hovered: true) == 1)
+        #expect(F.disabled.opacity(hovered: true) == OpacityRole.disabled && F.ghost.opacity(hovered: true) == OpacityRole.ghost)
+        #expect(CLIToggleState(cli: .codex, presence: .unreadable).fade == .disabled)
+        #expect(CLIToggleState(cli: .codex, presence: .off, hold: .noCopyTarget(folder: "skills")).fade == .disabled)
     }
 
     // MARK: Logo toggle states
@@ -342,8 +376,9 @@ struct FrameBlockLogicTests {
 
     @Test("the switch's light Off knob carries the shadow that keeps it visible, disabled too; nothing else does")
     func switchKnobShadow() {
-        #expect(FrameSwitch.knobHasShadow(isOn: false, dark: false))
-        #expect(!FrameSwitch.knobHasShadow(isOn: true, dark: false) && !FrameSwitch.knobHasShadow(isOn: false, dark: true))
+        // The shadow is a colour role, clear in dark, so the switch never branches on the theme (RB-F3).
+        #expect(FrameSwitch.knobShadow(isOn: false) == ColorRole.switchKnobOffShadow && FrameSwitch.knobShadow(isOn: true) == .clear)
+        #expect(ColorRoleValues.switchKnobOffShadow.light.alpha > 0 && ColorRoleValues.switchKnobOffShadow.dark.alpha == 0)
     }
 
     private func id(_ value: String, _ name: String? = nil) -> CLIIdentity { CLIIdentity(id: value, name: name ?? value) }

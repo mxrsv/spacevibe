@@ -25,7 +25,7 @@ enum CheckboxValue: Hashable, Sendable {
 
 /// The new frame's checkbox (DS-R10; the mock's `.cbw` and `.cb`): a 16 pt box inside a 28 pt cell, and the whole cell takes the
 /// click (RD-R16). Off: a 1.4 pt `ink3` edge that turns `ink` on hover. On and mixed: the primary fill with a white check or
-/// dash (RD-R9: the checkbox on-state is one of the primary's uses). Disabled at the ghost opacity. Lists draw it only where a
+/// dash (RD-R9: the checkbox on-state is one of the primary's uses). Disabled at the disabled opacity (RD49). Lists draw it only where a
 /// bulk action exists (RD40), and nothing is ticked at first (RD41).
 struct CheckboxCell: View {
     let value: CheckboxValue
@@ -51,9 +51,6 @@ struct CheckboxCell: View {
     }
 }
 
-/// The box's edge width (the mock's `inset 0 0 0 1.4px`).
-private let checkboxEdge: CGFloat = 1.4
-
 private struct CheckboxCellStyle: ButtonStyle {
     let value: CheckboxValue
     let isFocused: Bool
@@ -75,14 +72,14 @@ private struct CheckboxCellStyle: ButtonStyle {
             let box = RoundedRectangle(cornerRadius: RadiusRole.step4, style: .continuous)
             ZStack {
                 if value == .off {
-                    box.strokeBorder(hovered ? ColorRole.ink : ColorRole.ink3, lineWidth: checkboxEdge)
+                    box.strokeBorder(hovered ? ColorRole.ink : ColorRole.ink3, lineWidth: StrokeRole.checkboxEdge)
                 } else {
                     box.fill(configuration.isPressed ? ColorRole.primaryActionPressed : ColorRole.primaryAction)
                     SpaceVibeIcon(frame: value == .on ? .check : .minus, size: .small, ink: ColorRole.onPrimaryAction)
                 }
             }
             .frame(width: SizeRole.icon16, height: SizeRole.icon16)
-            .opacity(isEnabled ? 1 : OpacityRole.ghost)
+            .opacity(isEnabled ? 1 : OpacityRole.disabled)
             .frame(width: SizeRole.hitCell, height: SizeRole.hitCell)
             .contentShape(Rectangle())
             .focusBar(FocusBarRule.isShown(ownFocus: isFocused, specimen: specimen.contains(.focus)))

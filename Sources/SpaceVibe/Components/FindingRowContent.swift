@@ -10,7 +10,7 @@ enum FindingRowLayout {
     /// The action column (`172px`), fixed: wider buttons reach left over the evidence cell instead of growing it.
     static let actionsWidth = TableColumnWidth.action
     /// Below this list width the evidence column is left out (the mock's `mw >= 700`), so the name keeps its room.
-    static let evidenceFromListWidth: CGFloat = 700
+    static let evidenceFromListWidth = BlockRole.findingEvidenceFromListWidth
 
     static func showsEvidence(listWidth: CGFloat) -> Bool { listWidth >= evidenceFromListWidth }
 }

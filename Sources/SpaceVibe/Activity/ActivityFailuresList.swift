@@ -49,8 +49,7 @@ struct ActivityFailuresList: View {
                         .help(row.failure.reason)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                Text(verbatim: row.countText)
-                    .typeRole(.pageTitle.figures)
+                FigureText(row.countText, role: .pageTitle)
                     .foregroundStyle(ColorRole.ink)
                     .lineLimit(1)
                     .frame(width: TableColumnWidth.failureCount, alignment: .trailing)

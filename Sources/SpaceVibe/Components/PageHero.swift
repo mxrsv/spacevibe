@@ -44,7 +44,7 @@ struct PageHero: View {
         switch figure {
         case .value(let value, let unit):
             HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step6) {
-                Text(verbatim: value).typeRole(.hero).foregroundStyle(ColorRole.ink)
+                FigureText(value, role: .hero).foregroundStyle(ColorRole.ink)
                 if let unit {
                     Text(verbatim: unit).typeRole(.heroUnit).foregroundStyle(ColorRole.ink3)
                 }

@@ -128,13 +128,18 @@ enum IconSize: CaseIterable {
 /// (Phosphor Bold), `SpaceVibeIcon(frame: .warningFill)` (Phosphor Fill).
 struct SpaceVibeIcon: View {
     let source: any GlyphSource
-    var size: IconSize = .control
+    /// The drawn side: a v5 `IconSize`'s points, or a new-frame `SizeRole.Icon`'s (`init(frame:size:)` in `FrameGlyph.swift`).
+    let side: CGFloat
     var ink: Color?
     var label: String?
 
     init(source: any GlyphSource, size: IconSize = .control, ink: Color? = nil, label: String? = nil) {
+        self.init(source: source, side: size.points, ink: ink, label: label)
+    }
+
+    init(source: any GlyphSource, side: CGFloat, ink: Color? = nil, label: String? = nil) {
         self.source = source
-        self.size = size
+        self.side = side
         self.ink = ink
         self.label = label
     }
@@ -151,19 +156,14 @@ struct SpaceVibeIcon: View {
         self.init(source: glyph, size: size, ink: ink, label: label)
     }
 
-    /// An icon of the new frame, by the reference mock's name for it (`FrameIcon`).
-    init(frame icon: FrameIcon, size: IconSize = .control, ink: Color? = nil, label: String? = nil) {
-        self.init(source: icon.glyph, size: size, ink: ink, label: label)
-    }
-
     var body: some View {
         let drawn = ZStack {
             if source.hasLightLayer {
-                GlyphLayerView(source: source, layer: .light, side: size.points).opacity(source.layerOpacity)
+                GlyphLayerView(source: source, layer: .light, side: side).opacity(source.layerOpacity)
             }
-            GlyphLayerView(source: source, layer: .solid, side: size.points)
+            GlyphLayerView(source: source, layer: .solid, side: side)
         }
-        .frame(width: size.points, height: size.points)
+        .frame(width: side, height: side)
         Group {
             if let ink { drawn.foregroundStyle(ink) } else { drawn }
         }

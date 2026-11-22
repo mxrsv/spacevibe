@@ -37,9 +37,6 @@ enum FrameRole {
     /// The Settings item at the sidebar's foot: `.sbf button{border-radius:var(--r8)}` (style.css:82).
     static let sidebarFootCorner = CornerRole.radius(RadiusRole.step8)
 
-    /// The page help popover beside the title (RD32): `.hpop{width:300px;padding:var(--sp12)}` (style.css:567).
-    static let helpPopoverWidth: CGFloat = 300
-
     /// The Settings window's width (`style.css` `.sw{width:660px}`, style.css:290).
     static let settingsWindowWidth: CGFloat = 660
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// One CLI's logo in a Skill or Subagent row (DS-R10 "CLI logo toggle"; RD-R11; the mock's `.tgl`), beside v5's `LogoToggle`:
 /// the 20 pt logo in a 28 pt cell, every state of `CLIToggleState` drawn. A lit logo is the full logo (RD22: no badge on
-/// it); Never ran adds the amber dot on the owning CLI only; off is dim; Not supported is a dash with no button; a plugin's
+/// it); Never ran adds the amber dot on the owning CLI only; off is dim; pending shows the pending ring in the logo's place; Not supported is a dash with no button; a plugin's
 /// item carries a lock, a "via" logo a link, an unreadable CLI a `?`; the last copy has a bar under it and is not a toggle
 /// (D53). Only a toggle takes hover, press, the pointing hand and the keyboard; the rest are images with their state read out.
 /// While its write runs (`isPending`) the logo dims under the pending mark and a second press does nothing (FE-P: pending at
@@ -74,9 +74,8 @@ private struct CLIToggleStyle: ButtonStyle {
             let hovered = !pending && (hovering || specimen.contains(.hover))
             let pressed = !pending && (configuration.isPressed || specimen.contains(.press))
             let shape = RoundedRectangle(cornerRadius: RadiusRole.step8, style: .continuous)
-            CLIToggleFace(state: state, hovered: hovered)
-                .opacity(pending ? OpacityRole.dim : 1)
-                .overlay { if pending { PendingMark() } }
+            // Pending has its own look (RD49): the logo gives way to the pending ring in its place, nothing fades.
+            CLIToggleFace(state: state, hovered: hovered, isPending: pending)
                 .frame(width: SizeRole.hitCell, height: SizeRole.hitCell)
                 .background(shape.fill(pressed ? ColorRole.selectionFill : hovered ? ColorRole.hoverFill : .clear))
                 .contentShape(shape)
@@ -91,18 +90,22 @@ private struct CLIToggleStyle: ButtonStyle {
 private struct CLIToggleFace: View {
     let state: CLIToggleState
     let hovered: Bool
+    var isPending = false
 
     var body: some View {
         ZStack {
-            if state.drawsLogo {
+            if isPending {
+                PendingMark()
+            } else if state.drawsLogo {
                 CLILogo(state.cli, size: SizeRole.logo20)
-                    .opacity(Self.opacity(state.fade, hovered: hovered))
+                    .opacity(state.fade.opacity(hovered: hovered))
             } else {
-                // The mock's `.dash`: a short `faint` line at the disabled opacity, so the column stays aligned.
+                // The mock's `.dash`: a short `faint` line for Not supported, at the Not supported opacity (RD49), so the
+                // column stays aligned.
                 Capsule()
                     .fill(ColorRole.faint)
                     .frame(width: SpaceRole.step8, height: BlockRole.lastCopyBar)
-                    .opacity(OpacityRole.disabled)
+                    .opacity(OpacityRole.ghost)
             }
         }
         .frame(width: SizeRole.hitCell, height: SizeRole.hitCell)
@@ -135,15 +138,6 @@ private struct CLIToggleFace: View {
         case nil: EmptyView()
         }
     }
-
-    /// Off brightens to full on hover, as the press would make it.
-    static func opacity(_ fade: CLIToggleState.Fade, hovered: Bool) -> Double {
-        switch fade {
-        case .none: 1
-        case .dim: hovered ? 1 : OpacityRole.dim
-        case .ghost: OpacityRole.ghost
-        }
-    }
 }
 
 /// A row's logo toggles (RD-R11): one 28 pt cell per CLI in the fixed CLI order, the same slot on every row, wrapping at 5 per
@@ -171,13 +165,16 @@ struct CLIToggleStrip: View {
                 }
             }
         }
-        .frame(width: SizeRole.hitCell * CGFloat(Self.columns(states.count)), alignment: .leading)
+        .frame(width: Self.width(states.count), alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("CLIs")
     }
 
     /// Cells per line: the CLI count up to 5.
     static func columns(_ count: Int) -> Int { max(1, min(count, BlockRole.togglesPerLine)) }
+
+    /// The strip's width for `count` CLIs: one hit cell per column, so a table head above it lines up.
+    static func width(_ count: Int) -> CGFloat { SizeRole.hitCell * CGFloat(columns(count)) }
 
     /// The indexes on each line.
     static func lines(_ count: Int) -> [[Int]] {

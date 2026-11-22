@@ -42,7 +42,7 @@ struct GroupHead<Action: View>: View {
         case regular, quiet
 
         var title: TypeRole { self == .quiet ? .quietMedium : .bodyMedium }
-        var count: TypeRole { self == .quiet ? TypeRole.quiet.figures : TypeRole.bodyText.figures }
+        var count: TypeRole { self == .quiet ? TypeRole.quiet : TypeRole.bodyText }
         var insets: EdgeInsets {
             switch self {
             case .regular: EdgeInsets(top: SpaceRole.step16, leading: SpaceRole.step8, bottom: SpaceRole.step8, trailing: SpaceRole.step8)
@@ -81,8 +81,7 @@ struct GroupHead<Action: View>: View {
                     .foregroundStyle(ColorRole.ink2)
                     .lineLimit(1)
                 if let count {
-                    Text(verbatim: NumberWording.count(count))
-                        .typeRole(size.count)
+                    FigureText(NumberWording.count(count), role: size.count)
                         .foregroundStyle(ColorRole.ink3)
                         .lineLimit(1)
                         .fixedSize()

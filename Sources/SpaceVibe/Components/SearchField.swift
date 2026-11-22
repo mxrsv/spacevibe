@@ -41,29 +41,27 @@ struct SearchField: View {
         let shape = CornerRoleShape(RadiusRole.controlCorner(look))
         let isFocused = focused || specimen.contains(.focus)
         return HStack(spacing: SpaceRole.step6) {
-            FrameGlyph(.magnifyingGlass, side: SizeRole.icon16, ink: ColorRole.ink3)
-            TextField(Self.placeholder, text: $text)
-                .textFieldStyle(.plain)
-                .typeRole(.bodyText)
-                .foregroundStyle(ColorRole.ink)
+            FrameGlyph(.magnifyingGlass, side: SizeRole.icon16, ink: ColorRole.controlQuietInk)
+            FieldTextLine(placeholder: Self.placeholder, text: $text, role: .bodyText)
                 .focused($focused)
                 .focusEffectDisabled()
                 .accessibilityLabel(label)
             if text.isEmpty && !isFocused {
                 Text(verbatim: "\u{2318}F")
                     .typeRole(.quietMedium)
-                    .foregroundStyle(ColorRole.ink3)
+                    .foregroundStyle(ColorRole.controlQuietInk)
                     .accessibilityHidden(true)
             }
         }
         .padding(.horizontal, SpaceRole.step10)
         .frame(width: BlockRole.searchFieldWidth, height: SizeRole.controlRegular)
         // The toolbar controls' edge (the mock's `.ctl.srch`): the system glass in Glass, the control fill with a hairline in
-        // Solid; focused, the plain control fill in both, with the bar at its leading edge (`.srch:focus-within`).
+        // Solid; focused, the plain control fill in both, with the bar at its leading edge (`.srch:focus-within`). Under
+        // Increase Contrast every state takes the `hair` edge (DS-R1).
         .background { if isFocused { shape.fill(ColorRole.controlFill) } }
         .frameGlass(in: RadiusRole.controlCorner(look), interactive: true, solid: isFocused ? .clear : ColorRole.controlFill,
                     when: !isFocused)
-        .overlay { if look == .solid && !isFocused { shape.strokeBorder(ColorRole.hairline, lineWidth: 1) } }
+        .overlay { shape.strokeBorder(look == .solid && !isFocused ? ColorRole.hairline : ColorRole.controlEdge, lineWidth: StrokeRole.hairline) }
         .contentShape(shape)
         // The whole field takes the click and shows the text cursor, not only the text.
         .pointerStyle(.horizontalText)

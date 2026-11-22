@@ -46,8 +46,7 @@ struct WindowRow<Reset: View>: View {
     private var figure: some View {
         HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step6) {
             if let left {
-                Text(verbatim: WindowPace.percentText(left))
-                    .typeRole(.windowFigure)
+                FigureText(WindowPace.percentText(left), role: .windowFigure)
                     .foregroundStyle(isQuiet ? ColorRole.ink3 : ColorRole.ink)
                 Text("left").typeRole(.quiet).foregroundStyle(ColorRole.ink3)
             } else {
@@ -60,13 +59,6 @@ struct WindowRow<Reset: View>: View {
     }
 }
 
-/// The Window row's grid (the mock's `.win-row`): 96, 120, the rest, 200, 20 apart.
-enum WindowRowColumn {
-    static let name: CGFloat = 96
-    static let figure: CGFloat = 120
-    static let reset: CGFloat = 200
-    static let gap = SpaceRole.step20
-}
 
 /// A Window's meter (RD-R6, DS-R5; the mock's `.pace`): the 6 pt meter (`ShareMeter`, `hero` height) centred in a band as high
 /// as the Window's figure line, and the 2 pt `ink` time tick standing the band's whole height at the share of the Window's

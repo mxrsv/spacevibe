@@ -32,8 +32,8 @@ enum TableColumnWidth {
     static let sessionsBar: CGFloat = 48
     /// Last ran on Skills and Subagents: a day (`today`, `12 days ago`; `76px`).
     static let lastRan: CGFloat = 76
-    /// A table's header line (the mock's `.th`, 30 px).
-    static let headerHeight: CGFloat = 30
+    /// A table's header line: the hit cell's 28 (the mock's final `.th{height:var(--h-hit)}`, which overrides its 30).
+    static let headerHeight = SizeRole.hitCell
     /// The list width from which a table shows its wide columns (the mock's `ctx.wide`, `mw >= 940`): below it Hooks folds
     /// its Status column into the row's sub-line and Activity drops its Current tool and Age columns.
     static let wideListWidth: CGFloat = 940
@@ -50,4 +50,12 @@ enum TableColumnWidth {
     /// Clean: the band's figure beside the bar ("1.02 GB selected · 380 MB more in use", `min-width: 232px`), so the bar
     /// keeps one length whatever the figure says.
     static let cleanBandFigure: CGFloat = 232
+}
+
+/// The Window row's grid (the mock's `.win-row`): 96, 120, the rest, 200, 20 apart.
+enum WindowRowColumn {
+    static let name: CGFloat = 96
+    static let figure: CGFloat = 120
+    static let reset: CGFloat = 200
+    static let gap = SpaceRole.step20
 }

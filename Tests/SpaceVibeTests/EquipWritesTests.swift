@@ -269,7 +269,7 @@ struct EquipWritesTests {
         await model.store.reread([.loadout])
         let (row, codex) = try #require(toggle(state, "skill::changelog-writer", "codex"))
         #expect(codex.presence == .off && codex.hold == .noCopyTarget(folder: "skills"))
-        #expect(!codex.isToggle && codex.fade == .ghost && codex.tileFigure == NumberWording.missing)
+        #expect(!codex.isToggle && codex.fade == .disabled && codex.tileFigure == NumberWording.missing)
         #expect(codex.tooltip == "Codex: Off, no skills folder of its own to copy into")
         #expect(state.press(codex, on: row, from: .row) == nil)
         // A logo drawn before the readers map said so is judged again: no Add either.

@@ -92,9 +92,9 @@ struct KeyValueList: View {
     var keyColumn: CGFloat = KeyValueList.keyWidth
 
     /// The key column (`grid-template-columns: 84px …`).
-    static let keyWidth: CGFloat = 84
+    static let keyWidth = BlockRole.keyColumn
     /// A page's settings list, whose keys are longer ("Approval policy"; the mock's Rules `160px`).
-    static let wideKeyWidth: CGFloat = 160
+    static let wideKeyWidth = BlockRole.wideKeyColumn
 
     var body: some View {
         VStack(alignment: .leading, spacing: SpaceRole.step6) {
@@ -166,7 +166,7 @@ struct CommandBlock: View {
             .padding(.vertical, SpaceRole.step8)
             .padding(.horizontal, SpaceRole.step10)
             .background(shape.fill(ColorRole.zebraFill))
-            .overlay(shape.strokeBorder(ColorRole.hairline, lineWidth: 1))
+            .overlay(shape.strokeBorder(ColorRole.hairline, lineWidth: StrokeRole.hairline))
     }
 }
 

@@ -137,9 +137,22 @@ private struct CLITileFace: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: RadiusRole.step10, style: .continuous)
         VStack(spacing: SpaceRole.step2) {
-            CLILogo(state.cli, size: SizeRole.logo20)
-                .opacity(state.isOn ? 1 : OpacityRole.ghost)
-                .frame(height: SizeRole.logo20)
+            Group {
+                if isPending {
+                    // Pending has its own look (RD49): the ring in the logo's place, nothing fades.
+                    PendingMark()
+                } else {
+                    // RD48: on a step the logo would not read on, it sits on a group-surface disc (clear elsewhere).
+                    CLILogo(state.cli, size: SizeRole.logo20)
+                        .opacity(state.fade.opacity(hovered: hovered))
+                        .background {
+                            if state.isOn {
+                                Circle().fill(Self.logoDisc(step)).frame(width: BlockRole.tileLogoDisc, height: BlockRole.tileLogoDisc)
+                            }
+                        }
+                }
+            }
+            .frame(height: SizeRole.logo20)
             Text(state.cli.shortName)
                 .typeRole(.axisCaption)
                 .foregroundStyle(nameInk)
@@ -149,15 +162,13 @@ private struct CLITileFace: View {
                 FrameGlyph(.question, side: SizeRole.icon12, ink: figureInk)
                     .frame(height: figureRole.lineHeight)
             } else {
-                Text(verbatim: state.tileFigure)
-                    .typeRole(figureRole)
+                FigureText(state.tileFigure, role: figureRole)
                     .foregroundStyle(figureInk)
                     .lineLimit(1)
             }
         }
         .padding(.horizontal, SpaceRole.step2)
         .frame(width: width, height: BlockRole.tileHeight)
-        .opacity(isPending ? OpacityRole.dim : 1)
         .background { ground(shape) }
         .overlay {
             if hovered && state.isToggle { shape.fill(ColorRole.hoverFill) }
@@ -185,7 +196,7 @@ private struct CLITileFace: View {
         switch state.presence {
         case .on: shape.fill(Self.heatFill(step))
         case .off, .unreadable:
-            shape.strokeBorder(ColorRole.ink3.opacity(OpacityRole.dim), style: StrokeStyle(lineWidth: 1, dash: [SpaceRole.step4, SpaceRole.step2]))
+            shape.strokeBorder(ColorRole.offTileEdge, style: StrokeStyle(lineWidth: StrokeRole.hairline, dash: [SpaceRole.step4, SpaceRole.step2]))
         case .notSupported: shape.fill(ColorRole.zebraFill)
         }
     }
@@ -193,8 +204,7 @@ private struct CLITileFace: View {
     @ViewBuilder
     private var corner: some View {
         if isPending {
-            PendingMark()
-                .padding(SpaceRole.step4)
+            EmptyView()
         } else if state.badge == .lock || state.badge == .link {
             FrameGlyph(state.badge == .lock ? .lockSimple : .link, side: SizeRole.icon12, ink: ColorRole.ink3)
                 .padding(SpaceRole.step4)
@@ -203,6 +213,17 @@ private struct CLITileFace: View {
                 .frame(width: BlockRole.tileCheckDisc, height: BlockRole.tileCheckDisc)
                 .background(Circle().fill(ColorRole.groupSurface))
                 .padding(SpaceRole.step2)
+        }
+    }
+
+    /// The disc behind a lit logo on `step` (RD48): the group surface on the two hottest steps, and on every step under
+    /// Increase Contrast; clear otherwise.
+    static func logoDisc(_ step: HeatStep) -> Color {
+        switch step {
+        case .none: ColorRole.tileLogoDisc1
+        case .low: ColorRole.tileLogoDisc2
+        case .middle: ColorRole.tileLogoDisc3
+        case .high: ColorRole.tileLogoDisc4
         }
     }
 
@@ -218,8 +239,8 @@ private struct CLITileFace: View {
     private var isZero: Bool { state.presence == .on(.neverRan) || state.presence == .on(.sessions(0)) }
 
     private var figureRole: TypeRole {
-        if case .on(.sessions(let n)) = state.presence, n > 0 { return .bodyMedium.figures }
-        return state.presence == .off || isZero ? .axisCaption.figures : .bodyText.figures
+        if case .on(.sessions(let n)) = state.presence, n > 0 { return .bodyMedium }
+        return state.presence == .off || isZero ? .axisCaption : .bodyText
     }
 
     private var nameInk: Color {

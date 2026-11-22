@@ -75,7 +75,7 @@ struct RefusedWriteToast: View {
         .overlayPanelSurface()
         .overlay {
             CornerRoleShape(RadiusRole.popoverCorner(look))
-                .strokeBorder(isPartial ? ColorRole.hairline : ColorRole.destructiveTintEdge, lineWidth: 1)
+                .strokeBorder(isPartial ? ColorRole.hairline : ColorRole.destructiveTintEdge, lineWidth: StrokeRole.hairline)
         }
         .accessibilityElement(children: .contain)
         .onAppear { if !isShotRendering { ToastText.announce(shown, refused: true) } }

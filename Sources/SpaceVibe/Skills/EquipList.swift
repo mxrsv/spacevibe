@@ -213,7 +213,7 @@ struct EquipTableHeader: View {
                 .popover(isPresented: $isLegendOpen, arrowEdge: .bottom) {
                     CLILegend(clis: list.clis.map { CLIIdentity(id: $0.id, name: $0.name) }) { isLegendOpen = false }
                 }
-                .frame(width: SizeRole.hitCell * CGFloat(CLIToggleStrip.columns(list.clis.count)), alignment: .leading)
+                .frame(width: CLIToggleStrip.width(list.clis.count), alignment: .leading)
             HStack(spacing: SpaceRole.step4) {
                 Text("Sessions").foregroundStyle(ColorRole.ink)
                 FrameGlyph(.caretDown, side: SizeRole.icon12, ink: ColorRole.ink)

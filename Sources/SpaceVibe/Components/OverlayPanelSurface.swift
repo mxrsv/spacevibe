@@ -2,8 +2,8 @@ import SwiftUI
 
 extension View {
     /// The ground of every overlay block (toast, menu, popover, sheet, DS-R8; the mock's `.toast`, `.cpop`, `.tpop`,
-    /// `.alert`): in Glass the system glass at the popover corner, in Solid graphite `groupSurface` with a hairline edge; the
-    /// one `float` shadow in both. The look comes from the frame (`\.materialLook`, AR8), so no block takes it as a parameter.
+    /// `.alert`): in Glass the system glass at the popover corner, which draws its own shadow; in Solid graphite
+    /// `groupSurface` with a hairline edge and the one `float` shadow. The look comes from the frame (`\.materialLook`, AR8), so no block takes it as a parameter.
     /// `corner` overrides the popover corner.
     func overlayPanelSurface(corner: CornerRole? = nil) -> some View {
         modifier(OverlayPanelSurface(corner: corner))
@@ -24,10 +24,10 @@ private struct OverlayPanelSurface: ViewModifier {
             case .solid:
                 content
                     .background(shape.fill(ColorRole.groupSurface))
-                    .overlay(shape.strokeBorder(ColorRole.hairline, lineWidth: 1))
+                    .overlay(shape.strokeBorder(ColorRole.hairline, lineWidth: StrokeRole.hairline))
                     .clipShape(shape)
+                    .floatShadow()
             }
         }
-        .shadow(color: ColorRole.floatShadow, radius: ShadowRole.floatRadius, y: ShadowRole.floatOffsetY + ShadowRole.floatSpread)
     }
 }

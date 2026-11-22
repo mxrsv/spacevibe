@@ -47,17 +47,17 @@ struct ShareMeter: View {
         Group {
             if let share {
                 let fraction = Self.clamped(share)
-                Capsule()
+                CornerRoleShape(RadiusRole.meterCorner)
                     .fill(ColorRole.faint)
                     .overlay(alignment: .leading) {
                         GeometryReader { proxy in
-                            Capsule()
+                            CornerRoleShape(RadiusRole.meterCorner)
                                 .fill(fill)
                                 .frame(width: proxy.size.width * fraction)
-                                .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.tileDuration), value: fraction)
+                                .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.meterFillDuration), value: fraction)
                         }
                     }
-                    .clipShape(Capsule())
+                    .clipShape(CornerRoleShape(RadiusRole.meterCorner))
                     .overlay(alignment: .leading) {
                         if let paceTick {
                             GeometryReader { proxy in
@@ -70,7 +70,7 @@ struct ShareMeter: View {
                     }
             } else {
                 DashLine()
-                    .stroke(ColorRole.ink3, style: StrokeStyle(lineWidth: 1, dash: [SpaceRole.step4, SpaceRole.step4]))
+                    .stroke(ColorRole.ink3, style: StrokeStyle(lineWidth: StrokeRole.hairline, dash: [SpaceRole.step4, SpaceRole.step4]))
             }
         }
         .frame(height: height.points)

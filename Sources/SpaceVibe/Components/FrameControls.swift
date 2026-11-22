@@ -41,7 +41,7 @@ struct FrameSidebarItem: View {
                 if value != nil || mark != nil {
                     HStack(spacing: SpaceRole.step6) {
                         // DS-R2: sidebar values are figures, in SF Pro Rounded (the mock's `.nv .tv`).
-                        if let value { Text(value).typeRole(.quiet.figures).lineLimit(1) }
+                        if let value { FigureText(value, role: .quiet).lineLimit(1) }
                         if let mark { FrameSeverityMark(mark: mark) }
                     }
                     .foregroundStyle(isCurrent ? ColorRole.ink2 : ColorRole.ink3)

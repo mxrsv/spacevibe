@@ -23,11 +23,11 @@ struct RunsCell: View {
             switch value {
             case .count(let runs, let share):
                 ShareMeter(share: share, tone: .data)
-                figure(NumberWording.compactCount(runs), role: .quietMedium.figures, ink: ColorRole.ink)
+                figure(NumberWording.compactCount(runs), role: .quietMedium, ink: ColorRole.ink)
                     .help(NumberWording.plural(runs, "run"))
             case .zero:
                 ShareMeter(share: 0)
-                figure(NumberWording.count(0), role: .quiet.figures, ink: ColorRole.ink3)
+                figure(NumberWording.count(0), role: .quiet, ink: ColorRole.ink3)
             case .unmeasurable:
                 Text("Unmeasurable")
                     .typeRole(.quiet)
@@ -37,7 +37,7 @@ struct RunsCell: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             case .pending:
                 ShareMeter(share: nil)
-                figure("\u{2026}", role: .quiet.figures, ink: ColorRole.ink3)
+                figure("\u{2026}", role: .quiet, ink: ColorRole.ink3)
             }
         }
         .frame(width: TableColumnWidth.runs)
@@ -47,8 +47,7 @@ struct RunsCell: View {
     }
 
     private func figure(_ text: String, role: TypeRole, ink: Color) -> some View {
-        Text(verbatim: text)
-            .typeRole(role)
+        FigureText(text, role: role)
             .foregroundStyle(ink)
             .lineLimit(1)
             .frame(width: TableColumnWidth.runsFigure, alignment: .trailing)

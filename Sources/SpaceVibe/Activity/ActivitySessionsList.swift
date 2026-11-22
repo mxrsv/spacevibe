@@ -61,8 +61,7 @@ struct ActivitySessionsList: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if isWide {
                     toolCell(row).frame(width: TableColumnWidth.currentTool, alignment: .leading)
-                    Text(row.ageCell)
-                        .typeRole(.quiet.figures)
+                    FigureText(row.ageCell, role: .quiet)
                         .foregroundStyle(ColorRole.ink3)
                         .lineLimit(1)
                         .help(row.inspectorAge)

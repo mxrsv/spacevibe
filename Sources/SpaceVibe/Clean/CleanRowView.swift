@@ -76,8 +76,7 @@ struct CleanRowView: View {
     private var size: some View {
         switch row.size {
         case .bytes(let text):
-            Text(verbatim: text)
-                .typeRole(.bodyMedium.figures)
+            FigureText(text, role: .bodyMedium)
                 .foregroundStyle(ColorRole.ink)
                 .lineLimit(1)
         case .note(let text):

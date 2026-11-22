@@ -5,8 +5,13 @@ import SwiftUI
 /// a role with `.typeRole(_:)` and never build a font, set a weight or change letter-spacing themselves (AR6; v5 roles stay in
 /// `SpaceVibeType`).
 ///
-/// - Faces: SF Pro for text, SF Pro Rounded for figures only (RD6: the hero, a Window's figure, counts in tables and tiles,
-///   sizes, sidebar values; `figures` gives any role its rounded twin), SF Mono for paths, commands, rule text and Hook labels.
+/// - Faces: SF Pro for text, SF Pro Rounded for the digits of figures only (RD6, RD51: the hero, a Window's figure, counts in
+///   tables and tiles, sizes, sidebar values; `figures` gives any role its figure twin), SF Mono for paths, commands, rule text
+///   and Hook labels. Only the digits and their signs (`FigureText.roundedCharacters`, the mock's `SVDigits` unicode-range)
+///   are Rounded: a letter in a figure ("Clear", "M", "left") stays SF Pro. So a figure is drawn with `FigureText`, which sets
+///   the Rounded face on those runs; `.typeRole(_:)` alone sets SF Pro.
+/// - Line box: `.typeRole(_:)` gives single-line text its role's line height, as the mock's CSS `line-height` does, so a
+///   body line over a quiet line stacks 18 + 2 + 16.
 /// - Weights: 400, and 500 only through the roles that carry it (`hero`, `windowFigure`, `pageTitle`, `bodyMedium`,
 ///   `quietMedium`); 600 exists only as `sidebarLabel` (RD23). No accessor turns another role to 500, so a screen cannot.
 /// - Sizes are fixed points: the v5 Font size setting (`TypeScale`) does not move them.
@@ -102,9 +107,15 @@ struct TypeRole: Hashable, Sendable {
         face == .mono ? self : TypeRole(size: size, lineHeight: lineHeight, weight: weight, face: .figures)
     }
 
-    var font: Font { .system(size: size, weight: weight.font, design: face.design).monospacedDigit() }
+    /// The face letters take: SF Pro (a figure's letters too, RD51) or SF Mono.
+    var font: Font {
+        .system(size: size, weight: weight.font, design: face == .mono ? .monospaced : .default).monospacedDigit()
+    }
 
-    /// The AppKit font with the same face, for measuring.
+    /// The face a figure's digits take: SF Pro Rounded at the role's size and weight.
+    var digitFont: Font { .system(size: size, weight: weight.font, design: .rounded).monospacedDigit() }
+
+    /// The AppKit font with the same face, for measuring (a figure role measures with Rounded, its digits' face).
     var nsFont: NSFont {
         let base = NSFont.systemFont(ofSize: size, weight: weight.nsFont)
         switch face {
@@ -126,12 +137,65 @@ struct TypeRole: Hashable, Sendable {
     /// Half the line box's leading, above the first line and below the last, so one line of text fills `lineHeight` as the
     /// mock's CSS draws it.
     var halfLeading: CGFloat { max(0, (lineHeight - naturalLineHeight) / 2) }
+
+    /// The hero and a Window's figure never wrap, and their face is taller than their line box (40 / 44 draws 47): they take
+    /// exactly `lineHeight`. Every other role takes at least `lineHeight`, so a single line fills its box and a wrapped one
+    /// keeps its own height.
+    var isSingleLine: Bool { self == .hero || self == .windowFigure }
 }
 
 extension View {
-    /// The role's font and line spacing. The colour comes from a `ColorRole`; letter-spacing is never changed (RD-R5).
+    /// The role's font, line spacing and line box: a single line of text is `lineHeight` high (the mock's CSS `line-height`),
+    /// centred like CSS half-leading. On a container the box is a minimum, so a row of one line takes it once and a nested
+    /// role never adds to it. The colour comes from a `ColorRole`; letter-spacing is never changed (RD-R5).
     func typeRole(_ role: TypeRole) -> some View {
-        font(role.font).lineSpacing(role.lineSpacing)
+        font(role.font)
+            .lineSpacing(role.lineSpacing)
+            .frame(minHeight: role.isSingleLine ? nil : role.lineHeight)
+            .frame(height: role.isSingleLine ? role.lineHeight : nil)
+    }
+}
+
+/// A figure (RD6, RD51): its digits and their signs in SF Pro Rounded, every other character in SF Pro, at one role's size,
+/// weight and line box. "4.8M": `4.8` Rounded, `M` SF Pro; "Clear": all SF Pro. Built from an `AttributedString` whose digit
+/// runs carry the Rounded font, so the rest takes the role's own font from `.typeRole(_:)`. A mono role keeps SF Mono throughout.
+struct FigureText: View {
+    /// The characters the mock's `SVDigits` face covers (`unicode-range: U+0030-0039, U+0025, U+002E, U+002C, U+002B,
+    /// U+2212`): the digits, `%`, `.`, `,`, `+` and the minus sign.
+    static let roundedCharacters: Set<Character> = Set("0123456789%.,+\u{2212}")
+
+    let value: String
+    let role: TypeRole
+
+    init(_ value: String, role: TypeRole) {
+        self.value = value
+        self.role = role
+    }
+
+    var body: some View {
+        Text(Self.attributed(value, role: role)).typeRole(role)
+    }
+
+    /// The string with the Rounded font on each run of `roundedCharacters`. Pure, so the tests read the runs.
+    static func attributed(_ value: String, role: TypeRole) -> AttributedString {
+        var result = AttributedString()
+        var run = ""
+        var runIsDigits = false
+        func flush() {
+            guard !run.isEmpty else { return }
+            var piece = AttributedString(run)
+            if runIsDigits && role.face != .mono { piece.font = role.digitFont }
+            result.append(piece)
+            run = ""
+        }
+        for character in value {
+            let isDigit = roundedCharacters.contains(character)
+            if isDigit != runIsDigits { flush() }
+            runIsDigits = isDigit
+            run.append(character)
+        }
+        flush()
+        return result
     }
 }
 

@@ -88,7 +88,7 @@ struct FrameToolbar: View {
             .typeRole(.quiet)
             .foregroundStyle(ColorRole.ink2)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(width: FrameRole.helpPopoverWidth, alignment: .leading)
+            .frame(width: BlockRole.popoverWidth, alignment: .leading)
             .padding(SpaceRole.step12)
             .accessibilityLabel(content.help)
     }

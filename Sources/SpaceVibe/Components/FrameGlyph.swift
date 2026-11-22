@@ -39,3 +39,11 @@ struct FrameGlyph: View {
         .accessibilityLabel(label ?? "")
     }
 }
+
+extension SpaceVibeIcon {
+    /// An icon of the new frame, by the reference mock's name for it (`FrameIcon`), at one of DS-R6's sizes: `SizeRole.Icon`,
+    /// never v5's `IconSize`, so a new-frame icon cannot reach a v5 metric.
+    init(frame icon: FrameIcon, size: SizeRole.Icon = .control, ink: Color? = nil, label: String? = nil) {
+        self.init(source: icon.glyph, side: size.points, ink: ink, label: label)
+    }
+}

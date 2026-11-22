@@ -108,7 +108,7 @@ struct FrameWindowSurface: View {
     @Environment(\.materialLook) private var look
 
     var body: some View {
-        FrameWindowShape(sidebarWidth: FrameRole.sidebarWidth(look), inset: hasSidebar ? RadiusRole.sidebarInset(look) : 0,
+        FrameWindowShape(sidebarWidth: FrameRole.sidebarWidth(look), inset: hasSidebar ? SpaceRole.sidebarInset(look) : 0,
                          corner: RadiusRole.sidebarCorner(look))
             .fill(ColorRole.canvasSurface, style: FillStyle(eoFill: true))
             .ignoresSafeArea()
@@ -178,7 +178,7 @@ private struct FrameSidebarSurface: ViewModifier {
         case .glass:
             content
                 .frameGlass(in: RadiusRole.sidebarCorner(look), solid: ColorRole.sidebarSurface)
-                .padding(RadiusRole.sidebarInset(look))
+                .padding(SpaceRole.sidebarInset(look))
         case .solid:
             content
                 .background(ColorRole.sidebarSurface)
@@ -207,7 +207,7 @@ private struct FrameInspectorSurface: ViewModifier {
 
     func body(content: Content) -> some View {
         let corner = RadiusRole.sidebarCorner(look)
-        let inset = RadiusRole.sidebarInset(look)
+        let inset = SpaceRole.sidebarInset(look)
         let ground = look == .glass ? ColorRole.groupSurface : ColorRole.canvasSurface
         content
             .background(ground, in: CornerRoleShape(corner))
@@ -217,7 +217,7 @@ private struct FrameInspectorSurface: ViewModifier {
             .overlay(alignment: .leading) {
                 if look == .solid && !overlay { FrameHairline(axis: .vertical) }
             }
-            .shadow(color: overlay ? ColorRole.floatShadow : .clear, radius: ShadowRole.floatRadius, y: ShadowRole.floatOffsetY)
+            .floatShadow(when: overlay)
             .padding([.top, .bottom, .trailing], inset)
     }
 }

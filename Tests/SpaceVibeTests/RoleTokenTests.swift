@@ -85,7 +85,8 @@ struct RoleTokenTests {
         let changed = Set(V.all.filter { $0.value.changesWithIncreasedContrast }.map(\.specName))
         #expect(changed == ["ink3", "faint", "data-1", "data-2", "data-3", "data-4", "data-bar", "hair", "ctl", "ctl-h", "ctl-a",
                             "ink on data-2", "ink on data-3", "ink on data-4", "ink2 on data-1", "ink2 on data-2", "name on data-3",
-                            "name on data-4", "zero count", "ink2 on ctl", "ink3 on ctl"])
+                            "name on data-4", "zero count", "ink2 on ctl", "ink3 on ctl", "logo disc on data-1", "logo disc on data-2",
+                            "off tile edge", "ctl edge (IC hair)", "chosen segment"])
     }
 
     @Test("the session inks are v5's, unchanged (SessionStateGlyph)")
@@ -141,21 +142,52 @@ struct RoleTokenTests {
         #expect(FramePage.allCases.filter { $0.inspectorWidth == .wide } == [.inbox, .skills, .subagents])
         #expect(SpaceRole.inspectorOverlayBelowWindowWidth == 1100)
         #expect(RadiusRole.steps == [.radius(4), .radius(6), .radius(8), .radius(10), .radius(14), .radius(18), .capsule])
-        #expect(RadiusRole.windowCorner(.glass) == .radius(26) && RadiusRole.windowCorner(.solid) == .radius(12))
         #expect(RadiusRole.sidebarCorner(.glass) == .radius(18) && RadiusRole.sidebarCorner(.solid) == .radius(0))
-        #expect(RadiusRole.sidebarInset(.glass) == 8 && RadiusRole.sidebarInset(.solid) == 0)
+        #expect(SpaceRole.sidebarInset(.glass) == 8 && SpaceRole.sidebarInset(.solid) == 0)
         #expect(RadiusRole.groupCorner(.glass) == .radius(14) && RadiusRole.groupCorner(.solid) == .radius(10))
         #expect(RadiusRole.controlCorner(.glass) == .capsule && RadiusRole.controlCorner(.solid) == .radius(6))
         #expect(RadiusRole.popoverCorner(.glass) == .radius(14) && RadiusRole.popoverCorner(.solid) == .radius(10))
         #expect([SizeRole.controlRegular, SizeRole.controlSmall, SizeRole.controlMini, SizeRole.hitCell] == [32, 26, 20, 28])
         #expect(SizeRole.minimumHitTarget == 24 && SizeRole.tableRow == 48 && SizeRole.tableRowWrapped == 60 && SizeRole.listRow == 44)
-        #expect([SizeRole.segmentedRegular, SizeRole.segmentRegular, SizeRole.segmentedSmall, SizeRole.segmentSmall] == [32, 28, 26, 22])
+        // A segmented control is a regular or small control; its segments sit 2 inside (DS-R5).
+        #expect([SizeRole.segmentRegular, SizeRole.segmentSmall] == [28, 22] && SizeRole.segmentedInset == 2)
         #expect([SizeRole.meterRow, SizeRole.meterHero, SizeRole.meterProgress, SizeRole.paceTickWidth] == [4, 6, 3, 2])
         #expect(SizeRole.focusBar == 3)
         #expect(SizeRole.icons == [12, 14, 16, 20, 40] && SizeRole.logo16 == 16 && SizeRole.logo20 == 20)
+        // RB-F3: the new frame's icon sizes are DS-R6's only; the badge glyph and the table head follow the scale.
+        #expect(Set(SizeRole.Icon.allCases.map(\.points)) == Set(SizeRole.icons))
+        #expect(SizeRole.icons.contains(BlockRole.toggleBadgeGlyph))
+        #expect(TableColumnWidth.headerHeight == 28 && StrokeRole.hairline == 1)
+        #expect(ShadowRole.floatRadius == 17 && ShadowRole.floatY == 6)
         #expect(OpacityRole.disabled == 0.42 && OpacityRole.dim == 0.55 && OpacityRole.ghost == 0.35)
         #expect(MotionRole.lift(reduceMotion: true) == 0 && MotionRole.lift(reduceMotion: false) == 1)
         #expect(MotionRole.scale(pressed: true, reduceMotion: true) == 1 && MotionRole.scale(pressed: true, reduceMotion: false) == 0.98)
+    }
+
+    @Test("RD51: a figure rounds its digits and their signs only; its letters keep the role's SF Pro")
+    func figureDigitsOnly() {
+        let runs = FigureText.attributed("4.8M left, 12%", role: .bodyText).runs.map { run in
+            (String(FigureText.attributed("4.8M left, 12%", role: .bodyText)[run.range].characters), run.font)
+        }
+        #expect(runs.map(\.0) == ["4.8", "M left", ",", " ", "12%"])
+        for (text, font) in runs {
+            let digits = text.allSatisfy { FigureText.roundedCharacters.contains($0) }
+            #expect((font != nil) == digits, "\(text)")
+            if digits { #expect(font == TypeRole.bodyText.digitFont) }
+        }
+        // A word in a figure is all SF Pro; a path in mono keeps SF Mono throughout.
+        #expect(FigureText.attributed("Clear", role: .hero).runs.allSatisfy { $0.font == nil })
+        #expect(FigureText.attributed("v1.2.3", role: .mono).runs.allSatisfy { $0.font == nil })
+        #expect(FigureText.roundedCharacters == Set("0123456789%.,+\u{2212}"))
+    }
+
+    @Test("typeRole gives single-line text its line box: at least the line height, the hero and a Window's figure exactly")
+    func lineBoxes() {
+        #expect(TypeRole.hero.isSingleLine && TypeRole.windowFigure.isSingleLine)
+        #expect(TypeRole.all.filter { $0.role.isSingleLine }.map(\.name) == ["hero", "windowFigure"])
+        // The faces draw a line shorter than the box except the hero's (40 pt Rounded draws 47 in a 44 box).
+        #expect(TypeRole.bodyText.naturalLineHeight < TypeRole.bodyText.lineHeight)
+        #expect(TypeRole.hero.naturalLineHeight > TypeRole.hero.lineHeight)
     }
 
     // MARK: AR6 names

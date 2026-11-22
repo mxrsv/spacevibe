@@ -57,7 +57,16 @@ struct StyleBoundaryTests {
         // sets a hit area, draws nothing, and is allowed.
         ("shape", #"(?<!contentShape\()\b(Rectangle|RoundedRectangle|UnevenRoundedRectangle|Capsule|Circle|Ellipse)\s*\("#),
         ("shape paint", #"\.(stroke|strokeBorder|fill|clipShape)\s*\("#),
+        // RB-F3: colour by name and the deprecated radius modifier. `Color.clear` is structure (a spacer), not a colour.
+        ("radius modifier", #"\.cornerRadius\("#),
+        ("named colour", #"\bColor\.(?!clear\b)[a-z]\w*"#),
+        ("AppKit colour", #"\bNSColor\b"#),
+        ("system colour", systemColourPattern),
+        ("foreground colour", #"\.foregroundColor\("#),
     ]
+
+    /// A colour the system names (`.red`, `.secondary`, `.accentColor`) handed to a style modifier.
+    static let systemColourPattern = #"\.(foregroundStyle|tint|fill|stroke|strokeBorder|background|border)\(\s*\.(red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|white|gray|black|primary|secondary|tertiary|quaternary|accentColor)\b"#
 
     /// Empty since 2026-11-03 (design-language plan T6): no screen file may hold a style literal. A file that truly needs an
     /// exception gets an entry here with a comment saying why, and a reviewer has to agree. An old screen file that hits only
@@ -73,20 +82,41 @@ struct StyleBoundaryTests {
             .appendingPathComponent("Sources/SpaceVibe")
     }
 
-    /// Forbidden matches in one file. Whole-line comments are skipped; a trailing comment is skipped when the line has no
-    /// string literal (so `//` inside a string never hides code).
+    /// Forbidden matches in one file, over its logical lines (`logicalLines`).
     static func violations(in source: String) -> Int {
         let expressions = forbidden.map { try! NSRegularExpression(pattern: $0.pattern) }
         var count = 0
-        for rawLine in source.split(separator: "\n", omittingEmptySubsequences: false) {
-            let line = rawLine.trimmingCharacters(in: .whitespaces)
-            if line.hasPrefix("//") { continue }
-            var code = line
-            if !line.contains("\""), let comment = line.range(of: "//") { code = String(line[..<comment.lowerBound]) }
+        for code in logicalLines(source) {
             let range = NSRange(code.startIndex..., in: code)
             for expression in expressions { count += expression.numberOfMatches(in: code, range: range) }
         }
         return count
+    }
+
+    /// The code of a file as logical lines: string literals blanked (an interpolation inside one is blanked with it, so a
+    /// word in a label never counts), whole-line and trailing comments dropped, and a call whose parentheses stay open
+    /// joined with the lines that close it, so a literal on a continuation line (`.frame(\n width: 20)`) is judged with its
+    /// modifier (RB-F3).
+    static func logicalLines(_ source: String) -> [String] {
+        let literal = try! NSRegularExpression(pattern: #""(?:[^"\\]|\\.)*""#)
+        var lines: [String] = []
+        var pending = ""
+        var depth = 0
+        for rawLine in source.split(separator: "\n", omittingEmptySubsequences: false) {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("//") { continue }
+            var code = literal.stringByReplacingMatches(in: line, range: NSRange(line.startIndex..., in: line), withTemplate: #""""#)
+            if let comment = code.range(of: "//") { code = String(code[..<comment.lowerBound]) }
+            pending += pending.isEmpty ? code : " " + code
+            depth += code.filter { $0 == "(" }.count - code.filter { $0 == ")" }.count
+            if depth <= 0 {
+                lines.append(pending)
+                pending = ""
+                depth = 0
+            }
+        }
+        if !pending.isEmpty { lines.append(pending) }
+        return lines
     }
 
     static func measured() throws -> [String: Int] {
@@ -142,8 +172,8 @@ struct StyleBoundaryTests {
     /// checks `>= 1`, not an exact count.
     @Test("the V5-R8 patterns catch a screen that paints itself")
     func paintPatterns() {
-        #expect(Self.violations(in: "x.background(Color.red)") == 1)
-        #expect(Self.violations(in: "x.background(.red)") == 1)
+        #expect(Self.violations(in: "x.background(Color.red)") >= 1)
+        #expect(Self.violations(in: "x.background(.red)") >= 1)
         #expect(Self.violations(in: "x.background(.regularMaterial)") == 1)
         #expect(Self.violations(in: "x.background(RoundedRectangle(cornerRadius: Metrics.groupRadius).fill(tone))") >= 1)
         #expect(Self.violations(in: "x.background {") == 1)
@@ -198,6 +228,73 @@ struct StyleBoundaryTests {
         #expect(Self.violations(in: "x.frame(idealWidth: 308)") == 1)
         #expect(Self.violations(in: "x.frame(width: SizeRole.hitCell, height: SizeRole.hitCell)") == 0)
     }
+
+    @Test("the RB-F3 patterns catch colours by name, the radius modifier and literals on continuation lines")
+    func namedColourPatterns() {
+        #expect(Self.violations(in: "x.foregroundStyle(Color.red)") == 1)
+        #expect(Self.violations(in: "x.foregroundStyle(.secondary)") == 1)
+        #expect(Self.violations(in: "x.tint(.accentColor)") == 1)
+        #expect(Self.violations(in: "x.foregroundColor(tone)") == 1)
+        #expect(Self.violations(in: "let c = NSColor.systemRed") == 1)
+        #expect(Self.violations(in: "x.cornerRadius(6)") == 1)
+        #expect(Self.violations(in: "Color.clear.frame(width: TableColumnWidth.glyph)") == 0)
+        #expect(Self.violations(in: "x.foregroundStyle(ColorRole.ink2)") == 0)
+        #expect(Self.violations(in: #"Text("Color.red")"#) == 0, "a word in a label never counts")
+        // A literal on a continuation line is judged with its modifier.
+        #expect(Self.violations(in: "x.frame(\n    width: 20,\n    alignment: .leading\n)") == 1)
+        #expect(Self.violations(in: "x.padding(\n    .horizontal, 12\n)") == 1)
+        #expect(Self.violations(in: "x.frame(\n    width: SizeRole.hitCell\n)") == 0)
+        #expect(Self.logicalLines("a(\n b,\n c)\nd()") == ["a( b, c)", "d()"])
+    }
+
+    @Test("the RB-F3 new-frame screen patterns catch motion, line spacing, layout arithmetic and figures through typeRole")
+    func newFrameScreenPatterns() {
+        func count(_ line: String) -> Int { Self.matches(of: Self.newFrameScreenOnly, in: line).count }
+        #expect(count("x.offset(x: 3)") == 1)
+        #expect(count("x.scaleEffect(MotionRole.pressScale)") == 1)
+        #expect(count("x.blur(radius: 2)") == 1)
+        #expect(count("x.rotationEffect(.degrees(90))") == 1)
+        #expect(count("Text(a).lineSpacing(4)") == 1)
+        #expect(count("x.frame(width: SpaceRole.step12 * 2)") == 1)
+        #expect(count("x.padding(4 + SpaceRole.step8)") == 1)
+        #expect(count("x.frame(height: FrameRole.toolbarHeight(look) - topInset)") == 1)
+        #expect(count("HStack(spacing: SpaceRole.step4 + SpaceRole.step2) {") == 1)
+        #expect(count("Text(n).typeRole(.quiet.figures)") == 1)
+        #expect(count("x.frame(width: CLIToggleStrip.width(list.clis.count), alignment: .leading)") == 0)
+        #expect(count("x.padding(.top, -SpaceRole.step2)") == 0)
+        #expect(count("HStack(spacing: SpaceRole.step4) {") == 0)
+        #expect(count("FigureText(n, role: .quiet)") == 0)
+        #expect(count("SpaceVibeIcon(frame: .x, size: IconSize.control)") == 0, "IconSize is an AR6 token, checked in v5Tokens")
+        #expect(Self.matches(of: Self.v5Tokens, in: "SpaceVibeIcon(frame: .x, size: IconSize.control)").count == 1)
+    }
+
+    @Test("the RB-F3 block patterns catch every style literal and pass tokens, halves and doubles")
+    func componentPatterns() {
+        func count(_ line: String) -> Int {
+            Self.matches(of: Self.componentLiterals, in: line, transform: Self.blankingHalves).count
+        }
+        for failing in [
+            "x.padding(.horizontal, 10)", "HStack(spacing: 8) {", "x.frame(width: 34, height: SizeRole.hitCell)",
+            "x.frame(height: BlockRole.toastMinHeight - 4)", "RoundedRectangle(cornerRadius: 6)", "x.strokeBorder(tone, lineWidth: 1)",
+            "StrokeStyle(lineWidth: StrokeRole.hairline, dash: [4, 2])", "x.opacity(0.55)", "x.offset(y: -1)", "x.scaleEffect(0.98)",
+            "x.blur(radius: 2)", "x.rotationEffect(.degrees(-135))", "x.shadow(color: tone, radius: 17, y: 6)",
+            "static let knob: CGFloat = 16", "let edge: CGFloat = 1.4", "let w = CGFloat(30)", "x.foregroundStyle(Color.red)",
+            "x.foregroundStyle(.secondary)", "let c = NSColor.labelColor", "Text(a).font(.body)", "Text(a).fontWeight(.bold)",
+            "x.cornerRadius(6)", "Text(a).lineSpacing(2)", "Text(a).tracking(0.2)", "x.frame(\n    width: 20\n)",
+        ] {
+            #expect(count(failing) >= 1, "\(failing)")
+        }
+        for passing in [
+            "x.padding(.horizontal, SpaceRole.step10)", "HStack(spacing: 0) {", "x.frame(width: SizeRole.hitCell * 2)",
+            "x.frame(height: BlockRole.toastMinHeight - 2 * SpaceRole.step8)", "x.padding(.top, discSide / 2 - ringWidth / 2)",
+            "x.strokeBorder(tone, lineWidth: StrokeRole.hairline)", "x.opacity(isOn ? 1 : 0)", "x.opacity(OpacityRole.dim)",
+            "x.offset(y: -MotionRole.lift(reduceMotion: reduce))", "x.shadow(color: c, radius: ShadowRole.floatRadius, y: ShadowRole.floatY)",
+            "static let knob = BlockRole.switchKnob", "Color.clear.frame(width: SizeRole.hitCell)", "Color(nsColor: tone)",
+            "x.trim(from: 0, to: 0.25)", "x.lineLimit(2)", #"Text("16 pt")"#,
+        ] {
+            #expect(count(passing) == 0, "\(passing)")
+        }
+    }
 }
 
 // MARK: - AR6: a new-frame view uses no v5 token
@@ -213,34 +310,78 @@ extension StyleBoundaryTests {
     /// and the v5 text modifiers. Appearance plumbing (`AppearanceStore`, `ThemeSetting`, `AppearanceChoice`,
     /// `FontSizeChoice`) is not a token. Matched in code with string literals blanked, so a word in a label never counts.
     static let v5Tokens: [(name: String, pattern: String)] = [
-        ("v5 token type", #"\b(Palette|PaletteValue|ColorValue|TabChipAlpha|Metrics|Space|Rhythm|SpaceVibeType|TextTone|TypeScale|InterFont)\b"#),
+        // `IconSize` is v5's icon scale (RB-F3): a new-frame icon takes `SizeRole.Icon` or `FrameGlyph(side:)`.
+        ("v5 token type", #"\b(Palette|PaletteValue|ColorValue|TabChipAlpha|Metrics|Space|Rhythm|SpaceVibeType|TextTone|TypeScale|InterFont|IconSize)\b"#),
         ("v5 text modifier", #"\.(spaceVibeText|lineBox)\("#),
         ("v5 colour initializer", #"\bColor\(light:"#),
     ]
 
     /// In a new-frame screen file the type comes from `TypeRole` only: no weight, design or digit style of its own (RD23 keeps
     /// 600 for sidebar labels, RD6 keeps Rounded for figures).
+    ///
+    /// RB-F3: no motion or line spacing of its own (`MotionRole` and `TypeRole` belong to blocks), no arithmetic inside a
+    /// layout modifier (a computed metric is a token or a block's function), and a figure goes through `FigureText`, never
+    /// `.typeRole(<role>.figures)`, which would round no digit (RD51).
     static let newFrameScreenOnly: [(name: String, pattern: String)] = [
         ("font styling", #"\.(fontWeight|fontDesign|fontWidth|monospacedDigit|bold|italic)\("#),
+        ("motion or line spacing", #"\.(offset|scaleEffect|blur|rotationEffect|lineSpacing)\("#),
+        ("layout arithmetic", #"\.(padding|frame|offset)\((?:[^()]|\([^()]*\))*?(?:[\w\]]|\([^()]*\))\s*(?:[*/+]|-(?!>))\s*[\w(.]"#),
+        ("spacing arithmetic", #"spacing:\s*[^,(){}]*?[\w)\]]\s*(?:[*/+]|-(?!>))\s*[\w(.]"#),
+        ("figure through typeRole", #"\.typeRole\([^)]*\.figures"#),
     ]
+
+    /// RB-F3: what a new-frame block in `Components/` may not hold either. Blocks compose the design system's tokens; a
+    /// number that sizes, spaces, rounds, strokes, fades, moves or shadows something is a token in `Tokens/` (`SizeRole`,
+    /// `BlockRole`, `StrokeRole`, `TableColumnWidth`…). Halving and doubling (`/ 2`, `2 *`) are geometry, not values, and
+    /// pass. The generated icon data (`*IconData.swift`) is the generator's and is skipped.
+    static let componentLiterals: [(name: String, pattern: String)] = {
+        let number = #"(?<![\w.])(?:0?\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(?:\.[0-9]+)?)(?![\w.])"#
+        // Whole nested calls are stepped over, and the number may sit inside the last one (`.degrees(-135)`).
+        let args = #"(?:[^()]|\([^()]*\))*?(?:\([^()]*?)?"#
+        return [
+            ("system font", #"Font\.system|\.system\(size"#),
+            ("raw font", #"\.font\("#),
+            ("font styling", #"\.(fontWeight|fontDesign|fontWidth|bold|italic)\("#),
+            ("colour literal", #"\bColor\((?!nsColor:)"#),
+            ("named colour", #"\bColor\.(?!clear\b)[a-z]\w*"#),
+            ("AppKit colour", #"\bNSColor\b"#),
+            ("system colour", systemColourPattern),
+            ("radius modifier", #"\.cornerRadius\("#),
+            ("line spacing", #"\.lineSpacing\("#),
+            ("tracking", #"\.(tracking|kerning)\("#),
+            ("padding literal", #"\.padding\("# + args + number),
+            ("spacing literal", #"spacing:\s*"# + number),
+            ("frame literal", #"\.frame\("# + args + #"\b(width|height|minWidth|minHeight|idealWidth|idealHeight|maxWidth|maxHeight):\s*"# + number),
+            ("layout arithmetic literal", #"\.(padding|frame|offset)\("# + args + #"[*+\-]\s*"# + number),
+            ("radius literal", #"cornerRadius:\s*"# + number),
+            ("stroke literal", #"lineWidth:\s*"# + number),
+            ("dash literal", #"dash:\s*\[[^\]]*?"# + number),
+            ("opacity literal", #"\.opacity\([^)]*?(?<![A-Za-z0-9_.])0?\.[0-9]*[1-9]"#),
+            ("motion literal", #"\.(offset|scaleEffect|blur|rotationEffect)\("# + args + number),
+            ("shadow literal", #"\.shadow\("# + args + number),
+            ("size constant", #":\s*(CGFloat|Double|TimeInterval)\s*=\s*-?"# + number),
+            ("CGFloat literal", #"CGFloat\(\s*-?"# + number + #"\s*\)"#),
+        ]
+    }()
+
+    /// Halving and doubling are geometry: blanked before `componentLiterals` run.
+    static func blankingHalves(_ code: String) -> String {
+        code.replacingOccurrences(of: #"(/\s*2|\b2\s*\*|\*\s*2)(?![\w.])"#, with: " ", options: .regularExpression)
+    }
 
     /// True unless the file is in the frozen `v5Files` list.
     static func isNewFrame(folder: String, file: String) -> Bool {
         !(v5Files[folder]?.contains((file as NSString).deletingPathExtension) ?? false)
     }
 
-    /// Matches of `patterns` in code: string literals blanked first (an interpolation inside one is blanked with it), then
-    /// whole-line and trailing comments skipped.
-    static func matches(of patterns: [(name: String, pattern: String)], in source: String) -> [String] {
+    /// Matches of `patterns` in code, over its logical lines (`logicalLines`: literals blanked, comments dropped,
+    /// continuation lines joined). `transform` rewrites each line first (`blankingHalves` for blocks).
+    static func matches(of patterns: [(name: String, pattern: String)], in source: String,
+                        transform: (String) -> String = { $0 }) -> [String] {
         let expressions = patterns.map { ($0.name, try! NSRegularExpression(pattern: $0.pattern)) }
-        let literal = try! NSRegularExpression(pattern: #""(?:[^"\\]|\\.)*""#)
         var found: [String] = []
-        for rawLine in source.split(separator: "\n", omittingEmptySubsequences: false) {
-            let line = rawLine.trimmingCharacters(in: .whitespaces)
-            if line.hasPrefix("//") { continue }
-            let blanked = literal.stringByReplacingMatches(in: line, range: NSRange(line.startIndex..., in: line), withTemplate: #""""#)
-            var code = blanked
-            if let comment = blanked.range(of: "//") { code = String(blanked[..<comment.lowerBound]) }
+        for line in logicalLines(source) {
+            let code = transform(line)
             let range = NSRange(code.startIndex..., in: code)
             for (name, expression) in expressions {
                 for match in expression.matches(in: code, range: range) {
@@ -266,6 +407,24 @@ extension StyleBoundaryTests {
                         + "\(uses.joined(separator: ", ")). Use ColorRole, TypeRole, SpaceRole, RadiusRole, SizeRole, OpacityRole, "
                         + "ShadowRole or MotionRole instead (AR6).")
                 }
+            }
+        }
+        #expect(problems.isEmpty, "\(problems.joined(separator: "\n"))")
+    }
+
+    @Test("a new-frame block holds no style literal (RB-F3)")
+    func newFrameComponentsHoldNoLiterals() throws {
+        let directory = Self.appSources.appendingPathComponent("Components")
+        let names = try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted()
+        #expect(names.contains("PushButtonStyle.swift"), "found no block sources under \(directory.path)")
+        var problems: [String] = []
+        for name in names where name.hasSuffix(".swift") && !name.hasSuffix("IconData.swift")
+            && Self.isNewFrame(folder: "Components", file: name) {
+            let source = try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8)
+            let uses = Self.matches(of: Self.componentLiterals, in: source, transform: Self.blankingHalves)
+            if !uses.isEmpty {
+                problems.append("Components/\(name) is a new-frame block and holds \(uses.joined(separator: ", ")). Name the value in "
+                    + "Tokens/ (SizeRole, BlockRole, StrokeRole, TableColumnWidth…) and use the name.")
             }
         }
         #expect(problems.isEmpty, "\(problems.joined(separator: "\n"))")

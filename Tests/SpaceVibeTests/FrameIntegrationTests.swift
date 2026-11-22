@@ -193,7 +193,7 @@ struct FrameIntegrationTests {
     @Test("the tile grid fits the 336 inspector at every CLI count, Glass and Solid, tiles at 72 while they fit")
     func tileGridWidths() {
         for look in [MaterialLook.glass, .solid] {
-            let content = InspectorWidth.wide.points - RadiusRole.sidebarInset(look) - 2 * SpaceRole.step16
+            let content = InspectorWidth.wide.points - SpaceRole.sidebarInset(look) - 2 * SpaceRole.step16
             for count in 1...12 {
                 let width = CLITileGridLayout.width(count, available: content)
                 #expect(width <= content, "\(count) CLIs need \(width) in \(content) (\(look))")

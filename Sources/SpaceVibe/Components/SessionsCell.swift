@@ -23,10 +23,10 @@ struct SessionsCell: View {
             switch value {
             case .count(let sessions, let share, let floor):
                 ShareMeter(share: share, tone: .data).frame(width: TableColumnWidth.sessionsBar)
-                figure(NumberWording.compactCount(sessions) + (floor ? "+?" : ""), role: .quietMedium.figures, ink: ColorRole.ink)
+                figure(NumberWording.compactCount(sessions) + (floor ? "+?" : ""), role: .quietMedium, ink: ColorRole.ink)
             case .zero(let floor):
                 ShareMeter(share: 0).frame(width: TableColumnWidth.sessionsBar)
-                figure(NumberWording.count(0) + (floor ? "+?" : ""), role: .quiet.figures, ink: ColorRole.ink3)
+                figure(NumberWording.count(0) + (floor ? "+?" : ""), role: .quiet, ink: ColorRole.ink3)
             case .pending:
                 // The mock's `.sk` over the whole cell: nothing is counted yet, so no bar and no figure.
                 SkeletonLine(.long)
@@ -40,8 +40,7 @@ struct SessionsCell: View {
     }
 
     private func figure(_ text: String, role: TypeRole, ink: Color) -> some View {
-        Text(verbatim: text)
-            .typeRole(role)
+        FigureText(text, role: role)
             .foregroundStyle(ink)
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .trailing)

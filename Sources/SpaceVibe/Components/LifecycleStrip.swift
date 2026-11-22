@@ -113,11 +113,10 @@ struct LifecycleRowLayout: Layout {
     }
 }
 
-/// The disc's side and ring (the mock's `.nd .pt`: 22 px, a 2 px ring).
-private let discSide: CGFloat = 22
-private let ringWidth: CGFloat = 2
-/// The badge disc on a marked node (the mock's `.ndb`: 14 px, 7 px past the disc's corner).
-private let badgeOffset: CGFloat = 7
+/// The disc's side and ring, and its badge's offset (`BlockRole.lifecycleDisc`, `lifecycleRing`, `lifecycleBadgeOffset`).
+private let discSide = BlockRole.lifecycleDisc
+private let ringWidth = BlockRole.lifecycleRing
+private let badgeOffset = BlockRole.lifecycleBadgeOffset
 
 private struct LifecycleNodeButton: View {
     let node: LifecycleNode
@@ -186,9 +185,9 @@ private struct LifecycleNodeStyle: ButtonStyle {
         }
 
         private var halfLine: some View {
+            // The connector is a track: `faint` at full (RD49 keeps `dim` for an off logo).
             Rectangle()
                 .fill(ColorRole.faint)
-                .opacity(OpacityRole.dim)
                 .frame(maxWidth: .infinity)
                 .frame(height: ringWidth)
         }
@@ -197,8 +196,7 @@ private struct LifecycleNodeStyle: ButtonStyle {
             ZStack {
                 Circle().fill(isChosen ? ColorRole.ink : ColorRole.canvasSurface)
                 if !isChosen { Circle().strokeBorder(ring, lineWidth: ringWidth) }
-                Text(verbatim: NumberWording.count(node.count))
-                    .typeRole(.quietMedium.figures)
+                FigureText(NumberWording.count(node.count), role: .quietMedium)
                     .foregroundStyle(isChosen ? ColorRole.canvasSurface : figureInk)
                     .lineLimit(1)
             }

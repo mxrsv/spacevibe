@@ -11,9 +11,9 @@ import SwiftUI
 /// The whole switch is the hit area; the row beside it carries the visible name, and `label` is what VoiceOver reads with
 /// the switch's state.
 struct FrameSwitch: View {
-    static let trackWidth: CGFloat = 34
-    static let trackHeight: CGFloat = 20
-    static let knob: CGFloat = 16
+    static let trackWidth = BlockRole.switchTrackWidth
+    static let trackHeight = BlockRole.switchTrackHeight
+    static let knob = BlockRole.switchKnob
 
     let label: String
     let isOn: Bool
@@ -21,7 +21,6 @@ struct FrameSwitch: View {
 
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorScheme) private var colorScheme
     @FocusState private var isFocused: Bool
 
     init(_ label: String, isOn: Bool, toggle: @escaping () -> Void) {
@@ -37,10 +36,9 @@ struct FrameSwitch: View {
                 .frame(width: Self.trackWidth, height: Self.trackHeight)
                 .overlay(alignment: isOn ? .trailing : .leading) {
                     Circle()
-                        .fill(Self.knobInk(isOn: isOn, dark: colorScheme == .dark))
+                        .fill(Self.knobInk(isOn: isOn))
                         .frame(width: Self.knob, height: Self.knob)
-                        .shadow(color: Self.knobHasShadow(isOn: isOn, dark: colorScheme == .dark) ? ColorRole.switchKnobShadow : .clear,
-                                radius: ShadowRole.switchKnobRadius, y: ShadowRole.switchKnobOffsetY)
+                        .shadow(color: Self.knobShadow(isOn: isOn), radius: ShadowRole.switchKnobRadius, y: ShadowRole.switchKnobOffsetY)
                         .padding(SpaceRole.step2)
                 }
                 .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.switchKnobDuration), value: isOn)
@@ -58,12 +56,11 @@ struct FrameSwitch: View {
         .accessibilityAddTraits(.isToggle)
     }
 
-    /// White on the primary; off, `ink` in dark and white in light.
-    static func knobInk(isOn: Bool, dark: Bool) -> Color {
-        if isOn { return ColorRole.onPrimaryAction }
-        return dark ? ColorRole.ink : ColorRole.onPrimaryAction
-    }
+    /// The knob's role: white on the primary; off, `switchKnobOff` (`ink` in dark, white in light). The theme is the
+    /// colour role's, never a branch here.
+    static func knobInk(isOn: Bool) -> Color { isOn ? ColorRole.switchKnobOn : ColorRole.switchKnobOff }
 
-    /// Only the white Off knob in light needs the shadow to stand off the `faint` track.
-    static func knobHasShadow(isOn: Bool, dark: Bool) -> Bool { !isOn && !dark }
+    /// Only the Off knob has a shadow role, and it is clear in dark: the white light knob needs it to stand off the `faint`
+    /// track.
+    static func knobShadow(isOn: Bool) -> Color { isOn ? .clear : ColorRole.switchKnobOffShadow }
 }

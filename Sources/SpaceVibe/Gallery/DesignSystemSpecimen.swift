@@ -1,35 +1,23 @@
 import SwiftUI
 
 /// The redesign's "Tokens + base" specimen (RD-A3, DS-R12), tokens only: colour roles, data steps, the type ramp, space,
-/// radii, sizes, meters, the focus bar and opacity, dark beside light, with a switch for the Increase Contrast values. Every
-/// colour is drawn from `ColorRoleValues` at a fixed variant, so both themes and both contrasts show at once whatever the
-/// window's appearance. The blocks join it in RB-S4. Compare with the mock's page:
+/// the look's own metrics, radii, sizes, meters, the focus bar and opacity. It draws the variant it is shown in, so each
+/// shot is evidence for one case: the appearance (`colorScheme`), Increase Contrast (the system setting, or the shots'
+/// `ColorRoleValue.shotIncreasesContrast`) and the look (`\.materialLook`: Glass and Solid differ in the Look section). The
+/// blocks are in `FrameBlockSpecimens`. Compare with the mock's page at the same theme, look and contrast:
 /// `~/scratch/spacevibe-reins/2026-11-20-redesign-v2/mock.html?page=tokens`.
 struct DesignSystemSpecimen: View {
-    @State private var increased: Bool
-
-    init(increased: Bool = false) {
-        _increased = State(initialValue: increased)
-    }
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SpaceRole.step16) {
-            Toggle("Increase Contrast", isOn: $increased)
-                .toggleStyle(.checkbox)
-                .typeRole(.quiet)
-            HStack(alignment: .top, spacing: SpaceRole.step16) {
-                SpecimenColumn(variant: ColorRoleVariant(dark: true, increased: increased))
-                    .environment(\.colorScheme, .dark)
-                SpecimenColumn(variant: ColorRoleVariant(dark: false, increased: increased))
-                    .environment(\.colorScheme, .light)
-            }
-        }
+        SpecimenColumn(variant: ColorRoleVariant(dark: colorScheme == .dark, increased: ColorRoleValue.increasesContrast))
     }
 }
 
 /// One theme of the specimen.
 private struct SpecimenColumn: View {
     let variant: ColorRoleVariant
+    @Environment(\.materialLook) private var look
 
     private typealias V = ColorRoleValues
 
@@ -37,13 +25,16 @@ private struct SpecimenColumn: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: SpaceRole.step24) {
-            Text("\(variant.isDark ? "Dark" : "Light")\(variant.isIncreased ? " · Increase Contrast" : "")")
-                .typeRole(.windowFigure.figures)
+            Text("\(variant.isDark ? "Dark" : "Light") · \(look == .glass ? "Glass" : "Solid")\(variant.isIncreased ? " · Increase Contrast" : "")")
+                .typeRole(.windowFigure)
                 .foregroundStyle(c(V.ink))
             section("Colour", note: "Surfaces graphite; colour on state, data and one tone per category. Ratio on group.") { colours }
             section("Data", note: "Neutral steps on bars and tiles; Increase Contrast lifts every step to 3:1.") { data }
             section("Type", note: "SF Pro text, SF Pro Rounded figures, SF Mono paths. 400 and 500; 600 for sidebar labels.") { type }
-            section("Space", note: "Nine steps. Toolbar clearance 68 Glass / 64 Solid, title 36, empty state 72.") { space }
+            section("Space", note: "Nine steps. Title bar clearance 36, empty state 72.") { space }
+            section("Look", note: "What changes with the look: the toolbar, the sidebar, and the corners of groups, controls and popovers.") {
+                lookMetrics
+            }
             section("Radius", note: "Glass 26 / 18 / 14 / capsule, Solid 12 / 0 / 10 / 6 (window, sidebar, group, control).") { radius }
             section("Sizes", note: "Controls 32 / 26 / 20, hit cell 28, rows 48 table / 44 list, icons 12 to 40.") { sizes }
             section("Meters and focus", note: "Meters 4 / 6 / 3 with the 2 pt pace tick; focus is a 3 pt ink bar, never a ring.") {
@@ -114,7 +105,7 @@ private struct SpecimenColumn: View {
                     RoundedRectangle(cornerRadius: RadiusRole.step8)
                         .fill(c(value))
                         .frame(width: Layout.dataStep.width, height: Layout.dataStep.height)
-                        .overlay(label(name, .quietMedium.figures, ink: ink))
+                        .overlay(FigureText(name, role: .quietMedium).foregroundStyle(c(ink)))
                 }
             }
             meter(height: SizeRole.meterHero, fill: 0.62, tick: 0.48, ink: V.dataBar)
@@ -131,12 +122,21 @@ private struct SpecimenColumn: View {
                 HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step16) {
                     label("\(name) · \(specName) · \(Int(role.size))/\(Int(role.lineHeight))", .mono)
                         .frame(width: Layout.typeLabel, alignment: .leading)
-                    Text(sample(for: role)).typeRole(role).foregroundStyle(c(V.ink)).lineLimit(1)
+                    // Figure roles round their digits only (RD51): "3.42 GB" draws `GB` in SF Pro.
+                    Group {
+                        if role.face == .figures {
+                            FigureText(sample(for: role), role: role)
+                        } else {
+                            Text(sample(for: role)).typeRole(role)
+                        }
+                    }
+                    .foregroundStyle(c(V.ink))
+                    .lineLimit(1)
                 }
             }
             HStack(spacing: SpaceRole.step16) {
-                label("quietMedium.figures · .rc b", .mono).frame(width: Layout.typeLabel, alignment: .leading)
-                Text("1,204").typeRole(TypeRole.quietMedium.figures).foregroundStyle(c(V.ink))
+                label("FigureText · quietMedium · .rc b", .mono).frame(width: Layout.typeLabel, alignment: .leading)
+                FigureText("1,204 runs · 4.8M", role: .quietMedium).foregroundStyle(c(V.ink))
             }
         }
     }
@@ -149,7 +149,39 @@ private struct SpecimenColumn: View {
         }
     }
 
-    // MARK: Space, radius, sizes
+    // MARK: Space, look, radius, sizes
+
+    /// The look's metrics, drawn at their size: the toolbar strip and the sidebar item, and the group, control and popover
+    /// corners, with the content clearance and the sidebar width written out.
+    private var lookMetrics: some View {
+        VStack(alignment: .leading, spacing: SpaceRole.step12) {
+            HStack(alignment: .bottom, spacing: SpaceRole.step16) {
+                ForEach([("group", RadiusRole.groupCorner(look)), ("control", RadiusRole.controlCorner(look)),
+                         ("popover", RadiusRole.popoverCorner(look)), ("sidebar", RadiusRole.sidebarCorner(look)),
+                         ("sidebar item", FrameRole.sidebarItemCorner(look))], id: \.0) { name, corner in
+                    VStack(spacing: SpaceRole.step6) {
+                        CornerShape(corner: corner)
+                            .fill(c(V.controlFill))
+                            .overlay(CornerShape(corner: corner).strokeBorder(c(V.hairline)))
+                            .frame(width: Layout.lookTile.width, height: Layout.lookTile.height)
+                        label("\(name) \(corner.specimenName)")
+                    }
+                }
+            }
+            HStack(alignment: .bottom, spacing: SpaceRole.step16) {
+                VStack(alignment: .leading, spacing: SpaceRole.step6) {
+                    Rectangle().fill(c(V.controlFill)).frame(width: Layout.lookStrip, height: FrameRole.toolbarHeight(look))
+                    label("toolbar \(Int(FrameRole.toolbarHeight(look))) · content clears \(Int(SpaceRole.toolbarClearance(look)))")
+                }
+                VStack(alignment: .leading, spacing: SpaceRole.step6) {
+                    CornerShape(corner: FrameRole.sidebarItemCorner(look))
+                        .fill(c(V.selectionFill))
+                        .frame(width: Layout.lookStrip, height: FrameRole.sidebarItemHeight(look))
+                    label("sidebar item \(Int(FrameRole.sidebarItemHeight(look))) · sidebar \(Int(FrameRole.sidebarWidth(look))) wide, inset \(Int(SpaceRole.sidebarInset(look)))")
+                }
+            }
+        }
+    }
 
     private var space: some View {
         HStack(alignment: .bottom, spacing: SpaceRole.step16) {
@@ -251,7 +283,7 @@ private struct SpecimenColumn: View {
             VStack(spacing: SpaceRole.step6) {
                 RoundedRectangle(cornerRadius: RadiusRole.step10).fill(c(V.groupSurface))
                     .frame(width: Layout.floatTile.width, height: Layout.floatTile.height)
-                    .shadow(color: c(V.floatShadow), radius: ShadowRole.floatRadius, y: ShadowRole.floatOffsetY)
+                    .shadow(color: c(V.floatShadow), radius: ShadowRole.floatRadius, y: ShadowRole.floatY)
                 label("float")
             }
         }
@@ -266,6 +298,8 @@ private enum Layout {
     static let dataStep = CGSize(width: 56, height: 36)
     static let radiusTile = CGSize(width: 40, height: 28)
     static let floatTile = CGSize(width: 72, height: 40)
+    static let lookTile = CGSize(width: 64, height: 40)
+    static let lookStrip: CGFloat = 260
 }
 
 /// A `CornerRole` as a shape.
