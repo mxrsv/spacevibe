@@ -25,6 +25,17 @@ enum FrameRole {
     /// (RD-R17 Layout): `.dst.slot,.pri.slot,span.slot{min-width:196px;max-width:196px}` (style.css:523).
     static let toolbarSlotWidth: CGFloat = 196
 
+    /// The toolbar's trailing padding: `.tb{padding:12px 12px 0}` (style.css:89).
+    static let toolbarTrailingInset: CGFloat = SpaceRole.step12
+
+    /// The toolbar's trailing group, pinned to the window's right edge on every page (RD57): the search field (176) or its
+    /// folded icon button (32), the inspector button (32) and the slot (196), 8 apart (`.tb` gap). A page without a search or
+    /// an inspector keeps their places, so the group is this wide everywhere.
+    static func toolbarTrailingGroupWidth(searchFolds: Bool) -> CGFloat {
+        (searchFolds ? SizeRole.controlRegular : BlockRole.searchFieldWidth) + SpaceRole.step8 + SizeRole.controlRegular
+            + SpaceRole.step8 + toolbarSlotWidth
+    }
+
     /// One sidebar page item: `.nv{height:32px}` and `.desk[data-look=solid] .nv{height:30px}` (style.css:72-73).
     static func sidebarItemHeight(_ look: MaterialLook) -> CGFloat { look == .glass ? 32 : 30 }
 

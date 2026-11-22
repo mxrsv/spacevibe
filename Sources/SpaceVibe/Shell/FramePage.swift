@@ -100,10 +100,6 @@ enum FramePage: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Whether the toolbar keeps the 196 pt primary slot even when the page shows no button in it (the mock's empty
-    /// `span.slot`), so the controls before it never move when the button comes and goes (FE-L1). Limits has no slot.
-    var hasToolbarSlot: Bool { self != .limits }
-
     /// The inspector's width on this page: wide where it holds the CLI tile grid.
     var inspectorWidth: InspectorWidth {
         switch self {

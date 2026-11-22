@@ -19,9 +19,10 @@ struct CleanList: View {
         let actions = actions.using(toasts)
         SpaceVibeScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .bottom, spacing: SpaceRole.step24) {
+                // RD58: the hero stays at the header's top when the note beside it wraps (1000 pt).
+                PageHeader {
                     PageHero(page.hero, label: page.heroLabel)
-                        .fixedSize()
+                } band: {
                     if let move = page.moveBand {
                         CleanMovingBand(band: move, cancel: actions.cancelMove)
                     } else if page.showsBand {

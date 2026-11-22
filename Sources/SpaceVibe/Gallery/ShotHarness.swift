@@ -48,11 +48,11 @@ enum ShotHarness {
     /// A page state shot passes its own `content`, the matching `sidebarValues` and the `toasts` it has shown.
     static func frame(on page: FramePage, look: MaterialLook, choice: AppearanceChoice, env: AppEnvironment,
                       content: AppFrame.PageContent? = nil, sidebarValues: FrameSidebarValues? = nil,
-                      toasts: ToastCenter? = nil) -> some View {
+                      toasts: ToastCenter? = nil, width: CGFloat = ShotRenderer.size.width) -> some View {
         AppFrame(page: page, env: env, look: look, sidebarValues: sidebarValues,
                  content: content ?? { page, model in .region(page, model: model) })
             .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)),
                            toasts: toasts ?? ToastCenter(announce: false), env: env)
-            .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
+            .frame(width: width, height: ShotRenderer.size.height)
     }
 }
