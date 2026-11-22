@@ -8,14 +8,15 @@ struct WindowRow<Reset: View>: View {
     typealias Column = WindowRowColumn
 
     let name: String
-    /// Whole percent left; nil reads `?` Unmeasurable (a Window past its reset, never 0%).
-    let left: Int?
+    /// Share left, shown with one decimal (`WindowPace.percentText`, RD46); nil reads `?` Unmeasurable (a Window past its
+    /// reset, never 0%).
+    let left: Double?
     /// The figure is quiet: a reading too old to judge.
     var isQuiet = false
     let meter: WindowMeter
     @ViewBuilder var reset: Reset
 
-    init(name: String, left: Int?, isQuiet: Bool = false, meter: WindowMeter, @ViewBuilder reset: () -> Reset) {
+    init(name: String, left: Double?, isQuiet: Bool = false, meter: WindowMeter, @ViewBuilder reset: () -> Reset) {
         self.name = name
         self.left = left
         self.isQuiet = isQuiet
@@ -45,7 +46,7 @@ struct WindowRow<Reset: View>: View {
     private var figure: some View {
         HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step6) {
             if let left {
-                Text(verbatim: "\(NumberWording.count(left))%")
+                Text(verbatim: WindowPace.percentText(left))
                     .typeRole(.windowFigure)
                     .foregroundStyle(isQuiet ? ColorRole.ink3 : ColorRole.ink)
                 Text("left").typeRole(.quiet).foregroundStyle(ColorRole.ink3)

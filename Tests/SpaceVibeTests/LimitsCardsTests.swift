@@ -36,7 +36,7 @@ struct LimitsCardsTests {
         #expect(cards.unmeasurable.isEmpty)
         #expect(cards.failure == nil)
         #expect(cards.hero == .window(id: "codex:primary", left: 77, label: "Codex · 5-hour Window · using it faster than time passes"))
-        // AR3: the hero and the sidebar read the same Window and the same whole percent.
+        // AR3: the hero and the sidebar read the same Window and the same one-decimal percent.
         #expect(world.heroWindow?.id == "codex:primary")
         let sidebar = FrameSidebarValue(figure: world.figure(for: .limits, loading: [], failed: []), page: .limits)
         #expect(sidebar.text == "77% left")
@@ -52,6 +52,7 @@ struct LimitsCardsTests {
         let claude = try row(cards, "claude:five_hour")
         #expect(claude.name == "5-hour")
         #expect(claude.left == 38)
+        #expect(claude.resetTime == "6:12 PM")
         #expect(claude.tone == .plain)
         #expect(claude.countdownLead == LimitsCountdown.fiveHourLead)
         let left = try #require(claude.countdown(at: now))
@@ -64,12 +65,13 @@ struct LimitsCardsTests {
         #expect(codex.isBehind)
         #expect(codex.countdown(at: now) == nil)
         #expect(codex.reset.hasPrefix("Resets "))
-        #expect(codex.shownNote(at: now) == LimitsCards.Note(mark: .attention, text: "Faster than time · 4 h 6 min"))
+        #expect(codex.shownNote(at: now) == LimitsCards.Note(mark: .attention, text: "Faster than time · 4h 06m"))
 
         // A weekly Window outside the 1 h lead never counts; its note is the time to its reset.
         let weekly = try row(cards, "claude:seven_day")
         #expect(weekly.countdown(at: now) == nil)
-        #expect(weekly.shownNote(at: now) == LimitsCards.Note(mark: nil, text: "4 d 12 h"))
+        #expect(weekly.shownNote(at: now) == LimitsCards.Note(mark: nil, text: "4d 12h"))
+        #expect(weekly.reset == "Resets Tue 5:30 AM")
     }
 
     @Test("at the 24 h lead a weekly Window counts in H:MM:SS; at the default lead it does not (LC-R1, LC-R2)")
@@ -148,19 +150,21 @@ struct LimitsCardsTests {
         #expect(old.tone == .muted)
         #expect(old.isQuiet)
         #expect(!old.isBehind)
-        #expect(old.note == LimitsCards.Note(mark: .attention, text: "Reading is 7 hours old · 4 d 12 h"))
+        #expect(old.note == LimitsCards.Note(mark: .attention, text: "Reading is 7 hours old · 4d 12h"))
         let noLength = try row(cards, "claude:weekly")
         #expect(noLength.name == "Weekly · Fable")
         #expect(noLength.tick == nil)
-        #expect(noLength.note.text == "Reading is 7 hours old · no window length · 4 d 12 h")
+        #expect(noLength.note.text == "Reading is 7 hours old · no window length · 4d 12h")
+        #expect(noLength.left == 69.5)
+        #expect(cards.cards[0].source == "Status-line snapshot · 7 hours ago")
 
         let over = try row(cards, "codex:secondary")
         #expect(over.left == 0)
         #expect(over.tone == .critical)
-        #expect(over.note == LimitsCards.Note(mark: .critical, text: "Over by 4.5% · 3 d 8 h"))
+        #expect(over.note == LimitsCards.Note(mark: .critical, text: "Over by 4.5% · 3d 8h"))
         let low = try row(cards, "codex:primary")
         #expect(low.tone == .critical)
-        #expect(low.note == LimitsCards.Note(mark: .critical, text: "Almost used up · 4 h 6 min"))
+        #expect(low.note == LimitsCards.Note(mark: .critical, text: "Almost used up · 4h 06m"))
         #expect(cards.hero == .window(id: "codex:secondary", left: 0, label: "Codex · Weekly Window · over the limit"))
         #expect(cards.cards[1].plan == "Business (annual, 150 seats, invoiced through the reseller)")
     }
@@ -182,7 +186,7 @@ struct LimitsCardsTests {
         let (quiet, _) = self.cards(paceOnly)
         let row = try row(quiet, "claude:opus")
         #expect(row.tone == .plain)
-        #expect(row.note == LimitsCards.Note(mark: nil, text: "No window length, so no pace · 10 h 0 min"))
+        #expect(row.note == LimitsCards.Note(mark: nil, text: "No window length, so no pace · 10h 00m"))
     }
 
     // MARK: N CLIs (RD-R10)
@@ -264,10 +268,67 @@ struct LimitsCardsTests {
         for scenario in LimitsFrameShotData.Scenario.allCases {
             let cards = scenario.cards
             switch cards.hero {
-            case .window(_, let left, _): #expect(scenario.sidebarValue.text == "\(left)% left", "\(scenario)")
+            case .window(_, let left, _): #expect(scenario.sidebarValue.text == "\(WindowPace.percentText(left)) left", "\(scenario)")
             case .reading: #expect(scenario.sidebarValue.text == "\u{2026}", "\(scenario)")
             case .unmeasurable: #expect(scenario.sidebarValue.text == "Unmeasurable", "\(scenario)")
             }
         }
+    }
+
+    // MARK: RB-F2 (RD46)
+
+    @Test("the mock's time wording: \"3:12 PM\", \"Mon 9:00 AM\", \"Dec 1\"; \"42s\", \"42m\", \"4h 06m\", \"4d 18h\"; \"7 hours ago\"")
+    func clockWording() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 19, hour: 13, minute: 0))!
+        let at = { (days: Int, hour: Int, minute: Int) in calendar.date(byAdding: DateComponents(day: days, hour: hour - 13, minute: minute), to: now)! }
+        #expect(LimitsClockWording.clock(at(0, 15, 12), now: now, calendar: calendar) == "3:12 PM")
+        #expect(LimitsClockWording.clock(at(4, 9, 0), now: now, calendar: calendar) == "Mon 9:00 AM")
+        #expect(LimitsClockWording.clock(at(12, 0, 0), now: now, calendar: calendar) == "Dec 1")
+        #expect(LimitsClockWording.span(42) == "42s")
+        #expect(LimitsClockWording.span(42 * 60) == "42m")
+        #expect(LimitsClockWording.span(246 * 60) == "4h 06m")
+        #expect(LimitsClockWording.span((4 * 24 + 18) * 3600) == "4d 18h")
+        #expect(LimitsClockWording.span(-5) == "0s")
+        #expect(LimitsClockWording.ago(20) == "just now")
+        #expect(LimitsClockWording.ago(12 * 60) == "12 min ago")
+        #expect(LimitsClockWording.ago(3600) == "1 hour ago")
+        #expect(LimitsClockWording.ago(7 * 3600) == "7 hours ago")
+        #expect(LimitsClockWording.ago(50 * 3600) == "2 days ago")
+        // The v5 page keeps its own wording.
+        #expect(LimitsWording.span(246 * 60) == "4 h 6 min")
+    }
+
+    @Test("the Unmeasurable line keeps the registry's order whatever the reason a CLI is on it (RD-R10)")
+    func unmeasurableOrder() {
+        let none = CoreRegistrySupports(skill: true, agent: true, hook: true, rule: true, logs: true, limits: false)
+        // Cursor CLI keeps no limit record; Codex (after Claude Code, before Cursor CLI) cannot be measured.
+        let registry = Data.registry + [CoreRegistryCLI(id: "cursor", name: "Cursor CLI", supports: none)]
+        let result = CoreLimitsResult(limits: [
+            Data.entry(.claude, [Data.claudeFiveHour], source: .claudeStatusline, readAgo: 12),
+            Data.entry(.codex, [], readAgo: 0, state: .notMeasurable),
+        ])
+        let (cards, _) = cards(result, registry: registry)
+        #expect(cards.unmeasurable == ["Codex", "Cursor CLI"])
+        // Not installed is still left out.
+        let installed = CoreLimitsResult(limits: [
+            Data.entry(.claude, [], readAgo: 0, state: .notInstalled), Data.entry(.codex, [], readAgo: 0, state: .notMeasurable),
+        ])
+        #expect(self.cards(installed, registry: registry).0.unmeasurable == ["Codex", "Cursor CLI"])
+    }
+
+    @Test("percentages keep one decimal in the hero, the rows and the sidebar alike (RD46)")
+    func oneDecimal() throws {
+        let result = CoreLimitsResult(limits: [
+            Data.entry(.claude, [Data.window("five_hour", 300, used: 95.4, resetsIn: 280)], source: .claudeStatusline, readAgo: 1),
+        ])
+        let (cards, world) = cards(result)
+        let row = try row(cards, "claude:five_hour")
+        #expect(row.left == 4.6)
+        #expect(row.tone == .critical)
+        #expect(cards.hero == .window(id: "claude:five_hour", left: 4.6, label: "Claude Code · 5-hour Window · almost used up"))
+        let sidebar = FrameSidebarValue(figure: world.figure(for: .limits, loading: [], failed: []), page: .limits)
+        #expect(sidebar.text == "4.6% left")
     }
 }

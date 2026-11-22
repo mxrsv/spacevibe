@@ -81,12 +81,16 @@ enum SettingsWindowShots {
             refusal: state == .refused ? LoginItemWording.refused(turningOn: true, reason: "Operation not permitted") : nil)
     }
 
-    /// Rows (one undone, one with a very long label), empty, unreadable, and still reading.
-    static func journalStates() -> [(String, SettingsFacts)] {
+    /// Rows (one undone, one with a very long label), empty, unreadable, and still reading. The rows are dated from the
+    /// moment of the shot, as the window reads them (`JournalList` against now): just now, earlier today, three days ago.
+    static func journalStates(now: Date = Date()) -> [(String, SettingsFacts)] {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let ago = { (minutes: Double) in formatter.string(from: now.addingTimeInterval(-minutes * 60)) }
         let entries = [
-            CoreJournalEntry(id: "j3", at: "2025-11-23T11:58:00.000Z", label: "Removed ponytail from Codex", undone: false, count: 1),
-            CoreJournalEntry(id: "j2", at: "2025-11-23T10:12:00.000Z", label: "Changed Bash(git push:*) from Allow to Ask", undone: true, count: 1),
-            CoreJournalEntry(id: "j1", at: "2025-11-20T08:40:00.000Z",
+            CoreJournalEntry(id: "j3", at: ago(2), label: "Removed ponytail from Codex", undone: false, count: 1),
+            CoreJournalEntry(id: "j2", at: ago(48), label: "Changed Bash(git push:*) from Allow to Ask", undone: true, count: 1),
+            CoreJournalEntry(id: "j1", at: ago(3 * 24 * 60),
                              label: "Removed 12 Skills, Subagent review-every-pull-request-before-it-merges-into-the-main-branch and 3 Hooks",
                              undone: false, count: 16),
         ]

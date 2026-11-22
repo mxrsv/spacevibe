@@ -5,6 +5,8 @@ import SwiftUI
 struct ActivityPreview: Sendable {
     var clis: [CoreRegistryCLI]
     var sessions: [CoreActivitySession]
+    /// Sessions of illustration CLIs: their registry id by session id (`ActivityPageInput.sessionCLIs`).
+    var sessionCLIs: [String: String] = [:]
     var failures: [CoreActivityFailure]
     var hasReport = true
     var source: FrameSourceState? = .ready
@@ -16,6 +18,9 @@ struct ActivityPreview: Sendable {
     var selection: String?
     var ticked: Set<String>?
     var stopAlertIDs: [String] = []
+    /// The app that hosts a session, pinned for a shot (the real resolver finds none for a synthetic pid); nil leaves the
+    /// page's own.
+    var hostApp: (@Sendable (Int) -> HostApp?)?
 }
 
 /// The redesign's Activity page (RB-R7; the mock's `pageActivity`): the hero `1 waiting for you` (or the running count),
@@ -26,6 +31,7 @@ enum ActivityPage {
     @MainActor
     static func content(_ model: FrameModel, preview: ActivityPreview? = nil) -> FramePageContent {
         let state = ActivityPageState.of(model)
+        if let hostApp = preview?.hostApp { state.hostApp = hostApp }
         let context = ActivityPageContext(model: model, state: state, preview: preview)
         return FramePageContent(
             help: FramePage.activity.help,
@@ -49,7 +55,7 @@ struct ActivityPageContext {
     func data(now: Date = Date()) -> ActivityPageData {
         guard let preview else { return ActivityPageData(state.input(model: model, now: now)) }
         return ActivityPageData(ActivityPageInput(
-            clis: preview.clis, sessions: preview.sessions, failures: preview.failures, hasReport: preview.hasReport,
+            clis: preview.clis, sessions: preview.sessions, sessionCLIs: preview.sessionCLIs, failures: preview.failures, hasReport: preview.hasReport,
             source: preview.source, figure: preview.figure, tab: preview.tab ?? state.tab, scope: state.scope, dismissed: state.dismissed,
             ticked: preview.ticked ?? state.ticked, selection: preview.selection ?? model.router.route.selection, now: preview.now,
             query: model.search.query))
@@ -88,10 +94,12 @@ private struct ActivityToolbarControls: View {
         let clis = context.preview?.clis ?? context.model.store.world().clis
         let options = clis.map { CLIMenuEntries.Option(cli: CLIIdentity(id: $0.id, name: $0.name), isSupported: $0.supports.logs) }
         let chosen = options.first { $0.cli.id == state.scope }?.cli
+        // A shot that pins the tab shows it in the switch too.
+        let tab = context.preview?.tab ?? state.tab
         HStack(spacing: SpaceRole.step8) {
             FrameSegmentedControl(
                 segments: ActivityTable.allCases.map { FrameSegment(id: $0.rawValue, title: $0.title) },
-                selection: state.tab.rawValue, label: "Activity list"
+                selection: tab.rawValue, label: "Activity list"
             ) { id in
                 if let tab = ActivityTable(rawValue: id) { state.show(tab, router: context.model.router) }
             }
@@ -143,7 +151,7 @@ private struct ActivityOverlayActions: View {
 private struct ActivityPageBody: View {
     let context: ActivityPageContext
     @Environment(FrameChrome.self) private var chrome
-    @State private var listWidth: CGFloat = 0
+    @Environment(\.materialLook) private var look
 
     var body: some View {
         TimelineView(.everyMinute) { timeline in
@@ -155,9 +163,17 @@ private struct ActivityPageBody: View {
                     content(data)
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { listWidth = $0 }
             }
             .frameListKeys(rows: data.visibleIDs, router: context.model.router, chrome: chrome)
+            // RD44: the first shown row is selected on opening and whenever the tab, the CLI menu or the search hides the
+            // selected one (`FrameRouter.keepSelection`, the rule `frameFirstRowSelection` applies). Only once a reading is
+            // shown: before the first report the session the glance widget opened (`FrameRoute.session`) must survive. A shot
+            // pins its own selection instead.
+            .onChange(of: ActivityFirstRowInput(route: context.model.router.route, rows: data.visibleIDs, isReady: !data.isReading),
+                      initial: true) { _, input in
+                guard context.preview == nil, input.isReady else { return }
+                context.model.router.keepSelection(onPage: .activity, among: input.rows)
+            }
             .stopAlert(isPresented: Binding(get: { !context.stopTargets(in: data).isEmpty }, set: { if !$0 { context.state.cancelStop() } }),
                        text: ActivityPageData.stopText(context.stopTargets(in: data))) {
                 context.state.confirmStop(writes: context.model.writes)
@@ -181,12 +197,19 @@ private struct ActivityPageBody: View {
             } else {
                 switch data.input.tab {
                 case .sessions:
-                    ActivitySessionsList(context: context, data: data, isWide: listWidth >= TableColumnWidth.wideListWidth)
+                    ActivitySessionsList(context: context, data: data, isWide: isWide)
                 case .failures:
                     ActivityFailuresList(context: context, data: data)
                 }
             }
         }
+    }
+
+    /// The mock's `ctx.wide`: the main column (the window less the sidebar and a docked inspector, `FrameChrome.listWidth`, the
+    /// mock's `mw`) is at least 940, measured outside the content's safe-area padding. A shot without a window width is wide.
+    private var isWide: Bool {
+        let width = chrome.listWidth(sidebar: FrameRole.sidebarWidth(look), inspector: FramePage.activity.inspectorWidth.points)
+        return chrome.windowWidth == 0 || width >= TableColumnWidth.wideListWidth
     }
 
     /// The error band (RD-R13): what could not be read, the core's sentence, and Try Again, which reads again at once.
@@ -197,4 +220,11 @@ private struct ActivityPageBody: View {
                 .focusEffectDisabled()
         }
     }
+}
+
+/// What Activity's first-row rule watches (RD44): a change in any of these may leave the page without a selected row it shows.
+private struct ActivityFirstRowInput: Equatable {
+    let route: FrameRoute
+    let rows: [String]
+    let isReady: Bool
 }

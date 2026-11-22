@@ -30,6 +30,9 @@ struct ActivityPageInput: Sendable {
     var clis: [CoreRegistryCLI]
     /// `FrameWorld.sessions`: the report's sessions of the shown CLIs, ended ones included (the core keeps them 15 minutes).
     var sessions: [CoreActivitySession]
+    /// The registry CLI of a session the core's `CoreCLI` cannot name, by session id (a shot's sessions of illustration CLIs,
+    /// RD-R10 at ten CLIs). Every other session belongs to `session.cli`.
+    var sessionCLIs: [String: String] = [:]
     var failures: [CoreActivityFailure]
     var hasReport: Bool
     /// The store's state of `.activity`; nil before the first read starts.
@@ -55,6 +58,8 @@ struct ActivityPageInput: Sendable {
 /// core's session.
 struct ActivitySessionRow: Identifiable, Equatable, Sendable {
     let session: CoreActivitySession
+    /// The registry id of the session's CLI: `session.cli`, unless the input names another (`ActivityPageInput.sessionCLIs`).
+    let cliID: String
     let cliName: String
     /// The `SessionStateGlyph` state: nil for an ended row, which has no glyph (the widget drops it, GW10).
     let glyph: GlanceState?
@@ -62,8 +67,9 @@ struct ActivitySessionRow: Identifiable, Equatable, Sendable {
     let ageMs: Double?
     let lastWriteAgoMs: Double?
 
-    init(_ session: CoreActivitySession, cliName: String, elapsedMs: Double) {
+    init(_ session: CoreActivitySession, cliID: String? = nil, cliName: String, elapsedMs: Double) {
         self.session = session
+        self.cliID = cliID ?? session.cli.rawValue
         self.cliName = cliName
         ageMs = session.ageMs.map { $0 + elapsedMs }
         lastWriteAgoMs = session.lastWriteAgoMs.map { $0 + elapsedMs }
@@ -73,7 +79,7 @@ struct ActivitySessionRow: Identifiable, Equatable, Sendable {
     }
 
     /// The same shape as the glance widget's and the route's session id (`FrameRoute.session`).
-    var id: String { "\(session.cli.rawValue):\(session.id)" }
+    var id: String { "\(cliID):\(session.id)" }
     /// The session has a process (the mock's `LIVE`): every state but ended.
     var isLive: Bool { session.state != .ended }
     /// Stop needs a live process the core can name again: an id ending `:unknown` cannot authorize it (core-protocol.md).
@@ -255,12 +261,15 @@ struct ActivityPageData: Sendable {
         let name = { (cli: CoreCLI) in names[cli.rawValue] ?? cli.label }
         let clis = input.clis.filter { input.scope == nil || $0.id == input.scope }
 
-        let everyRow = input.sessions.map { ActivitySessionRow($0, cliName: name($0.cli), elapsedMs: input.elapsedMs) }
+        let everyRow = input.sessions.map { session in
+            let cliID = input.sessionCLIs[session.id] ?? session.cli.rawValue
+            return ActivitySessionRow(session, cliID: cliID, cliName: names[cliID] ?? session.cli.label, elapsedMs: input.elapsedMs)
+        }
         let rows = input.query.filter(everyRow) { row in
             [row.session.title, row.session.project, row.cliName, row.session.currentTool?.name, row.session.currentTool?.target]
         }
         groups = clis.compactMap { cli in
-            let mine = rows.enumerated().filter { $0.element.session.cli.rawValue == cli.id }
+            let mine = rows.enumerated().filter { $0.element.cliID == cli.id }
                 .sorted { ($0.element.rank, $0.offset) < ($1.element.rank, $1.offset) }.map(\.element)
             return mine.isEmpty ? nil : ActivitySessionGroup(cli: CLIIdentity(id: cli.id, name: cli.name), rows: mine)
         }
@@ -276,10 +285,16 @@ struct ActivityPageData: Sendable {
             [row.title, row.failure.title, row.failure.reason, row.cliName] + row.failure.projects
         }
         let hidden = switch input.tab {
-        case .sessions: groups.isEmpty && everyRow.contains { row in clis.contains { $0.id == row.session.cli.rawValue } }
+        case .sessions: groups.isEmpty && everyRow.contains { row in clis.contains { $0.id == row.cliID } }
         case .failures: failures.isEmpty && !everyFailure.isEmpty
         }
         isSearchMiss = !input.query.isEmpty && hidden
+    }
+
+    /// No reading to show yet (the first read, or it failed with nothing read before).
+    var isReading: Bool {
+        if case .ready = phase { return false }
+        return true
     }
 
     /// What the toolbar's search finds on the tab showing.

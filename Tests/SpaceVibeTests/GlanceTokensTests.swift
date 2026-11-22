@@ -90,5 +90,18 @@ struct GlanceTokensTests {
         let cards = LimitsFrameShotData.Scenario.normal.cards
         #expect(cards.rowIDs.contains(window.id))
     }
+
+    @Test("every strip the controller lays out or measures draws with the controller's tokens, so a slot outline matches the widget")
+    func measuredStripUsesTokens() throws {
+        let source = try String(contentsOf: StyleBoundaryTests.appSources.appendingPathComponent("Glance/GlanceController.swift"),
+                                encoding: .utf8)
+        // The strip views set as a host's root view (`stripHost`, `measureStrip`): each passes `tokens:` in the same statement.
+        let statements = source.components(separatedBy: ".rootView = GlanceStripView(").dropFirst()
+        #expect(statements.count == 2)
+        for statement in statements {
+            let call = statement.prefix { $0 != "}" }
+            #expect(call.contains("tokens: tokens"), "\(call)")
+        }
+    }
 }
 

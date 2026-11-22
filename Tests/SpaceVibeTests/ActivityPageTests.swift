@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import SpaceVibe
 
@@ -199,6 +200,8 @@ struct ActivityPageTests {
         #expect(actions.allSatisfy { $0.map(\.title) == ["Stop…"] && $0[0].isDestructive && $0[0].shortcut == FrameShortcut("s", modifiers: []) })
         #expect(actions.map { $0[0].isEnabled } == [true, false, false])
         #expect(actions.allSatisfy { FrameRowAction.conflicts(in: $0).isEmpty })
+        // RD46 / RD-R9: the selected row's Stop… keeps its red tint (the destructive push button).
+        #expect(actions[0][0].buttonKind == .destructive)
     }
 
     @Test("the alert names exactly what was asked, capped at 5 with and N more; a row that cannot stop is left out")
@@ -371,5 +374,52 @@ struct ActivityPageTests {
         #expect(FrameSegmentedControl.step(from: "failures", by: 1, in: segments) == "failures")
         #expect(FrameSegmentedControl.step(from: "sessions", by: -1, in: segments) == "sessions")
         #expect(SkeletonRows.share(0) == 0.46 && SkeletonRows.share(3) == 0.85)
+    }
+
+    // MARK: RB-F2
+
+    @Test("a session of a CLI the core cannot name groups under the registry CLI the input gives it; its id follows")
+    func sessionCLIs() {
+        let registry = FrameTestData.registry(count: 10)
+        var page = input([session("a", state: .running), session("x", state: .idle, lastWrite: 60_000)], registry: registry)
+        page.sessionCLIs = ["x": "cli4"]
+        let data = ActivityPageData(page)
+        #expect(data.groups.map(\.cli.id) == ["claude", "cli4"])
+        #expect(data.groups[1].rows.map(\.id) == ["cli4:x"])
+        #expect(data.groups[1].rows[0].cliName == registry.first { $0.id == "cli4" }?.name)
+    }
+
+    @Test("the shots: many shows other CLIs' groups, Failures pins the switch's tab, the partial Stop is the real partial toast")
+    func shotStates() {
+        let many = ActivityPageData(ActivityPageInput(
+            clis: ActivityShotState.many.preview().clis, sessions: ActivityShotState.many.preview().sessions,
+            sessionCLIs: ActivityShotState.many.preview().sessionCLIs, failures: [], hasReport: true, source: .ready,
+            figure: ActivityShotState.many.preview().figure))
+        #expect(many.groups.map(\.cli.id) == ["claude", "codex", "cursor", "copilot"])
+        #expect(ActivityShotState.failures.preview().tab == .failures)
+        let partial = ActivityShotState.writefail.toast
+        #expect(partial?.tone == .partial)
+        #expect(partial?.message == ActivityPageData.partialStop(stopped: [48211], refused: [(pid: 47990, reason: ActivityShotData.refusal)]))
+        #expect(ActivityShotState.write.toast?.message == "Stopped pid 48211. This can't be undone.")
+    }
+
+    @Test("the first-row rule waits for a reading: before it the widget's session survives (RD44)")
+    func firstRowWaitsForReading() {
+        let reading = ActivityPageData(input([], source: .loading, hasReport: false))
+        #expect(reading.isReading)
+        let ready = ActivityPageData(input([session("a", state: .running)]))
+        #expect(!ready.isReading)
+        let router = FrameRouter(FrameRoute.session("claude:zzz"))
+        router.keepSelection(onPage: .activity, among: ready.visibleIDs)
+        #expect(router.route.selection == "claude:a")
+    }
+
+    @Test("Activity's session glyph is 16 and its CLI group heads are the quiet size (RD46)")
+    func glyphAndHeadSize() {
+        #expect(IconSize.control.points == 16)
+        #expect(GroupHead<EmptyView>.Size.quiet.title == .quietMedium)
+        #expect(GroupHead<EmptyView>.Size.quiet.insets == EdgeInsets(top: SpaceRole.step12, leading: SpaceRole.step12,
+                                                                    bottom: SpaceRole.step6, trailing: SpaceRole.step12))
+        #expect(GroupHead<EmptyView>.Size.regular.title == .bodyMedium)
     }
 }

@@ -6,11 +6,13 @@ import Foundation
 enum ActivityShotState: String, CaseIterable, Sendable {
     case normal, empty, scanning, error, worst, write, writefail, dialog, failures, many
 
-    /// The toast the state shows: Stop's done toast (no Undo) or its refusal.
+    /// The toast the state shows, in the words and tone the real Stop gives (`ActivityPageState.stopWrite` through
+    /// `FrameWrites`): one stopped session's toast (no Undo), or the partial toast when one of two was refused.
     var toast: (message: String, tone: ToastTone)? {
         switch self {
-        case .write: ("Stopped pid 48211. This can't be undone.", .info)
-        case .writefail: ("Stopped 1 of 2 sessions. pid 47990: the process could not be checked again, so nothing was sent to it.", .danger)
+        case .write: (ActivityPageData.stoppedLabel(ActivityShotData.stopped), .info)
+        case .writefail:
+            (ActivityPageData.partialStop(stopped: [48211], refused: [(pid: 47990, reason: ActivityShotData.refusal)]) ?? "", .partial)
         default: nil
         }
     }
@@ -19,10 +21,15 @@ enum ActivityShotState: String, CaseIterable, Sendable {
         let data = ActivityShotData(now: now)
         let registry = self == .many ? ActivityShotData.tenCLIs : Array(ActivityShotData.tenCLIs.prefix(2))
         var sessions = data.sessions, failures = data.failures
+        var sessionCLIs: [String: String] = [:]
         var source: FrameSourceState? = .ready
         var hasReport = true
         switch self {
-        case .normal, .dialog, .failures, .many, .writefail: break
+        case .normal, .dialog, .failures, .writefail: break
+        case .many:
+            // The mock's `SESS_X`: Cursor CLI and Copilot CLI sessions, so the other CLIs' groups show (RD-R10).
+            sessions += data.otherCLISessions.map(\.session)
+            sessionCLIs = Dictionary(uniqueKeysWithValues: data.otherCLISessions.map { ($0.session.id, $0.cli) })
         case .empty: sessions = []; failures = []
         case .scanning: sessions = []; failures = []; hasReport = false; source = .loading
         case .error: sessions = []; failures = []; hasReport = false; source = .failed("The session logs could not be read.")
@@ -44,11 +51,12 @@ enum ActivityShotState: String, CaseIterable, Sendable {
         default: .count(waiting > 0 ? waiting : running, tone: waiting > 0 ? .attention : nil)
         }
         return ActivityPreview(
-            clis: registry, sessions: sessions, failures: failures, hasReport: hasReport, source: source, figure: figure, now: now,
+            clis: registry, sessions: sessions, sessionCLIs: sessionCLIs, failures: failures, hasReport: hasReport, source: source, figure: figure, now: now,
             tab: self == .failures ? .failures : .sessions,
             selection: self == .failures ? "claude:hook:f1" : hasReport && !sessions.isEmpty ? "claude:a2" : nil,
             ticked: self == .dialog || self == .worst ? ["claude:a1", "claude:a2"] : [],
-            stopAlertIDs: self == .dialog ? ["claude:a1"] : [])
+            stopAlertIDs: self == .dialog ? ["claude:a1"] : [],
+            hostApp: ActivityShotData.hostApp)
     }
 
     /// The sidebar's Activity value for the state, the same figure the hero shows.
@@ -72,6 +80,19 @@ struct ActivityShotData {
 
     private static let minute = 60_000.0
 
+    /// The session the write shot stopped (the mock's `a1`), as the row the toast names.
+    static var stopped: [ActivitySessionRow] {
+        ActivityShotData(now: Date()).sessions.prefix(1).map { ActivitySessionRow($0, cliName: "Claude Code", elapsedMs: 0) }
+    }
+
+    /// The mock's hosts: every session runs in Terminal but the Cursor CLI one (`host: false`, Terminal app not found).
+    static let hostApp: @Sendable (Int) -> HostApp? = { pid in
+        pid == 50211 ? nil : HostApp(pid: 1, bundleIdentifier: "com.apple.Terminal", name: "Terminal")
+    }
+
+    /// The core's sentence when a pid could not be checked again (`activity.Stop`, S-R6).
+    static let refusal = "The process could not be checked again, so nothing was sent to it."
+
     private func session(_ id: String, cli: CoreCLI, title: String, project: String?, pid: Int, state: CoreSessionState,
                          reason: String = "", tool: (String, String)? = nil, ageMinutes: Double, lastWriteMinutes: Double? = 0.1,
                          cost: Double?, costNote: String? = nil) -> CoreActivitySession {
@@ -92,6 +113,18 @@ struct ActivityShotData {
                     lastWriteMinutes: 8, cost: 0.31),
             session("a3", cli: .codex, title: "Refactor billing module", project: "ledger-api", pid: 49102, state: .unmeasurable,
                     reason: "No rollout file yet", ageMinutes: 38, lastWriteMinutes: nil, cost: 4.80),
+        ]
+    }
+
+    /// Sessions of CLIs the engine does not read yet, for the ten-CLI shot (the mock's `SESS_X`, synthetic): a Cursor CLI
+    /// session done 2 minutes ago and an ended Copilot CLI one. The core's `CoreCLI` names only Claude Code and Codex, so the
+    /// registry id rides beside each (`ActivityPageInput.sessionCLIs`).
+    var otherCLISessions: [(cli: String, session: CoreActivitySession)] {
+        [
+            ("cursor", session("a5", cli: .claude, title: "Add pagination to search", project: "catalog-ui", pid: 50211, state: .idle,
+                               ageMinutes: 7, lastWriteMinutes: 2, cost: nil, costNote: "No token usage logged yet")),
+            ("copilot", session("a6", cli: .claude, title: "Triage open issues", project: "ops-tools", pid: 50377, state: .ended,
+                                ageMinutes: 40, lastWriteMinutes: 6, cost: nil, costNote: "No price for this model")),
         ]
     }
 

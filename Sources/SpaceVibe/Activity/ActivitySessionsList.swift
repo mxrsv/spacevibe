@@ -16,6 +16,7 @@ struct ActivitySessionsList: View {
             PageEmptyState(icon: .activity, title: "No CLI sessions live",
                            text: "Start a CLI in a terminal and it appears here within a few seconds.")
         } else {
+            // The head is pinned while the rows scroll under it (the mock's sticky `.th`, RowGroup's `head`).
             RowGroup {
                 RowTableHead(check: ItemRow<EmptyView, EmptyView>.Check(
                     value: data.headerCheck, label: "Select all shown sessions", toggle: { context.state.toggleAll(data) })) {
@@ -30,8 +31,9 @@ struct ActivitySessionsList: View {
                     }
                 }
                 .disabled(data.stoppableIDs.isEmpty)
+            } content: {
                 ForEach(data.groups) { group in
-                    GroupHead(group.cli.name, count: group.rows.count, cli: group.cli)
+                    GroupHead(group.cli.name, count: group.rows.count, cli: group.cli, size: .quiet)
                     ForEach(Array(group.rows.enumerated()), id: \.element.id) { index, row in
                         sessionRow(row).rowStripe(index % 2 == 0)
                     }
@@ -100,7 +102,7 @@ struct ActivitySessionGlyph: View {
     var body: some View {
         Group {
             if let state = row.glyph {
-                SessionStateGlyph(state: state)
+                SessionStateGlyph(state: state, size: .control)
             } else {
                 Color.clear
             }

@@ -187,7 +187,8 @@ struct AppFrameTests {
         #expect(FrameSidebarValue(figure: .pending, page: .clean).text == "Measuring")
         #expect(FrameSidebarValue(figure: .failed, page: .rules).text == "Unmeasurable")
         #expect(FrameSidebarValue(figure: .unmeasurable, page: .limits).text == "Unmeasurable")
-        #expect(FrameSidebarValue(figure: .percentLeft(37.6, tone: .attention), page: .limits) == FrameSidebarValue(text: "38% left"))
+        #expect(FrameSidebarValue(figure: .percentLeft(37.6, tone: .attention), page: .limits) == FrameSidebarValue(text: "37.6% left"))
+        #expect(FrameSidebarValue(figure: .percentLeft(38, tone: nil), page: .limits) == FrameSidebarValue(text: "38% left"))
         #expect(FrameSidebarValue(figure: .notMeasured, page: .clean) == .none)
         #expect(FrameSidebarValue(figure: .count(1_204, tone: nil), page: .activity).text == NumberWording.count(1_204))
     }

@@ -51,7 +51,7 @@ struct LimitsCardList: View {
         switch cards.hero {
         case .reading: PageHero(.scanning, label: "Reading the limit records")
         case .unmeasurable: PageHero(.unmeasurable, label: "Unmeasurable")
-        case .window(_, let left, let label): PageHero(.value(NumberWording.count(left), unit: "% left"), label: label)
+        case .window(_, let left, let label): PageHero(.value(WindowPace.shareText(left), unit: "% left"), label: label)
         }
     }
 
@@ -155,7 +155,7 @@ struct LimitsCardList: View {
     }
 
     /// The reset column: the clock in the row's tone with the reset time after it while the Window counts (RD33), otherwise
-    /// "Resets 17:40"; the note under it. It ticks each second from a minute before its lead (`LimitsCountdown.wakeAhead`), as
+    /// "Resets 5:40 PM"; the note under it. It ticks each second from a minute before its lead (`LimitsCountdown.wakeAhead`), as
     /// the v5 page does, so it starts on time although the page itself redraws once a minute.
     @ViewBuilder
     private func resetColumn(_ row: LimitsCards.Row) -> some View {

@@ -89,4 +89,31 @@ struct WindowPaceTests {
     func id() {
         #expect(pace(D.limits(.codex, id: "Weekly", used: 1)).id == "codex:Weekly")
     }
+
+    @Test("one rounding rule: the figure and the flag read the same one-decimal value, so 5% left is never unflagged (RD46)")
+    func oneRoundingRule() {
+        // 94.96 used: 5.04 left rounds to 5.0, shown "5%", and 5% left or less is flagged.
+        let five = pace(D.limits(used: 94.96, minutesLeft: 295))
+        #expect(five.left == 5)
+        #expect(WindowPace.percentText(five.left ?? -1) == "5%")
+        #expect(five.isLow && five.isBehind && five.severity == .critical)
+        // 94.94 used: 5.06 left rounds to 5.1, shown "5.1%", not low.
+        let above = pace(D.limits(used: 94.94, minutesLeft: 295))
+        #expect(WindowPace.percentText(above.left ?? -1) == "5.1%")
+        #expect(!above.isLow && !above.isBehind)
+        // The sidebar shows the same text as the figure.
+        let sidebar = FrameSidebarValue(figure: .percentLeft(above.left ?? -1, tone: nil), page: .limits)
+        #expect(sidebar.text == "5.1% left")
+    }
+
+    @Test("a share reads with one decimal and no trailing .0, the number apart for a hero")
+    func percentText() {
+        #expect(WindowPace.percentText(38) == "38%")
+        #expect(WindowPace.percentText(69.5) == "69.5%")
+        #expect(WindowPace.percentText(0.04) == "0%")
+        #expect(WindowPace.percentText(4.46) == "4.5%")
+        #expect(WindowPace.percentText(1_204) == "1,204%")
+        #expect(WindowPace.shareText(77) == "77")
+        #expect(WindowPace.shareText(69.5) == "69.5")
+    }
 }

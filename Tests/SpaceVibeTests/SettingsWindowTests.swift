@@ -184,6 +184,15 @@ struct SettingsWindowTests {
         #expect(list.failure == "refresh failed", "a failed refresh keeps the rows and shows the error over them")
         #expect(rows[0].control == "journalUndo:e1")
         #expect(JournalList.date("2026-11-21T10:00:00Z") != nil && JournalList.date("2026-11-21T10:00:00.123Z") != nil)
+        // The redesign's time wording (RD46, `LimitsClockWording`): "2:02 PM", never the v5 "14:02".
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let afternoon = utc.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: 14, minute: 30))!
+        let today = JournalList(history: CoreJournalHistory(entries: [CoreJournalEntry(id: "t", at: "2026-11-21T14:02:00Z", label: "x",
+                                                                                         undone: false, count: 1)]),
+                                state: .ready, now: afternoon, calendar: utc)
+        guard case .rows(let todayRows) = today.content else { Issue.record("rows expected"); return }
+        #expect(todayRows[0].time == "2:02 PM")
     }
 
     @Test("Undo from the Journal runs journal.undo, toasts without Undo, re-reads the Journal; a 409 shows the refusal")

@@ -574,8 +574,9 @@ final class GlanceController {
         guard let feed, let surfaces else { return GlanceStripSizes(horizontal: .zero, vertical: .zero) }
         func size(_ axis: GlanceAxis) -> CGSize {
             let slot = GlanceSlot.allCases.first { $0.axis == axis } ?? GlanceSlot.defaultSlot
+            // The same tokens as the strip it stands for, so a slot's outline matches the drawn widget with the switch on.
             surfaces.measureStrip.rootView = GlanceStripView(strip: GlanceStrip(entries: feed.entries, slot: slot), isOnScreen: false,
-                                                             open: { _ in })
+                                                             tokens: tokens, open: { _ in })
             return Self.whole(surfaces.measureStrip.fittingSize)
         }
         return GlanceStripSizes(horizontal: size(.horizontal), vertical: size(.vertical))

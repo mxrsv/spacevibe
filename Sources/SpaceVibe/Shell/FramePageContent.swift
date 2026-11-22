@@ -95,7 +95,7 @@ struct FrameSidebarValue: Equatable, Sendable {
         case .failed, .unmeasurable: self.init(text: "Unmeasurable")
         case .notMeasured: self.init()
         case .count(let n, let tone): self.init(text: NumberWording.count(n), mark: mark(tone), criticalCount: criticalCount)
-        case .percentLeft(let left, _): self.init(text: "\(NumberWording.count(Int(left.rounded())))% left")
+        case .percentLeft(let left, _): self.init(text: "\(WindowPace.percentText(left)) left")
         case .bytes(let bytes): self.init(text: NumberWording.bytes(bytes))
         }
     }

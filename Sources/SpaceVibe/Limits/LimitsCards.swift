@@ -20,8 +20,8 @@ struct LimitsCards: Equatable {
         case reading
         /// No Window can be measured, or the read failed with nothing read before.
         case unmeasurable
-        /// The Window that needs you: its share left, whole percent, and the label under it.
-        case window(id: String, left: Int, label: String)
+        /// The Window that needs you: its share left, one decimal (`WindowPace.percentText`), and the label under it.
+        case window(id: String, left: Double, label: String)
     }
 
     /// The tone of a Window's meter fill, its figure and its countdown clock (the mock's `col`).
@@ -40,8 +40,9 @@ struct LimitsCards: Equatable {
         let id: String
         /// "5-hour", "Weekly", "Weekly · Fable".
         let name: String
-        /// Whole percent left ("38%"; "0%" over the limit); nil when the Window is past its reset (Unmeasurable).
-        let left: Int?
+        /// Share left, one decimal as `WindowPace` keeps it ("38%", "69.5%"; "0%" over the limit); nil when the Window is past
+        /// its reset (Unmeasurable).
+        let left: Double?
         /// 0 to 1: the meter's fill (0 for a Window past its reset, as the mock draws it).
         let share: Double
         /// 0 to 1: the share of the Window's time left, the pace tick; nil without a length or past its reset.
@@ -49,9 +50,9 @@ struct LimitsCards: Equatable {
         let tone: Tone
         /// The figure is drawn quiet (`ink3`): the reading is too old to judge.
         let isQuiet: Bool
-        /// "Resets 17:40", or "Reset has passed".
+        /// "Resets 5:40 PM", or "Reset has passed".
         let reset: String
-        /// The reset's clock time beside a running countdown ("17:40").
+        /// The reset's clock time beside a running countdown ("3:12 PM").
         let resetTime: String
         let resetsAt: Date
         /// How long before the reset the countdown runs (LC-R1); nil when this Window never counts.
@@ -114,7 +115,7 @@ struct LimitsCards: Equatable {
 
     let hero: Hero
     let cards: [Card]
-    /// CLIs without limit data, in the registry's order: the one "Unmeasurable" line (RD-R10).
+    /// CLIs without limit data, in the registry's fixed order whatever the reason: the one "Unmeasurable" line (RD-R10).
     let unmeasurable: [String]
     /// The core's sentence when `limits.read` failed with nothing read before.
     let failure: String?
@@ -132,21 +133,22 @@ struct LimitsCards: Equatable {
         let limits = world.snapshot.limits
         let supported = world.clis.filter(\.supports.limits)
         var cards: [Card] = []
-        var unmeasurable = world.clis.filter { !$0.supports.limits }.map(\.name)
+        // Registry ids without limit data; named in registry order once every CLI is sorted (RD-R10).
+        var unmeasurableIDs = Set(world.clis.filter { !$0.supports.limits }.map(\.id))
         let failure: String?
         if case .failed(let message) = state, limits == nil { failure = message } else { failure = nil }
 
         if let limits {
             for cli in supported {
                 guard let entry = limits.limits.first(where: { $0.cli.rawValue == cli.id }) else {
-                    unmeasurable.append(cli.name)
+                    unmeasurableIDs.insert(cli.id)
                     continue
                 }
                 switch entry.state {
                 case .notInstalled:
                     continue
                 case .notMeasurable:
-                    unmeasurable.append(cli.name)
+                    unmeasurableIDs.insert(cli.id)
                 case .notRecorded:
                     let body: Card.Body = cli.id == CLIIdentity.claude.id
                         ? .noSnapshot : .note(LimitsWording.stateNote(entry)?.body ?? Self.noWindow(cli.name))
@@ -157,7 +159,7 @@ struct LimitsCards: Equatable {
                     let rows = world.windows.filter { $0.cli == cli.id }
                         .map { Self.row($0, cli: entry.cli, readAt: entry.at, now: now, weeklyLead: weeklyLead) }
                     if rows.isEmpty, entry.windows.isEmpty {
-                        unmeasurable.append(cli.name)
+                        unmeasurableIDs.insert(cli.id)
                         continue
                     }
                     cards.append(Card(cliID: cli.id, name: cli.name, plan: entry.plan.map(LimitsWording.planName),
@@ -171,13 +173,13 @@ struct LimitsCards: Equatable {
         }
 
         self.cards = cards
-        self.unmeasurable = unmeasurable
+        unmeasurable = world.clis.filter { unmeasurableIDs.contains($0.id) }.map(\.name)
         self.failure = failure
         if limits == nil, failure == nil {
             hero = .reading
         } else if let window = world.heroWindow, let left = window.left {
             let name = world.clis.first { $0.id == window.cli }?.name ?? window.cli
-            hero = .window(id: window.id, left: Self.whole(left), label: "\(name) · \(LimitsWording.name(window.window)) Window · \(Self.why(window))")
+            hero = .window(id: window.id, left: left, label: "\(name) · \(LimitsWording.name(window.window)) Window · \(Self.why(window))")
         } else {
             hero = .unmeasurable
         }
@@ -209,18 +211,13 @@ struct LimitsCards: Equatable {
         case (.codex, _): "Session log"
         case (.gemini, _): nil
         }
-        let age = entry.at.map { LimitsWording.readAge(at: Date(timeIntervalSince1970: $0), now: now) }
+        let age = entry.at.map { LimitsClockWording.ago(now.timeIntervalSince(Date(timeIntervalSince1970: $0))) }
         let parts = [name, age].compactMap { $0 }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    static func whole(_ share: Double) -> Int { Int(share.rounded()) }
-
-    /// "4.5%": the share over the limit, one decimal as `WindowPace` keeps it, no trailing ".0".
-    static func percent(_ value: Double) -> String {
-        let rounded = (value * 10).rounded() / 10
-        return rounded == rounded.rounded() ? "\(Int(rounded))%" : String(format: "%.1f%%", rounded)
-    }
+    /// "4.5%": a share, one decimal as `WindowPace` keeps it, no trailing ".0" (the one rule of the figure and the flag).
+    static func percent(_ value: Double) -> String { WindowPace.percentText(value) }
 
     /// "Reading is 7 hours old", "Reading is 2 days old"; a reading with no time says so.
     static func age(readAt: Double?, now: Date) -> String {
@@ -233,7 +230,7 @@ struct LimitsCards: Equatable {
     static func row(_ pace: WindowPace, cli: CoreLimitsCLI, readAt: Double?, now: Date, weeklyLead: WeeklyCountdownLead) -> Row {
         let window = pace.window
         let passed = pace.left == nil
-        let span = LimitsWording.resetsIn(window, now: now) ?? ""
+        let span = LimitsClockWording.resetsIn(window, now: now) ?? ""
         let tone: Tone = passed || pace.isOld ? .muted : !pace.isBehind ? .plain : pace.severity == .critical ? .critical : .attention
         let note: Note
         if passed {
@@ -252,9 +249,9 @@ struct LimitsCards: Equatable {
         } else {
             note = Note(mark: nil, text: span)
         }
-        let resetTime = LimitsWording.resetsAt(window, now: now)
+        let resetTime = LimitsClockWording.resetsAt(window, now: now)
         return Row(
-            id: pace.id, name: LimitsWording.name(window), left: pace.left.map(whole),
+            id: pace.id, name: LimitsWording.name(window), left: pace.left,
             share: passed ? 0 : (pace.left ?? 0) / 100,
             tick: passed ? nil : pace.timeLeft.map { min(Self.tickCap, $0) / 100 },
             tone: tone, isQuiet: pace.isOld,

@@ -28,7 +28,7 @@ struct ActivitySessionInspector: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SpaceRole.step16) {
             InspectorTitle(row.session.title, sub: row.cliName) {
-                CLILogo(CLIIdentity(id: row.session.cli.rawValue, name: row.cliName), size: SizeRole.logo20)
+                CLILogo(CLIIdentity(id: row.cliID, name: row.cliName), size: SizeRole.logo20)
             }
             KeyValueList(facts: row.facts)
             InspectorSection("Current tool") {

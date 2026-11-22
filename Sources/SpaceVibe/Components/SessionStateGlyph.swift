@@ -38,7 +38,7 @@ extension GlanceState {
     var rotates: Bool { self == .working }
 }
 
-/// One session's state glyph at 12 (the smallest icon size): the glyph in its state colour, or the idle dot. The working ring
+/// One session's state glyph, 12 by default (the smallest icon size): the glyph in its state colour, or the idle dot. The working ring
 /// turns once a second; it holds still under Reduce Motion, in a headless shot, and when `isAnimating` is false (the widget
 /// is hidden or covered, GW-R11). The ring is drawn by a `TimelineView`, so a still ring costs no frame at all. Decorative:
 /// the entry or row around it says the state in words.
@@ -46,6 +46,9 @@ struct SessionStateGlyph: View {
     let state: GlanceState
     /// False while the widget is not on screen.
     var isAnimating = true
+    /// The glyph's side: 12 in the widget (unchanged since v5), 16 in the Activity page's rows (RD46, the mock's `ic(…, 16)`).
+    /// The idle dot keeps its 6 at any size.
+    var size: IconSize = .small
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isShotRendering) private var isShotRendering
@@ -53,7 +56,7 @@ struct SessionStateGlyph: View {
     var body: some View {
         Group {
             if let glyph = state.glyph {
-                let icon = SpaceVibeIcon(state: glyph, size: .small, ink: state.ink.color).opacity(state.inkOpacity)
+                let icon = SpaceVibeIcon(state: glyph, size: size, ink: state.ink.color).opacity(state.inkOpacity)
                 if state.rotates && isAnimating && !reduceMotion && !isShotRendering {
                     TimelineView(.animation(minimumInterval: Metrics.Glance.spinFrame)) { context in
                         icon.rotationEffect(Self.angle(at: context.date))
@@ -68,7 +71,7 @@ struct SessionStateGlyph: View {
                     .opacity(state.inkOpacity)
             }
         }
-        .frame(width: IconSize.small.points, height: IconSize.small.points)
+        .frame(width: size.points, height: size.points)
         .accessibilityHidden(true)
     }
 

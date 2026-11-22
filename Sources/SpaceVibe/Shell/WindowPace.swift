@@ -78,7 +78,20 @@ struct WindowPace: Identifiable, Equatable, Sendable {
         isBehind = judged && (overLimit > 0 || low || pace)
     }
 
-    private static func oneDecimal(_ value: Double) -> Double { (value * 10).rounded() / 10 }
+    /// The one rounding rule of a share (RD46: one decimal, as the mock's `r1`). `left` and `over` are kept in it, so the flag
+    /// (`isLow`, `severity`) judges exactly the value the figure shows: "5% left" is never unflagged, "5.1%" never flagged.
+    static func oneDecimal(_ value: Double) -> Double { (value * 10).rounded() / 10 }
+
+    /// A share as every new-frame surface shows it (the Limits hero and rows, the sidebar): one decimal, no trailing ".0"
+    /// ("38%", "69.5%", "0%"), the mock's `pct`.
+    static func percentText(_ share: Double) -> String { "\(shareText(share))%" }
+
+    /// The number alone, for a figure whose unit is drawn apart (the hero's "77" before "% left").
+    static func shareText(_ share: Double) -> String {
+        let rounded = oneDecimal(share)
+        let whole = rounded.rounded()
+        return rounded == whole ? NumberWording.count(Int(whole)) : String(format: "%.1f", rounded)
+    }
 }
 
 extension WindowPace {

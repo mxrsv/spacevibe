@@ -36,19 +36,36 @@ enum GroupSeverity: Hashable, Sendable {
 /// quiet button (RD41: nothing is pre-selected; the head offers the pick). The head is a heading for VoiceOver ("Critical,
 /// Clean up, 6").
 struct GroupHead<Action: View>: View {
+    /// The head's size: `regular` (a page's group heads), or `quiet`, the smaller head of Activity's CLI groups (RD46; the
+    /// mock's `.gh` with `font-size: var(--t-quiet)` and `padding: 12px 12px 6px`).
+    enum Size: Hashable, Sendable {
+        case regular, quiet
+
+        var title: TypeRole { self == .quiet ? .quietMedium : .bodyMedium }
+        var count: TypeRole { self == .quiet ? TypeRole.quiet.figures : TypeRole.bodyText.figures }
+        var insets: EdgeInsets {
+            switch self {
+            case .regular: EdgeInsets(top: SpaceRole.step16, leading: SpaceRole.step8, bottom: SpaceRole.step8, trailing: SpaceRole.step8)
+            case .quiet: EdgeInsets(top: SpaceRole.step12, leading: SpaceRole.step12, bottom: SpaceRole.step6, trailing: SpaceRole.step12)
+            }
+        }
+    }
+
     let title: String
     var count: Int?
     var severity: GroupSeverity = .none
     /// A group of one CLI's rows (Activity, RD-R10) leads with that CLI's logo.
     var cli: CLIIdentity?
+    var size: Size = .regular
     @ViewBuilder var action: Action
 
-    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none, cli: CLIIdentity? = nil,
+    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none, cli: CLIIdentity? = nil, size: Size = .regular,
          @ViewBuilder action: () -> Action) {
         self.title = title
         self.count = count
         self.severity = severity
         self.cli = cli
+        self.size = size
         self.action = action()
     }
 
@@ -60,12 +77,12 @@ struct GroupHead<Action: View>: View {
                 }
                 if let cli { CLILogo(cli, size: SizeRole.logo16) }
                 Text(title)
-                    .typeRole(.bodyMedium)
+                    .typeRole(size.title)
                     .foregroundStyle(ColorRole.ink2)
                     .lineLimit(1)
                 if let count {
                     Text(verbatim: NumberWording.count(count))
-                        .typeRole(.bodyText.figures)
+                        .typeRole(size.count)
                         .foregroundStyle(ColorRole.ink3)
                         .lineLimit(1)
                         .fixedSize()
@@ -77,9 +94,7 @@ struct GroupHead<Action: View>: View {
             Spacer(minLength: SpaceRole.step8)
             action
         }
-        .padding(.top, SpaceRole.step16)
-        .padding(.horizontal, SpaceRole.step8)
-        .padding(.bottom, SpaceRole.step8)
+        .padding(size.insets)
     }
 
     static func spoken(title: String, count: Int?, severity: GroupSeverity) -> String {
@@ -88,8 +103,8 @@ struct GroupHead<Action: View>: View {
 }
 
 extension GroupHead where Action == EmptyView {
-    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none, cli: CLIIdentity? = nil) {
-        self.init(title, count: count, severity: severity, cli: cli) { EmptyView() }
+    init(_ title: String, count: Int? = nil, severity: GroupSeverity = .none, cli: CLIIdentity? = nil, size: Size = .regular) {
+        self.init(title, count: count, severity: severity, cli: cli, size: size) { EmptyView() }
     }
 }
 

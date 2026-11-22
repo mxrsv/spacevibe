@@ -15,7 +15,7 @@ struct JournalList: Equatable {
         let entry: CoreJournalEntry
         /// "Removed ponytail"; a change the core named nothing reads "Change".
         let label: String
-        /// "14:02", "Fri 16:00", "Nov 10".
+        /// "2:02 PM", "Fri 4:00 PM", "Nov 10" (the redesign's time wording, `LimitsClockWording`).
         let time: String
 
         var id: String { entry.id }
@@ -46,7 +46,7 @@ struct JournalList: Equatable {
         let entries = history.entries.sorted { Self.date($0.at) ?? .distantPast > Self.date($1.at) ?? .distantPast }.prefix(Self.cap)
         content = entries.isEmpty ? .empty : .rows(entries.map { entry in
             Row(entry: entry, label: entry.label.isEmpty ? "Change" : entry.label,
-                time: Self.date(entry.at).map { LimitsWording.clock($0, now: now, calendar: calendar) } ?? NumberWording.missing)
+                time: Self.date(entry.at).map { LimitsClockWording.clock($0, now: now, calendar: calendar) } ?? NumberWording.missing)
         })
     }
 
@@ -177,7 +177,7 @@ struct JournalWindow: View {
             Button { undo(row, store: store) } label: { PushButtonLabel(ToastText.undoTitle, icon: .arrowCounterClockwise, size: .small) }
                 .buttonStyle(PushButtonStyle(.control, size: .small, isLoading: isPending))
                 .focusEffectDisabled()
-                .disabled(store == nil || isPending)
+                .disabled(isPending)
                 .accessibilityLabel("Undo \(row.label)")
         }
     }
