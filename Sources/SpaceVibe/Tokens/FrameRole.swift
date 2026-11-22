@@ -13,6 +13,14 @@ enum FrameRole {
     /// The overlay inspector starts below it (`.in.ov{top:60px}`, style.css:482).
     static func toolbarHeight(_ look: MaterialLook) -> CGFloat { look == .glass ? 60 : 52 }
 
+    /// The toolbar's controls start this far down its strip: `.tb{padding:12px 12px 0}` in Glass, none in Solid
+    /// (`.desk[data-look=solid] .tb{padding-top:0}`, style.css:89, 94). With `toolbarRowHeight` it makes `toolbarHeight`.
+    static func toolbarTopInset(_ look: MaterialLook) -> CGFloat { look == .glass ? 12 : 0 }
+
+    /// The row the toolbar's controls are centred in: `toolbarHeight` less `toolbarTopInset` (48 in Glass, 52 in Solid), so
+    /// every page's controls share one centre line (36 in Glass, 26 in Solid).
+    static func toolbarRowHeight(_ look: MaterialLook) -> CGFloat { look == .glass ? 48 : 52 }
+
     /// The toolbar's primary or destructive button keeps this one width, so its label never moves the controls beside it
     /// (RD-R17 Layout): `.dst.slot,.pri.slot,span.slot{min-width:196px;max-width:196px}` (style.css:523).
     static let toolbarSlotWidth: CGFloat = 196
@@ -45,7 +53,16 @@ enum FrameRole {
     /// The sidebar's top, where the window's traffic lights sit: `.lights{height:52px}` (style.css:67).
     static let trafficLightClearance: CGFloat = 52
 
+    /// Where the centre of the window's first traffic light (close) sits, as the same distance from the window's left and
+    /// top edges: in the mock the lights are the first thing in the floating sidebar, `.sb{margin:8px;padding:0 8px}`
+    /// then `.lights{height:52px;padding:0 12px}` with 12 pt dots, so the close dot's centre is 8 + 8 + 12 + 6 = 34 across
+    /// and 8 + 52 / 2 = 34 down in Glass, and 0 + 8 + 12 + 6 = 26 both ways in Solid (no inset). The system's own place for
+    /// a hidden title bar is a centre near 16, which puts the buttons on the glass sidebar's rounded corner (RB-F4).
+    /// `FrameWindowButtons` moves the real buttons there and keeps the system's spacing between them.
+    static func trafficLightCenter(_ look: MaterialLook) -> CGFloat { look == .glass ? 34 : 26 }
+
     /// With the sidebar hidden (RD47) the toolbar starts after the window's traffic lights, as a macOS toolbar does when its
-    /// sidebar collapses: the three 12 pt buttons, their 8 pt gaps and the 20 pt the system keeps on each side of them.
-    static let trafficLightsWidth: CGFloat = 92
+    /// sidebar collapses: the three system buttons (14 pt, 23 pt apart on macOS 26 and 27) placed at
+    /// `trafficLightCenter` end at 87 in Glass and 79 in Solid, and the toolbar keeps at least the toolbar's 12 pt gap after them.
+    static func trafficLightsWidth(_ look: MaterialLook) -> CGFloat { look == .glass ? 100 : 92 }
 }

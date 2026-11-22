@@ -158,8 +158,11 @@ private struct ActivityPageBody: View {
             let data = context.data(now: context.preview?.now ?? timeline.date)
             SpaceVibeScrollView {
                 VStack(alignment: .leading, spacing: SpaceRole.step16) {
+                    // The mock's `.hdr` (4 above, 8 beside, 20 below with the stack's 16), as on every page (RB-F4).
                     PageHero(data.hero.figure, label: data.hero.label)
+                        .padding(.top, SpaceRole.step4)
                         .padding(.horizontal, SpaceRole.step8)
+                        .padding(.bottom, SpaceRole.step4)
                     content(data)
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)

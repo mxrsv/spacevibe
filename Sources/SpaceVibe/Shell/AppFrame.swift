@@ -28,7 +28,7 @@ struct AppFrame: View {
     init(model: FrameModel, look: MaterialLook? = nil, sidebarValues: FrameSidebarValues? = nil, sidebarHidden: Bool = false,
          content: @escaping PageContent = { page, model in .region(page, model: model) }) {
         _model = State(initialValue: model)
-        let chrome = FrameChrome()
+        let chrome = FrameChrome(page: model.router.route.page)
         chrome.isSidebarHidden = sidebarHidden
         _chrome = State(initialValue: chrome)
         forcedLook = look
@@ -91,9 +91,10 @@ private struct FrameWindow: View {
     var body: some View {
         let page = model.router.route.page
         let parts = content(page, model)
-        let presentation = chrome.presentation
+        // RB-F4: every region's place from this page's own parts, never from the page before (`FrameRegionLayout`).
+        let layout = chrome.layout(on: page, hasInspector: parts.inspector != nil, look: look)
+        let presentation = layout.presentation
         let modal = parts.dialog != nil
-        let sidebarWidth = FrameRole.sidebarWidth(look)
         ZStack(alignment: .topTrailing) {
             FrameWindowSurface(hasSidebar: !chrome.isSidebarHidden)
             HStack(spacing: 0) {
@@ -101,13 +102,12 @@ private struct FrameWindow: View {
                     FrameSidebar(current: page, values: sidebarValues ?? .from(model.store),
                                  open: { model.router.open($0) },
                                  openSettings: { openWindow(id: SettingsWindowFrame.windowID) })
-                        .frame(width: sidebarWidth)
+                        .frame(width: FrameRole.sidebarWidth(look))
                         .transition(.move(edge: .leading))
                 }
                 ZStack(alignment: .top) {
                     parts.body
-                        .safeAreaPadding(EdgeInsets(top: SpaceRole.toolbarClearance(look), leading: SpaceRole.step12,
-                                                    bottom: SpaceRole.step24, trailing: SpaceRole.step20))
+                        .safeAreaPadding(layout.contentInsets)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         .focusable(!modal)
                         .focused($focus, equals: .content)
@@ -128,21 +128,20 @@ private struct FrameWindow: View {
                             return .handled
                         }
                     FrameToolbar(page: page, content: parts, hidesTitle: presentation == .overlay, chrome: chrome,
-                                 search: model.search,
-                                 searchFolds: chrome.listWidth(sidebar: sidebarWidth, inspector: page.inspectorWidth.points)
-                                     < BlockRole.searchFoldsBelowListWidth)
-                        .padding(.trailing, presentation == .overlay ? page.inspectorWidth.points : 0)
+                                 leading: layout.toolbarLeading, isInspectorShown: presentation != .hidden,
+                                 search: model.search, searchFolds: layout.mainColumnWidth < BlockRole.searchFoldsBelowListWidth)
+                        .padding(.trailing, presentation == .overlay ? layout.inspectorWidth : 0)
                 }
                 if presentation == .docked, let inspector = parts.inspector {
                     FrameInspector(content: inspector, overlayActions: nil, isOverlay: false) { chrome.closeOverlays() }
-                        .frame(width: page.inspectorWidth.points)
+                        .frame(width: layout.inspectorWidth)
                 }
             }
             .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.sidebarDuration), value: chrome.isSidebarHidden)
             .accessibilityHidden(modal)
             if presentation == .overlay, let inspector = parts.inspector {
                 FrameInspector(content: inspector, overlayActions: parts.overlayActions, isOverlay: true) { chrome.closeOverlays() }
-                    .frame(width: page.inspectorWidth.points)
+                    .frame(width: layout.inspectorWidth)
                     .padding(.top, FrameRole.toolbarHeight(look))
                     .focusable(!modal)
                     .focused($focus, equals: .inspector)
@@ -163,6 +162,8 @@ private struct FrameWindow: View {
         .overlayHost()
         .ignoresSafeArea()
         .frameWindowBackground()
+        // RB-F4: the traffic lights at the floating sidebar's top, as the mock draws them, not on its rounded corner.
+        .frameWindowButtons(look: look)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chrome.setWindowWidth($0) }
         .onAppear {
             // A shot draws the state it was given; the app takes the window's stored one.
@@ -178,7 +179,7 @@ private struct FrameWindow: View {
             if new == nil, old != nil { focus = FrameFocusTarget.returning(to: focusBeforeDialog) }
         }
         // The search is cleared by the router itself, before the new page's first-row rule runs (`FrameRouter.open`).
-        .onChange(of: page) { chrome.pageChanged() }
+        .onChange(of: page) { chrome.pageChanged(to: page) }
         .onChange(of: presentation) { old, new in
             let opened = new == .overlay, closed = old == .overlay && !opened
             if opened { focus = .inspector }

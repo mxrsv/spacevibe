@@ -14,7 +14,11 @@ struct EquipList: View {
         let list = state.list()
         SpaceVibeScrollView {
             VStack(alignment: .leading, spacing: SpaceRole.step12) {
+                // The mock's `.hdr` (4 above, 8 beside, 20 below with the stack's 12), as on every page (RB-F4).
                 PageHero(list.heroFigure, label: list.heroLabel)
+                    .padding(.top, SpaceRole.step4)
+                    .padding(.horizontal, SpaceRole.step8)
+                    .padding(.bottom, SpaceRole.step8)
                 phaseContent(list)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)

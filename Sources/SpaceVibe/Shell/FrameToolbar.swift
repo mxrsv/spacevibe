@@ -10,6 +10,11 @@ struct FrameToolbar: View {
     /// Below 1100 pt with the overlay open the toolbar narrows beside it and leaves the title out (the mock's `.ovo .ttl`).
     let hidesTitle: Bool
     let chrome: FrameChrome
+    /// The leading padding, the same on every page (`FrameRegionLayout.toolbarLeading`): after the traffic lights while the
+    /// sidebar is hidden.
+    let leading: CGFloat
+    /// Whether this page's inspector is drawn now (`FrameChrome.presentation(on:hasInspector:)`), for the inspector button.
+    let isInspectorShown: Bool
     /// The page's search (`FramePageContent.searchItems`), and whether the main column is narrow enough to fold the field to
     /// its icon button.
     var search: FrameSearch?
@@ -18,7 +23,6 @@ struct FrameToolbar: View {
 
     var body: some View {
         @Bindable var chrome = chrome
-        let topInset = look == .glass ? SpaceRole.step12 : 0
         HStack(spacing: SpaceRole.step8) {
             // RD47: Hide Sidebar first (the mock's `b-chrome.js` toolbar), the same command as ⌃⌘S.
             let sidebarLabel = "\(chrome.sidebarCommandTitle) (\(FrameCommandMap.sidebar))"
@@ -56,14 +60,14 @@ struct FrameToolbar: View {
                 SearchField(text: $search.text, label: "Search \(items)", folded: searchFolds, focusRequest: search.focusRequest)
             }
             if content.inspector != nil {
-                let label = "\(chrome.isInspectorShown ? "Hide" : "Show") Inspector (\(FrameCommandMap.inspector))"
+                let label = "\(isInspectorShown ? "Hide" : "Show") Inspector (\(FrameCommandMap.inspector))"
                 Button { chrome.toggleInspector() } label: { SpaceVibeIcon(frame: .sidebarSimple, size: .control) }
-                    .buttonStyle(PushButtonStyle(.icon, isActive: chrome.isInspectorShown))
+                    .buttonStyle(PushButtonStyle(.icon, isActive: isInspectorShown))
                     .focusEffectDisabled()
                     .help(label)
                     .accessibilityLabel(label)
-                    .accessibilityAddTraits(chrome.isInspectorShown ? .isSelected : [])
-                    .accessibilityValue(chrome.isInspectorShown ? "On" : "Off")
+                    .accessibilityAddTraits(isInspectorShown ? .isSelected : [])
+                    .accessibilityValue(isInspectorShown ? "On" : "Off")
             }
             if let primary = content.primary {
                 FrameToolbarSlot { primary }
@@ -71,10 +75,10 @@ struct FrameToolbar: View {
                 FrameToolbarSlot()
             }
         }
-        .padding(.leading, chrome.isSidebarHidden ? FrameRole.trafficLightsWidth : SpaceRole.step12)
+        .padding(.leading, leading)
         .padding(.trailing, SpaceRole.step12)
-        .frame(height: FrameRole.toolbarHeight(look) - topInset)
-        .padding(.top, topInset)
+        .frame(height: FrameRole.toolbarRowHeight(look))
+        .padding(.top, FrameRole.toolbarTopInset(look))
         .frame(maxWidth: .infinity)
         .frameToolbarSurface()
     }
