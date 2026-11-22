@@ -21,11 +21,14 @@ test("every screen the page names is a file in public/", () => {
 
 test("every band shows a screen that exists, and has a line per CLI", () => {
   const keys = new Set([...shots.matchAll(/^  (\w+): \{$/gm)].map((m) => m[1]));
-  const bands = [...content.matchAll(/id: "(\w+)",\n    question:[\s\S]*?shot: "(\w+)"/g)];
+  const bands = [...content.matchAll(/id: "(\w+)",\n    label:[\s\S]*?shot: "(\w+)"/g)];
   assert.ok(bands.length >= 5, "the bands were not found in content.ts");
   const diffs = content.slice(content.indexOf("export const DIFFS"), content.indexOf("export const UPCOMING"));
   for (const [, id, shot] of bands) {
     assert.ok(keys.has(shot), `band ${id} names the unknown shot ${shot}`);
-    assert.match(diffs, new RegExp(`\\n  ${id}: \\{\\n    claude: "[^"]+",\\n    codex: "[^"]+",`), `band ${id} has no line per CLI`);
+    const block = diffs.match(new RegExp(`\\n  ${id}: \\{\\n([\\s\\S]*?)\\n  \\},`))?.[1] ?? "";
+    for (const cli of ["claude", "codex"]) {
+      assert.match(block, new RegExp(`${cli}: \\{\\n      reach: "(full|partial|readonly)",\\n      verdict: "[^"]+",\\n      detail:\\s+"[^"]+",`), `band ${id} has no line for ${cli}`);
+    }
   }
 });

@@ -66,6 +66,8 @@ export type BandId = "clean" | "skills" | "rules" | "limits" | "activity";
 
 export interface Band {
   readonly id: BandId;
+  /** The screen's name in the app's sidebar. */
+  readonly label: string;
   readonly question: string;
   readonly answer: string;
   readonly shot: ShotKey;
@@ -80,6 +82,7 @@ const DEMO = "demo data";
 export const BANDS: readonly Band[] = [
   {
     id: "clean",
+    label: "Clean",
     question: "What can go, and how much does it free?",
     answer:
       "Skills, subagents and hooks that never ran, hooks whose script is gone, and old session logs and caches, each with its size. Tick what goes and remove it in one step; Undo brings it back.",
@@ -88,6 +91,7 @@ export const BANDS: readonly Band[] = [
   },
   {
     id: "skills",
+    label: "Skills",
     question: "What is installed, and how often did it run?",
     answer:
       "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other. Subagents and hooks have the same page of their own.",
@@ -96,6 +100,7 @@ export const BANDS: readonly Band[] = [
   },
   {
     id: "rules",
+    label: "Rules",
     question: "What is each CLI allowed to do?",
     answer:
       "Claude Code’s rules as Allow, Ask or Deny per capability, with the rule behind each one and a warning on a rule that allows a whole tool. Codex’s sandbox and approvals are shown in its own words.",
@@ -104,6 +109,7 @@ export const BANDS: readonly Band[] = [
   },
   {
     id: "limits",
+    label: "Limits",
     question: "How much of my limit is left?",
     answer:
       "Read from Claude Code’s own usage cache, or optionally its status-line capture, and from Codex’s session logs, with no login and no API call. A CLI that keeps no usage file reads as not measurable; SpaceVibe never guesses.",
@@ -113,6 +119,7 @@ export const BANDS: readonly Band[] = [
   },
   {
     id: "activity",
+    label: "Activity",
     question: "What is running, and what is waiting for me?",
     answer:
       "Running, waiting and idle sessions with their current tool and estimated cost, and failed commands grouped with a count. Stop a session from here. Where a CLI cannot be read, SpaceVibe says so instead of guessing.",
@@ -122,27 +129,81 @@ export const BANDS: readonly Band[] = [
   },
 ];
 
+/**
+ * How much of a screen one CLI lets the app do. `full`: read (and where the screen writes, written) in
+ * full. `partial`: the CLI logs nothing for part of it, so that part reads not measurable. `readonly`:
+ * shown, never edited.
+ */
+export type Reach = "full" | "partial" | "readonly";
+
+export interface CliLine {
+  readonly reach: Reach;
+  /** Two or three words for the reach on this screen, in the app's own vocabulary. */
+  readonly verdict: string;
+  readonly detail: string;
+}
+
 /** What differs between the two CLIs on each screen, in the app's own words. */
-export const DIFFS: Record<BandId, Record<CLI, string>> = {
+export const DIFFS: Record<BandId, Record<CLI, CliLine>> = {
   clean: {
-    claude: "Old session logs, shell snapshots and the debug cache go to the macOS Trash. Logs a running session holds stay locked.",
-    codex: "Old session logs and the cache go the same way, by the age you pick: 30, 90 or 180 days.",
+    claude: {
+      reach: "full",
+      verdict: "Moved, with Undo",
+      detail: "Old session logs, shell snapshots and the debug cache go to the macOS Trash. Logs a running session holds stay locked.",
+    },
+    codex: {
+      reach: "full",
+      verdict: "Moved, with Undo",
+      detail: "Old session logs and the cache go the same way, by the age you pick: 30, 90 or 180 days.",
+    },
   },
   skills: {
-    claude: "Counts how often each skill, subagent and hook ran, and which hook commands fire on each event.",
-    codex: "Counts skills and subagents. Codex does not log hook runs, so a hook reads not measurable, never 0.",
+    claude: {
+      reach: "full",
+      verdict: "Every run counted",
+      detail: "Counts how often each skill, subagent and hook ran, and which hook commands fire on each event.",
+    },
+    codex: {
+      reach: "partial",
+      verdict: "Hooks not measurable",
+      detail: "Counts skills and subagents. Codex does not log hook runs, so a hook reads not measurable, never 0.",
+    },
   },
   rules: {
-    claude: "Allow, Ask or Deny for each capability, editable, with the concrete rules behind each one.",
-    codex: "Sandbox and approval settings in Codex’s own words, shown read only.",
+    claude: {
+      reach: "full",
+      verdict: "Editable",
+      detail: "Allow, Ask or Deny for each capability, with the concrete rules behind each one.",
+    },
+    codex: {
+      reach: "readonly",
+      verdict: "Read only",
+      detail: "Sandbox and approval settings in Codex’s own words, shown and never edited.",
+    },
   },
   limits: {
-    claude: "Reads the share left in each window from Claude Code’s own usage cache, or from its status-line capture when that is installed.",
-    codex: "Reads it from the last Codex turn, and shows how old that reading is.",
+    claude: {
+      reach: "full",
+      verdict: "Read locally",
+      detail: "Reads the share left in each window from Claude Code’s own usage cache, or from its status-line capture when that is installed.",
+    },
+    codex: {
+      reach: "full",
+      verdict: "Read locally",
+      detail: "Reads it from the last Codex turn, and shows how old that reading is.",
+    },
   },
   activity: {
-    claude: "Claude Code does not record permission prompts, so a long tool run and a wait for approval look the same.",
-    codex: "Codex logs nothing while a tool runs and writes no log until the first prompt is sent.",
+    claude: {
+      reach: "partial",
+      verdict: "Prompts not logged",
+      detail: "Claude Code does not record permission prompts, so a long tool run and a wait for approval look the same.",
+    },
+    codex: {
+      reach: "partial",
+      verdict: "Silent while a tool runs",
+      detail: "Codex logs nothing while a tool runs and writes no log until the first prompt is sent.",
+    },
   },
 };
 

@@ -101,6 +101,7 @@ Lines with no owner decision behind them. The build follows them; the owner sett
 - **The scene's stars and planet keep moving while the page is idle** (loops of 7 to 96 s, off under reduced motion). The owner's rule FE-M1 says nothing loops while idle; L2 keeps the scene. Source: carried over with the scene; left as is until the owner says which wins.
 - **A phone has no section links in the header**, only the brand and the download button; the footer carries them. Source: the first-generation header, unchanged.
 - **On a phone a whole capture is shown at about twice the frame's width and cut on the right**, so its text can be read. Source: agent's choice (audit 2026-11-22).
+- **Each band opens with the screen's name and an icon, and the two per-CLI text cards are one ledger**: a row per CLI with a verdict (a green check for read in full, an amber eye-off where the CLI logs nothing for part of it, a lock for read only) before the reason. Source: agent's choice (design-direction pass, 2026-11-22), to make what a CLI does not log the page's signature; the verdict words are the agent's.
 - **The Codex dot is neutral, not teal**, as in the app (`PRODUCT.md`, Colour). Source: app convention.
 
 ## Deploy gates
