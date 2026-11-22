@@ -3,7 +3,7 @@
 // builds the loadout.rows result. It never executes anything. Settings are read only for hooks, plugin flags
 // and skill overrides: no other value, in particular env, is kept or returned (S-R3).
 //
-// Ported from Sources/ReinsCore/Inventory*.swift (InventoryReader, InventoryTypes, InventoryFileIO,
+// Ported from the retired Swift core's Inventory*.swift (InventoryReader, InventoryTypes, InventoryFileIO,
 // InventoryProjects, InventoryHash, InventoryScriptPaths, InventoryUsageAttach, InventoryFilterCounts) and
 // Frontmatter.swift, plus the pure helpers of Sources/SpaceVibe/Loadout/LoadoutRows.swift (LoadoutData.build,
 // the per-row filter flags). The usage side lives in internal/usage, which this package imports.

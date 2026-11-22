@@ -1,22 +1,22 @@
-# SpaceVibe (formerly Reins)
+# SpaceVibe
 
 Date: 2026-11-02
-Status: partly superseded, marked 2026-11-20. Still the requirements: Purpose, Users, Identity, Platform, Constraints, Out of scope, the Tokens and Limits parts of Scope, the acceptance criteria and the SV traceability table (W20). Superseded and kept as the record: Interface, and the Loadout, Agents and Activity parts of Scope, replaced by [design language v5](2026-11-06-reins-design-language-v5.md) and decisions D3 to D70 of the [linear ledger](2026-11-06-reins-linear-identity-decisions.md); each of those sections says so at its start. The interface as shipped is described in [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md).
+Status: partly superseded, marked 2026-11-20. Still the requirements: Purpose, Users, Identity, Platform, Constraints, Out of scope, the Tokens and Limits parts of Scope, the acceptance criteria and the SV traceability table (W20). Superseded and kept as the record: Interface, and the Loadout, Agents and Activity parts of Scope, replaced by [design language v5](2026-11-06-spacevibe-design-language-v5.md) and decisions D3 to D70 of the [linear ledger](2026-11-06-spacevibe-linear-identity-decisions.md); each of those sections says so at its start. The interface as shipped is described in [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md).
 
 Status as written up to 2026-11-08: Scope and visual direction (Matrix) accepted by the owner on 2026-11-02. Platform changed the same day from
 Electron to native SwiftUI (see Platform). Tokens tab added to scope and its direction "Board" accepted by the owner on
 2026-11-03 (see Interface). Limits added to scope by the owner on 2026-11-03, from local files only (see Scope).
 Rules split into one page per CLI by the owner on 2026-11-04. Settings (Appearance,
-Update) added by the owner on 2026-11-04 in [its own spec](2026-11-04-reins-settings.md). Agents replaces the Rules tab
-and takes the hooks out of Loadout (owner, 2026-11-05) in [its own spec](2026-11-05-reins-agents.md).
+Update) added by the owner on 2026-11-04 in [its own spec](2026-11-04-spacevibe-settings.md). Agents replaces the Rules tab
+and takes the hooks out of Loadout (owner, 2026-11-05) in [its own spec](2026-11-05-spacevibe-agents.md).
 Superseded on 2026-11-07 by the owner's decisions SV1 to SV4 (standalone Go core, SwiftUI as the UI layer, stdio protocol)
 and SV9 to SV13 (rename to SpaceVibe, new identifiers, new update key); the source is the
 [decision ledger](2026-11-07-core-port-and-spacevibe-identity-decisions.md). Identity and Platform below are rewritten for
 them, and the traceability table at the end maps SV1 to SV17 to requirements and checks (W20). Other sections still carry
 the old wording until their own tasks update them. The Go port is built as of 2026-11-08 (every golden matches); the acceptance runs A1 to A5 on real CLIs are pending, see the Go core plan.
-Execution: [plan](../plans/2026-11-02-reins-swiftui.md), whose open tasks move to the
-[Go core and identity plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md); the Tokens tab has [its own plan](../plans/2026-11-03-reins-tokens.md), and so does
-[Limits](../plans/2026-11-03-reins-limits.md). The earlier [Electron plan](../plans/2026-11-02-reins-electron.md)
+Execution: plan (record removed 2026-11-22, in git history), whose open tasks move to the
+[Go core and identity plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md); the Tokens tab has [its own plan](../plans/2026-11-03-spacevibe-tokens.md), and so does
+Limits (record removed 2026-11-22, in git history). The earlier Electron plan (record removed 2026-11-22, in git history)
 is superseded.
 
 ## Purpose
@@ -25,7 +25,7 @@ One local app to control Claude Code and Codex CLI on the owner's Mac. It answer
 what is each agent equipped with, what is it allowed to do, what did it do, and what did it cost. Limits adds a fifth: how
 much of each subscription's usage limit is left.
 
-Reins is first an agent control app. On 2026-11-02 the owner kept token and cost tracking out because TokenTracker
+SpaceVibe is first an agent control app. On 2026-11-02 the owner kept token and cost tracking out because TokenTracker
 owned it; on 2026-11-03 the owner reversed that so everything lives in one app and TokenTracker can be uninstalled.
 Any other feature belongs here when it changes or explains what an agent may do.
 
@@ -40,21 +40,20 @@ permissions.
 
 ## Identity
 
-Decided by the owner on 2026-11-07 (SV9 to SV17), replacing the name `Reins` chosen on 2026-11-02.
+Decided by the owner on 2026-11-07 (SV9 to SV17).
 
-- Product and app name: `SpaceVibe`. No visible or identifying reference to Reins remains (SV9). `Reins` is named below
-  only as the former name where history needs it: this spec, the dated records under `docs/`, and the frozen test
-  fixtures. The plan reports those sites separately (the fix-one-fix-all report, FE-SP3).
+- Product and app name: `SpaceVibe`. No visible or identifying reference to the former name remains (SV9). Since 2026-11-22 that holds
+  for the dated records and the test fixtures too; the sites still open, each waiting on a step outside the repo, are
+  listed in the [SV ledger](2026-11-07-core-port-and-spacevibe-identity-decisions.md#owner-answer-on-the-former-name-2026-11-22).
 - Names (SV12): bundle id `dev.spacevibe.app`, CLI `spacevibe`, environment prefix `SPACEVIBE_*`, data folder
   `~/.spacevibe`. The binary name, the env prefix and the data folder are one constant each. `initialize` returns the
   core's name and version, so a shell never depends on the binary name.
 - Domain (SV10, SV16): `spacevibe.dev` is this product's landing page and download page. `spacevibe-hub` is retired and
   its content moves to `kyant.dev`. The host is Vercel; the order is build the Hub on `kyant.dev`, verify, then repoint
-  `spacevibe.dev`. Every DNS and deploy step needs the owner's approval when it runs. `reins.spacevibe.dev` did not
+  `spacevibe.dev`. Every DNS and deploy step needs the owner's approval when it runs. The retired product subdomain did not
   answer HTTP on 2026-11-07, so it needs no redirect unless a DNS record for it exists.
-- Repository: renamed with the product (SV11). The new repo name is **open**: the owner has not picked between
-  `mxrsv/spacevibe` and `spacevibe-app`, and nothing here assumes either. Until then the directory stays
-  `spacevibe-reins`, in `spacevibe-workspace`.
+- Repository: renamed with the product (SV11). The repository is `mxrsv/spacevibe` (settled 2026-11-21). The local checkout
+  folder in `spacevibe-workspace` still carries the old folder name until a workspace session renames it.
 - Previous installs (SV11, SV14, SV15): installed `v0.1.0` copies do not keep updating. The `v0.1.0` release stays,
   marked deprecated in its description with a pointer to the new download page; there is no bridge release, and deleting
   it is not part of this decision. There is no data migration from `~/.reins` to `~/.spacevibe`: the owner copies the
@@ -70,8 +69,8 @@ Execution: [Go core and identity plan](../plans/2026-11-07-go-core-and-spacevibe
 
 - Two parts. The core is a standalone engine written in Go and lives in this repository, in the directory `core/`
   (SV1, SV6; the name is owner decision D-7 in the plan, recommended and not yet confirmed). The macOS app is Swift and
-  SwiftUI and is the UI layer only (AppKit where SwiftUI falls short). The Swift engine library (`ReinsCore`) and the
-  `reins-cli` executable are not part of the target design: the core replaces them, and the Swift code is the port source
+  SwiftUI and is the UI layer only (AppKit where SwiftUI falls short). The Swift engine library (`SpaceVibeCore`) and the
+  `spacevibe-cli` executable are not part of the target design: the core replaces them, and the Swift code is the port source
   until it is deleted.
 - Shell-to-core protocol (SV3): JSON-RPC 2.0 over stdio, with the core as a child process owned by the GUI.
   - `initialize` carries the protocol version; a mismatch is refused.
@@ -82,7 +81,7 @@ Execution: [Go core and identity plan](../plans/2026-11-07-go-core-and-spacevibe
   - A one-shot `spacevibe <command> --json` stays for debugging.
   - The wire format (framing, errors, notifications) is specified in the plan, task PR.1.
 - The app reaches the core only through the child process, via one `CoreClient` in Swift; the UI no longer links
-  `ReinsCore` (SV4). Migration is one screen at a time.
+  `SpaceVibeCore` (SV4). Migration is one screen at a time.
 - Parity (SV5): the Node `core/` and its golden generator are deleted, as plan task S8.3 intended. The existing golden
   files are frozen as committed files. The Go core must match them by canonical bytes of named projections, as defined in
   the plan (conflict C1); the byte-for-byte wording is being narrowed there and needs the owner's explicit yes.
@@ -104,14 +103,14 @@ Execution: [Go core and identity plan](../plans/2026-11-07-go-core-and-spacevibe
   which the app must handle (denied means "not readable", never a crash or a silent empty list).
 - Updates: Sparkle, from a signed `appcast.xml` (owner, 2026-11-03, reversing "no updater"). The app checks once a day
   without asking unless the owner turns automatic checks off in Settings (2026-11-04,
-  [Settings](2026-11-04-reins-settings.md)), and never installs without a click. Sparkle's standard window shows the update; a check that finds one
+  [Settings](2026-11-04-spacevibe-settings.md)), and never installs without a click. Sparkle's standard window shows the update; a check that finds one
   mid-session also shows a toast that opens that window. A build with no feed configured makes no request. Notarizing,
   hosting the public feed and publishing a release are separate release work. For the new bundle id Sparkle gets a new key
   pair, a new Keychain account and a new `SUPublicEDKey` (SV13); installed `v0.1.0` copies are not kept updating (SV11).
 
 ## Interface
 
-SUPERSEDED, marked 2026-11-20. The Matrix direction and the layout below were replaced on 2026-11-06 and 2026-11-07 by the Linear-referenced identity (D3, D17, D43 to D68 of the [linear ledger](2026-11-06-reins-linear-identity-decisions.md)), specified in [design language v5](2026-11-06-reins-design-language-v5.md) and cut over on 2026-11-12. What changed against the text below: the pages are Agents (tabs Skills, Subagents, Hooks, Rules), Activity and Limits, plus Settings, so there is no Loadout, Rules or Tokens tab (D43, D46, D49); the two CLIs are a logo strip per row, not two columns (D21, D23, D31); Limits is a regular page on `⌘3` (D43, D59, D70); Activity has Running and Failed, the Files tab is dropped (D70); the look is v5's tokens, not the System Settings structure or the v3 tokens. Still the direction of its own plan: the Tokens "Board" paragraph. The text is kept as the record.
+SUPERSEDED, marked 2026-11-20. The Matrix direction and the layout below were replaced on 2026-11-06 and 2026-11-07 by the Linear-referenced identity (D3, D17, D43 to D68 of the [linear ledger](2026-11-06-spacevibe-linear-identity-decisions.md)), specified in [design language v5](2026-11-06-spacevibe-design-language-v5.md) and cut over on 2026-11-12. What changed against the text below: the pages are Agents (tabs Skills, Subagents, Hooks, Rules), Activity and Limits, plus Settings, so there is no Loadout, Rules or Tokens tab (D43, D46, D49); the two CLIs are a logo strip per row, not two columns (D21, D23, D31); Limits is a regular page on `⌘3` (D43, D59, D70); Activity has Running and Failed, the Files tab is dropped (D70); the look is v5's tokens, not the System Settings structure or the v3 tokens. Still the direction of its own plan: the Tokens "Board" paragraph. The text is kept as the record.
 
 Direction "Matrix" chosen by the owner on 2026-11-02. The earlier web prototype directions (`?d=a|b|c`) were
 rejected. Click-through mock, outside the repo: `~/scratch/spacevibe-reins/b-matrix.html`.
@@ -119,7 +118,7 @@ rejected. Click-through mock, outside the repo: `~/scratch/spacevibe-reins/b-mat
 - Look: macOS System Settings structure (sidebar, inset grouped lists) with a Raycast command palette
   (`⌘K`) and a bottom hint bar. Dark by default, light switchable. Neutral ground; the two CLIs carry
   the colour (Claude Code clay, Codex blue). Identity, state and interaction colours share a restrained tonal family
-  ([2026-11-05 palette refinement](2026-11-03-reins-design-language.md#shared-colour-tone-decided-2026-11-05)); danger and warn colours mark state only.
+  (2026-11-05 palette refinement (record removed 2026-11-22, in git history)); danger and warn colours mark state only.
 - Claude Code and Codex are two columns on every tab, so a difference between them is the first thing seen. Agents is the
   exception (owner, 2026-11-04): the two CLIs keep their configuration in different shapes, so each gets a card and panels
   in its own terms (one grid had forced Codex into Claude's rows: "no setting" hid a Codex that never asks and has no
@@ -131,7 +130,7 @@ rejected. Click-through mock, outside the repo: `~/scratch/spacevibe-reins/b-mat
 - Usage cell has five states that must look different: counted (bar and number), never ran (red 0),
   not counted yet (dashed track), not measurable (icon and label, reason on hover), not installed.
 - Agents (replaces Rules, owner 2026-11-05): one card per CLI whose buttons open its Rules, Permissions, Hooks, MCP,
-  Model and Advanced settings in a panel on the right; see the [Agents spec](2026-11-05-reins-agents.md). The Rules page
+  Model and Advanced settings in a panel on the right; see the [Agents spec](2026-11-05-spacevibe-agents.md). The Rules page
   (one CLI at a time behind a `Claude Code | Codex` switch, mock `~/scratch/spacevibe-reins/rules-split/index.html`)
   stays the default until the Agents cut-over.
 - Activity: one lane per CLI for running sessions and failed commands (repeats grouped with a count), and one
@@ -166,7 +165,7 @@ rejected. Click-through mock, outside the repo: `~/scratch/spacevibe-reins/b-mat
   ruler, three facts (resets in, resets at, reading age) and the reading's source under them, with `Copy /usage` for
   Claude Code. The window with the least
   left is selected first. The visual tokens are the app-wide v3 tokens of the
-  [design-language spec](2026-11-03-reins-design-language.md).
+  design-language spec (record removed 2026-11-22, in git history).
 - Not yet designed: light-mode review, narrow windows, the menubar item, empty and error states.
 
 ## Scope
@@ -182,9 +181,9 @@ SUPERSEDED as a tab by D43 and D46: these items are the Skills, Subagents and Ho
 
 ### Tab: Agents
 
-SUPERSEDED by D43, D47 and D48: Agents is the page that holds Skills, Subagents, Hooks and Rules; Rules is Claude Code's permission grid with Codex read only; the per-CLI settings cards and panels below are a later phase (see the status of the [Agents spec](2026-11-05-reins-agents.md)).
+SUPERSEDED by D43, D47 and D48: Agents is the page that holds Skills, Subagents, Hooks and Rules; Rules is Claude Code's permission grid with Codex read only; the per-CLI settings cards and panels below are a later phase (see the status of the [Agents spec](2026-11-05-spacevibe-agents.md)).
 
-Replaces Tab: Rules (owner, 2026-11-05). Requirements in the [Agents spec](2026-11-05-reins-agents.md):
+Replaces Tab: Rules (owner, 2026-11-05). Requirements in the [Agents spec](2026-11-05-spacevibe-agents.md):
 - Every setting of both CLIs is editable from one card per agent, Codex included. This reverses "writing Codex settings
   from the app is out of scope".
 - Every save is confirmed once and can be undone.
@@ -209,7 +208,7 @@ Replaces Tab: Rules (owner, 2026-11-05). Requirements in the [Agents spec](2026-
 ### Tab: Tokens
 
 Accounting and history refinements accepted after the TokenTracker scout on 2026-11-12; execution remains in the
-[Tokens plan](../plans/2026-11-03-reins-tokens.md). The Board direction and exclusions below are unchanged.
+[Tokens plan](../plans/2026-11-03-spacevibe-tokens.md). The Board direction and exclusions below are unchanged.
 
 - Tokens and estimated cost of both CLIs by day, week, month and total, with Claude Code and Codex shown side by side.
 - Top models, and a breakdown by day and by project.
@@ -243,7 +242,7 @@ owner's Mac).
 - Sources, read-only, with no request, no credential read and no CLI started:
   - Codex: the `rate_limits` of the newest `token_count` event in its rollout logs, written after every turn.
   - Claude Code (owner-approved correction, 2026-11-05): quota received through the supported `statusLine` payload,
-    collected into Reins' own data directory by a separate native helper that Claude starts. Installation is explicit,
+    collected into SpaceVibe' own data directory by a separate native helper that Claude starts. Installation is explicit,
     preserves the existing status-line command, input, output and settings, and records an undoable journal entry.
     The GUI never starts the helper or the original command. No dependency on another application's capture files.
     The helper persists only known quota windows, receipt time and a hash of the configured account identity; no
@@ -321,19 +320,19 @@ Every owner decision of the [ledger](2026-11-07-core-port-and-spacevibe-identity
 | SV1 | "The core is a standalone engine in Go. SwiftUI is the macOS UI layer only. Supersedes the spec line "the engine is rewritten in Swift as a library"." | RQ-SV1: all engine behavior lives in a Go core that runs without the app; SwiftUI holds no engine logic. | Plan tasks P0.5, G1, G2: the Go packages pass GO (`go vet`, `go test`) and the app runs on the Go core only. |
 | SV2 | "Windows and Linux shells are committed within about 3-6 months, which is the reason for SV1." | RQ-SV2: the core builds for darwin, linux and windows without cgo or Apple-only imports; the shells themselves are out of scope. | Plan tasks X1 (cross-compile and Linux CI), X2 (Windows hardware, signal only). |
 | SV3 | "Shell-to-core protocol: JSON-RPC over stdio, a child process owned by the GUI. The protocol version is sent in `initialize` and a mismatch is refused. Stdout carries protocol only, logs go to stderr, the core exits on stdin EOF, spawn uses an argv array (no shell). No network listener (S-R5). A one-shot `<cli> <command> --json` stays for debugging." | RQ-SV3: the stdio protocol has exactly these properties: versioned `initialize`, protocol-only stdout, stderr logs, exit on EOF, argv spawn, no listener, one-shot `--json` (reads only). | Plan tasks PR.1 to PR.3 and S.2: protocol tests for mismatch, EOF exit and stdout discipline; the `no_net_deps` check (PR.2). |
-| SV4 | "The macOS app calls the core only through the child process, via one `CoreClient` in Swift. `ReinsCore` is no longer linked by the UI. Migration is one screen at a time." | RQ-SV4: the app reaches the core only through `CoreClient`; no UI target links `ReinsCore`; screens move one at a time. | Plan tasks S.1 to S.8: after each cut-over the screen works on the core, and at S.8 no UI import of `ReinsCore` remains. |
-| SV5 | "Parity oracle: the existing `Tests/ReinsCoreTests/Fixtures/golden/*.json` are frozen as committed files. The Node generator and Node `core/` are deleted as plan S8.3 intended. The Go core must match the goldens byte for byte. A wrong golden is fixed together with its Swift test in one commit." | RQ-SV5: goldens are frozen and the Node oracle is deleted. The Go core matches the goldens as canonical bytes of the named projections, case counts asserted. The wording "byte for byte" is narrowed to this (plan C1); the owner gave the explicit yes on 2026-11-20 ([ledger, "Owner answer on SV5"](2026-11-07-core-port-and-spacevibe-identity-decisions.md#owner-answer-on-sv5-2026-11-20)). A wrong golden is fixed with its test in one commit ("Swift test" becomes "Go test" after the Swift tests are deleted, plan C2). | Plan tasks P0.3, P0.4, G1.10, every `TestGolden*`, and conflict C1: canonical bytes of the named projections, case counts asserted; `SHA256SUMS` check on the frozen files. Status: pending the owner's yes on C1. |
+| SV4 | "The macOS app calls the core only through the child process, via one `CoreClient` in Swift. `SpaceVibeCore` is no longer linked by the UI. Migration is one screen at a time." | RQ-SV4: the app reaches the core only through `CoreClient`; no UI target links `SpaceVibeCore`; screens move one at a time. | Plan tasks S.1 to S.8: after each cut-over the screen works on the core, and at S.8 no UI import of `SpaceVibeCore` remains. |
+| SV5 | "Parity oracle: the existing `Tests/SpaceVibeCoreTests/Fixtures/golden/*.json` are frozen as committed files. The Node generator and Node `core/` are deleted as plan S8.3 intended. The Go core must match the goldens byte for byte. A wrong golden is fixed together with its Swift test in one commit." | RQ-SV5: goldens are frozen and the Node oracle is deleted. The Go core matches the goldens as canonical bytes of the named projections, case counts asserted. The wording "byte for byte" is narrowed to this (plan C1); the owner gave the explicit yes on 2026-11-20 ([ledger, "Owner answer on SV5"](2026-11-07-core-port-and-spacevibe-identity-decisions.md#owner-answer-on-sv5-2026-11-20)). A wrong golden is fixed with its test in one commit ("Swift test" becomes "Go test" after the Swift tests are deleted, plan C2). | Plan tasks P0.3, P0.4, G1.10, every `TestGolden*`, and conflict C1: canonical bytes of the named projections, case counts asserted; `SHA256SUMS` check on the frozen files. Status: pending the owner's yes on C1. |
 | SV6 | "The Go core lives in this repository, in a new directory whose name is chosen after reading `~/.claude/templates/project-structure.md`." | RQ-SV6: the Go core is in this repository; the directory name and module path are decided by the owner (plan D-7, recommended `core/`). | Plan tasks P0.5, G1, G2 (after D-7): `git ls-files` shows the Go core under the chosen directory. |
 | SV7 | "Order: the Go port comes before the first macOS publish, so S0.5, S0.4 and S0.3 are verified once, on the Go core." | RQ-SV7: no macOS release before the port; real-CLI acceptance, process facts with Stop, and TCC are run once, on the Go core. | Plan tasks P1 and A1 to A6 (runtime checks on Go); release gate REL1 stays after them. |
 | SV8 | "Pre-publish core review order: real-CLI acceptance (S0.5), then write safety and Stop (S0.4), then TCC (S0.3), then S8.1 and S8.2, then feature gaps against the spec. Output is a severity-ranked read-only report on the core whose findings become tasks in an existing plan. The goal is trust for a macOS release, not cross-platform preparation." | RQ-SV8: a read-only, severity-ranked review in this order; findings become tasks in an existing plan. | Plan tasks P1 (early read-only review in SV8 order) and A1 to A6 (runtime checks in the same order); conflict C4. |
-| SV9 | "The product is renamed from Reins to SpaceVibe. No visible or identifying reference to Reins remains." | RQ-SV9: no visible or identifying reference to Reins remains in the repo, app, site and release text, except sites named as skipped. | Plan tasks R1 to R6, GH1: a repo-wide search ending in "changed N of M", each skipped site named (FE-SP3); frozen fixtures and the `v0.1.0` release text reported separately (conflict C3). |
+| SV9 | "The product takes the name SpaceVibe in place of its former name. No visible or identifying reference to the former name remains." | RQ-SV9: no visible or identifying reference to the former name remains in the repo, app, site and release text, except sites named as skipped. | Plan tasks R1 to R6, GH1: a repo-wide search ending in "changed N of M", each skipped site named (FE-SP3); frozen fixtures and the `v0.1.0` release text reported separately (conflict C3). |
 | SV10 | "`spacevibe.dev` becomes this product's landing page. `spacevibe-hub` is retired and its content moves to `kyant.dev`." | RQ-SV10: `spacevibe.dev` serves this product's landing page; Hub content lives on `kyant.dev`. | Plan tasks R5, WEB1 to WEB3: deploy and DNS steps each run only with the owner's approval; the final check is the live response of `spacevibe.dev` after repoint. |
 | SV11 | "All identifiers are renamed too, including the bundle id, the repo name and the appcast URL. Installed `v0.1.0` copies are not kept updating." | RQ-SV11: bundle id, repo name and appcast URL carry the new name; `v0.1.0` installs receive no update. The repo name is `mxrsv/spacevibe` (owner decision D-1, settled 2026-11-21). | Plan tasks R1 to R6, GH1 (after D-1): the same repo-wide search as SV9, plus the appcast URL in the built plist. |
 | SV12 | "New names: bundle id `dev.spacevibe.app`, CLI `spacevibe`, env prefix `SPACEVIBE_*`, data folder `~/.spacevibe`. The binary name, env prefix and data folder are one constant each. `initialize` returns the core's name and version so a shell never depends on the binary name." | RQ-SV12: the four names are used as given, each in one constant, and `initialize` returns the core name and version. | Plan tasks R1, P0.5, S.2: a grep finds each name defined once; the `initialize` result is asserted in the protocol test. |
 | SV13 | "Sparkle gets a new key pair and a new Keychain account for the new bundle id, with a new `SUPublicEDKey`. B8 is rewritten for the new key." | RQ-SV13: a new Sparkle key pair, Keychain account and `SUPublicEDKey`; AGENTS.md B8 rewritten (conflict C6). | Plan task R2: the updater check of AC7 runs with the new key, and B8 in AGENTS.md names the new account. |
 | SV14 | "The `v0.1.0` release stays, marked deprecated in its description with a pointer to the new download page. No bridge release (3 downloads at 2026-11-07). Deleting it is not part of this decision." | RQ-SV14: the `v0.1.0` release remains, its description marked deprecated with a pointer; no bridge release and no deletion. | Plan gate GH2: the owner approves the edit, then `gh release view` shows the deprecated description. |
 | SV15 | "No data migration from `~/.reins` to `~/.spacevibe`. The owner copies the folder by hand; the release notes say so." | RQ-SV15: the app never reads `~/.reins` or copies it; the release notes tell the owner to copy the folder by hand. | Plan tasks R1 (no migration code) and R5 (release notes): grep finds no read of `~/.reins`, and the notes contain the instruction. |
-| SV16 | "Deploy host is Vercel. Old Hub routes redirect to the same path on `kyant.dev`. The `/live` family (`/live`, `/en/live`, `/vi/live`, `/live/<slug>`) keeps its 308 to `https://active.spacevibe.dev` (U4). Order: build Hub on `kyant.dev`, verify, then repoint `spacevibe.dev`. `reins.spacevibe.dev` did not answer HTTP on 2026-11-07, so it needs no redirect unless DNS for it exists. Every DNS and deploy step needs the owner's approval when it runs." | RQ-SV16: Vercel hosts the site; old Hub routes redirect to the same path on `kyant.dev`; the `/live` family keeps its 308; the order is Hub on `kyant.dev`, verify, then repoint; each DNS and deploy step is approved when it runs. | Plan tasks R5, WEB1 to WEB3: redirect responses checked per route, and WEB3 checks DNS for `reins.spacevibe.dev`. |
+| SV16 | "Deploy host is Vercel. Old Hub routes redirect to the same path on `kyant.dev`. The `/live` family (`/live`, `/en/live`, `/vi/live`, `/live/<slug>`) keeps its 308 to `https://active.spacevibe.dev` (U4). Order: build Hub on `kyant.dev`, verify, then repoint `spacevibe.dev`. The retired product subdomain did not answer HTTP on 2026-11-07, so it needs no redirect unless DNS for it exists. Every DNS and deploy step needs the owner's approval when it runs." | RQ-SV16: Vercel hosts the site; old Hub routes redirect to the same path on `kyant.dev`; the `/live` family keeps its 308; the order is Hub on `kyant.dev`, verify, then repoint; each DNS and deploy step is approved when it runs. | Plan tasks R5, WEB1 to WEB3: redirect responses checked per route, and WEB3 checks DNS for the retired product subdomain. |
 | SV17 | "The other products (Deck, Bench, Academy, Active) keep their own names. "SpaceVibe" names this app. Workspace-level records move to a separate workspace session (X1)." | RQ-SV17: copy in this repo names only this app "SpaceVibe"; other products keep their names; workspace records are handled in a workspace session. | Plan task R5 copy review; the workspace-level items are listed in the plan's hand-off and not edited here. |
 
 Table shown to the owner on: 2026-11-07. Owner: "tiếp tục hết tất các phase" (build through all phases, accepting the plan's recommendations; see the ledger, "Owner answers at plan execution").

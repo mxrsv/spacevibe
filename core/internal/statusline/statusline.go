@@ -1,6 +1,6 @@
 // Package statusline is the Claude Code status line collector and its setup (decision D-3: a core subcommand, not
-// a separate binary). Ported from Sources/ReinsCore/StatuslineSetup.swift, Sources/ReinsStatusline/main.swift and
-// the write side of Sources/ReinsCore/LimitsClaudeStatusline.swift; internal/limits has the read side.
+// a separate binary). Ported from the retired Swift core's StatuslineSetup.swift, its status-line collector and
+// the write side of the retired Swift core's LimitsClaudeStatusline.swift; internal/limits has the read side.
 //
 //	spacevibe statusline install
 //	spacevibe statusline uninstall

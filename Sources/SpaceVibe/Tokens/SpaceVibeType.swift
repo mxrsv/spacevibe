@@ -3,7 +3,7 @@ import Foundation
 import SwiftUI
 
 /// A text role: one Inter weight at one size, its line box on the 4 pt grid, its tracking, and whether it is a machine
-/// string. Spec: `docs/specs/2026-11-03-reins-design-language.md` (Typography). A view takes a role with
+/// string. Spec: `docs/specs/2026-11-03-spacevibe-design-language.md` (Typography). A view takes a role with
 /// `.spaceVibeText(_:tone:)`; it never builds a font itself, so changing a role here restyles every screen.
 ///
 /// Hierarchy inside one size comes from weight and tone, not size: 12, 14 and 16 are only a step of 1.14 apart. The Font

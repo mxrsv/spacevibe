@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Writes the app's icons as SwiftUI path code into Sources/SpaceVibe/Components, from two icon packages in their Iconify JSON form
 // and SpaceVibe's own page icons in Resources/PageIcons.json. No SVG is shipped or parsed at run time (spec
-// docs/specs/2026-11-03-reins-design-language.md, v3 "Icons"; v5 spec V5-R9, V5-R10, V5-R12; redesign spec RD23, RD37, RD38).
+// docs/specs/2026-11-03-spacevibe-design-language.md, v3 "Icons"; v5 spec V5-R9, V5-R10, V5-R12; redesign spec RD23, RD37, RD38).
 //
 //   The v5 frame (kept as it is until the cut-over RB-X1 deletes what no screen uses):
 //   CategoryIconData.swift  MingCute Line (MingCute Design, Apache-2.0): the category glyphs

@@ -1,6 +1,6 @@
 // Package activity is the Activity tab's data: the running sessions of both CLIs, failed commands and file history.
 //
-// Ported from Sources/ReinsCore/Activity.swift (ActivityEngine, readActivity), ActivityFold.swift,
+// Ported from the retired Swift core's Activity.swift (ActivityEngine, readActivity), ActivityFold.swift,
 // ActivityGroups.swift, ActivityStop.swift and SessionTitles.swift (ActivityText is internal/textjs). The Swift code
 // is the spec, quirks included; the patterns that ran on ICU are in icu-patterns.go.
 //

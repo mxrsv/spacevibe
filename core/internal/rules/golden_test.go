@@ -317,7 +317,7 @@ func settingsAfter(t *testing.T, root string) obj {
 			return nil
 		}
 		rel, _ := filepath.Rel(root, path)
-		if strings.HasPrefix(rel, ".reins") || strings.HasPrefix(rel, ".spacevibe") {
+		if strings.HasPrefix(rel, ".spacevibe") {
 			return nil
 		}
 		data, err := os.ReadFile(path)

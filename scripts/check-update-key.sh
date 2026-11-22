@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Refuses an Info.plist whose Sparkle public key must not ship: the key of the deprecated account dev.spacevibe.reins
+# Refuses an Info.plist whose Sparkle public key must not ship: the key of the deprecated v0.1.0 account
 # (AGENTS.md B8), a missing key or an empty one. Reads the plist only; touches no Keychain.
 #
 #   scripts/check-update-key.sh <Info.plist>    exit 0 when the key may ship, 1 with one sentence on stderr otherwise
@@ -18,6 +18,6 @@ if [[ -z "${KEY}" ]]; then
   exit 1
 fi
 if [[ "${KEY}" == "${DEPRECATED_UPDATE_KEY}" ]]; then
-  echo "SUPublicEDKey in ${PLIST} is still the deprecated key of the account dev.spacevibe.reins: replace it with the new account's public key before any release (AGENTS.md B8)." >&2
+  echo "SUPublicEDKey in ${PLIST} is still the deprecated key of the v0.1.0 account: replace it with the new account's public key before any release (AGENTS.md B8)." >&2
   exit 1
 fi

@@ -1,6 +1,6 @@
 // Package logs finds, opens and incrementally reads session logs, plain `.jsonl` and compressed `.jsonl.zst`.
 //
-// Ported from Sources/ReinsCore/ZstdStream.swift, LogFiles.swift (with LineSplitter) and TailReader.swift
+// Ported from the retired Swift core's ZstdStream.swift, LogFiles.swift (with LineSplitter) and TailReader.swift
 // (TailReader, CompressedLogReader, LineTail). `modificationTime` is not ported: os.FileInfo.ModTime replaces it,
 // and the plan's `fsx` package owns the stat helper for other callers.
 //

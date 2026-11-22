@@ -1,23 +1,23 @@
-# Reins: Agents
+# SpaceVibe: Agents
 
-On hold and partly superseded, marked 2026-11-20. Nothing after A0b was built. Superseded by the [UI v5 build plan](2026-11-07-reins-ui-v5-build.md) (D43 to D49, D68): A8, A10 and the UI half of A12. Moved: the engine tasks A1 to A6 would be written in the Go core, not in `Sources/ReinsCore` (go-core plan D-5), and are not started. Waiting for the later phase the owner has not opened (D47, D48): A7, A9, A11. Its dependency, design language v4, is superseded. See the status of the [spec](../specs/2026-11-05-reins-agents.md). The text below is kept as it stood.
+On hold and partly superseded, marked 2026-11-20. Nothing after A0b was built. Superseded by the [UI v5 build plan](2026-11-07-spacevibe-ui-v5-build.md) (D43 to D49, D68): A8, A10 and the UI half of A12. Moved: the engine tasks A1 to A6 would be written in the Go core, not in `Sources/SpaceVibeCore` (go-core plan D-5), and are not started. Waiting for the later phase the owner has not opened (D47, D48): A7, A9, A11. Its dependency, design language v4, is superseded. See the status of the [spec](../specs/2026-11-05-spacevibe-agents.md). The text below is kept as it stood.
 
-Spec: [2026-11-05-reins-agents.md](../specs/2026-11-05-reins-agents.md), AG1 to AG10.
-Depends on [design language v4](2026-11-05-reins-design-language-v4.md) V5 (the components) before any UI task here. The core tasks A1 to A6 can start now.
-Mock: `mocks/agents/agents-panel.html` (C′), with the v4 look at `mocks/agents/controls.html``?icons=tabler&buttons=a`. Both were tracked with synthetic data, and A12 was to delete the folder. `mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`.
+Spec: [2026-11-05-spacevibe-agents.md](../specs/2026-11-05-spacevibe-agents.md), AG1 to AG10.
+Depends on design language v4 (record removed 2026-11-22, in git history) V5 (the components) before any UI task here. The core tasks A1 to A6 can start now.
+Mock: `mocks/agents/agents-panel.html` (C′), with the v4 look at `mocks/agents/controls.html``?icons=tabler&buttons=a`. Both were tracked with synthetic data, and A12 was to delete the folder. `mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the docs-normalization plan (record removed 2026-11-22, in git history)); it is in git history, last present at `2c3093a`.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions. Commit with `git commit -- <paths>` only.
 Started 2026-11-05. Status: the owner approved the write approach below on 2026-11-05 (W9, "ok"), adding that every failure shows a toast. The owner also picked the name-based secret rule the same day. The owner picked the A0b mock on 2026-11-05 ("ok chốt"), so A1 can start; the cut-over (A12) is the only owner stop left.
 
 ## Approach
 
 ```
-Sources/ReinsCore/   SecretMask, TOMLEdit, ClaudeSettingsEdit (any key path), ClaudeStateMCP (~/.claude.json), MCPFile
+Sources/SpaceVibeCore/   SecretMask, TOMLEdit, ClaudeSettingsEdit (any key path), ClaudeStateMCP (~/.claude.json), MCPFile
                      (.mcp.json), CodexConfigEdit, CodexRulesFile, CodexHooksFile, InstructionFile; every save goes
                      through Journal
-Sources/Reins/Components/  InspectorPanel (resize, footer, discard prompt), MarkdownEditor + Preview, CodeEditor (gutter,
+Sources/SpaceVibe/Components/  InspectorPanel (resize, footer, discard prompt), MarkdownEditor + Preview, CodeEditor (gutter,
                      masked values), MenuPicker; CardButton and the verdict picker come from v4
-Sources/Reins/Agents/      AgentsTab, AgentsScreen, AgentCard, one view per panel and CLI, AgentsModel (drafts, scopes, diff)
-Sources/Reins/App/LaunchMode, Shell/TabRegistry   the development switch REINS_AGENTS=1
+Sources/SpaceVibe/Agents/      AgentsTab, AgentsScreen, AgentCard, one view per panel and CLI, AgentsModel (drafts, scopes, diff)
+Sources/SpaceVibe/App/LaunchMode, Shell/TabRegistry   the development switch SPACEVIBE_AGENTS=1
 ```
 
 ### Write approach and recovery (W9)
@@ -33,7 +33,7 @@ Sources/Reins/App/LaunchMode, Shell/TabRegistry   the development switch REINS_A
   - Just before the rename, read the file again. If any of the three changed, apply the same `mcpServers` edit to the new bytes and check again; give up after one retry with the spec's message.
   - The file's other keys are never parsed into a model.
 - **Secrets.**
-  - `SecretMask` finds secret spans by key path and returns masked text plus a span table that never leaves `ReinsCore`.
+  - `SecretMask` finds secret spans by key path and returns masked text plus a span table that never leaves `SpaceVibeCore`.
   - On save it maps each placeholder back to its original span, and refuses a placeholder that moved.
   - Errors carry a position or a fixed reason, never content (S-R3).
   - The trash copies already hold whole files. They stay inside the app's data folder, whose mode is confirmed as 0600 in A1.
@@ -44,7 +44,7 @@ Sources/Reins/App/LaunchMode, Shell/TabRegistry   the development switch REINS_A
 - **Recovery.**
   - Every save can be undone from the toast or from the journal, after a relaunch too.
   - A failed write leaves the target untouched, because the temp file is removed before any rename.
-  - Tests run only against `TempHome` (S-R1). A manual check uses the synthetic home from `scripts/dev-fixture.sh --prepare`, opened with `open -n build/Reins.app --env HOME=… --env CLAUDE_CONFIG_DIR=… --env CODEX_HOME=… --env REINS_HOME=… --env REINS_TEST=1 --env REINS_AGENTS=1`. `REINS_TEST=1` keeps the S-R1 guard: `Roots.resolve` throws when a root resolves under the real home.
+  - Tests run only against `TempHome` (S-R1). A manual check uses the synthetic home from `scripts/dev-fixture.sh --prepare`, opened with `open -n build/SpaceVibe.app --env HOME=… --env CLAUDE_CONFIG_DIR=… --env CODEX_HOME=… --env SPACEVIBE_HOME=… --env SPACEVIBE_TEST=1 --env SPACEVIBE_AGENTS=1`. `SPACEVIBE_TEST=1` keeps the S-R1 guard: `Roots.resolve` throws when a root resolves under the real home.
   - The real `~/.claude` and `~/.codex` are never touched by this work.
 
 ## Tasks
@@ -73,22 +73,22 @@ Sources/Reins/App/LaunchMode, Shell/TabRegistry   the development switch REINS_A
   - `MenuPicker`.
 
   Each gets a gallery specimen (AG7, AG8).
-- [ ] A8. The Agents screen behind `REINS_AGENTS=1`, while Rules stays the default.
-  - The switch is honoured in debug builds, and in any build only when `REINS_TEST=1` is also set.
-  - The second case lets the owner test the release bundle from `scripts/build-app.sh` on a synthetic home. No user sets both, and `REINS_TEST=1` makes `Roots.resolve` refuse the real home.
+- [ ] A8. The Agents screen behind `SPACEVIBE_AGENTS=1`, while Rules stays the default.
+  - The switch is honoured in debug builds, and in any build only when `SPACEVIBE_TEST=1` is also set.
+  - The second case lets the owner test the release bundle from `scripts/build-app.sh` on a synthetic home. No user sets both, and `SPACEVIBE_TEST=1` makes `Roots.resolve` refuse the real home.
   - The A8 screen covers:
     - the cards and panel routing;
     - per-panel scopes remembered per agent;
     - drafts, the review dialog, the toast with Undo, and the error toasts;
     - the Claude Code panels (AG1, AG2, AG7).
 - [ ] A9. The Codex panels, including the profile editor and the both-models state picked in A0b (AG6).
-- [ ] A10. Shots: `REINS_SHOT_SCREEN=agents` for every panel, both appearances, with drafts, confirmations and errors. Extend `StyleBoundaryTests` to cover `Agents/`. Synthetic fixture homes through `scripts/fixture-home.mjs` (S-R2) for:
+- [ ] A10. Shots: `SPACEVIBE_SHOT_SCREEN=agents` for every panel, both appearances, with drafts, confirmations and errors. Extend `StyleBoundaryTests` to cover `Agents/`. Synthetic fixture homes through `scripts/fixture-home.mjs` (S-R2) for:
   - Codex legacy, profiles and both models;
   - MCP `env` and `headers`, plus a plain `DISABLE_TELEMETRY`;
   - a dead hook.
 
-  The variants are picked by `REINS_FIXTURE_AGENTS=legacy|profiles|both`, which the `swift` workflow already loops over once `Sources/Reins/Agents` exists. Then write a "Test tomorrow" list in Handoff: one launch command per fixture, verified, and what to click.
-- [ ] A11. Real-CLI check, run with the owner like the parent plan's S0.5: a throwaway home needs the owner's sign-in, and real sessions spend their quota. `claude` and `codex` load a permission, a hook, an MCP server, a model and an instruction-file change written by Reins (AG9).
+  The variants are picked by `SPACEVIBE_FIXTURE_AGENTS=legacy|profiles|both`, which the `swift` workflow already loops over once `Sources/SpaceVibe/Agents` exists. Then write a "Test tomorrow" list in Handoff: one launch command per fixture, verified, and what to click.
+- [ ] A11. Real-CLI check, run with the owner like the parent plan's S0.5: a throwaway home needs the owner's sign-in, and real sessions spend their quota. `claude` and `codex` load a permission, a hook, an MCP server, a model and an instruction-file change written by SpaceVibe (AG9).
 - [ ] A12. Cut-over:
   - run `impeccable distill` and `clarify`, then get the owner's eye approval of the shots next to the mock (AG10);
   - in the same change, remove the switch, the Rules tab and its code, Loadout's hooks, and `mocks/agents/` once design language v4 V8 is approved (AG1);
@@ -98,11 +98,11 @@ Sources/Reins/App/LaunchMode, Shell/TabRegistry   the development switch REINS_A
 
 - `scripts/test.sh`, which must report more than 0 passed.
 - `scripts/build-app.sh`, which must print `minos 15.0`.
-- `REINS_SHOT_SCREEN=agents scripts/dev-fixture.sh --shots <dir>`.
-- The manual run on a synthetic home with `REINS_AGENTS=1`.
+- `SPACEVIBE_SHOT_SCREEN=agents scripts/dev-fixture.sh --shots <dir>`.
+- The manual run on a synthetic home with `SPACEVIBE_AGENTS=1`.
 
 ## Handoff
 
 2026-11-05: the plan is written, and the owner approved the write approach and the secret rule. The owner picked the A0b mock. Next: design language v4 V2 to V5, then A1. Every failed save maps to an error toast in A8 and A9 (AG7).
 
-/goal Build the Reins Agents page per docs/specs/2026-11-05-reins-agents.md and docs/plans/2026-11-05-reins-agents.md: tasks A1 to A10 in order, one commit each, the UI behind REINS_AGENTS=1 after design language v4 V5. Done means scripts/test.sh passes with the AG2 to AG8 tests against TempHome, and the agents shots render in light and dark. Leave A11 (the real-CLI check with the owner) and A12 (eye approval and cut-over) to the owner. Never push or release, and never touch the real ~/.claude or ~/.codex.
+/goal Build the SpaceVibe Agents page per docs/specs/2026-11-05-spacevibe-agents.md and docs/plans/2026-11-05-spacevibe-agents.md: tasks A1 to A10 in order, one commit each, the UI behind SPACEVIBE_AGENTS=1 after design language v4 V5. Done means scripts/test.sh passes with the AG2 to AG8 tests against TempHome, and the agents shots render in light and dark. Leave A11 (the real-CLI check with the owner) and A12 (eye approval and cut-over) to the owner. Never push or release, and never touch the real ~/.claude or ~/.codex.

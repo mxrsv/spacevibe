@@ -1,5 +1,5 @@
 // Package pricing is the estimate-only model price table and the cost estimate built on it.
-// Ported from Sources/ReinsCore/Pricing.swift.
+// Ported from the retired Swift core's Pricing.swift.
 //
 // Unlike Swift, where the table is a literal that a test compares with pricing.json, the Go table
 // IS the embedded pricing.json. Prices are USD per million tokens (standard API-equivalent, not

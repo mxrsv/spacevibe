@@ -12,7 +12,7 @@
 # SPACEVIBE_FIXTURE_ACTIVITY=empty|loading and SPACEVIBE_FIXTURE_LIMITS=typical|edge select synthetic states.
 # Screenshot runs verify the displayed data and guarded writes against the synthetic home.
 #
-# What the fake process list says (written by fixture-home.mjs to <home>/.reins/activity-proc.json, used because
+# What the fake process list says (written by fixture-home.mjs to <home>/.spacevibe/activity-proc.json, used because
 # SPACEVIBE_TEST=1 and SPACEVIBE_PROC_FIXTURE name it; the pids are made up and only the fake answers for them):
 #   alive 41001, 41002, 41003   the three Claude Code status files (running, waiting for you, idle)
 #   codex threads 52001, 52002  two Codex rollouts (a silent tool call = not measurable, a running turn)
@@ -58,9 +58,9 @@ node scripts/fixture-home.mjs "${FIX}" >/dev/null
 export HOME="${FIX}"
 export CLAUDE_CONFIG_DIR="${FIX}/.claude"
 export CODEX_HOME="${FIX}/.codex"
-export SPACEVIBE_HOME="${FIX}/.reins"
+export SPACEVIBE_HOME="${FIX}/.spacevibe"
 export SPACEVIBE_TEST=1
-export SPACEVIBE_PROC_FIXTURE="${FIX}/.reins/activity-proc.json"
+export SPACEVIBE_PROC_FIXTURE="${FIX}/.spacevibe/activity-proc.json"
 [ -f "${SPACEVIBE_PROC_FIXTURE}" ] || { echo "missing ${SPACEVIBE_PROC_FIXTURE}" >&2; exit 1; }
 
 case "${MODE}" in

@@ -1,6 +1,6 @@
 # SpaceVibe design language
 
-The shipped interface is the v5 shell: three pages, Agents (Skills, Subagents, Hooks, Rules), Activity and Limits, plus Settings and the session glance widget. It is the same in development and distribution builds; no UI environment switch is required. [Registry](../Sources/SpaceVibe/Shell/TabRegistry.swift), [app shell](../Sources/SpaceVibe/Shell/AppShell.swift), [design decisions](specs/2026-11-06-reins-design-language-v5.md).
+The shipped interface is the v5 shell: three pages, Agents (Skills, Subagents, Hooks, Rules), Activity and Limits, plus Settings and the session glance widget. It is the same in development and distribution builds; no UI environment switch is required. [Registry](../Sources/SpaceVibe/Shell/TabRegistry.swift), [app shell](../Sources/SpaceVibe/Shell/AppShell.swift), [design decisions](specs/2026-11-06-spacevibe-design-language-v5.md).
 
 ## Screens compose shared components
 
@@ -14,7 +14,7 @@ Inter is the only bundled font. Each [text role](../Sources/SpaceVibe/Tokens/Spa
 
 ## Colour tokens
 
-What each colour token is for. The values, dark and light, live only in [Palette](../Sources/SpaceVibe/Tokens/Palette.swift), so this page never drifts from the code. A token marked † departs from the frozen v5 mock, for contrast or for hue separation; the reason and the mock's value are on its line in `Palette.swift`. The ink twins (`cat*Ink`, `cat*CountInk`, `accentInk`, `accentCountInk`, `successInk`, `warnInk`, `dangerInk`, `claudeInk`), the shadows and the product mark's colours are in `Palette.swift` only. What was specified, and the accent and category candidates that were not built, are in the [v5 spec](specs/2026-11-06-reins-design-language-v5.md#token-table).
+What each colour token is for. The values, dark and light, live only in [Palette](../Sources/SpaceVibe/Tokens/Palette.swift), so this page never drifts from the code. A token marked † departs from the frozen v5 mock, for contrast or for hue separation; the reason and the mock's value are on its line in `Palette.swift`. The ink twins (`cat*Ink`, `cat*CountInk`, `accentInk`, `accentCountInk`, `successInk`, `warnInk`, `dangerInk`, `claudeInk`), the shadows and the product mark's colours are in `Palette.swift` only. What was specified, and the accent and category candidates that were not built, are in the [v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md#token-table).
 
 ### Surfaces and lines
 
@@ -96,7 +96,7 @@ A tab chip's fills are shares of one colour, `fg` for an inactive tab and the ca
 
 [ToastHost](../Sources/SpaceVibe/Shell/ToastHost.swift) owns the toast placement and Undo key. The newest journal write can be undone after its toast disappears; Activity dismissal has its own in-memory Undo. Stop uses [StopSessionPanel](../Sources/SpaceVibe/Activity/ActivityStopConfirmation.swift), identifies the process and consequence, and has no Undo.
 
-Settings composes the same blocks as the other pages ([Tile](../Sources/SpaceVibe/Components/Tile.swift), [ListRow](../Sources/SpaceVibe/Components/ListRow.swift), [ActionButtonStyle](../Sources/SpaceVibe/Components/ActionButtonStyle.swift), [StatusBar](../Sources/SpaceVibe/Components/StatusBar.swift)) plus its own [RailTab](../Sources/SpaceVibe/Components/RailTab.swift), [ThemeTile](../Sources/SpaceVibe/Components/ThemeTile.swift), [SegmentedControl](../Sources/SpaceVibe/Components/SegmentedControl.swift) and [SpaceVibeSwitch](../Sources/SpaceVibe/Components/SpaceVibeSwitch.swift) on the same tokens. Icons come from two sets and one drawn set ([IconPolicyTests](../Tests/SpaceVibeTests/IconPolicyTests.swift)): MingCute Line for the categories, Phosphor for the sidebar, content and Settings (Duotone) and for the glance widget's session states (Bold), plus SpaceVibe's own [verdict glyphs](../Sources/SpaceVibe/Components/VerdictGlyph.swift). This is SpaceVibe's recorded exception to the global one-icon-library rule (FE-K3 of `~/.claude/rules/frontend.md`; [D72](specs/2026-11-06-reins-linear-identity-decisions.md)); moving to one library would be its own code task.
+Settings composes the same blocks as the other pages ([Tile](../Sources/SpaceVibe/Components/Tile.swift), [ListRow](../Sources/SpaceVibe/Components/ListRow.swift), [ActionButtonStyle](../Sources/SpaceVibe/Components/ActionButtonStyle.swift), [StatusBar](../Sources/SpaceVibe/Components/StatusBar.swift)) plus its own [RailTab](../Sources/SpaceVibe/Components/RailTab.swift), [ThemeTile](../Sources/SpaceVibe/Components/ThemeTile.swift), [SegmentedControl](../Sources/SpaceVibe/Components/SegmentedControl.swift) and [SpaceVibeSwitch](../Sources/SpaceVibe/Components/SpaceVibeSwitch.swift) on the same tokens. Icons come from two sets and one drawn set ([IconPolicyTests](../Tests/SpaceVibeTests/IconPolicyTests.swift)): MingCute Line for the categories, Phosphor for the sidebar, content and Settings (Duotone) and for the glance widget's session states (Bold), plus SpaceVibe's own [verdict glyphs](../Sources/SpaceVibe/Components/VerdictGlyph.swift). This is SpaceVibe's recorded exception to the global one-icon-library rule (FE-K3 of `~/.claude/rules/frontend.md`; [D72](specs/2026-11-06-spacevibe-linear-identity-decisions.md)); moving to one library would be its own code task.
 
 ## Building a page
 
@@ -113,7 +113,7 @@ The conventions every page follows, moved here from the UI v5 build plan's hando
 
 ## Departures from the frozen mock
 
-Where the build differs from the frozen v5 mock on purpose. The build lead approved these on 2026-11-07 and 2026-11-08; the owner's eye approval of the whole build is still open (V5-A14 of the [v5 spec](specs/2026-11-06-reins-design-language-v5.md)).
+Where the build differs from the frozen v5 mock on purpose. The build lead approved these on 2026-11-07 and 2026-11-08; the owner's eye approval of the whole build is still open (V5-A14 of the [v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md)).
 
 - Colour: the tokens marked † under "Colour tokens".
 - A menu opens 4 pt below its button (`Metrics` menu `gap`), where the spec's text gave a fixed 52 from the tab head's top.

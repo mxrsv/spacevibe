@@ -1,4 +1,4 @@
-/* Reins Tokens mocks: Raycast idiom on the Reins palette (search field, accessory dropdowns, compact rows, action bar). */
+/* SpaceVibe Tokens mocks: Raycast idiom on the SpaceVibe palette (search field, accessory dropdowns, compact rows, action bar). */
 .tk-main { display: grid; grid-template-rows: 52px minmax(0, 1fr) 40px; height: 100vh; min-width: 0; position: relative; }
 .tk-search { display: flex; align-items: center; gap: 10px; padding: 0 12px 0 18px; border-bottom: 1px solid var(--border); }
 .tk-search > svg { color: var(--fg-3); }

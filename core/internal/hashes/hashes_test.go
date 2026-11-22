@@ -13,7 +13,7 @@ import (
 // fixtureHome is where goldentest materializes testdata/fixtures/home; golden hook ids and
 // project ids hash absolute paths under it (plan B6, FixtureHome.swift:12).
 const (
-	fixtureHome = "/private/tmp/reins-fixture-home"
+	fixtureHome = "/private/tmp/spacevibe-fixture-home"
 	homeToken   = "$HOME"
 )
 

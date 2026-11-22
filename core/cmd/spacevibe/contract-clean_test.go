@@ -130,7 +130,7 @@ func cleanCases(t *testing.T) {
 		if res.Moved.Files == 0 || res.Cancelled || res.Entry.Count != 2 || len(res.Groups) != 3 || phases["reading"] == 0 || phases["moving"] == 0 {
 			t.Fatalf("move %+v, progress %v", res, phases)
 		}
-		if !strings.HasPrefix(res.Trash, filepath.Join(home, ".reins", "test-trash")+"/SpaceVibe Clean ") {
+		if !strings.HasPrefix(res.Trash, filepath.Join(home, ".spacevibe", "test-trash")+"/SpaceVibe Clean ") {
 			t.Fatalf("trash %q is not the test stand-in", res.Trash)
 		}
 		var hist struct{ Entries []json.RawMessage }
@@ -151,7 +151,7 @@ func cleanCases(t *testing.T) {
 
 	t.Run("clean_move_locked", func(t *testing.T) {
 		home := aged(t)
-		c := startOn(t, shippedBin, home, "SPACEVIBE_PROC_FIXTURE="+filepath.Join(home, ".reins", "activity-proc.json"))
+		c := startOn(t, shippedBin, home, "SPACEVIBE_PROC_FIXTURE="+filepath.Join(home, ".spacevibe", "activity-proc.json"))
 		c.initialize()
 		var scan struct {
 			CLIs []struct {

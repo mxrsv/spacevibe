@@ -1,5 +1,5 @@
 // Package coreerr is an error whose message is safe to show to the user.
-// Ported from Sources/ReinsCore/ReinsError.swift (Node mutate UserError, git b58269d).
+// Ported from the retired Swift core's error type (Node mutate UserError, git b58269d).
 //
 // The message may name a path or a rule, never file content (S-R3): a parse error from a settings
 // file can quote a secret, so callers replace those with a fixed sentence.

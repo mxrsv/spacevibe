@@ -83,7 +83,7 @@ func TestLoadFixtureUnreadable(t *testing.T) {
 }
 
 func TestLoadFixtureGoldenFiles(t *testing.T) {
-	for _, rel := range []string{"golden/activity-proc.json", "home/.reins/activity-proc.json"} {
+	for _, rel := range []string{"golden/activity-proc.json", "home/.spacevibe/activity-proc.json"} {
 		f, err := LoadFixture(filepath.Join("..", "..", "testdata", "fixtures", rel))
 		if err != nil {
 			t.Fatalf("%s: %v", rel, err)

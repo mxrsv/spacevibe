@@ -176,7 +176,7 @@
       {
         "kind": "hook",
         "cli": "claude",
-        "key": "e7067f2456fc",
+        "key": "d9395b0046ea",
         "title": "sh '$HOME/.claude/scripts/block-env-edit.sh'",
         "count": 1,
         "exit": 1,
@@ -189,7 +189,7 @@
         "last": "2026-11-01T12:00:00.000Z",
         "laterPass": null,
         "hook": {
-          "hash": "e7067f2456fc",
+          "hash": "d9395b0046ea",
           "event": "PreToolUse"
         }
       },
@@ -736,8 +736,8 @@
       {
         "kind": "command",
         "cli": "claude",
-        "key": "24a805fc88a7",
-        "title": "touch /nonexistent-reins-marker/must-not-exist && false",
+        "key": "4da13f0c9d29",
+        "title": "touch /nonexistent-spacevibe-marker/must-not-exist && false",
         "count": 1,
         "exit": 1,
         "reason": "Exit 1",

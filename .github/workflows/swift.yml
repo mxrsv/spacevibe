@@ -1,5 +1,5 @@
 # Builds and tests the Swift app on macOS, so a cloud session that cannot compile SwiftUI still gets a real result:
-# docs/plans/2026-11-03-reins-tokens.md T0. Runs only on agent branches, PRs and by hand, because macOS minutes are paid.
+# docs/plans/2026-11-03-spacevibe-tokens.md T0. Runs only on agent branches, PRs and by hand, because macOS minutes are paid.
 name: swift
 
 on:

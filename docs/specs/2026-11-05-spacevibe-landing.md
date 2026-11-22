@@ -1,16 +1,16 @@
 # SpaceVibe: landing page standardisation
 
-Date: 2026-11-05 (written while the product was named Reins)
-Status: draft, direction picked. The owner picked Two CLIs at the first gate (L16, 2026-11-05); the "On pick" step has not been done, so `/` is still the first-generation page (see "Deploy gates"). Since SV10 (2026-11-07) the page is the landing of `spacevibe.dev`, not of `reins.spacevibe.dev`, and the product is named SpaceVibe (SV9); read "Reins" and `reins.spacevibe.dev` below as written before that. Requirements, acceptance criteria and the traceability table (W20) are still to be added.
+Date: 2026-11-05
+Status: draft, direction picked. The owner picked Two CLIs at the first gate (L16, 2026-11-05); the "On pick" step has not been done, so `/` is still the first-generation page (see "Deploy gates"). Since SV10 (2026-11-07) the page is the landing of `spacevibe.dev` (SV10), so every hostname below reads `spacevibe.dev`. Requirements, acceptance criteria and the traceability table (W20) are still to be added.
 Status as written on 2026-11-05: draft. Decision ledger only, from the owner's grilling on 2026-11-05; the owner confirmed it the same day ("ok") and asked for the mock directions to be built directly in the `site/` dev server. Requirements, acceptance criteria and the traceability table (W20) are added once the owner has picked a direction.
-Handoff 2026-11-05: the owner accepted the layout of the mock round ("layout tạm ổn") and named the app's own screens as the remaining problem ("app stage chưa tốt"): the four categories look alike. The design language v4 that restyles them is not built (its plan says "no Swift written yet") and the palette is still changing (`ec27b4a`, 15:51, after the captures at about 15:15), so the captures in `site/public/landing/app/` are placeholders. (Update 2026-11-20: v4 was replaced by v5, which is built; the shot command is now `SPACEVIBE_SHOT_SCREEN=<screen> scripts/dev-fixture.sh --shots <dir>`, with the screen names listed in [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md#gallery-and-verification).) After v4 lands, re-shoot with `REINS_SHOT_SCREEN=<loadout|limits|activity|rules> scripts/dev-fixture.sh --shots <dir>` (limits with `REINS_FIXTURE_LIMITS=typical`) and redo the crops by eye from the 2880x1800 captures; the layout code does not change.
-Parent: [Reins](2026-11-02-reins.md). Earlier record of the first build: [site landing plan](../plans/2026-11-03-reins-site-landing.md).
+Handoff 2026-11-05: the owner accepted the layout of the mock round ("layout tạm ổn") and named the app's own screens as the remaining problem ("app stage chưa tốt"): the four categories look alike. The design language v4 that restyles them is not built (its plan says "no Swift written yet") and the palette is still changing (`ec27b4a`, 15:51, after the captures at about 15:15), so the captures in `site/public/landing/app/` are placeholders. (Update 2026-11-20: v4 was replaced by v5, which is built; the shot command is now `SPACEVIBE_SHOT_SCREEN=<screen> scripts/dev-fixture.sh --shots <dir>`, with the screen names listed in [DESIGN-LANGUAGE.md](../DESIGN-LANGUAGE.md#gallery-and-verification).) After v4 lands, re-shoot with `SPACEVIBE_SHOT_SCREEN=<loadout|limits|activity|rules> scripts/dev-fixture.sh --shots <dir>` (limits with `SPACEVIBE_FIXTURE_LIMITS=typical`) and redo the crops by eye from the 2880x1800 captures; the layout code does not change.
+Parent: [SpaceVibe](2026-11-02-spacevibe.md). Earlier record of the first build: site landing plan (record removed 2026-11-22, in git history).
 
 ## Scope
 
-The page in [`site/`](../../site/README.md) was generated once on 2026-11-03 and never polished or reviewed ("chỉ generate 1 lần từ agent chưa polish hay qua các vòng review"). This work makes it fit Reins: its claims match what the download does, and the parts that present the app match the app.
+The page in [`site/`](../../site/README.md) was generated once on 2026-11-03 and never polished or reviewed ("chỉ generate 1 lần từ agent chưa polish hay qua các vòng review"). This work makes it fit SpaceVibe: its claims match what the download does, and the parts that present the app match the app.
 
-Out of scope: the app itself, DNS and production hosting for `reins.spacevibe.dev`, the hub card, a `LICENSE` and root `README.md` (launch plan L8), building Agents or Tokens.
+Out of scope: the app itself, DNS and production hosting for `spacevibe.dev`, the hub card, a `LICENSE` and root `README.md` (launch plan L8), building Agents or Tokens.
 
 ## Decision ledger
 
@@ -18,7 +18,7 @@ Quotes are the owner's words. "No objection" means the owner was told a recommen
 
 | ID | Decision | Owner's words |
 | --- | --- | --- |
-| L1 | Goal: standardise the landing page for Reins; the current page is a temporary frame. | "với landing page tôi muốn chuẩn hoá phù hợp dành cho reins" |
+| L1 | Goal: standardise the landing page for SpaceVibe; the current page is a temporary frame. | "với landing page tôi muốn chuẩn hoá phù hợp dành cho [SpaceVibe]" |
 | L2 | Look is option C: the planet scene and stars stay behind the hero and the download band; the bands between follow the app's design language (real app screenshots in a window frame, Inter, tonal layers, CTA in the app's accent token). | "giữ hành tinh" then "ok ânậnận" (accepts C) |
 | L3 | The page is dark only. | "ok ânậnận" (accepts Q11) |
 | L4 | Stack (Next.js static export + Tailwind in `site/`), English only, CTA to GitHub Releases stay. | No objection |
@@ -29,7 +29,7 @@ Quotes are the owner's words. "No objection" means the owner was told a recommen
 | L9 | Interested visitors get a "Watch releases on GitHub" link; no form and no email capture. | "nhận cả 3" |
 | L10 | The owner's gates: at least three mock directions, the owner picks one before code; then the owner's eye approval at 1440 and 390 in their own dev server. | "q6-1 và 5" |
 | L11 | `impeccable` (build, `distill`, `clarify`) runs unattended. The `frontend-design-bar` screenshot gate and `review-experience` at 375/768/1440 are skipped. | "cổng ảnh frontend-design-bar và review-experience ở 375/768/1440 thì bỏ qua" |
-| L12 | Reviews happen on a Vercel preview that is not public; no DNS for `reins.spacevibe.dev` until the owner approves it separately. | No objection |
+| L12 | Reviews happen on a Vercel preview that is not public; no DNS for `spacevibe.dev` until the owner approves it separately. | No objection |
 | L13 | Section order: hero, Loadout, Limits, Activity, Rules, In development (Agents, Tokens), Private by construction, Download. When Agents ships, that release's PR replaces the Rules band. | "ok ânậnận" (accepts Q12) |
 | L14 | The download band says "Free"; no licence is named until the owner picks one. The "Source on GitHub" label becomes "GitHub" until a `LICENSE` exists (the label change is derived: "open source" is claimed only with a licence). | "ok ânậnận" (accepts Q13 b) |
 | L15 | The page says "macOS 15 or later, Apple silicon". The local build is `arm64`; the published DMG is checked at build time. | Derived from a verified fact, not an owner quote |
@@ -45,7 +45,7 @@ Built 2026-11-05 in `site/`, viewed with `cd site && npx next dev -p 3100` at `h
 | --- | --- | --- |
 | `/directions/deck` | Deck | Each screen is a viewport-tall sticky band; the next screen slides over it. |
 | `/directions/two-clis` | Two CLIs | The real screen, then one block per CLI on what differs between Claude Code and Codex. |
-| `/directions/manual` | Manual | Sticky rail of the four screens; each chapter is question, screen, what Reins does, what it cannot see. |
+| `/directions/manual` | Manual | Sticky rail of the four screens; each chapter is question, screen, what SpaceVibe does, what it cannot see. |
 
 Owner feedback on the first round: the four categories looked alike and the options did not differ. The bands now show one signature crop per category instead of the whole window (Loadout's paired bars, Limits' figure and ruler, Activity's two lanes, Rules' Allow/Ask/Deny pickers) with the sidebar tab the category lives behind beside the caption; only the hero keeps a whole window. Real screens are dark captures of the SwiftUI app on the synthetic fixture home (`site/public/landing/app/`); Agents and Tokens are renders of the tracked mocks and are captioned as design previews (L7). On pick: delete the other two directions, `/directions` and `DirectionSwitcher`, move the copy from `site/components/landing/directions/copy.ts` into `content.ts`, and replace `/`.
 
@@ -54,4 +54,4 @@ Owner feedback on the first round: the four categories looked alike and the opti
 Moved here from `AGENTS.md` on 2026-11-20.
 
 - **WEB0, before WEB1.** The owner picks a landing direction (L16 records the pick of 2026-11-05) and `/` is replaced with it, the "On pick" step above. Until then `/` is the first-generation page with a Tokens tab the app does not have, and it must never be deployed.
-- **WEB1 to WEB3.** Creating the Vercel project, repointing `spacevibe.dev` and the DNS check for `reins.spacevibe.dev` are the owner's gates, done in that order after WEB0 and after `kyant.dev` is verified. They are tracked in the [go-core plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md) (SV16).
+- **WEB1 to WEB3.** Creating the Vercel project, repointing `spacevibe.dev` and the DNS check for the retired product subdomain are the owner's gates, done in that order after WEB0 and after `kyant.dev` is verified. They are tracked in the [go-core plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md) (SV16).

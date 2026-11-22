@@ -14,14 +14,14 @@ import (
 	"time"
 )
 
-// CanonicalRoot is the path the frozen goldens ran on. Ids in them (hook ids, project ids) are hashes of
+// CanonicalRoot is the path the frozen goldens are tied to. Ids in them (hook ids, project ids) are hashes of
 // absolute paths under it (B6), so the shared tree must live exactly here. It is a macOS path; the fixture
 // tests skip elsewhere.
-const CanonicalRoot = "/private/tmp/reins-fixture-home"
+const CanonicalRoot = "/private/tmp/spacevibe-fixture-home"
 
 const (
 	stampName        = ".fixture-stamp"
-	dataFolder       = ".reins"
+	dataFolder       = ".spacevibe"
 	mtimeToleranceMS = 1.0
 )
 
@@ -90,7 +90,7 @@ func Env(root string) map[string]string {
 //
 // Stronger than Swift: a matching stamp is not trusted alone. The tree must also hold exactly the files the
 // manifest lists with the committed bytes (token replaced by the root path) and mtimes, and no other file
-// outside the data folder .reins, where a scan may write. A stale or corrupt tree under a matching stamp is
+// outside the data folder .spacevibe, where a scan may write. A stale or corrupt tree under a matching stamp is
 // rebuilt. The stamp format is unchanged (the manifest digest), so Swift reads Go's tree and the reverse.
 func Materialize() (string, error) { return materializeAt(CanonicalRoot) }
 

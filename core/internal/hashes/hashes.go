@@ -1,6 +1,6 @@
 // Package hashes holds the identity and content hashes the core writes into its output.
-// Ported from Sources/ReinsCore/InventoryHash.swift (Sha1, Inventory.sha, Inventory.hookHash,
-// Inventory.bare) and Sources/ReinsCore/JournalSHA256.swift (ContentHash.sha256Hex). The Swift
+// Ported from the retired Swift core's InventoryHash.swift (Sha1, Inventory.sha, Inventory.hookHash,
+// Inventory.bare) and the retired Swift core's JournalSHA256.swift (ContentHash.sha256Hex). The Swift
 // files hand-wrote SHA-1 and SHA-256 because CryptoKit is Apple-only; Go has both in the
 // standard library, so only the output formats are kept.
 package hashes

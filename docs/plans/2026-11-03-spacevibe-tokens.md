@@ -7,12 +7,12 @@ Base revision: `b877e3a37dc511eec9e28f2fc37db3b7bde4cee1`
 
 ## Requirements reference and delivery scope
 
-Requirements: [Tokens](../specs/2026-11-02-reins.md#tab-tokens), [Board direction](../specs/2026-11-02-reins.md#interface) and [AC3, AC5, AC6, AC8, AC9](../specs/2026-11-02-reins.md#acceptance-criteria).
-Architecture: [Go core and SwiftUI shell](../internals/overview.md); vocabulary: [D65](../specs/2026-11-06-reins-linear-identity-decisions.md) and [glossary](../../GLOSSARY.md).
+Requirements: [Tokens](../specs/2026-11-02-spacevibe.md#tab-tokens), [Board direction](../specs/2026-11-02-spacevibe.md#interface) and [AC3, AC5, AC6, AC8, AC9](../specs/2026-11-02-spacevibe.md#acceptance-criteria).
+Architecture: [Go core and SwiftUI shell](../internals/overview.md); vocabulary: [D65](../specs/2026-11-06-spacevibe-linear-identity-decisions.md) and [glossary](../../GLOSSARY.md).
 The current [design language](../DESIGN-LANGUAGE.md) supplies shared controls and styling.
 This is the existing Tokens execution record, not a new feature proposal. The owner approved the scout shortlist and then its implementation direction on 2026-11-12. No application implementation has landed for this plan.
 
-The accepted Board reference remains [the synthetic mock](../../mocks/tokens-board/index.html), with [dark](../../mocks/tokens-board/shot-dark.png) and [light](../../mocks/tokens-board/shot-light-price.png) targets. `mocks/tokens-board/` stays tracked until the Tokens page is decided in the app-wide layout grilling (owner, 2026-11-20, "ok" to DN-Q6 of the [docs-normalization plan](2026-11-19-docs-normalization.md)); before that it was to be deleted when T8 passes.
+The accepted Board reference remains [the synthetic mock](../../mocks/tokens-board/index.html), with [dark](../../mocks/tokens-board/shot-dark.png) and [light](../../mocks/tokens-board/shot-light-price.png) targets. `mocks/tokens-board/` stays tracked until the Tokens page is decided in the app-wide layout grilling (owner, 2026-11-20, "ok" to DN-Q6 of the docs-normalization plan (record removed 2026-11-22, in git history)); before that it was to be deleted when T8 passes.
 Use its information arrangement inside the current shell; do not restore the obsolete shell or copy old font/spacing literals. Do not redesign other pages.
 The spec's excluded features remain excluded; Limits pace, menu-bar additions and pricing network fetches are not tasks here.
 Owner eye approval stays at T8 after the implementation, not between tasks.
@@ -200,4 +200,4 @@ Execution uses the current checkout by default, preserving unrelated work; commi
 Remaining owner-only gates: authorization for the real-data T7 run and final T8 eye approval. No duplicate approval is required for the already accepted approach.
 At implementation handoff, replace this status with completed tasks, observed commands, commit IDs, unrun gates and the next task.
 
-`/goal` Implement the Tokens scope of docs/specs/2026-11-02-reins.md through docs/plans/2026-11-03-reins-tokens.md T1–T8: preserve Activity goldens, count Claude/Codex with independent synthetic fixtures, retain timestamped history through log deletion/encoding changes and failed reads/writes, expose local-calendar query RPC and the approved SwiftUI Board, pass scripts/test.sh and build/synthetic visual/native checks, satisfy normalized AC8 in an owner-authorized local run, then obtain one final eye approval; keep real configs untouched, preserve unrelated work, and do not push, merge, release or uninstall TokenTracker without authorization.
+`/goal` Implement the Tokens scope of docs/specs/2026-11-02-spacevibe.md through docs/plans/2026-11-03-spacevibe-tokens.md T1–T8: preserve Activity goldens, count Claude/Codex with independent synthetic fixtures, retain timestamped history through log deletion/encoding changes and failed reads/writes, expose local-calendar query RPC and the approved SwiftUI Board, pass scripts/test.sh and build/synthetic visual/native checks, satisfy normalized AC8 in an owner-authorized local run, then obtain one final eye approval; keep real configs untouched, preserve unrelated work, and do not push, merge, release or uninstall TokenTracker without authorization.

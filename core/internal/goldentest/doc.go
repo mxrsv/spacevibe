@@ -2,7 +2,7 @@
 // test-support code that lives as a normal package so other packages' tests can import it; production code
 // must not.
 //
-// It ports the fixture side of Tests/ReinsCoreTests/Support/FixtureHome.swift and FixtureHomeTests.swift:
+// It ports the fixture side of the retired Swift core tests' FixtureHome.swift and FixtureHomeTests.swift:
 //
 //   - Materialize builds the frozen home tree at CanonicalRoot with the same staging, rename and stamp
 //     protocol as FixtureHome.materialize, so a Go run and a Swift run share one tree safely.

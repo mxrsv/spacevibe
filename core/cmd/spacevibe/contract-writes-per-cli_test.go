@@ -226,7 +226,7 @@ func homeTree(t *testing.T, home string) map[string]string {
 			return err
 		}
 		rel, _ := filepath.Rel(home, path)
-		if d.IsDir() && (rel == ".spacevibe" || rel == ".reins") {
+		if d.IsDir() && rel == ".spacevibe" {
 			return filepath.SkipDir
 		}
 		info, err := os.Lstat(path)

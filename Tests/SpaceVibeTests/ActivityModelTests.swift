@@ -284,7 +284,7 @@ struct ActivityModelTests {
 @Suite("Activity model, Go core")
 @MainActor
 struct ActivityModelCoreTests {
-    private static let procFixture = CoreTestData.directory.appendingPathComponent("fixtures/home/.reins/activity-proc.json").path
+    private static let procFixture = CoreTestData.directory.appendingPathComponent("fixtures/home/.spacevibe/activity-proc.json").path
 
     private func model(_ fixture: CoreFixtureHome) throws -> (ActivityModel, CoreClient) {
         let client = try fixture.client()

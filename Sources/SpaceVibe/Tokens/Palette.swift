@@ -13,7 +13,7 @@ struct ColorValue: Sendable {
 }
 
 /// The values behind `Palette`, under the token names of the v5 spec's token table
-/// (`docs/specs/2026-11-06-reins-design-language-v5.md`, read from the frozen mock's `system/shared.css`). Values changed
+/// (`docs/specs/2026-11-06-spacevibe-design-language-v5.md`, read from the frozen mock's `system/shared.css`). Values changed
 /// from the spec to pass `ContrastTests` say so on their line: each is a departure the owner sees at the final eye task.
 ///
 /// Rules the names encode:

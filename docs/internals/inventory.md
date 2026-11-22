@@ -39,7 +39,7 @@ Settings are read only for hooks, plugin flags and skill overrides. No other val
 
 ## Usage cell states
 
-`AttachUsage` gives each row one `Cell` per CLI, whose state is counted, pending, unmeasurable or missing. `pending` is current behaviour of the core. [D63](../specs/2026-11-06-reins-linear-identity-decisions.md) decided that it stops being a state and becomes a note on `Never ran`: the shell already shows it that way ([`SkillCell`](../../Sources/SpaceVibe/Agents/LoadoutRows.swift) maps an "Added…" reason to Never ran with the note, "No logs scanned" to unmeasurable and an unfinished scan to loading), and the core's state has not been removed.
+`AttachUsage` gives each row one `Cell` per CLI, whose state is counted, pending, unmeasurable or missing. `pending` is current behaviour of the core. [D63](../specs/2026-11-06-spacevibe-linear-identity-decisions.md) decided that it stops being a state and becomes a note on `Never ran`: the shell already shows it that way ([`SkillCell`](../../Sources/SpaceVibe/Agents/LoadoutRows.swift) maps an "Added…" reason to Never ran with the note, "No logs scanned" to unmeasurable and an unfinished scan to loading), and the core's state has not been removed.
 
 - **Missing**: the row is not installed in that CLI.
 - **Unmeasurable**: a Codex hook; Codex logs no hook runs.

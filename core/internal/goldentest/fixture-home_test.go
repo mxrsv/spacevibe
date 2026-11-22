@@ -98,7 +98,7 @@ func TestFixtureMaterialize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if root != "/private/tmp/reins-fixture-home" {
+	if root != "/private/tmp/spacevibe-fixture-home" {
 		t.Fatalf("root %q", root)
 	}
 	m := mustManifest(t)
@@ -109,7 +109,7 @@ func TestFixtureMaterialize(t *testing.T) {
 	if !strings.Contains(string(settings), root+"/.claude/scripts/guard-destructive.sh") || strings.Contains(string(settings), "$HOME") {
 		t.Error("settings.json does not hold the root path in place of $HOME")
 	}
-	for _, rel := range []string{".claude/scripts/guard-destructive.sh", ".reins"} {
+	for _, rel := range []string{".claude/scripts/guard-destructive.sh", ".spacevibe"} {
 		if _, err := os.Stat(filepath.Join(root, rel)); err != nil {
 			t.Error(err)
 		}
@@ -148,7 +148,7 @@ func TestFixtureTreeCheckCatchesCorruptionUnderMatchingStamp(t *testing.T) {
 	if p := checkTree(dest, m, files); len(p) != 0 {
 		t.Fatalf("a fresh copy has problems: %v", p)
 	}
-	if err := os.WriteFile(filepath.Join(dest, ".reins/usage-cache.json"), []byte("{}"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dest, ".spacevibe/usage-cache.json"), []byte("{}"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if p := checkTree(dest, m, files); len(p) != 0 {
@@ -232,7 +232,7 @@ func TestFixtureRootsPassRealHomeGuard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Claude.Root != "/private/tmp/reins-fixture-home/.claude" {
+	if r.Claude.Root != "/private/tmp/spacevibe-fixture-home/.claude" {
 		t.Errorf("claude root %q", r.Claude.Root)
 	}
 }
@@ -295,12 +295,12 @@ func TestFixtureInventoryGoldenAgreesWithTree(t *testing.T) {
 
 // Swift: FixtureHomeTests.swift "normalize and firstDifference behave as the later comparisons need"
 func TestFixtureHomeTokenAndCanonicalDifference(t *testing.T) {
-	actual := map[string]any{"p": "/private/tmp/reins-fixture-home/.claude", "n": []any{1, 2}, "o": map[string]any{"k": true},
-		"/private/tmp/reins-fixture-home/x": "v"}
+	actual := map[string]any{"p": "/private/tmp/spacevibe-fixture-home/.claude", "n": []any{1, 2}, "o": map[string]any{"k": true},
+		"/private/tmp/spacevibe-fixture-home/x": "v"}
 	normalized := HomeToken(actual, CanonicalRoot)
 	want := map[string]any{"p": "$HOME/.claude", "n": []any{1, 2}, "o": map[string]any{"k": true}, "$HOME/x": "v"}
 	AssertCanonicalEqual(t, "normalized", want, normalized)
-	if actual["p"] != "/private/tmp/reins-fixture-home/.claude" {
+	if actual["p"] != "/private/tmp/spacevibe-fixture-home/.claude" {
 		t.Error("HomeToken changed its input")
 	}
 	// A different number is a difference, and the diff names it.

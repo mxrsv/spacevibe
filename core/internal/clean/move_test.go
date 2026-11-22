@@ -41,7 +41,7 @@ func (h *home) tree() map[string]string {
 			return err
 		}
 		rel, _ := filepath.Rel(h.root, p)
-		if d.IsDir() && (rel == ".spacevibe" || rel == ".reins") {
+		if d.IsDir() && rel == ".spacevibe" {
 			return filepath.SkipDir
 		}
 		info, err := os.Lstat(p)

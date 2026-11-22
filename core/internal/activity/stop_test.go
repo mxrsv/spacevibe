@@ -16,7 +16,7 @@ import (
 	"spacevibe.dev/core/internal/proc"
 )
 
-// Ported from Tests/ReinsCoreTests/ActivityStopTests.swift and ActivitySafetyTests.swift. stop goes through a fake
+// Ported from the retired Swift core tests' ActivityStopTests.swift and ActivitySafetyTests.swift. stop goes through a fake
 // adapter: nothing is signalled for real, and the pid always comes from the live system.
 
 const (

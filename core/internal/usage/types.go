@@ -3,7 +3,7 @@
 // the scan cache under the data folder. Per-file results are cached by size and mtime and stamped with
 // ScanVersion; the cache format is shared with the Swift engine while both exist.
 //
-// Ported from Sources/ReinsCore/UsageScanner.swift, UsageScanTypes.swift, UsageScanLines.swift,
+// Ported from the retired Swift core's UsageScanner.swift, UsageScanTypes.swift, UsageScanLines.swift,
 // UsageScanAggregate.swift and UsageScanCache.swift. The package sits below internal/inventory (which
 // attaches the result to its rows), so it names the two CLIs itself.
 package usage

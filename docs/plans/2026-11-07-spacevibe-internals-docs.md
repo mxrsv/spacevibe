@@ -1,8 +1,8 @@
 # SpaceVibe: internals reference pages
 
-Requirements: agreed in chat on 2026-11-07, no spec. Scope: one reference page per `ReinsCore` subsystem, so an agent reads only the page for the code it touches. Model: magpie's `docs/subsystems/` (a page per subsystem with a responsibilities and sources-of-truth table, an index, "update the page in the same PR") and orca's "read only when the task touches it" index.
+Requirements: agreed in chat on 2026-11-07, no spec. Scope: one reference page per `SpaceVibeCore` subsystem, so an agent reads only the page for the code it touches. Model: magpie's `docs/subsystems/` (a page per subsystem with a responsibilities and sources-of-truth table, an index, "update the page in the same PR") and orca's "read only when the task touches it" index.
 Checkout: `spacevibe-reins` on `main`. Commit with `git commit -- <paths>` only.
-Status, checked 2026-11-20: active, one item open. The pages changed shape on 2026-11-20 ([docs-normalization plan](2026-11-19-docs-normalization.md), DN-T3): the file-responsibility tables and test-file lists this plan's model called for are gone (the global D-rule D9: no file catalogs), each page opens with one "Code:" line, and the engine they describe is the Go core, not `ReinsCore`. The owner's check below is not one of the gates waived by DN-Q4, so it stays open. T1 to T8 written and committed (T1, T2 on 2026-11-07; T3 to T8 on 2026-11-15). Open: the owner's check in Acceptance that each page lets an agent skip unrelated code. Approved so far: the model above and the `AGENTS.md` read-when list (done 2026-11-07).
+Status, checked 2026-11-20: active, one item open. The pages changed shape on 2026-11-20 (docs-normalization plan (record removed 2026-11-22, in git history), DN-T3): the file-responsibility tables and test-file lists this plan's model called for are gone (the global D-rule D9: no file catalogs), each page opens with one "Code:" line, and the engine they describe is the Go core, not `SpaceVibeCore`. The owner's check below is not one of the gates waived by DN-Q4, so it stays open. T1 to T8 written and committed (T1, T2 on 2026-11-07; T3 to T8 on 2026-11-15). Open: the owner's check in Acceptance that each page lets an agent skip unrelated code. Approved so far: the model above and the `AGENTS.md` read-when list (done 2026-11-07).
 
 ## Directory (D3)
 
@@ -44,7 +44,7 @@ Each of T2 to T7 is one commit. Write from the code and the Node oracle's behavi
 
 ## Acceptance
 
-- Every `ReinsCore` file belongs to one page's source column or is named as out of scope in the index.
+- Every `SpaceVibeCore` file belongs to one page's source column or is named as out of scope in the index.
 - `AGENTS.md` points to the index, and no fact in a page is duplicated in `AGENTS.md`.
 - Owner agrees the pages let an agent skip unrelated code, on one sample task per page.
 
@@ -57,8 +57,8 @@ Each of T2 to T7 is one commit. Write from the code and the Node oracle's behavi
 - `rules.md` documents permission Rules, as GLOSSARY.md defines the word. No code under `core/internal` reads or writes `CLAUDE.md` or `AGENTS.md`, so there is no Instructions page to write.
 - T8: the two "Known traps" in `AGENTS.md` are pointers now (`usage.md` for `.jsonl.zst`, `inventory.md` for hook identity). `overview.md` said log lines go up to 32 MiB; that holds for the usage scan only, and the line now names the 16 MiB cap of the tail readers too.
 - The index lists the four packages with no page (`cmd/spacevibe`, `config`, `coreerr`, `identity`) and puts `hashes` under `inventory.md`, which covers Acceptance line 1.
-- Found and left as they are, outside this plan: PRODUCT.md names status-line snapshots as the only Claude Code source of limits, while the core reads Claude's own usage cache first (`core/internal/limits/claude-cache.go`); 22 Go files still carry "ported from `Sources/ReinsCore/...`" comments that point at files no longer in the repo.
+- Found and left as they are, outside this plan: PRODUCT.md names status-line snapshots as the only Claude Code source of limits, while the core reads Claude's own usage cache first (`core/internal/limits/claude-cache.go`); 22 Go files still carry "ported from `Sources/SpaceVibeCore/...`" comments that point at files no longer in the repo.
 - Verification on 2026-11-15: `docs-compliance.sh` and `docs-anchors.sh` exit 0; the Go tests of every documented package pass under `SPACEVIBE_TEST=1`.
 - Remaining: Acceptance line 3, the owner's check on one sample task per page.
 
-/goal Write the Reins internals reference per docs/plans/2026-11-07-reins-internals-docs.md: tasks T1 to T8 in order, one commit each. Done means every ReinsCore file is covered by one docs/internals page, the docs-compliance and docs-anchors scripts print no new warning, every source link resolves, and the AGENTS.md "Known traps" live only in their pages.
+/goal Write the SpaceVibe internals reference per docs/plans/2026-11-07-spacevibe-internals-docs.md: tasks T1 to T8 in order, one commit each. Done means every SpaceVibeCore file is covered by one docs/internals page, the docs-compliance and docs-anchors scripts print no new warning, every source link resolves, and the AGENTS.md "Known traps" live only in their pages.

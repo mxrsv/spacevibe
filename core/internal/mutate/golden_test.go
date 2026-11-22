@@ -111,7 +111,7 @@ func (h copyHome) measure(dir string, skipTop ...string) map[string]string {
 }
 
 func (h copyHome) tree() map[string]string {
-	return h.measure(h.root, ".reins", ".spacevibe", ".fixture-stamp")
+	return h.measure(h.root, ".spacevibe", ".fixture-stamp")
 }
 
 // trash is what the trash holds, as sorted "<path inside the slot>:<sha1>".

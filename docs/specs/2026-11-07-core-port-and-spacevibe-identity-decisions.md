@@ -10,7 +10,7 @@ Every later artifact (spec, plan, build prompt, subagent brief) cites these IDs 
 ## Problem
 
 Owner: "gần đây chúng ta gần như chỉ tập trung về build UI, tính năng core chưa có nhiều, tôi cần review nhiều thứ, và có cần thiết làm một CLI core hay engine core không ?"
-The 2026-11-02 spec made the engine a Swift library (`ReinsCore`). Owner on that choice: "tôi chọn SwiftUI nó chỉ dành cho UI thôi hiểu không ? có lẽ do hôm đó tôi không nói rõ ràng".
+The 2026-11-02 spec made the engine a Swift library (`SpaceVibeCore`). Owner on that choice: "tôi chọn SwiftUI nó chỉ dành cho UI thôi hiểu không ? có lẽ do hôm đó tôi không nói rõ ràng".
 
 ## Decisions
 
@@ -19,19 +19,19 @@ The 2026-11-02 spec made the engine a Swift library (`ReinsCore`). Owner on that
 | SV1 | The core is a standalone engine in Go. SwiftUI is the macOS UI layer only. Supersedes the spec line "the engine is rewritten in Swift as a library". | "yes chuyển sang Go đi" |
 | SV2 | Windows and Linux shells are committed within about 3-6 months, which is the reason for SV1. | "yes chuyển sang Go đi" (answer to the commitment question) |
 | SV3 | Shell-to-core protocol: JSON-RPC over stdio, a child process owned by the GUI. The protocol version is sent in `initialize` and a mismatch is refused. Stdout carries protocol only, logs go to stderr, the core exits on stdin EOF, spawn uses an argv array (no shell). No network listener (S-R5). A one-shot `<cli> <command> --json` stays for debugging. | "approve đủ" |
-| SV4 | The macOS app calls the core only through the child process, via one `CoreClient` in Swift. `ReinsCore` is no longer linked by the UI. Migration is one screen at a time. | "approve đủ" |
-| SV5 | NARROWED with the owner's explicit yes on 2026-11-20 ("byte for byte" reads as canonical bytes of the named projections; see "Owner answer on SV5"). Parity oracle: the existing `Tests/ReinsCoreTests/Fixtures/golden/*.json` are frozen as committed files. The Node generator and Node `core/` are deleted as plan S8.3 intended. The Go core must match the goldens byte for byte. A wrong golden is fixed together with its Swift test in one commit. | "approve đủ" |
+| SV4 | The macOS app calls the core only through the child process, via one `CoreClient` in Swift. `SpaceVibeCore` is no longer linked by the UI. Migration is one screen at a time. | "approve đủ" |
+| SV5 | NARROWED with the owner's explicit yes on 2026-11-20 ("byte for byte" reads as canonical bytes of the named projections; see "Owner answer on SV5"). Parity oracle: the existing `Tests/SpaceVibeCoreTests/Fixtures/golden/*.json` are frozen as committed files. The Node generator and Node `core/` are deleted as plan S8.3 intended. The Go core must match the goldens byte for byte. A wrong golden is fixed together with its Swift test in one commit. | "approve đủ" |
 | SV6 | The Go core lives in this repository, in a new directory whose name is chosen after reading `~/.claude/templates/project-structure.md`. | "approve đủ" |
 | SV7 | Order: the Go port comes before the first macOS publish, so S0.5, S0.4 and S0.3 are verified once, on the Go core. | "approve đủ" |
 | SV8 | Pre-publish core review order: real-CLI acceptance (S0.5), then write safety and Stop (S0.4), then TCC (S0.3), then S8.1 and S8.2, then feature gaps against the spec. Output is a severity-ranked read-only report on the core whose findings become tasks in an existing plan. The goal is trust for a macOS release, not cross-platform preparation. | "approve đủ" |
-| SV9 | The product is renamed from Reins to SpaceVibe. No visible or identifying reference to Reins remains. | "không còn reins name nữa, spacevibe là một domain xuất sắc dành cho dự án này" and "tôi sẽ chuyển hết sang thành spacevibe.dev không còn liên quan nào đến reins nữa" |
+| SV9 | The product takes the name SpaceVibe in place of its former name. No visible or identifying reference to the former name remains. | "không còn [tên cũ] name nữa, spacevibe là một domain xuất sắc dành cho dự án này" and "tôi sẽ chuyển hết sang thành spacevibe.dev không còn liên quan nào đến [tên cũ] nữa" |
 | SV10 | `spacevibe.dev` becomes this product's landing page. `spacevibe-hub` is retired and its content moves to `kyant.dev`. | "lấy luôn domain spacevibe.dev làm landing cho repo này", "không còn dùng hub nữa", "hub đổi sang thành kyant.dev" |
 | SV11 | All identifiers are renamed too, including the bundle id, the repo name and the appcast URL. Installed `v0.1.0` copies are not kept updating. | "chọn (b) đổi hết" |
 | SV12 | New names: bundle id `dev.spacevibe.app`, CLI `spacevibe`, env prefix `SPACEVIBE_*`, data folder `~/.spacevibe`. The binary name, env prefix and data folder are one constant each. `initialize` returns the core's name and version so a shell never depends on the binary name. | "approve đủ" |
 | SV13 | Sparkle gets a new key pair and a new Keychain account for the new bundle id, with a new `SUPublicEDKey`. B8 is rewritten for the new key. | "approve đủ" |
 | SV14 | The `v0.1.0` release stays, marked deprecated in its description with a pointer to the new download page. No bridge release (3 downloads at 2026-11-07). Deleting it is not part of this decision. | "approve đủ" |
 | SV15 | No data migration from `~/.reins` to `~/.spacevibe`. The owner copies the folder by hand; the release notes say so. | "approve đủ" |
-| SV16 | Deploy host is Vercel. Old Hub routes redirect to the same path on `kyant.dev`. The `/live` family (`/live`, `/en/live`, `/vi/live`, `/live/<slug>`) keeps its 308 to `https://active.spacevibe.dev` (U4). Order: build Hub on `kyant.dev`, verify, then repoint `spacevibe.dev`. `reins.spacevibe.dev` did not answer HTTP on 2026-11-07, so it needs no redirect unless DNS for it exists. Every DNS and deploy step needs the owner's approval when it runs. | "approve đủ" |
+| SV16 | Deploy host is Vercel. Old Hub routes redirect to the same path on `kyant.dev`. The `/live` family (`/live`, `/en/live`, `/vi/live`, `/live/<slug>`) keeps its 308 to `https://active.spacevibe.dev` (U4). Order: build Hub on `kyant.dev`, verify, then repoint `spacevibe.dev`. The retired product subdomain did not answer HTTP on 2026-11-07, so it needs no redirect unless DNS for it exists. Every DNS and deploy step needs the owner's approval when it runs. | "approve đủ" |
 | SV17 | The other products (Deck, Bench, Academy, Active) keep their own names. "SpaceVibe" names this app. Workspace-level records move to a separate workspace session (X1). | "approve đủ" |
 
 ## Open (not assumed)
@@ -42,7 +42,7 @@ The list as it stood on 2026-11-07. Items settled since are in "Owner answers at
 - Spike (fact, not a decision): Go reads a `.jsonl.zst` rollout, parses TOML and cross-compiles to Windows before any port starts.
 - Windows and Linux UI technology (native per OS or a shared web UI). Needed only when the second shell starts.
 - Module order of the Go port.
-- `ReinsStatusline` becomes a subcommand of the Go core (it uses `posix_spawn` of `/bin/sh`, unavailable on Windows). Not asked yet.
+- `SpaceVibeStatusline` becomes a subcommand of the Go core (it uses `posix_spawn` of `/bin/sh`, unavailable on Windows). Not asked yet.
 - Whether the core may run `claude --version` and `codex --version` (S-R4 would list them as fixed commands). Not asked since the Go decision.
 - Whether new UI work pauses until the core review and the first CLI exist.
 - Windows tests run on a real Windows machine, not only compiled in CI (lesson from the magpie repo).
@@ -74,7 +74,7 @@ Settled or taken, no further owner input needed (all still reversible until the 
 - D-7 `core/`, `spacevibe.dev/core`: in use.
 - C1/Q1, C2/Q8: in use (canonical bytes with asserted case counts; the Go test owns the golden after the Swift tests were deleted).
 - C3/Q2: the frozen fixtures are named skipped sites in the rename report (plan, Verification evidence).
-- D-3: `spacevibe statusline install|undo|capture` is built; `ReinsStatusline` is deleted.
+- D-3: `spacevibe statusline install|undo|capture` is built; `SpaceVibeStatusline` is deleted.
 - D-4: the core does not run `claude --version` or `codex --version`.
 - D-5: UI-only work continued (UI v5 track); re-targeting the engine tasks of the Agents and Tokens plans is for those plans' owners (not checked here).
 - Spike item: no longer open; the Go port reads `.jsonl.zst` fixtures, parses TOML and cross-builds (plan, Verification evidence).
@@ -89,18 +89,36 @@ Still open:
 
 ## Owner answer on SV5 (2026-11-20)
 
-The [product spec](2026-11-02-reins.md) (RQ-SV5) said that narrowing SV5's "byte for byte" needed the owner's explicit yes, and "tiếp tục hết tất các phase" had only been read as one. Asked directly as DN-Q3 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md) with the recommendation "record an explicit yes to the narrowing", the owner answered: "ok" (2026-11-20).
+The [product spec](2026-11-02-spacevibe.md) (RQ-SV5) said that narrowing SV5's "byte for byte" needed the owner's explicit yes, and "tiếp tục hết tất các phase" had only been read as one. Asked directly as DN-Q3 of the docs-normalization plan (record removed 2026-11-22, in git history) with the recommendation "record an explicit yes to the narrowing", the owner answered: "ok" (2026-11-20).
 
 So SV5 reads: the Go core matches the frozen goldens as canonical bytes of the named projections, with the case counts asserted (row C1/Q1 above). The goldens have been frozen on that reading since 2026-11-07. Nothing else in SV5 changes.
 
 ## Owner answer on the repo name (2026-11-21)
 
-Owner, in chat: "tôi muốn chuyển đổi repo này chỉ tên là spacevibe, không còn reins nữa, và repo nó sẽ có domain là spacevibe.dev luôn, tôi đã mua domain này rồi".
+Owner, in chat: "tôi muốn chuyển đổi repo này chỉ tên là spacevibe, không còn [tên cũ] nữa, và repo nó sẽ có domain là spacevibe.dev luôn, tôi đã mua domain này rồi".
 
 - D-1 is settled: the repository is `mxrsv/spacevibe`, not `spacevibe-app`. `GITHUB_REPO` in `scripts/release.sh` and `GITHUB_URL` in `site/components/landing/content.ts` already held that value and are no longer working values.
-- Gate GH1 ran the same day on those words: the GitHub repository was renamed from `mxrsv/spacevibe-reins`. GitHub redirects the old URL, so a `v0.1.0` copy still reaches the `v0.1.0` feed until REL1 publishes a newer one (H7 of the go-core plan stays open until then).
-- `spacevibe.dev` as this repo's domain restates SV10 and SV16. It does not waive the deploy gates: WEB0 to WEB3 of the [landing spec](2026-11-05-reins-landing.md#deploy-gates) still stand, and on 2026-11-21 the domain still served the Hub.
+- Gate GH1 ran the same day on those words: the GitHub repository was renamed to `mxrsv/spacevibe`. GitHub redirects the old URL, so a `v0.1.0` copy still reaches the `v0.1.0` feed until REL1 publishes a newer one (H7 of the go-core plan stays open until then).
+- `spacevibe.dev` as this repo's domain restates SV10 and SV16. It does not waive the deploy gates: WEB0 to WEB3 of the [landing spec](2026-11-05-spacevibe-landing.md#deploy-gates) still stand, and on 2026-11-21 the domain still served the Hub.
 - Not decided here: the name of the local checkout folder (`spacevibe-reins` in the workspace) and the workspace `AGENTS.md` row, which belong to a workspace session.
+
+## Owner answer on the former name (2026-11-22)
+
+The owner asked, in chat on 2026-11-22, that nothing related to the former product name remain in the repo, records and fixtures included (paraphrased, because the words name it). Asked first whether the fixture path, the fixture data folder, the old update account and the legacy status-line wrapper should stay, the owner answered that everything goes. This lifts the exceptions SV9 was read with (dated records, frozen fixtures) and the docs-map rule that paths are never renamed, for this one change.
+
+Done that day:
+
+- The twelve frozen or historical records were removed from the tree (list in the [docs map](../README.md#specs-and-plans)); the eleven living specs and plans took the `spacevibe` slug, and every link, comment and body text followed.
+- The fixture root is `/private/tmp/spacevibe-fixture-home` and the fixture data folder is `.spacevibe`. SV5's freeze was opened once for it: path-hashed ids in five goldens, `manifest.json` and `SHA256SUMS` changed, nothing else ([how](../internals/overview.md)).
+- Owner quotes that held the former name carry a bracketed substitution.
+
+Still holding the former name, each waiting on a step outside the repo:
+
+| Site | Why it stays | What retires it |
+| --- | --- | --- |
+| `dev.spacevibe.reins` in `generate-update-feed.sh`, `test-update.sh`, `Info.plist`'s comment, AGENTS.md B3 and B8, the release runbook | It is the Keychain account of the only update key that exists, and the bundle id of the shipped `v0.1.0` | The owner creates the new key (runbook, "Before the first SpaceVibe release"), then the account flips and the lines go |
+| `reins-statusline` and the old data folder in `core/internal/statusline` (`quote.go`, `install_test.go`), `scripts/test-statusline.sh`, `docs/internals/limits.md` | The owner's own `~/.claude/settings.json` still runs that wrapper (seen 2026-11-22, read only); without the unwrap an install would wrap it a second time | The owner reinstalls the capture from the app once, then the recognition and its tests are deleted |
+| The local folder name in `Checkout:` lines and `~/scratch/` paths | The folders on disk still have that name; other sessions and the agent memory path depend on it | A workspace session renames the checkout and the scratch folder, then the lines follow |
 
 ## Out of scope for this ledger
 
@@ -108,4 +126,4 @@ Building the Windows or Linux shell, the visual design of the `spacevibe.dev` la
 
 ## Traceability (W20)
 
-Done: the [product spec](2026-11-02-reins.md#decision-traceability-w20) maps SV1 to SV17 to a requirement ID and an acceptance check. The acceptance for the port is SV5 as the owner narrowed it (canonical bytes of the named projections, see "Owner answer on SV5"). "No reference to Reins remains" (SV9, SV11) is a repo-wide search ending in "changed N of M, each skipped site named", with the fixtures and the `v0.1.0` release text reported separately; the go-core plan's task R6 holds that report.
+Done: the [product spec](2026-11-02-spacevibe.md#decision-traceability-w20) maps SV1 to SV17 to a requirement ID and an acceptance check. The acceptance for the port is SV5 as the owner narrowed it (canonical bytes of the named projections, see "Owner answer on SV5"). "No reference to the former name remains" (SV9, SV11) is a repo-wide search ending in "changed N of M, each skipped site named", with the fixtures and the `v0.1.0` release text reported separately; the go-core plan's task R6 holds that report.

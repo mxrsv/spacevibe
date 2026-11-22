@@ -2,7 +2,7 @@
 
 How the app is split between a Go core and a SwiftUI shell, how a request travels, and the traps of Go code that must behave like the Swift and JavaScript code the goldens were recorded from. Read this first, then the page for the code you touch ([index](README.md)). Terms follow [GLOSSARY.md](../../GLOSSARY.md).
 
-Requirements: [spec](../specs/2026-11-02-reins.md) and [decision ledger](../specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) (SV1 to SV17). Execution and progress: [plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md). The wire contract: [core-protocol.md](core-protocol.md).
+Requirements: [spec](../specs/2026-11-02-spacevibe.md) and [decision ledger](../specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) (SV1 to SV17). Execution and progress: [plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md). The wire contract: [core-protocol.md](core-protocol.md).
 
 ## Shell and core
 
@@ -28,7 +28,7 @@ Requirements: [spec](../specs/2026-11-02-reins.md) and [decision ledger](../spec
 | Materializer, canonical writer, diff, leak guard, freeze check | [`core/internal/goldentest`](../../core/internal/goldentest); rules in [core-protocol.md](core-protocol.md#canonical-golden-writer) |
 | Recorded request and response transcripts | [`core/testdata/rpc/*.jsonl`](../../core/testdata/rpc), recorded and compared by the contract tests in `core/cmd/spacevibe`; the Swift `CoreTypesTests` decode every response into its DTO |
 
-The materialized home sits at the fixed path `/private/tmp/reins-fixture-home`, and the fixture keeps its own `.reins` folder. Hook and project ids in the goldens are hashes of absolute paths under that root, and nothing can regenerate them now that the Node generator is gone. Renaming the root or the folder breaks the goldens, so both keep the old product name on purpose. Parity means canonical bytes of a named projection, not the Node bytes; each package's `golden_test.go` builds its projection and compares it through the [canonical writer](core-protocol.md#canonical-golden-writer).
+The materialized home sits at the fixed path `/private/tmp/spacevibe-fixture-home`, and the fixture keeps its own `.spacevibe` folder. Hook and project ids in the goldens are hashes of absolute paths under that root, and the Node generator that wrote them is gone. Moving the root or the folder therefore changes every such id. It was done once, on 2026-11-22: with the Go core green at the old root, each id was recomputed at the new root by `TestGoldenInventoryHookAndProjectIDs`, substituted in the goldens, and `manifest.json` (digest) and `SHA256SUMS` were refreshed; the golden diff held ids only. Parity means canonical bytes of a named projection, not the Node bytes; each package's `golden_test.go` builds its projection and compares it through the [canonical writer](core-protocol.md#canonical-golden-writer).
 
 ## Swift-to-Go traps
 

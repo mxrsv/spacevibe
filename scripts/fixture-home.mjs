@@ -5,7 +5,7 @@
 //   node scripts/fixture-home.mjs <dir>        write into <dir> (must not exist or be empty) and print env exports
 //   import { writeFixtureHome } from './fixture-home.mjs'
 //
-// Layout under <dir>: .claude/ .codex/ .reins/ (app data; the folder name is frozen by the Go goldens) and work/spacevibe-{bench,api,academy}/ (projects
+// Layout under <dir>: .claude/ .codex/ .spacevibe/ (app data; the Go goldens are tied to the folder name) and work/spacevibe-{bench,api,academy}/ (projects
 // with their own .claude/settings.json). Point the app at it with HOME, CLAUDE_CONFIG_DIR, CODEX_HOME and
 // SPACEVIBE_HOME (the printed exports do exactly that), then `npm run dev`, or use scripts/shots.mjs.
 //
@@ -83,10 +83,10 @@ export function writeFixtureHome(dir, { now = Date.now() } = {}) {
   const ctx = { dir: root, claude, codex, work, now, put, day: stamp };
   for (const section of SECTIONS) section(ctx);
   backdate(root, now);
-  mkdirSync(join(root, '.reins'), { recursive: true });
+  mkdirSync(join(root, '.spacevibe'), { recursive: true });
   return {
     dir: root,
-    env: { HOME: root, CLAUDE_CONFIG_DIR: claude, CODEX_HOME: codex, SPACEVIBE_HOME: join(root, '.reins') },
+    env: { HOME: root, CLAUDE_CONFIG_DIR: claude, CODEX_HOME: codex, SPACEVIBE_HOME: join(root, '.spacevibe') },
   };
 }
 
@@ -233,7 +233,7 @@ function rulesSection(ctx) {
 
 // Activity: three Claude Code sessions (running, waiting with a junk title in a worktree, idle), three Codex
 // processes (running, a silent tool call, one with no rollout yet), failed commands that repeat (one with a later
-// pass), and two files with the same basename. Live processes are faked: the app reads <dir>/.reins/activity-proc.json
+// pass), and two files with the same basename. Live processes are faked: the app reads <dir>/.spacevibe/activity-proc.json
 // instead of ps/lsof when SPACEVIBE_TEST=1. SPACEVIBE_FIXTURE_ACTIVITY=empty writes no live session; =loading delays the
 // first read by 20 s so a screenshot can catch "Reading logs…". The sessions and rollouts below add to the Claude
 // and Codex session counts that Loadout shows, and use no skill, agent or hook (the usage scan counts those).
@@ -293,7 +293,7 @@ function activitySection(ctx) {
   ], 22 * MIN);
 
   if (variant === 'empty') {
-    put(join(ctx.dir, '.reins', 'activity-proc.json'), JSON.stringify({ alive: [], threads: [] }));
+    put(join(ctx.dir, '.spacevibe', 'activity-proc.json'), JSON.stringify({ alive: [], threads: [] }));
     return;
   }
 
@@ -330,7 +330,7 @@ function activitySection(ctx) {
   const silent = rollout(1, api, 'Add /v1/leaderboard cache header', 5 * MIN, 'pnpm test --run', 9 * MIN);
   const busy = rollout(2, bench, 'Port the rank tie-break to a shared helper', 4000, null, 14 * MIN);
   put(join(codex, 'session_index.jsonl'), `${index.join('\n')}\n`);
-  put(join(ctx.dir, '.reins', 'activity-proc.json'), JSON.stringify({
+  put(join(ctx.dir, '.spacevibe', 'activity-proc.json'), JSON.stringify({
     alive: [41001, 41002, 41003],
     starts: { 52003: lstart(now - 2 * MIN) },
     threads: [{ pid: 52001, threadId: silent }, { pid: 52002, threadId: busy }, { pid: 52003, threadId: null }],

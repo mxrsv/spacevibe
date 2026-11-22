@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings over the whole window (spec `docs/specs/2026-11-04-reins-settings.md`, mock A2): the rail of sections at the
+/// Settings over the whole window (spec `docs/specs/2026-11-04-spacevibe-settings.md`, mock A2): the rail of sections at the
 /// top with the back button after the window buttons, one centred column of cards, and a status bar with only `Esc`.
 struct SettingsScreen: View {
     /// The page name under which the cards keep their open state.

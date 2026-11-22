@@ -1,7 +1,7 @@
 {
   "now": 1793620800000,
   "token": "$HOME",
-  "digest": "f7fff9aa7b05523a6b92a27960fcac4e48e8bc7d71b6f47b8d33183fdfb90198",
+  "digest": "4f892d973e01f082722c85f15a3e2574549c39522da736da70869d4f55a47e9c",
   "mtimes": {
     ".claude/agents/architect.md": 1788436800000,
     ".claude/agents/database-reviewer.md": 1788436800000,
@@ -216,7 +216,7 @@
     ".codex/skills/impeccable/SKILL.md": 1788436800000,
     ".codex/skills/kyant-kanban/SKILL.md": 1788436800000,
     ".codex/skills/webapp-testing/SKILL.md": 1788436800000,
-    ".reins/activity-proc.json": 1788436800000,
+    ".spacevibe/activity-proc.json": 1788436800000,
     "work/spacevibe-academy/.claude/settings.json": 1788436800000,
     "work/spacevibe-academy/.claude/settings.local.json": 1788436800000,
     "work/spacevibe-api/.claude/settings.json": 1788436800000,

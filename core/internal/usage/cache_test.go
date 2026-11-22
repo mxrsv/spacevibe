@@ -15,7 +15,7 @@ import (
 )
 
 // swiftCache is usage-cache.json as the Swift engine's UsageScanCache.save wrote it (JSONEncoder, no
-// formatting) for the three logs writeSwiftLogs builds (recorded by building ReinsCore with the 6.3
+// formatting) for the three logs writeSwiftLogs builds (recorded by building the retired Swift core with the 6.3
 // toolchain and scanning that tree). It is the literal the plan asks for (G2.1): the Swift encoder writes compact
 // JSON, escapes "/" as "\/", leaves out a nil `first`, and writes the members of every object in an order
 // that changes from run to run (a Dictionary), so the order below is one of many it can produce. The root of

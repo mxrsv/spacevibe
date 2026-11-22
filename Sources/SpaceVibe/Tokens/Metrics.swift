@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sizes, radii and spacing. One place so a number is never typed twice. Spec: `docs/specs/2026-11-03-reins-design-language.md`
+/// Sizes, radii and spacing. One place so a number is never typed twice. Spec: `docs/specs/2026-11-03-spacevibe-design-language.md`
 /// (Spacing, sizes, radii, colour). Text roles live in `SpaceVibeType`. A width measured for text grows with the Font size
 /// setting (`TypeScale.width(_:at:)`, the size it was measured at) and never shrinks below the measured value.
 enum Metrics {

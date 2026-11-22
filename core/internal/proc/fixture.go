@@ -23,7 +23,7 @@ const EnvProcFixture = identity.EnvPrefix + "PROC_FIXTURE"
 // in-memory list, so Stop works end to end without touching the machine. The pids in the file are
 // made up; nothing real answers to them.
 //
-// File format (what scripts/fixture-home.mjs writes to <dir>/.reins/activity-proc.json; the golden
+// File format (what scripts/fixture-home.mjs writes to <dir>/.spacevibe/activity-proc.json; the golden
 // file wraps the same shape in "shared", which is unwrapped here):
 //
 //	{ "alive": [41001], "starts": { "52003": "Mon Nov  2 11:58:00 2026" },

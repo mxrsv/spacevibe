@@ -6,16 +6,16 @@ Status, checked 2026-11-20: active. Built and committed: the Go core, the protoc
 Base revision: 39ff3f5 (main, clean at survey time)
 Open items of older plans that this plan now owns are listed in "What this plan takes over" and, for the launch plan, in the Handoff.
 
-Rule ids: W16 to W18, W21 to W23, UX1 to UX4 and UP1 to UP8 cited in this plan were the owner's global rules until 2026-11-19, when the FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`) replaced them; the old-to-new mapping is in the [docs-normalization plan](2026-11-19-docs-normalization.md#audit-2026-11-19-three-read-only-agents). The citations below are left as written.
+Rule ids: W16 to W18, W21 to W23, UX1 to UX4 and UP1 to UP8 cited in this plan were the owner's global rules until 2026-11-19, when the FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`) replaced them; the old-to-new mapping is in the docs-normalization plan (record removed 2026-11-22, in git history). The citations below are left as written.
 
 ## Requirements reference and delivery scope
 
 - Decisions: [decision ledger](../specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) SV1 to SV17. Its "Open (not assumed)" items appear below as owner decisions D-1 to D-7. None of them is decided here.
-- Product requirements and acceptance: [spec](../specs/2026-11-02-reins.md), acceptance criteria 1 to 5 (AC1 to AC5), plus AC6 (eye), AC7 (updater) and AC10 (Limits). Its Platform and Identity sections are superseded by SV1 to SV4 and SV9 to SV13. P0.1 rewrites them and adds the W20 traceability table that the ledger says is still owed.
+- Product requirements and acceptance: [spec](../specs/2026-11-02-spacevibe.md), acceptance criteria 1 to 5 (AC1 to AC5), plus AC6 (eye), AC7 (updater) and AC10 (Limits). Its Platform and Identity sections are superseded by SV1 to SV4 and SV9 to SV13. P0.1 rewrites them and adds the W20 traceability table that the ledger says is still owed.
 - In scope: a Go core in this repo (SV1, SV6); the stdio JSON-RPC protocol (SV3); a SwiftUI shell that reaches the core only through `CoreClient` (SV4); deleting the Node oracle and then the Swift engine (SV5); the rename (SV9, SV11 to SV13, SV15); the runtime acceptance checks S0.5, S0.4, S0.3, S8.1 and S8.2, run once on the Go core (SV7, SV8). Release, GitHub, DNS and deploy steps appear only as gates (SV14, SV16).
 - Out of scope (ledger): the Windows and Linux shells, the visual design of the `spacevibe.dev` landing page, and any edit outside this repo. See "Out of this plan, hand off".
 
-### What this plan takes over from [2026-11-02-reins-swiftui.md](2026-11-02-reins-swiftui.md)
+### What this plan takes over from 2026-11-02-spacevibe-swiftui.md (record removed 2026-11-22, in git history)
 
 | Old task | Fate here |
 | --- | --- |
@@ -23,7 +23,7 @@ Rule ids: W16 to W18, W21 to W23, UX1 to UX4 and UP1 to UP8 cited in this plan w
 | S0.3 TCC | Superseded by A3: Go core, `dev.spacevibe.app` identity. |
 | S0.4 process facts and Stop | Superseded by A2, plus G1.9 and G2.2 (ported tests). |
 | S0.5 real-CLI check | Superseded by A1. |
-| S0.6 Swift portability | Dropped (ReinsCore is deleted). Replaced by X1 (cross-compile and Linux CI) and X2 (Windows hardware). |
+| S0.6 Swift portability | Dropped (SpaceVibeCore is deleted). Replaced by X1 (cross-compile and Linux CI) and X2 (Windows hardware). |
 | S1, S2 (Swift engine) | Kept as history. The Swift engine is the port source. |
 | S7.3 updater | Re-verified with the new key in R2 (AC7). |
 | S8.1, S8.2 | Superseded by A4 and A5. |
@@ -31,23 +31,23 @@ Rule ids: W16 to W18, W21 to W23, UX1 to UX4 and UP1 to UP8 cited in this plan w
 
 When this plan is stored, replace those lines in the old plan with a pointer here, so there is one checklist (D0).
 
-Affected sibling plans: [Agents](2026-11-05-reins-agents.md) A1 to A6 and [Tokens](2026-11-03-reins-tokens.md) T1 to T4 add engine modules to `Sources/ReinsCore`. Under SV1 and SV4 they move to the Go core. D-5 decides when.
+Affected sibling plans: [Agents](2026-11-05-spacevibe-agents.md) A1 to A6 and [Tokens](2026-11-03-spacevibe-tokens.md) T1 to T4 add engine modules to `Sources/SpaceVibeCore`. Under SV1 and SV4 they move to the Go core. D-5 decides when.
 
 ## Conflicts between the ledger and the repo (surfaced, not resolved)
 
 - **C1. "Byte for byte" (SV5) is not what the oracle checked on 2026-11-07.**
-  - Goldens are Node `JSON.stringify(v, null, 2)` output (`scripts/make-golden.mjs:49`). Swift compares parsed JSON: `FixtureHome.firstDifference` ignores key order and compares numbers as `NSNumber` (`Tests/ReinsCoreTests/Support/FixtureHome.swift:113-136`).
+  - Goldens are Node `JSON.stringify(v, null, 2)` output (`scripts/make-golden.mjs:49`). Swift compares parsed JSON: `FixtureHome.firstDifference` ignores key order and compares numbers as `NSNumber` (`Tests/SpaceVibeCoreTests/Support/FixtureHome.swift:113-136`).
   - Swift compares projections, not raw output: `RulesGoldenView` (`RulesGoldenTests.swift:73-226`) and the sorted views in `ActivityGoldenTests.swift:16-32`.
   - Rules writes are compared as parsed settings on purpose (`RulesGoldenTests.swift:7-8`).
   - Swift also departs from Node deliberately: Codex IDs bound to process start time are projected back to `pid:<pid>` (`ActivityGoldenTests.swift:18-23`), and `Journal` fails closed (`Journal.swift:88-89`).
   - A Go core that matched the Node goldens literally would undo those security fixes. Proposed definition (Q1): Go implements current Swift behavior. Each golden test builds the same named projection the Swift test builds. Both sides are serialized with one canonical writer (sorted keys, ES6 number text, 2-space indent, `$HOME` substituted in keys and values) and must be equal as bytes. The golden files themselves stay frozen (SHA256SUMS check, P0.4).
 - **C2.** SV5 says a wrong golden is "fixed together with its Swift test". Swift tests are deleted at S.8; after that it should read "with its Go test" (Q8).
-- **C3.** SV9 ("no Reins reference remains") cannot hold for the frozen fixtures.
-  - Hook and project ids in `inventory.json` and `mutate.json` are hashes of absolute paths under `/private/tmp/reins-fixture-home` (B6, `FixtureHome.swift:12`). Renaming the root changes those hashes, and nothing can regenerate them once Node is gone.
-  - Also affected: `/nonexistent-reins-marker/` (`golden/activity.json:740`, `activity-home/.claude/projects/-work-app-a/aaaaaa81-….jsonl:16`) and `.reins/activity-proc.json` (`manifest.json:219`).
-  - The ledger already wants fixtures reported separately. Recommendation: keep them as named skipped sites (Q2). Alternative: re-root once, with Go, after Go has passed at the old root.
-- **C4.** SV8 puts S0.5 first in the review order, but SV7 requires S0.5 to run on the Go core. The split used here: P1 is an early read-only review of ReinsCore in SV8 order; A1 to A5 are the runtime checks, run once on Go, in the same order.
-- **C5.** The 2026-11-02 spec still describes a Swift engine, a `reins-cli` executable and `reins.spacevibe.dev` (Platform and Identity). The W20 table is owed before code (P0.1).
+- **C3.** SV9 ("no reference to the former name remains") cannot hold for the frozen fixtures.
+  - Hook and project ids in `inventory.json` and `mutate.json` are hashes of absolute paths under `/private/tmp/spacevibe-fixture-home` (B6, `FixtureHome.swift:12`). Renaming the root changes those hashes, and nothing can regenerate them once Node is gone.
+  - Also affected: `/nonexistent-spacevibe-marker/` (`golden/activity.json:740`, `activity-home/.claude/projects/-work-app-a/aaaaaa81-….jsonl:16`) and `.spacevibe/activity-proc.json` (`manifest.json:219`).
+  - The ledger already wants fixtures reported separately. Recommendation: keep them as named skipped sites (Q2). Alternative: re-root once, with Go, after Go has passed at the old root. The alternative was taken on 2026-11-22 on the owner's word (SV ledger).
+- **C4.** SV8 puts S0.5 first in the review order, but SV7 requires S0.5 to run on the Go core. The split used here: P1 is an early read-only review of SpaceVibeCore in SV8 order; A1 to A5 are the runtime checks, run once on Go, in the same order.
+- **C5.** The 2026-11-02 spec still describes a Swift engine, a separate CLI executable and a product subdomain (Platform and Identity). The W20 table is owed before code (P0.1).
 - **C6.** AGENTS.md B8 says "never regenerate" the Sparkle key. SV13 replaces the key on purpose (new bundle id, and SV11 drops updates for v0.1.0). B8 is rewritten in R2, not silently broken.
 - **C7.** The ledger lists "Spike" under Open, but the brief treats it as verified. Its evidence (commands and output) is not in the repo, so this plan marks it "reported verified" (see Handoff).
 
@@ -72,7 +72,7 @@ core/                         (new) go.mod, go.sum
   cmd/spacevibe/              argv dispatch; contract tests run the built binary
   internal/identity/          Name "spacevibe", EnvPrefix "SPACEVIBE_", DataDir ".spacevibe", Version (ldflags): the one constant each (SV12)
   internal/config/            the only env reader, fail-closed (workspace E5)
-  internal/coreerr/           status + safe message (ReinsError)
+  internal/coreerr/           status + safe message (SpaceVibeError)
   internal/textjs/            ActivityText, OrderedMap
   internal/ojson/             JSONValue + JSONParser + OrderedJSON (one Swift cycle, so one package)
   internal/toml/              TOMLReader
@@ -90,7 +90,7 @@ core/                         (new) go.mod, go.sum
   internal/statusline/        install, undo, capture (D-3)
   internal/rpc/               framing, dispatcher, notifications, cancel
   internal/goldentest/        fixture materializer, canonical writer, diff, leak guard (test helpers)
-  testdata/fixtures/          moved from Tests/ReinsCoreTests/Fixtures, frozen, SHA256SUMS
+  testdata/fixtures/          moved from Tests/SpaceVibeCoreTests/Fixtures, frozen, SHA256SUMS
   testdata/rpc/               recorded request/response transcripts (the shared contract)
 ```
 
@@ -133,7 +133,7 @@ Modules with no golden on 2026-11-07:
 
 ### Parity method (C1, Q1)
 
-`goldentest` materializes `testdata/fixtures/home` at `/private/tmp/reins-fixture-home`. It uses the same staging + rename + stamp-digest protocol as `FixtureHome.swift:41-65`, so a Go test run and a Swift test run can share the tree safely.
+`goldentest` materializes `testdata/fixtures/home` at `/private/tmp/spacevibe-fixture-home`. It uses the same staging + rename + stamp-digest protocol as `FixtureHome.swift:41-65`, so a Go test run and a Swift test run can share the tree safely.
 
 Each golden test builds the named projection and compares canonical bytes. On failure it prints a unified diff; on success it logs the canonical sha256. The named projections:
 
@@ -154,9 +154,9 @@ The protocol as built is documented in one place, [core-protocol.md](../internal
 
 ### Swift migration (SV4, W17)
 
-1. **S.1, the seam.** `CoreService` (a protocol) plus Codable DTOs in a new folder, `Sources/Reins/Core/`.
-   - Screens move from ReinsCore types to DTOs, backed at first by `InProcessCore`, an adapter over ReinsCore. No behavior change.
-   - After S.1 the only UI file that imports ReinsCore is `InProcessCore.swift`.
+1. **S.1, the seam.** `CoreService` (a protocol) plus Codable DTOs in a new folder, `Sources/SpaceVibe/Core/`.
+   - Screens move from SpaceVibeCore types to DTOs, backed at first by `InProcessCore`, an adapter over SpaceVibeCore. No behavior change.
+   - After S.1 the only UI file that imports SpaceVibeCore is `InProcessCore.swift`.
 2. **S.2, the client.** `CoreClient` implements `CoreService` over RPC.
    - A per-screen switch, `SPACEVIBE_CORE_SCREENS`, is honored only in DEBUG builds and under `SPACEVIBE_TEST=1`, so release builds keep the old path until a screen cuts over.
 3. **Cut-over order:**
@@ -169,17 +169,17 @@ The protocol as built is documented in one place, [core-protocol.md](../internal
    - Each cut-over flips the default for that screen and deletes that screen's in-process path in the same commit.
    - The app is releasable at every step. A release still waits for A1 to A5 (SV7).
 4. **No visual change.** Per-screen evidence is contract tests plus pixel-identical fixture shots of the old and new path, instead of a per-region eye gate. The one eye task is F1 (Q5).
-5. **S.8.** Deletes ReinsCore, CZstd, ReinsCoreTests, `InProcessCore` and, per D-3, ReinsStatusline. Only after every Go golden and the coverage ledger pass, and no UI path imports ReinsCore.
+5. **S.8.** Deletes SpaceVibeCore, CZstd, SpaceVibeCoreTests, `InProcessCore` and, per D-3, SpaceVibeStatusline. Only after every Go golden and the coverage ledger pass, and no UI path imports SpaceVibeCore.
 
 ### Rename (SV9, SV11 to SV13, W21)
 
-Baseline at 39ff3f5: 1,520 matching lines in 275 tracked files (case-insensitive `reins`). Recount at execution.
+Baseline at 39ff3f5: 1,520 matching lines in 275 tracked files (case-insensitive `spacevibe`). Recount at execution.
 
 | Step | When | What |
 | --- | --- | --- |
-| R1 | Early, one commit | Env names and data folder across Swift, scripts, CI and tests. No aliases: if `REINS_TEST` lived on beside `SPACEVIBE_TEST`, one engine's real-home guard would be off without anyone noticing (AC3). |
+| R1 | Early, one commit | Env names and data folder across Swift, scripts, CI and tests. No aliases: if the old test flag lived on beside `SPACEVIBE_TEST`, one engine's real-home guard would be off without anyone noticing (AC3). |
 | R2 | After R1 | Bundle id, names, Sparkle key, AGENTS.md B3, B8, B9 |
-| R3 | After S.8 | Swift type, target and file names. ReinsCore is not renamed; it is deleted. |
+| R3 | After S.8 | Swift type, target and file names. SpaceVibeCore is not renamed; it is deleted. |
 | R4 | After R3 | Scripts and CI |
 | R5 | After R2 | Site and living docs |
 | R6 | Last | The "changed N of M" report |
@@ -207,7 +207,7 @@ Six of the ledger's "Open" items map to D-1 and D-3 to D-7 (the spike item is C7
 | --- | --- | --- | --- |
 | D-1 | Repo name | none; `mxrsv/spacevibe` vs `spacevibe-app`. Answered 2026-11-21: `mxrsv/spacevibe` (ledger) | R4 (`release.sh:30`), R5 (`site/components/landing/content.ts:9`), GH1, REL1 |
 | D-2 | Go port module order | the order above; answered by approving this plan | G2 |
-| D-3 | `ReinsStatusline` as a core subcommand | `spacevibe statusline install\|undo\|capture`. A reinstall unwraps an old `…/.reins/bin/reins-statusline --capture …` command, not double-wrapping it (`StatuslineSetup.swift:44` checks only its own prefix). | G2.6, S.8 |
+| D-3 | `SpaceVibeStatusline` as a core subcommand | `spacevibe statusline install\|undo\|capture`. A reinstall unwraps an old `…/.spacevibe/bin/reins-statusline --capture …` command, not double-wrapping it (`StatuslineSetup.swift:44` checks only its own prefix). | G2.6, S.8 |
 | D-4 | May the core run `claude --version` and `codex --version` | no task here needs it; S-R4 lists only `ps`, `lsof`, signals and the D-3 capture | S-R4 wording in R5 |
 | D-5 | Does new UI work pause until the review and first CLI exist | engine tasks of the Agents and Tokens plans move to Go after G1; UI-only work continues; R3 waits for a quiet `Sources/` | S.1, R3, sibling plans |
 | D-6 | Windows tests on real hardware | yes | X2 |
@@ -222,7 +222,7 @@ Outward-facing gates. Each needs the owner's explicit approval when it runs; non
 | GH2 | Mark the v0.1.0 release description deprecated (SV14) |
 | WEB1 | Vercel project and preview deploy for `site/` |
 | WEB2 | Repoint `spacevibe.dev` |
-| WEB3 | DNS check for `reins.spacevibe.dev` |
+| WEB3 | DNS check for the retired product subdomain |
 
 ## Tasks
 
@@ -245,19 +245,19 @@ DOCS = bash ~/.claude/scripts/docs-compliance.sh && bash ~/.claude/scripts/docs-
 ### Phase P0: preconditions (sequential, one session)
 
 - [x] **P0.1 Spec rewrite and W20 traceability (gate before P0.3)**
-  - Files: `docs/specs/2026-11-02-reins.md` (Platform, Identity, a new traceability section)
+  - Files: `docs/specs/2026-11-02-spacevibe.md` (Platform, Identity, a new traceability section)
   - Depends on: none
   - Build: rewrite Platform as Go core + SwiftUI shell + stdio protocol, and Identity as SpaceVibe / `spacevibe.dev`. Add a table with one row per decision: SV1 to SV17, the quoted decision, a requirement ID, an acceptance check (this plan's tasks implement the checks). Show the table to the owner before code (W20). The ledger stays the source of decisions.
-  - Verify: `grep -cE '^\| SV(1[0-7]\|[1-9]) ' docs/specs/2026-11-02-reins.md` → 17; the date the owner saw the table is recorded; DOCS. (SV1 to SV17)
+  - Verify: `grep -cE '^\| SV(1[0-7]\|[1-9]) ' docs/specs/2026-11-02-spacevibe.md` → 17; the date the owner saw the table is recorded; DOCS. (SV1 to SV17)
 - [x] **P0.2 Owner decisions at plan approval**
   - Build: record the answers to D-2 and D-7 (needed now) and any of D-1 and D-3 to D-6 the owner gives, in the ledger (the decision source), not in the plan.
   - Verify: the ledger "Open" list shows which items closed and the owner's words.
 - [x] **P0.3 Delete the Node oracle (S8.3, SV5)**
   - Files:
     - `git mv core/pricing.json core/internal/pricing/pricing.json` (or `engine/…` per D-7).
-    - Update the path at `Tests/ReinsCoreTests/ActivityPricingTests.swift:9`.
+    - Update the path at `Tests/SpaceVibeCoreTests/ActivityPricingTests.swift:9`.
     - Delete `core/*.mjs` (15 files), `scripts/make-golden.mjs`, `scripts/golden/*.mjs` (4), `test.mjs`, `package.json`.
-    - In `AGENTS.md`: delete the "Node core" section, the `make-golden` and `npm test` rows and the last sentence of S-R2's paragraph about Node; point the Known-traps link (`core/log-files.mjs`) at `Sources/ReinsCore/LogFiles.swift`, and R6 at `Sources/ReinsCore/ActivityStop.swift`.
+    - In `AGENTS.md`: delete the "Node core" section, the `make-golden` and `npm test` rows and the last sentence of S-R2's paragraph about Node; point the Known-traps link (`core/log-files.mjs`) at `Sources/SpaceVibeCore/LogFiles.swift`, and R6 at `Sources/SpaceVibeCore/ActivityStop.swift`.
     - Reword the Swift test comments that cite `make-golden` (`Support/Fixtures.swift:4`, `Support/FixtureHome.swift:3,11,100`, `RulesGoldenTests.swift:5,73`, `ActivityGoldenTests.swift:5`, `MutateTests.swift:41`, `RulesTests.swift:7`) to "frozen goldens (SV5), last generated at <sha>".
   - Depends on: P0.1, D-7
   - Build: first record `git log -1 --format=%H -- core/activity.mjs` in Handoff; that commit is the Node behavior reference. Keep `scripts/fixture-home.mjs`. SV5 approves the deletion; git history is the backup (W9).
@@ -268,25 +268,25 @@ DOCS = bash ~/.claude/scripts/docs-compliance.sh && bash ~/.claude/scripts/docs-
     - `node scripts/fixture-home.mjs "$(mktemp -d)"` → exit 0.
     - DOCS.
 - [x] **P0.4 Move the frozen fixtures (SV5, B6)**
-  - Files: `git mv Tests/ReinsCoreTests/Fixtures core/testdata/fixtures`. Edit `Tests/ReinsCoreTests/Support/Fixtures.swift:6-8` (new path from `#filePath`) and `Package.swift:44` (drop `exclude: ["Fixtures"]`). New: `core/testdata/fixtures/SHA256SUMS` over `golden/*.json`, `manifest.json`, `zst/*`. `scripts/test.sh` gains `(cd core/testdata/fixtures && shasum -a 256 -c --quiet SHA256SUMS)` before the tests.
+  - Files: `git mv Tests/SpaceVibeCoreTests/Fixtures core/testdata/fixtures`. Edit `Tests/SpaceVibeCoreTests/Support/Fixtures.swift:6-8` (new path from `#filePath`) and `Package.swift:44` (drop `exclude: ["Fixtures"]`). New: `core/testdata/fixtures/SHA256SUMS` over `golden/*.json`, `manifest.json`, `zst/*`. `scripts/test.sh` gains `(cd core/testdata/fixtures && shasum -a 256 -c --quiet SHA256SUMS)` before the tests.
   - Depends on: P0.3
   - Build: bytes do not change. The 2026-11-03 review found fixtures hidden by a global gitignore, so check every moved path stays tracked.
   - Verify:
     - `git diff --cached -M --name-status` → only `R100` renames plus the three edited files and `SHA256SUMS`.
-    - `git ls-files core/testdata/fixtures | wc -l` equals `git ls-files Tests/ReinsCoreTests/Fixtures | wc -l` taken before the move (record both; about 304 on disk).
+    - `git ls-files core/testdata/fixtures | wc -l` equals `git ls-files Tests/SpaceVibeCoreTests/Fixtures | wc -l` taken before the move (record both; about 304 on disk).
     - `git status --porcelain --ignored core/testdata` → no `!!` lines.
     - SW, with N unchanged.
 - [x] **R1 Env and data-folder rename, one commit (SV12, AC3)**
   - Files:
-    - Swift sources: `Sources/ReinsCore/Roots.swift:23,41,52-57`, `FileEdit.swift:187,191`, `FileEditAtomicWrite.swift:16` (temp prefix `.spacevibe-<pid>-<rand>.tmp`), `StatuslineSetup.swift:5`, `Sources/ReinsStatusline/main.swift:64`, `Sources/Reins/App/AppEnvironment.swift:46-47`, `App/UpdateController.swift:108`, `App/LaunchMode.swift:13,16`, `Gallery/ShotRenderer.swift:26,45`, `Limits/LimitsShots.swift`, `Rules/RulesShots.swift`.
-    - Tests: `Tests/ReinsCoreTests/Support/TempHome.swift:20,28`, the env key in `Support/FixtureHome.swift:35`, and every `REINS_*` in the test files.
+    - Swift sources: `Sources/SpaceVibeCore/Roots.swift:23,41,52-57`, `FileEdit.swift:187,191`, `FileEditAtomicWrite.swift:16` (temp prefix `.spacevibe-<pid>-<rand>.tmp`), `StatuslineSetup.swift:5`, `Sources/SpaceVibeStatusline/main.swift:64`, `Sources/SpaceVibe/App/AppEnvironment.swift:46-47`, `App/UpdateController.swift:108`, `App/LaunchMode.swift:13,16`, `Gallery/ShotRenderer.swift:26,45`, `Limits/LimitsShots.swift`, `Rules/RulesShots.swift`.
+    - Tests: `Tests/SpaceVibeCoreTests/Support/TempHome.swift:20,28`, the env key in `Support/FixtureHome.swift:35`, and every `SPACEVIBE_*` in the test files.
     - Scripts and CI: `scripts/{test,dev,dev-fixture,build-app,release,test-update,rules-shots,test-statusline}.sh`, `scripts/fixture-home.mjs:86,89,224,242,345`, `.github/workflows/swift.yml`.
-    - New: one Swift constant for prefix and folder in `Sources/ReinsCore/ReinsCore.swift`. It is deleted with ReinsCore; after S.8 the app reads both from `initialize`.
+    - New: one Swift constant for prefix and folder in `Sources/SpaceVibeCore/SpaceVibeCore.swift`. It is deleted with SpaceVibeCore; after S.8 the app reads both from `initialize`.
   - Depends on: P0.3. Must land before G1.6.
-  - Build: every `REINS_*` becomes `SPACEVIBE_*`, and `.reins` becomes `.spacevibe`, with no aliases. Unchanged: the fixture-tree internals (the canonical root, the `.reins` folder `FixtureHome.swift:89` creates, the fixture's `.reins/activity-proc.json`; see C3) and the bundle id (R2). SV15: no migration code.
+  - Build: every `SPACEVIBE_*` becomes `SPACEVIBE_*`, and `.spacevibe` becomes `.spacevibe`, with no aliases. Unchanged: the fixture-tree internals (the canonical root, the `.spacevibe` folder `FixtureHome.swift:89` creates, the fixture's `.spacevibe/activity-proc.json`; see C3) and the bundle id (R2). SV15: no migration code.
   - Verify:
-    - `git grep -nE 'REINS_[A-Z_]+' -- Sources Tests scripts .github site` → empty.
-    - `git grep -n '\.reins' -- Sources scripts Tests` → only the `FixtureHome.swift` fixture line(s), named.
+    - `git grep -nE 'SPACEVIBE_[A-Z_]+' -- Sources Tests scripts .github site` → empty.
+    - `git grep -n '\.spacevibe' -- Sources scripts Tests` → only the `FixtureHome.swift` fixture line(s), named.
     - SW, with N unchanged, including `RootsTests` "real home throws".
     - `scripts/test-statusline.sh` → exit 0.
 - [x] **P0.5 Go module scaffold and bundling (SV1, SV6, SV12)**
@@ -301,14 +301,14 @@ DOCS = bash ~/.claude/scripts/docs-compliance.sh && bash ~/.claude/scripts/docs-
   - Verify:
     - GO.
     - XC.
-    - `scripts/build-app.sh` → `minos 15.0` for the app; `codesign --verify --deep --strict` passes; `codesign -dv build/Reins.app/Contents/Helpers/spacevibe 2>&1 | grep -E 'flags=.*runtime'` matches.
-    - `build/Reins.app/Contents/Helpers/spacevibe --version` → the plist version.
+    - `scripts/build-app.sh` → `minos 15.0` for the app; `codesign --verify --deep --strict` passes; `codesign -dv build/SpaceVibe.app/Contents/Helpers/spacevibe 2>&1 | grep -E 'flags=.*runtime'` matches.
+    - `build/SpaceVibe.app/Contents/Helpers/spacevibe --version` → the plist version.
     - SW shows the Go `ok` lines and the Swift summary.
 
 ### Phase P1: SV8 core review (read-only; parallel with G1)
 
-- [x] **P1 Severity-ranked review of ReinsCore**
-  - Files: read only: `Sources/ReinsCore/**`, `core/testdata/fixtures/golden/*`, the spec's ACs and Known defects, and the "Debt accepted" line of the 2026-11-02 plan.
+- [x] **P1 Severity-ranked review of SpaceVibeCore**
+  - Files: read only: `Sources/SpaceVibeCore/**`, `core/testdata/fixtures/golden/*`, the spec's ACs and Known defects, and the "Debt accepted" line of the 2026-11-02 plan.
   - Depends on: P0.4
   - Build: run fresh-context reviewers (`code-reviewer`, `security-reviewer`, `silent-failure-hunter`) in SV8 order:
     1. What S0.5 exercises: the skill, agent, hook and permission formats written by `MutateItems`, `MutateText`, `MutateHooks` and `RulesSettingsFile`, checked against the CLIs' docs (UP6).
@@ -363,7 +363,7 @@ Remains: G-fix.22. The pricing note still quotes a model name from the logs; fix
 
 **Owner (reported once, not fixed by agents; each needs a spec or SV5 call):**
 
-- Codex skills path: docs list `~/.agents/skills`, Reins writes `$CODEX_HOME/skills` (SF 1, H until A1; BLOCK if A1 shows it is ignored).
+- Codex skills path: docs list `~/.agents/skills`, SpaceVibe writes `$CODEX_HOME/skills` (SF 1, H until A1; BLOCK if A1 shows it is ignored).
 - Secrets cell writes `Read(./.env)` which anchors at cwd only, and `Write(path)` rules never match (SF 2): golden fix for `rules.json`.
 - Usage "0 runs" hides unreadable logs and oversized lines (SF 12): shape change to `UsageResult`.
 - Undo of a rule edit refuses when the file changed since (CR M2); undo of `created` moves whatever sits there (CR M4, SF low); trash is never pruned and the journal holds hook commands (SE M5); statusline value over 100 (SF 16, H); "Push and deploy" rules are not a boundary (SF 21); hook scan drops cancelled hooks (SF 20, H); duplicate hook add is frozen by golden `add-hook-duplicate-command` (CR M1, golden fix).
@@ -398,13 +398,13 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
 - [x] **G1.3 `toml`** ← `TOMLReader.swift`, ported by hand. Deciding check for the dependency: parse each `core/testdata/fixtures/rules-home/codex-*/.codex/config.toml` with go-toml/v2 in a scratch program. If any errors, go-toml stays out of go.mod. Tests: `TOMLReaderTests`, plus the recursion bound from `ReadHardeningTests`. Verify: GO; the scratch result recorded here.
 - [x] **G1.4 `logs`** ← `ZstdStream.swift` (klauspost decoder: concurrency 1, memory and window capped at 512 MiB), `LogFiles.swift`, `TailReader.swift`.
   - Tests: `ZstdStreamTests` (small, twice, `large` against `zst/large.meta.json` sha256 and line count, `cli-made`, truncated), `LogFilesTests`, `TailReaderTests`, the FIFO case of `ReadHardeningTests`.
-  - Add the klauspost/compress licence notice to `Sources/Reins/App/Credits.swift` (BSD; binary redistribution). Read the licence file in the module cache first.
+  - Add the klauspost/compress licence notice to `Sources/SpaceVibe/App/Credits.swift` (BSD; binary redistribution). Read the licence file in the module cache first.
   - Verify: GO.
 - [x] **G1.5 Hashes** ← `InventoryHash.swift` (`Sha1`, `sha`, `hookHash`), `JournalSHA256.swift`, replaced by `crypto/sha1` and `crypto/sha256`. Tests: the `JournalTests.swift:9-19` vectors and the hook ids in `golden/inventory.json`. Verify: GO.
-- [x] **G1.6 `roots`, `config`, `coreerr`** ← `Roots.swift`, `ReinsError.swift`, `FileEdit.refuseRealHomeUnderTest`. Port the `resolvedPath` algorithm itself and read the real home from the password database (H1). Tests: `RootsTests`, the guard cases of `WriteGuardTests`. Verify: GO; plus a darwin `CGO_ENABLED=0` build of the guard test with `HOME` overridden still throws. (AC3)
+- [x] **G1.6 `roots`, `config`, `coreerr`** ← `Roots.swift`, `SpaceVibeError.swift`, `FileEdit.refuseRealHomeUnderTest`. Port the `resolvedPath` algorithm itself and read the real home from the password database (H1). Tests: `RootsTests`, the guard cases of `WriteGuardTests`. Verify: GO; plus a darwin `CGO_ENABLED=0` build of the guard test with `HOME` overridden still throws. (AC3)
 - [x] **G1.7 `fsx`** ← `FileEditAtomicWrite.swift`, `WriteLock.swift`, `modificationTime`, `managedDirectory`. Locked entry and unlocked body pairs, plus `flock` on `<data>/write.lock`. Tests: the atomic-write cases of `FileEditTests`, `WriteConcurrencyTests` (goroutines), and a new two-process test that runs the test binary twice against one data folder (no lost journal entry). Verify: GO.
 - [x] **G1.8 `pricing`** ← `Pricing.swift`, plus the embedded `pricing.json`. Keep the summation order (`Pricing.swift:60`). Tests: `ActivityPricingTests`, which checks the table equals the JSON. Verify: GO.
-- [x] **G1.9 `proc`** ← `ProcessAdapter.swift`, plus the fixture adapter moved from `Sources/Reins/Activity/FixtureProcessAdapter.swift`.
+- [x] **G1.9 `proc`** ← `ProcessAdapter.swift`, plus the fixture adapter moved from `Sources/SpaceVibe/Activity/FixtureProcessAdapter.swift`.
   - The darwin adapter runs `/bin/ps` and `/usr/sbin/lsof` with `TZ=UTC LC_ALL=C` and the 3 s / 5 s timeouts, uses `syscall.Kill`, and maps ESRCH and EPERM.
   - The fixture adapter works only under `SPACEVIBE_TEST=1`, with the same gating as `AppEnvironment.swift:46-57`.
   - On other OSes the adapter reports "not measurable on this OS".
@@ -423,7 +423,7 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
 ### Phase G0: goldens that must exist first
 
 - [x] **G0.1 Swift-recorded Limits golden (AC10)**
-  - Files: new `Tests/ReinsCoreTests/LimitsGoldenTests.swift`; new `core/testdata/fixtures/golden/limits.json` and its line in SHA256SUMS
+  - Files: new `Tests/SpaceVibeCoreTests/LimitsGoldenTests.swift`; new `core/testdata/fixtures/golden/limits.json` and its line in SHA256SUMS
   - Depends on: P0.4
   - Build:
     - Every scenario of `LimitsTests` and the read side of `LimitsStatuslineTests`: Codex `token_count`, Claude cache, statusline snapshots incl. an account change and the highest-recent merge, a passed reset, a missing cache, an unknown shape, Gemini not measurable.
@@ -455,7 +455,7 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
     - The journal format and fail-closed behavior are identical to Swift's.
     - The trash move falls back to copy + fsync + remove on EXDEV, as `FileManager.moveItem` does (H13).
   - Tests: `TestGoldenMutate` (`mutate-tree`, ≥37 scenarios); `MutateTests` units; `JournalTests`; `MutationTransactionTests`; `FileEditTests`; `WriteGuardTests`; `WriteConcurrencyTests`; an injected-EXDEV test.
-  - Verify: as G2.1; plus new `Tests/ReinsTests/CoreJournalInteropTests.swift`, run by SW against the built core: a Swift-recorded entry is undone by Go and a Go-recorded one by Swift, with byte-identical results.
+  - Verify: as G2.1; plus new `Tests/SpaceVibeTests/CoreJournalInteropTests.swift`, run by SW against the built core: a Swift-recorded entry is undone by Go and a Go-recorded one by Swift, with byte-identical results.
 - [x] **G2.4 `rules` (`rules.json`)** Done: `5c4efe4`.
   - Depends on: G2.1 (`discoverProjects`), G2.3
   - Build: methods `rules.snapshot` (what `RulesSnapshot.swift:32-59` assembles), `rules.preview`, `rules.setCapability`, `rules.add`, `rules.remove`, `rules.changeVerdict`, `rules.check` (live validation for `RulesScopes.swift:70`). Regex per the trap list.
@@ -471,7 +471,7 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
   - Build, if D-3 picks the subcommand:
     - `spacevibe statusline install | undo <id> | capture <data> <claudeRoot> <original>`.
     - Capture runs `/bin/sh -c <original>` through `os/exec` in Claude's process group (no `Setpgid`), copies stdin to it, honours the 1 MiB cap and propagates the exit status as `main.swift:71-76` does.
-    - Install unwraps an old Reins wrapper.
+    - Install unwraps an old SpaceVibe wrapper.
     - The RPC method list has no path to capture; the contract case `rpc_cannot_capture` asserts it.
   - Tests: `LimitsStatuslineTests`; `scripts/test-statusline.sh`, pointed at `core/…/spacevibe statusline`.
   - Verify: `scripts/test-statusline.sh` → exit 0; GO. (S-R4)
@@ -479,23 +479,23 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
 ### Phase S: Swift shell (W17, SV4)
 
 - [x] **X-lock Cross-process write lock in Swift (before S.6)** Done: `da331b3`.
-  - Files: `Sources/ReinsCore/WriteLock.swift` (flock `<data>/write.lock` at the outermost depth), new `Tests/ReinsTests/CoreWriteLockInteropTests.swift`
+  - Files: `Sources/SpaceVibeCore/WriteLock.swift` (flock `<data>/write.lock` at the outermost depth), new `Tests/SpaceVibeTests/CoreWriteLockInteropTests.swift`
   - Depends on: G1.7
   - Verify: SW. Concurrent Swift and Go writers hammering one journal → entry count equals the total written, no lost edit.
   - Status 2026-11-08: committed in `da331b3`. `WriteLock.run` now takes `roots`. `CoreWriteLockInteropTests` passes; with the `flock` disabled it loses 10 to 13 of 90 entries in each of 3 runs.
 - [x] **S.1 `CoreService` seam and DTOs, no behavior change (one commit per screen)** Done: `c6079c2`, `9542400`, `a34c8bc`, `0afd82b`, `88e6e59`.
   - Files:
-    - New in `Sources/Reins/Core/`: `CoreService.swift`, `CoreTypes*.swift`, `InProcessCore.swift`.
-    - Edited: `Sources/Reins/App/AppEnvironment.swift` (`core: any CoreService`; `performWithUndo` takes DTO journal entries; an app-side error DTO replaces `ReinsError.message`).
-    - The screen models and views of Components, Shell, Limits, Activity, Loadout and Rules: the 51 files that imported ReinsCore on 2026-11-07.
-    - `Tests/ReinsTests/*` rebuilt on DTOs.
+    - New in `Sources/SpaceVibe/Core/`: `CoreService.swift`, `CoreTypes*.swift`, `InProcessCore.swift`.
+    - Edited: `Sources/SpaceVibe/App/AppEnvironment.swift` (`core: any CoreService`; `performWithUndo` takes DTO journal entries; an app-side error DTO replaces `SpaceVibeError.message`).
+    - The screen models and views of Components, Shell, Limits, Activity, Loadout and Rules: the 51 files that imported SpaceVibeCore on 2026-11-07.
+    - `Tests/SpaceVibeTests/*` rebuilt on DTOs.
   - Depends on: D-5, PR.1 (DTO shapes)
   - Verify:
     - SW (`StyleBoundaryTests` and `IconPolicyTests` green; N explained).
-    - `git grep -l 'import ReinsCore' -- Sources/Reins` → only `Sources/Reins/Core/InProcessCore.swift`.
+    - `git grep -l 'import SpaceVibeCore' -- Sources/SpaceVibe` → only `Sources/SpaceVibe/Core/InProcessCore.swift`.
     - Fixture shots for `shell`, `loadout`, `rules`, `activity` and `limits` (`SPACEVIBE_SHOT_SCREEN=<s> scripts/dev-fixture.sh --shots <dir>`) are pixel-identical to the pre-change set. The comparison script lives in the scratchpad; any differing pixel is explained.
 - [x] **S.2 `CoreClient` (child process)** Done: `14a3064`.
-  - Files: new `Sources/Reins/Core/CoreClient.swift`, new `Tests/ReinsTests/CoreClientTests.swift`
+  - Files: new `Sources/SpaceVibe/Core/CoreClient.swift`, new `Tests/SpaceVibeTests/CoreClientTests.swift`
   - Depends on: PR.2, S.1
   - Build:
     - Binary: `Contents/Helpers/spacevibe`. The override `SPACEVIBE_CORE_BINARY` is honored only in DEBUG builds or under `SPACEVIBE_TEST=1`.
@@ -507,31 +507,31 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
     - Lines are read off the main actor.
   - Verify: SW includes `CoreClientTests`, all passing: handshake against the real binary on the fixture home; a `kill -9` of the core, after which the next call succeeds after re-init; every `core/testdata/rpc/*.jsonl` response decodes into its DTO; the Swift env-prefix constant equals the `initialize` value. (SV3, SV4, SV12)
   - Status 2026-11-08: committed in `14a3064`; every screen uses it since the S.3 to S.7 cut-overs. The restart, cancel and retry rules are in [core-protocol.md](../internals/core-protocol.md#swift-client). `CoreJournalInteropTests` (Swift-recorded undone by Go and the reverse) also passes.
-- [x] **S.3 Cut over Activity and Stop.** Depends on: G2.2, S.2. Build: make the core path the default; delete the in-process Activity path and `Sources/Reins/Activity/FixtureProcessAdapter.swift`. Verify: SW; ACT contract cases; identical `activity` shots; `git grep -nE 'readActivity|stopSession|SystemProcessAdapter|FixtureProcessAdapter' -- Sources/Reins` → empty. (AC4) Done: `9c97706`.
-- [x] **S.4 Cut over Limits** (sidebar block on every tab, and the page). Depends on: G2.5, S.2. Verify: SW; identical `limits` shots for both fixture variants (`typical`, `edge`); `git grep -n 'Limits.read' -- Sources/Reins` → empty. (AC10) Done: `2c19da4`.
-- [x] **S.5 Cut over Loadout reads.** Depends on: G2.1, S.2. Verify: SW; identical `loadout` shots; `git grep -nE 'Inventory\.(read\|attachUsage\|filterCounts)\|UsageScanner' -- Sources/Reins` → empty. Done: `1f2f2ec`.
-- [x] **S.6 Cut over Loadout writes, with Undo moving to the core.** Depends on: G2.3, X-lock, S.5. Verify: SW; `CoreJournalInteropTests`; contract write cases; `git grep -nE 'Mutate\.\|Journal\.undo' -- Sources/Reins` → empty. Done: `7f15071`.
-- [x] **S.7 Cut over Rules.** Depends on: G2.4, S.6. Verify: SW; identical `rules` shots incl. `SPACEVIBE_FIXTURE_CODEX` variants (`scripts/rules-shots.sh`); `git grep -nE 'RulesStore\|CodexPermissions\|Rules\.' -- Sources/Reins` → empty. Done: `f52168a`.
+- [x] **S.3 Cut over Activity and Stop.** Depends on: G2.2, S.2. Build: make the core path the default; delete the in-process Activity path and `Sources/SpaceVibe/Activity/FixtureProcessAdapter.swift`. Verify: SW; ACT contract cases; identical `activity` shots; `git grep -nE 'readActivity|stopSession|SystemProcessAdapter|FixtureProcessAdapter' -- Sources/SpaceVibe` → empty. (AC4) Done: `9c97706`.
+- [x] **S.4 Cut over Limits** (sidebar block on every tab, and the page). Depends on: G2.5, S.2. Verify: SW; identical `limits` shots for both fixture variants (`typical`, `edge`); `git grep -n 'Limits.read' -- Sources/SpaceVibe` → empty. (AC10) Done: `2c19da4`.
+- [x] **S.5 Cut over Loadout reads.** Depends on: G2.1, S.2. Verify: SW; identical `loadout` shots; `git grep -nE 'Inventory\.(read\|attachUsage\|filterCounts)\|UsageScanner' -- Sources/SpaceVibe` → empty. Done: `1f2f2ec`.
+- [x] **S.6 Cut over Loadout writes, with Undo moving to the core.** Depends on: G2.3, X-lock, S.5. Verify: SW; `CoreJournalInteropTests`; contract write cases; `git grep -nE 'Mutate\.\|Journal\.undo' -- Sources/SpaceVibe` → empty. Done: `7f15071`.
+- [x] **S.7 Cut over Rules.** Depends on: G2.4, S.6. Verify: SW; identical `rules` shots incl. `SPACEVIBE_FIXTURE_CODEX` variants (`scripts/rules-shots.sh`); `git grep -nE 'RulesStore\|CodexPermissions\|Rules\.' -- Sources/SpaceVibe` → empty. Done: `f52168a`.
 - [x] **S.8 Delete the Swift engine**
-  - Status 2026-11-07: done. The gate held (six Go goldens pass, ledger "Unmapped: none", only `InProcessCore.swift` imported ReinsCore, D-3 answered). `scripts/test.sh` went from 546 to 242 tests: minus 298 `ReinsCoreTests`, minus 3 `InProcessCoreTests`, minus 2 `CoreJournalInteropTests`, minus 2 `CoreWriteLockInteropTests`, plus 1 new `AppEnvironment.message` test. `ReinsStatusline` is gone; the Go helper `Contents/Helpers/spacevibe` is the only helper.
+  - Status 2026-11-07: done. The gate held (six Go goldens pass, ledger "Unmapped: none", only `InProcessCore.swift` imported SpaceVibeCore, D-3 answered). `scripts/test.sh` went from 546 to 242 tests: minus 298 `SpaceVibeCoreTests`, minus 3 `InProcessCoreTests`, minus 2 `CoreJournalInteropTests`, minus 2 `CoreWriteLockInteropTests`, plus 1 new `AppEnvironment.message` test. `SpaceVibeStatusline` is gone; the Go helper `Contents/Helpers/spacevibe` is the only helper.
   - Gate, all four required:
     - (a) every Go golden passes;
     - (b) the coverage ledger has no unmapped Swift test;
-    - (c) `git grep -l 'import ReinsCore' -- Sources/Reins Tests/ReinsTests` lists only `InProcessCore.swift`;
+    - (c) `git grep -l 'import SpaceVibeCore' -- Sources/SpaceVibe Tests/SpaceVibeTests` lists only `InProcessCore.swift`;
     - (d) D-3 is answered.
-  - Files: delete `Sources/ReinsCore`, `Sources/CZstd`, `Tests/ReinsCoreTests`, `Sources/Reins/Core/InProcessCore.swift` and, per D-3, `Sources/ReinsStatusline`. Edit `Package.swift` (targets, Sparkle comment) and `scripts/build-app.sh:56,104` (the statusline copy and sign). Delete `AGENTS.md` B5 and B7 (replaced in R5).
+  - Files: delete `Sources/SpaceVibeCore`, `Sources/CZstd`, `Tests/SpaceVibeCoreTests`, `Sources/SpaceVibe/Core/InProcessCore.swift` and, per D-3, `Sources/SpaceVibeStatusline`. Edit `Package.swift` (targets, Sparkle comment) and `scripts/build-app.sh:56,104` (the statusline copy and sign). Delete `AGENTS.md` B5 and B7 (replaced in R5).
   - Verify:
     - `swift build` succeeds.
-    - SW: N drops by exactly the deleted `ReinsCoreTests` count (record it).
+    - SW: N drops by exactly the deleted `SpaceVibeCoreTests` count (record it).
     - GO.
     - `scripts/build-app.sh`.
     - Identical shots on all screens.
-    - `git grep -n 'ReinsCore\|CZstd' -- Sources Tests Package.swift scripts .github` → empty. (SV4, SV5)
+    - `git grep -n 'SpaceVibeCore\|CZstd' -- Sources Tests Package.swift scripts .github` → empty. (SV4, SV5)
 
 ### Phase R: rename (W21)
 
 - [ ] **R2 Bundle identity and the new Sparkle key (SV11, SV13)**
-  - Files: `Resources/Info.plist:12-15,19,37-41,44-48`, `Sources/Reins/App/UpdateController.swift:44`, `Sources/Reins/Tokens/AppearanceStore.swift:43-44`, `scripts/generate-update-feed.sh:18`, `scripts/test-update.sh:9,17`, `scripts/dev.sh:28`; `AGENTS.md` B3, B8, B9 rewritten
+  - Files: `Resources/Info.plist:12-15,19,37-41,44-48`, `Sources/SpaceVibe/App/UpdateController.swift:44`, `Sources/SpaceVibe/Tokens/AppearanceStore.swift:43-44`, `scripts/generate-update-feed.sh:18`, `scripts/test-update.sh:9,17`, `scripts/dev.sh:28`; `AGENTS.md` B3, B8, B9 rewritten
   - Depends on: R1. Owner action: `generate_keys --account dev.spacevibe.app` (prints `SUPublicEDKey`), then a backup with `-x` into the password manager (it writes the owner's Keychain, W9).
   - Build: `CFBundleIdentifier` `dev.spacevibe.app`, `CFBundleName` SpaceVibe, the usage descriptions, the new `SUPublicEDKey`.
   - H7 check, local only: a build carrying the old public key against a `127.0.0.1` feed signed with the new key, and against a 404 feed. Record exactly what Sparkle shows in a scheduled and a manual check; the result feeds the REL1 decision on the new feed's asset name.
@@ -542,29 +542,29 @@ Each task ports the named Swift unit tests as Go table tests with the same vecto
   - Status 2026-11-08: bundle id `dev.spacevibe.app` and the SpaceVibe names are done (`86a83d0`). Still the owner's: the new Sparkle key pair (`generate_keys --account dev.spacevibe.app`), the `SUPublicEDKey` in `Resources/Info.plist`, flipping `SIGNING_ACCOUNT` and `SPARKLE_ACCOUNT` to the new account, the H7 check and AC7. R2 stays open.
 - [x] **R3 Swift target, type and file names** Done: `d509feb`, `3d6867d`.
   - Files:
-    - Folders: `Sources/Reins` → `Sources/SpaceVibe`; `Tests/ReinsTests` → `Tests/SpaceVibeTests`.
-    - Types: `ReinsApp`, `ReinsRootStyle`/`reinsRoot`, `ReinsType`/`.reinsText`, `ReinsIcon`, `ReinsGlyph` (and the output names in `scripts/generate-icons.mjs:19,332`), `ReinsButtonStyle`/`ReinsButtonKind`/`.reins(_:)`, `reinsFocusable`, `ReinsMark`, `ReinsSwitch`, `ReinsScrollView`, `ReinsTab`.
-    - Text: window title and About (`ReinsApp.swift:15,33`); the string at `StyleBoundaryTests.swift:95`.
+    - Folders: the app and its tests move to `Sources/SpaceVibe` and `Tests/SpaceVibeTests`.
+    - Types: `SpaceVibeApp`, `SpaceVibeRootStyle`/`spacevibeRoot`, `SpaceVibeType`/`.spacevibeText`, `SpaceVibeIcon`, `SpaceVibeGlyph` (and the output names in `scripts/generate-icons.mjs:19,332`), `SpaceVibeButtonStyle`/`SpaceVibeButtonKind`/`.spacevibe(_:)`, `spacevibeFocusable`, `SpaceVibeMark`, `SpaceVibeSwitch`, `SpaceVibeScrollView`, `SpaceVibeTab`.
+    - Text: window title and About (`SpaceVibeApp.swift:15,33`); the string at `StyleBoundaryTests.swift:95`.
     - Names: `Package.swift` name and targets; `CFBundleExecutable` SpaceVibe; `build-app.sh:29-30`; `dev.sh:8,10`; `dev-fixture.sh:40`; `test-update.sh:22,49-58`; `release.sh:31`; the identifiers in `docs/DESIGN-LANGUAGE.md`.
   - Depends on: S.8, D-5, and no other session with uncommitted `Sources/` edits (W11)
   - Verify:
     - `swift build`; SW with N unchanged.
     - Rerunning `node scripts/generate-icons.mjs <icons.json>` gives no diff.
     - Shots identical except for renamed text; each difference listed.
-    - `git grep -n -i reins -- Sources Tests Package.swift` → empty.
-- [x] **R4 Scripts and CI.** Files: the temp prefixes (`build-app.sh:74`, `release.sh:50`, `test-update.sh:24`, `dev-fixture.sh:37,44`, `.github/workflows/swift.yml:35`); `release.sh:30` `GITHUB_REPO` per D-1. Depends on: R3, D-1. Verify: `bash -n` on every script; `scripts/build-app.sh`; `scripts/release.sh --prepare` on a clean `main` (local; publishes nothing) → `SpaceVibe-<v>.dmg`; `git grep -n -i reins -- scripts .github` → empty. Done: `c4a226b`.
+    - `git grep -n -i <former name> -- Sources Tests Package.swift` → empty.
+- [x] **R4 Scripts and CI.** Files: the temp prefixes (`build-app.sh:74`, `release.sh:50`, `test-update.sh:24`, `dev-fixture.sh:37,44`, `.github/workflows/swift.yml:35`); `release.sh:30` `GITHUB_REPO` per D-1. Depends on: R3, D-1. Verify: `bash -n` on every script; `scripts/build-app.sh`; `scripts/release.sh --prepare` on a clean `main` (local; publishes nothing) → `SpaceVibe-<v>.dmg`; `git grep -n -i <former name> -- scripts .github` → empty. Done: `c4a226b`.
 - [x] **R5 Site and living docs (SV9, SV10, SV16)** Done: `693f647`, `1cbcf9b`, `2ca0a73`.
   - Files:
-    - `site/`: `site/**` (all 16 matching files from the inventory: `content.ts:9,13-15,45,255-265`, `reins-mark.tsx` → `spacevibe-mark.tsx`, `scroll-reveal.tsx:5`, `shots.ts:20`, the `directions/*` titles, `public/icon.svg:1`, `next.config.ts:5`, `README.md`, `AGENTS.md`).
+    - `site/`: `site/**` (all 16 matching files from the inventory: `content.ts:9,13-15,45,255-265`, `spacevibe-mark.tsx` → `spacevibe-mark.tsx`, `scroll-reveal.tsx:5`, `shots.ts:20`, the `directions/*` titles, `public/icon.svg:1`, `next.config.ts:5`, `README.md`, `AGENTS.md`).
     - New: `site/vercel.json` with the redirects. `output: "export"` (`site/next.config.ts:9`) rules out `next.config` redirects. The `/live` family → 308 to `https://active.spacevibe.dev/:slug*`, as the Hub does (`spacevibe-hub/next.config.ts:7-17`). Old Hub routes → same path on `kyant.dev`, as an explicit list read from `spacevibe-hub/app/**` (X2, read only); `/` and the landing's own paths are excluded and any conflict is listed for the owner.
     - New: `site/tests/redirects.test.mjs`.
     - Docs: `AGENTS.md` (full pass: B1 adds the helper's minos, B2, B6, S-R1 to S-R5, R6, Known traps, the "Public site" paragraph and the command table); `PRODUCT.md`; `docs/DESIGN-LANGUAGE.md`; `docs/internals/*`.
     - Draft release notes in the scratchpad: no migration, copy `~/.reins` by hand (SV15).
-    - The idiom "take the reins" is replaced as well (reversible).
+    - The idiom "take the spacevibe" is replaced as well (reversible).
   - Depends on: R2, D-1, D-4
-  - Verify: `cd site && npm run build` → exit 0; `grep -ri reins site/out | wc -l` → 0; `node --test site/tests/redirects.test.mjs` → pass; DOCS.
+  - Verify: `cd site && npm run build` → exit 0; `grep -ri <former name> site/out | wc -l` → 0; `node --test site/tests/redirects.test.mjs` → pass; DOCS.
 - [x] **R6 Rename report (W21)**
-  - Build: run `git grep -i -c reins` and report "changed N of M" against the 1,520-line baseline. Name each skipped site:
+  - Build: run `git grep -i -c <former name>` and report "changed N of M" against the 1,520-line baseline. Name each skipped site:
     - the fixtures (C3);
     - historical specs and plans (D1 history; file names keep their D4 paths);
     - `mocks/` (deleted at Tokens T8 and Agents A12);
@@ -626,18 +626,18 @@ The owner signs both CLIs in to that home; real sessions spend quota. H9: Claude
   - Build: in the owner's runtime (W22): the renamed app on the fixture home and on the A1 home (all tabs, About, Settings > Update, the update toast); the old-vs-new shot comparisons from S.1 to S.8; the site build. Open the main sheet (W18).
   - Verify: the owner's words recorded with the date.
 - [ ] **Gates (outward-facing; each needs explicit approval when it runs)**
-  - GH1: rename the GitHub repo (after D-1), then `git remote set-url`. Done 2026-11-21: `gh repo rename spacevibe`; `gh repo view mxrsv/spacevibe` → `PUBLIC`; `https://github.com/mxrsv/spacevibe-reins` → `301` to the new URL, and the old `releases/latest/download/appcast.xml` still resolves to the `v0.1.0` asset.
+  - GH1: rename the GitHub repo (after D-1), then `git remote set-url`. Done 2026-11-21: `gh repo rename spacevibe`; `gh repo view mxrsv/spacevibe` → `PUBLIC`; the repository's earlier URL → `301` to the new URL, and the old `releases/latest/download/appcast.xml` still resolves to the `v0.1.0` asset.
   - REL1: a fresh notarization profile and key backup; `scripts/release.sh --notarize` on a clean `main`; then the printed tag, push and `gh release create` (feed asset name decided from the R2 H7 result).
   - GH2: `gh release edit v0.1.0` with the deprecation text and a link to the new download (SV14; after REL1).
   - WEB1: Vercel project for `site/` and a preview deploy; `curl -sI <preview>/live/abc` → `308` with `location: https://active.spacevibe.dev/abc`; an old Hub route → `kyant.dev`.
   - WEB2: repoint `spacevibe.dev`, only after the Hub session confirms `kyant.dev` is verified (SV16 order).
-  - WEB3: `dig +short reins.spacevibe.dev`; a redirect is needed only if a record exists (SV16).
+  - WEB3: `dig +short` on the retired product subdomain; a redirect is needed only if a record exists (SV16).
 
 ## Coverage ledger (filled during G tasks; it gates S.8)
 
 Counts are exact (`grep -c @Test`: 298 across the 30 files). "Go ported" counts Swift tests that have a Go counterpart found by a `// Swift:` comment or by reading the Go test; a parametrized test counts once. Total: 298 Swift, 297 with a Go counterpart, 1 retired (Toolchain), 0 unmapped.
 
-| Swift test file (Tests/ReinsCoreTests) | Go owner task | Go owner package(s) | Swift @Test | Go ported | Notes |
+| Swift test file (Tests/SpaceVibeCoreTests) | Go owner task | Go owner package(s) | Swift @Test | Go ported | Notes |
 | --- | --- | --- | --- | --- | --- |
 | ZstdStreamTests | G1.4 | `logs` | 7 | 7 |  |
 | LogFilesTests | G1.4 | `logs` | 6 | 6 |  |
@@ -860,7 +860,7 @@ Counts are exact (`grep -c @Test`: 298 across the 30 files). "Go ported" counts 
 - ReadHardeningTests.swift › a symlinked Claude root still gives its sessions a state and a tool → activity TestSymlinkedClaudeRootKeepsStateAndTool; Walk half is logs TestWalkKeepsGivenBase
 - ReadHardeningTests.swift › a hook whose script sits under a folder that denies the lookup is not dead, and a problem says so → inventory TestDeniedScriptIsNotDead
 - ReadHardeningTests.swift › presence: only ENOENT and ENOTDIR mean missing → inventory TestPresenceKinds
-- ReadHardeningTests.swift › a project under a folder Reins cannot stat is listed and reported as not readable, not dropped → inventory TestDeniedProject
+- ReadHardeningTests.swift › a project under a folder SpaceVibe cannot stat is listed and reported as not readable, not dropped → inventory TestDeniedProject
 - ReadHardeningTests.swift › 100000 nested brackets or braces are skipped, not recursed into → toml TestDeepNestingIsSkipped
 - ReadHardeningTests.swift › nesting up to 64 levels reads; one more does not; ordinary nested values are unaffected → toml TestDepthLimit
 - ReadHardeningTests.swift › a stream of 200000 short lines is read with only about maxBytes of lines held → logs TestCompressedRingBufferBoundsMemory
@@ -1008,7 +1008,7 @@ Unmapped: none
   - P1 (read only);
   - PR.1;
   - each G1.x (its own package directory);
-  - G0.1 (`Tests/ReinsCoreTests`);
+  - G0.1 (`Tests/SpaceVibeCoreTests`);
   - S.1 (Swift UI; conflicts with other UI plans' sessions, see D-5);
   - R2 (plist and scripts; after R1).
 - PR.2 after G1.6. G2.1 and G2.2 run in parallel; G2.3 → G2.4; G2.5 after G0.1; G2.6 after D-3.
@@ -1065,18 +1065,10 @@ Checkout `main` at `a8bce31`, run 2026-11-08 on darwin/arm64, `go1.25.5`. Comman
 - **Swift suite:** the working tree had other sessions' uncommitted `Sources/` edits and `scripts/test.sh` failed to compile there (`ShellModel.swift:54: type 'TabRegistry' has no member 'limitsID'`; not this task's change). The same script on a clean `git archive HEAD` copy in a scratch directory ended `Test run with 270 tests in 34 suites passed`, with the Go `ok` lines before it. N history: 546 before S.8, 242 after, 262 after U4 (commit message), 270 now.
 - **Shots (reported, not re-run here):** the old and new paths' fixture shots were byte-identical per screen except the named noise recorded in the cut-over commits; the U4 commit records "switch-off shots pixel-identical".
 - **Reviews (reported, not re-run here):** P1 ran three reviewers (`code-reviewer`, `security-reviewer`, `silent-failure-hunter`), all WARNING, 0 CRITICAL. The final two review passes and the second pass came back APPROVE or WARNING with 0 CRITICAL and 0 HIGH. Review findings 1-11 are in `7e56b5d`.
-- **R6 rename report (W21).** `git grep -i -c reins` on 2026-11-08 gives 651 lines in 99 files, against the 1,520 lines in 275 files at `39ff3f5`: changed 869 lines and 176 files of 1,520 and 275. The count is taken on the working tree, which includes other sessions' uncommitted edits to `Sources/` and `Tests/`. By area: `docs/` 519 lines / 26 files, `core/` 57 / 37, `mocks/` 39 / 14, `scripts/` 13 / 6, `Sources/` 8 / 8, root `AGENTS.md` 8 / 1, `Tests/` 4 / 4, `Resources/Info.plist` 1, `GLOSSARY.md` 1, `.github/workflows/swift.yml` 1. `site/` has none. Every remaining hit belongs to one of these categories:
-  - Historical specs and plans (D1; file names keep their D4 paths): 513 lines in 22 files under `docs/specs` and `docs/plans`, this plan included (80 lines naming the old identity).
-  - Spec-path and plan-path references to files that keep `reins` in their names: `docs/DESIGN-LANGUAGE.md` (2), `docs/internals/` (4 in 3 files), `AGENTS.md` (links to `reins` specs and plans), `GLOSSARY.md` (1), `.github/workflows/swift.yml` (1), 7 comments in `Sources/` and 3 in `Tests/`, 1 in `scripts/generate-icons.mjs`.
-  - `mocks/` (39 lines, 14 files): deleted at Tokens T8 and Agents A12.
-  - Frozen fixtures (C3): `core/testdata` (3 lines: `manifest.json`, `golden/activity.json`, one rollout), the canonical root `/private/tmp/reins-fixture-home` and the fixture's `.reins` folder in `core/internal/goldentest`, `core/internal/hashes`, `core/internal/proc`, `core/internal/mutate`, `core/internal/rules`, `core/internal/activity` (`/nonexistent-reins-marker/`), `scripts/fixture-home.mjs` (6), `scripts/dev-fixture.sh` (3), `Tests/SpaceVibeTests/ActivityModelTests.swift` (1), and `docs/internals/overview.md` (1).
-  - Provenance comments "Ported from Sources/ReinsCore/..." in `core/` (about 22 lines).
-  - The v0.1.0 Sparkle account constants: `scripts/generate-update-feed.sh` (`SIGNING_ACCOUNT`), `scripts/test-update.sh` (`SPARKLE_ACCOUNT`), the `Resources/Info.plist` comment, and `AGENTS.md` B3 and B8; these flip with R2 (owner).
-  - Legacy statusline wrapper recognition (the old `reins-statusline` command unwrapped on install, D-3): `core/internal/statusline/quote.go` and `install_test.go`, `scripts/test-statusline.sh`.
-  - The DNS name `reins.spacevibe.dev` in `AGENTS.md` (WEB3 check).
-  - False positives: "reinstall" and "requireInsideProject" (`core/internal/rules/store.go`, `core/internal/statusline/install.go`, `install_test.go`) and "Reinstall SpaceVibe." (`Sources/SpaceVibe/Core/CoreWire.swift`).
+- **R6 rename report (W21).** `git grep -i -c <former name>` on 2026-11-08 gives 651 lines in 99 files, against the 1,520 lines in 275 files at `39ff3f5`: changed 869 lines and 176 files of 1,520 and 275. The count is taken on the working tree, which includes other sessions' uncommitted edits to `Sources/` and `Tests/`. By area: `docs/` 519 lines / 26 files, `core/` 57 / 37, `mocks/` 39 / 14, `scripts/` 13 / 6, `Sources/` 8 / 8, root `AGENTS.md` 8 / 1, `Tests/` 4 / 4, `Resources/Info.plist` 1, `GLOSSARY.md` 1, `.github/workflows/swift.yml` 1. `site/` has none. Every remaining hit belongs to one of these categories:
+  - Superseded 2026-11-22: the owner lifted the skipped sites this report listed (dated records, frozen fixtures, provenance comments, mocks). What still holds the former name, and what retires each site, is in the [SV ledger](../specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md#owner-answer-on-the-former-name-2026-11-22). False positives of a search stay: "reinstall", "requireInsideProject".
   - The v0.1.0 release text lives on GitHub, not in the repo (GH2).
-  - Verify lines that do not hold literally: R3's `git grep -n -i reins -- Sources Tests Package.swift` and R4's `git grep -n -i reins -- scripts .github` are not empty; each hit is in the categories above. R5's `grep -ri reins site/out` was not run in this pass; `git grep -i reins -- site` is empty.
+  - Verify lines that do not hold literally: R3's `git grep -n -i <former name> -- Sources Tests Package.swift` and R4's `git grep -n -i <former name> -- scripts .github` are not empty; each hit is in the categories above. R5's `grep -ri <former name> site/out` was not run in this pass; `git grep -i <former name> -- site` is empty.
 - **Docs gate:** see the command output reported with this change (`docs-compliance.sh` and `docs-anchors.sh`).
 
 **Not verified:** A1 to A5 (real CLIs, Stop on live sessions, TCC, offline, AC1 timing); X2 on Windows hardware; the Linux CI run of `core.yml` (needs a push); AC7 and the H7 check (new Sparkle key); H8 notarization of the Go helper; H9 Claude credentials location; WEB1 to WEB3; F1 eye approval; macOS 15 launch for H16; the shots and review results above are reported, not reproduced.
@@ -1119,7 +1111,7 @@ Checkout `main` at `a8bce31`, run 2026-11-08 on darwin/arm64, `go1.25.5`. Comman
   - Hook duplicate add (golden `add-hook-duplicate-command`): a golden fix.
   - `/api/auth` and `/vote` redirects in `site/vercel.json` go to `kyant.dev`; login may break. The Hub session decides before WEB2.
   - Copy changes not checked by eye, including the new Codex "not readable" sentence; F1 covers them.
-- Taken over from the [launch plan](2026-11-03-reins-launch.md) on 2026-11-20, when it was marked historical: its L6, L7 and L12 are R2 and REL1 here (steps in the [release runbook](../operations/release.md)), its L9 is A1 to A5, its L13 is WEB1 to WEB3. One item had no home: L8's licence. No `LICENSE` exists and `README.md` says none is chosen; the owner picks one before the repository is announced (GH1, REL1).
+- Taken over from the launch plan (record removed 2026-11-22, in git history) on 2026-11-20, when it was marked historical: its L6, L7 and L12 are R2 and REL1 here (steps in the [release runbook](../operations/release.md)), its L9 is A1 to A5, its L13 is WEB1 to WEB3. One item had no home: L8's licence. No `LICENSE` exists and `README.md` says none is chosen; the owner picks one before the repository is announced (GH1, REL1).
 - Process incident: an agent amended another session's commit and then reset it back. The reflog was checked and is intact; no commit was lost. Agents must not amend or reset commits they did not make (W11).
 
-/goal Deliver docs/plans/2026-11-07-go-core-and-spacevibe-identity.md: a Go core in core/ (D-7) that matches every frozen golden by canonical bytes and every ported Swift unit test, driven by the SwiftUI app only through CoreClient over JSON-RPC 2.0 on stdio with version refusal, protocol-only stdout and exit on EOF; ReinsCore, CZstd and the Node oracle deleted; env, data folder, bundle id dev.spacevibe.app and Sparkle key renamed, with the rename report naming every remaining "reins" site; S0.5, S0.4, S0.3, S8.1 and S8.2 (AC1, AC2, AC4, AC5) passed once on the Go core with the final identity, AC3, AC7 and AC10 green, and owner eye approval in F1; stop at decisions D-1 to D-7 and before every outward-facing gate (GitHub rename, v0.1.0 text, release, Vercel or DNS).
+/goal Deliver docs/plans/2026-11-07-go-core-and-spacevibe-identity.md: a Go core in core/ (D-7) that matches every frozen golden by canonical bytes and every ported Swift unit test, driven by the SwiftUI app only through CoreClient over JSON-RPC 2.0 on stdio with version refusal, protocol-only stdout and exit on EOF; SpaceVibeCore, CZstd and the Node oracle deleted; env, data folder, bundle id dev.spacevibe.app and Sparkle key renamed, with the rename report naming every remaining "spacevibe" site; S0.5, S0.4, S0.3, S8.1 and S8.2 (AC1, AC2, AC4, AC5) passed once on the Go core with the final identity, AC3, AC7 and AC10 green, and owner eye approval in F1; stop at decisions D-1 to D-7 and before every outward-facing gate (GitHub rename, v0.1.0 text, release, Vercel or DNS).

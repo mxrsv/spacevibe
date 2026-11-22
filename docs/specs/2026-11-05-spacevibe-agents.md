@@ -1,11 +1,11 @@
-# Reins: Agents
+# SpaceVibe: Agents
 
 Date: 2026-11-05
-Status: partly superseded on 2026-11-06, marked 2026-11-20; the page as specified here was never built. Superseded: the placement and look (one card per CLI at `⌘2`, AG1, AG10) by D43 to D49 and D68, as the [v5 spec](2026-11-06-reins-design-language-v5.md) records under conflict C17: `Agents` is the page at `⌘1` that holds Skills, Subagents, Hooks and Rules. Narrowed: Codex is read only in Rules until a later phase (D48), which holds back the Codex writes of this spec ("Codex becomes writable", AG6). Deferred: the per-CLI settings panels, Instructions included, are a later phase with no plan yet (D47). Nothing below is a requirement of the shipped app until that phase is opened.
-Status as written on 2026-11-05: the owner confirmed the intent on 2026-11-04, through an interview and a grilling in chat. Mock C′ was accepted as "tạm ổn" on 2026-11-05, after the panel fixes. The page takes the v4 look of the [design-language spec](2026-11-03-reins-design-language.md), picked the same day.
-Parent spec: [Reins](2026-11-02-reins.md). This page replaces its Rules tab and moves hooks out of Loadout.
-Execution: [plan](../plans/2026-11-05-reins-agents.md), after [design language v4](../plans/2026-11-05-reins-design-language-v4.md).
-Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md)); it is in git history, last present at `2c3093a`. The paths below are as they were), tracked in `mocks/agents/index.html` with synthetic data (serve the folder, for example `python3 -m http.server 4186 --directory mocks/agents`):
+Status: partly superseded on 2026-11-06, marked 2026-11-20; the page as specified here was never built. Superseded: the placement and look (one card per CLI at `⌘2`, AG1, AG10) by D43 to D49 and D68, as the [v5 spec](2026-11-06-spacevibe-design-language-v5.md) records under conflict C17: `Agents` is the page at `⌘1` that holds Skills, Subagents, Hooks and Rules. Narrowed: Codex is read only in Rules until a later phase (D48), which holds back the Codex writes of this spec ("Codex becomes writable", AG6). Deferred: the per-CLI settings panels, Instructions included, are a later phase with no plan yet (D47). Nothing below is a requirement of the shipped app until that phase is opened.
+Status as written on 2026-11-05: the owner confirmed the intent on 2026-11-04, through an interview and a grilling in chat. Mock C′ was accepted as "tạm ổn" on 2026-11-05, after the panel fixes. The page takes the v4 look of the design-language spec (record removed 2026-11-22, in git history), picked the same day.
+Parent spec: [SpaceVibe](2026-11-02-spacevibe.md). This page replaces its Rules tab and moves hooks out of Loadout.
+Execution: [plan](../plans/2026-11-05-spacevibe-agents.md), after design language v4 (record removed 2026-11-22, in git history).
+Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to DN-Q6 of the docs-normalization plan (record removed 2026-11-22, in git history)); it is in git history, last present at `2c3093a`. The paths below are as they were), tracked in `mocks/agents/index.html` with synthetic data (serve the folder, for example `python3 -m http.server 4186 --directory mocks/agents`):
 - `mocks/agents/agents-panel.html`: C′, also option C′ of that folder's `index.html`.
 - `mocks/agents/controls.html``?icons=tabler&buttons=a`: the v4 look applied to C′.
 
@@ -59,7 +59,7 @@ Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to D
   | MCP | User `~/.claude.json`, Project `<p>/.mcp.json`, Local: that project's entry in `~/.claude.json` | Global, `[mcp_servers]` in `~/.codex/config.toml` |
 - **Draft and save.**
   - Edits stay in the panel as a draft. The footer shows "N unsaved changes", Discard, and Review and save (`⌘S`).
-  - Review opens the `ConfirmationDialog`. It lists each change (Add, Remove, Change, Replace, Edit, with verdict tags), the scope, the file or files, and "Reins keeps a copy you can restore".
+  - Review opens the `ConfirmationDialog`. It lists each change (Add, Remove, Change, Replace, Edit, with verdict tags), the scope, the file or files, and "SpaceVibe keeps a copy you can restore".
   - Bypass, `danger-full-access` and `never` each add a warn note that says the consequence.
   - Saving writes the files, closes the dialog and shows a toast with Undo.
   - A save that fails shows an error toast that names the reason, and the panel keeps the draft so nothing typed is lost (owner, 2026-11-05). The reasons include a refused `~/.claude.json`, a file that changed shape, a guard, a write error and a missing permission.
@@ -102,7 +102,7 @@ Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to D
     - A dead hook carries a "script missing" danger tag.
   - The card offers Remove N dead, and Add hook (an event menu of that CLI's events, a matcher and a command).
   - Each row has Copy to <other CLI> and remove on hover. A copy is its own confirmed write with a toast. It warns that the other CLI names its tools differently, or that it has no such event.
-  - Reins writes hooks and never runs them.
+  - SpaceVibe writes hooks and never runs them.
 - **MCP.**
   - Each server shows its name, its kind (command or URL) and its target.
   - A plugin-owned server is read-only and carries a lock tag.
@@ -141,9 +141,9 @@ Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to D
   - JSON goes through `OrderedJSON`, which keeps every other byte.
   - TOML goes through a line-level editor that keeps comments, order and untouched keys. The result is read back with `TOMLReader` before the rename.
 - **`~/.claude.json`.** Only `mcpServers` keys are read into the app.
-  - Before the rename, Reins checks the file is unchanged since it was read (size, modification time, hash).
-  - If it changed, Reins reads it again and applies the same edit to the new content.
-  - If that fails, Reins refuses with "Claude Code just changed ~/.claude.json. Nothing was saved; try again."
+  - Before the rename, SpaceVibe checks the file is unchanged since it was read (size, modification time, hash).
+  - If it changed, SpaceVibe reads it again and applies the same edit to the new content.
+  - If that fails, SpaceVibe refuses with "Claude Code just changed ~/.claude.json. Nothing was saved; try again."
 - **Secrets** (AGENTS.md S-R3 stays).
   - **Never shown or logged:**
     - every value of an MCP server's environment and headers: MCP `env` and `headers` in Claude Code, and in Codex `mcp_servers.*.env`, `http_headers` and `env_http_headers`;
@@ -156,9 +156,9 @@ Mocks (`mocks/agents/` was deleted from the tree on 2026-11-20 (owner, "ok" to D
 - **Read-only:**
   - items owned by a plugin;
   - managed settings (organisation policy files), which are shown but never written;
-  - a `.rules` file Reins cannot parse into `prefix_rule` calls, which shows the reason.
-- **Codex permission models.** A Reins write never leaves both `sandbox_mode` and `default_permissions` set.
-- **Applying changes.** No CLI is run to apply a change: Reins edits files.
+  - a `.rules` file SpaceVibe cannot parse into `prefix_rule` calls, which shows the reason.
+- **Codex permission models.** A SpaceVibe write never leaves both `sandbox_mode` and `default_permissions` set.
+- **Applying changes.** No CLI is run to apply a change: SpaceVibe edits files.
 
 ## Decisions
 
@@ -177,7 +177,7 @@ From the 2026-11-04 interview unless dated otherwise.
 
 Lines with no owner decision behind them (W20). They follow the recommendation until the owner says otherwise.
 
-- The panel's width bounds, 420 to 720 pt (Interface, Panel; acceptance AG8). Source: not recorded (the mock or the agent's choice); no owner statement names the numbers. Moved here on 2026-11-20 (DN-L13 of the [docs-normalization plan](../plans/2026-11-19-docs-normalization.md)).
+- The panel's width bounds, 420 to 720 pt (Interface, Panel; acceptance AG8). Source: not recorded (the mock or the agent's choice); no owner statement names the numbers. Moved here on 2026-11-20 (DN-L13 of the docs-normalization plan (record removed 2026-11-22, in git history)).
 
 ## Out of scope
 
@@ -200,12 +200,12 @@ Lines with no owner decision behind them (W20). They follow the recommendation u
   - no masked value appears in any panel, shot, log line or error, while `DISABLE_TELEMETRY` shows its value;
   - Replace writes the new value;
   - an Advanced save that leaves the masked values alone leaves those bytes identical.
-- **AG4.** A test changes `~/.claude.json` between Reins reading it and writing it. The edit is applied to the new content or refused with the message, and no other key changes.
+- **AG4.** A test changes `~/.claude.json` between SpaceVibe reading it and writing it. The edit is applied to the new content or refused with the message, and no other key changes.
 - **AG5.** Golden tests edit `config.toml` with comments, dotted keys, inline tables, multi-line arrays and quoted table names:
   - untouched lines stay byte-identical;
   - the result reads back with `TOMLReader`.
-- **AG6.** A Reins write never leaves Codex with both permission models set. Each risky value shows its warn note in the confirmation.
+- **AG6.** A SpaceVibe write never leaves Codex with both permission models set. Each risky value shows its warn note in the confirmation.
 - **AG7.** The draft guard behaves as described for `Esc`, Close, switching the panel and switching the scope. Each failure reason named under Draft and save shows its error toast and keeps the draft.
 - **AG8.** Only one panel opens at a time; it pushes the content, its width stays within 420 to 720 pt and is remembered, and the cards never go below 440 pt.
-- **AG9.** On a throwaway home, a real `claude` and a real `codex` load a permission, a hook, an MCP server, a model and an instruction-file change written by Reins. This extends the parent spec's AC2.
+- **AG9.** On a throwaway home, a real `claude` and a real `codex` load a permission, a hook, an MCP server, a model and an instruction-file change written by SpaceVibe. This extends the parent spec's AC2.
 - **AG10.** Shots of the page and of every panel, in both appearances, match mock C′ in the v4 look by the owner's eye, after the last task. Departures are named in the plan.

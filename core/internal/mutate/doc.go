@@ -2,7 +2,7 @@
 // skills, agents and hooks, the file edit they and the rules package share, the undo journal and
 // the app trash.
 //
-// Ported from Sources/ReinsCore/Mutate.swift, MutateItems.swift, MutateHooks.swift,
+// Ported from the retired Swift core's Mutate.swift, MutateItems.swift, MutateHooks.swift,
 // MutateHookEdit.swift (hook-edit.go), MutateText.swift (text.go), Journal.swift,
 // JournalTrash.swift (trash.go), FileEdit.swift and the rollback logic of the mutation
 // transaction (Journal.recordMutation, rollbackMutation).

@@ -1,5 +1,5 @@
 // Package toml is a forgiving, read-only TOML reader for Codex config.toml and agent .toml files.
-// It ports Sources/ReinsCore/TOMLReader.swift by hand: Read never fails, lines it cannot read are
+// It ports the retired Swift core's TOMLReader.swift by hand: Read never fails, lines it cannot read are
 // skipped and counted in Document.SkippedLines, bare tokens it cannot classify are kept as KindRaw,
 // and the last assignment of a key wins. It does not validate TOML, so a file Codex rejects can
 // still be shown. A strict parser (go-toml) is not used because it would reject such files and

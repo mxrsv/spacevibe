@@ -239,7 +239,7 @@ Each line comes from the mock or from an agent's choice, not from the owner:
 
 ## Ledger decisions this spec replaces
 
-From the [2026-11-06 ledger](2026-11-06-reins-linear-identity-decisions.md). Rows marked "owner yes" narrow or reverse a decision the owner made; the owner accepted them together on 2026-11-21 ("ok approve chốt", W20). D53, D57, D69 and D70 stay (RD21).
+From the [2026-11-06 ledger](2026-11-06-spacevibe-linear-identity-decisions.md). Rows marked "owner yes" narrow or reverse a decision the owner made; the owner accepted them together on 2026-11-21 ("ok approve chốt", W20). D53, D57, D69 and D70 stay (RD21).
 
 | Ledger | What it said | Replaced by | State |
 | --- | --- | --- | --- |

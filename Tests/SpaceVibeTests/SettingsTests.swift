@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import SpaceVibe
 
-/// Settings (spec `docs/specs/2026-11-04-reins-settings.md`): the stored Theme and Font size, the type scale, and the
+/// Settings (spec `docs/specs/2026-11-04-spacevibe-settings.md`): the stored Theme and Font size, the type scale, and the
 /// Update wording. No test changes `TypeScale.shared`, which every other suite reads in parallel.
 @MainActor
 @Suite("Settings")

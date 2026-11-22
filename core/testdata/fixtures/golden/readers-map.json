@@ -132,29 +132,29 @@
       "folder": "$HOME/.claude/agents",
       "realPath": "$HOME/.claude/agents/typescript-reviewer.md"
     },
-    "claude:agent:project:231074454cfd:migration-reviewer.md": {
+    "claude:agent:project:c5937184721a:migration-reviewer.md": {
       "folder": "$HOME/work/spacevibe-bench/.claude/agents",
       "realPath": "$HOME/work/spacevibe-bench/.claude/agents/migration-reviewer.md"
     },
-    "claude:hook:0a18bd821ef5": {
+    "claude:hook:c9ebdd7a67c0": {
       "folder": "$HOME/.claude/settings.json"
     },
-    "claude:hook:0b3f174c44c9": {
+    "claude:hook:292956e7f21c": {
       "folder": "$HOME/.claude/settings.json"
     },
-    "claude:hook:520be5fccf31": {
+    "claude:hook:a5322b8604a7": {
       "folder": "$HOME/.claude/settings.json"
     },
-    "claude:hook:542caf91b7c8": {
+    "claude:hook:b5c9db36e94e": {
       "folder": "$HOME/.claude/settings.json"
     },
-    "claude:hook:7a927295033e": {
+    "claude:hook:62de33e4d238": {
       "folder": "$HOME/.claude/settings.json"
     },
-    "claude:hook:b9f92a37d758": {
+    "claude:hook:71be91746031": {
       "folder": "$HOME/.claude/settings.json"
     },
-    "claude:hook:be21b7d68101": {
+    "claude:hook:e38277d4cc7c": {
       "folder": "$HOME/work/spacevibe-bench/.claude/settings.local.json"
     },
     "claude:hook:ef9fdb35fcba": {
@@ -200,7 +200,7 @@
       "folder": "$HOME/.claude/plugins/cache/neon/skills",
       "realPath": "$HOME/.claude/plugins/cache/neon/skills/neon-postgres"
     },
-    "claude:skill:project:231074454cfd:bench-checklist": {
+    "claude:skill:project:c5937184721a:bench-checklist": {
       "folder": "$HOME/work/spacevibe-bench/.claude/skills",
       "realPath": "$HOME/work/spacevibe-bench/.claude/skills/bench-checklist"
     },
@@ -208,7 +208,7 @@
       "folder": "$HOME/.codex/agents",
       "realPath": "$HOME/.codex/agents/security-reviewer.toml"
     },
-    "codex:hook:7a927295033e": {
+    "codex:hook:62de33e4d238": {
       "folder": "$HOME/.codex/hooks.json"
     },
     "codex:skill:local:explain": {

@@ -1,6 +1,6 @@
 # SpaceVibe
 
-SpaceVibe is a local macOS app that shows what Claude Code and Codex are equipped with, what they are allowed to do, and what they did. Terms below follow decisions D39, D43 and D46 in the [identity decisions](docs/specs/2026-11-06-reins-linear-identity-decisions.md).
+SpaceVibe is a local macOS app that shows what Claude Code and Codex are equipped with, what they are allowed to do, and what they did. Terms below follow decisions D39, D43 and D46 in the [identity decisions](docs/specs/2026-11-06-spacevibe-linear-identity-decisions.md).
 
 ## Language
 

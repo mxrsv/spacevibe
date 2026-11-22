@@ -181,7 +181,7 @@
         "state": "missing"
       }
     },
-    "hook::06ec17491e86": {
+    "hook::b30cb257a118": {
       "claude": {
         "errors": 0,
         "errorsLast7Days": 0,
@@ -230,7 +230,7 @@
         "state": "missing"
       }
     },
-    "hook::47c885b4654d": {
+    "hook::a59355ec0f46": {
       "claude": {
         "errors": 0,
         "errorsLast7Days": 0,
@@ -279,7 +279,7 @@
         "state": "missing"
       }
     },
-    "hook::487c8bee3fe1": {
+    "hook::38b59e17c361": {
       "claude": {
         "errors": 0,
         "errorsLast7Days": 0,
@@ -377,7 +377,7 @@
         "state": "missing"
       }
     },
-    "hook::9f0dd7d87722": {
+    "hook::f9c7d0df581b": {
       "claude": {
         "errors": 0,
         "errorsLast7Days": 0,
@@ -426,7 +426,7 @@
         "state": "missing"
       }
     },
-    "hook::e33ea0a4c951": {
+    "hook::a152e3085b89": {
       "claude": {
         "errors": 0,
         "errorsLast7Days": 0,
@@ -476,7 +476,7 @@
         "state": "unmeasurable"
       }
     },
-    "hook::e7067f2456fc": {
+    "hook::d9395b0046ea": {
       "claude": {
         "errors": 3,
         "errorsLast7Days": 3,
@@ -908,7 +908,7 @@
         "state": "missing"
       }
     },
-    "hook::06ec17491e86": {
+    "hook::b30cb257a118": {
       "claude": {
         "state": "scanning"
       },
@@ -916,7 +916,7 @@
         "state": "missing"
       }
     },
-    "hook::47c885b4654d": {
+    "hook::a59355ec0f46": {
       "claude": {
         "state": "scanning"
       },
@@ -924,7 +924,7 @@
         "state": "missing"
       }
     },
-    "hook::487c8bee3fe1": {
+    "hook::38b59e17c361": {
       "claude": {
         "state": "scanning"
       },
@@ -940,7 +940,7 @@
         "state": "missing"
       }
     },
-    "hook::9f0dd7d87722": {
+    "hook::f9c7d0df581b": {
       "claude": {
         "state": "scanning"
       },
@@ -948,7 +948,7 @@
         "state": "missing"
       }
     },
-    "hook::e33ea0a4c951": {
+    "hook::a152e3085b89": {
       "claude": {
         "state": "scanning"
       },
@@ -957,7 +957,7 @@
         "state": "unmeasurable"
       }
     },
-    "hook::e7067f2456fc": {
+    "hook::d9395b0046ea": {
       "claude": {
         "state": "scanning"
       },

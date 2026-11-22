@@ -9,7 +9,7 @@ final class ShellModel {
     let tabs: [any SpaceVibeTab]
     let appearance: AppearanceStore
     var activeID: String
-    /// Settings covers the whole window (spec `docs/specs/2026-11-04-reins-settings.md`); the tab or Limits page under it
+    /// Settings covers the whole window (spec `docs/specs/2026-11-04-spacevibe-settings.md`); the tab or Limits page under it
     /// stays as it was and shows again when Settings closes.
     var isSettingsOpen = false
     var settingsSection = SettingsSection.appearance

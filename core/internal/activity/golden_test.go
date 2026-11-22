@@ -254,10 +254,10 @@ func TestGoldenActivityExtra(t *testing.T) { // Swift: "section fixture HOME: en
 		t.Error("no hook failure")
 	}
 	// R4: the recorded `touch` command is listed as a failure and was never run
-	if _, ok := findFailure(report, func(f Failure) bool { return strings.HasPrefix(f.Title, "touch /nonexistent-reins-marker/") }); !ok {
+	if _, ok := findFailure(report, func(f Failure) bool { return strings.HasPrefix(f.Title, "touch /nonexistent-spacevibe-marker/") }); !ok {
 		t.Error("the touch command is not listed")
 	}
-	if _, err := os.Stat("/nonexistent-reins-marker/must-not-exist"); err == nil {
+	if _, err := os.Stat("/nonexistent-spacevibe-marker/must-not-exist"); err == nil {
 		t.Error("the recorded command was run")
 	}
 }

@@ -11,7 +11,7 @@ import Sparkle
 @MainActor
 @Observable
 final class UpdateController: NSObject, @preconcurrency SPUStandardUserDriverDelegate, SPUUpdaterDelegate {
-    /// What Settings > Update says about this launch (spec `docs/specs/2026-11-04-reins-settings.md`, Update).
+    /// What Settings > Update says about this launch (spec `docs/specs/2026-11-04-spacevibe-settings.md`, Update).
     enum Status: Equatable {
         /// No check has finished since launch: Settings shows the time of the last one only.
         case notChecked

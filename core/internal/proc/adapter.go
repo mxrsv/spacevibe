@@ -1,6 +1,6 @@
 // Package proc is the only place Activity touches the operating system: process lookup, start
-// times, Codex thread locks and SIGTERM for Stop. Ported from Sources/ReinsCore/ProcessAdapter.swift
-// and Sources/Reins/Activity/FixtureProcessAdapter.swift.
+// times, Codex thread locks and SIGTERM for Stop. Ported from the retired Swift core's ProcessAdapter.swift
+// and the Swift shell's former fixture process adapter.
 //
 // Only Terminate changes anything. The real adapter exists on darwin (ps, lsof, kill(2)); every other
 // OS gets an adapter that reports "not measurable on this OS" without failing. The fixture adapter

@@ -2,7 +2,7 @@
 
 A native macOS app that shows and edits what Claude Code and Codex CLI are equipped with: every skill, subagent, hook and rule, joined to how often each one actually ran according to local logs. It answers three questions a pile of installed extras never does: what is never used, what one CLI has and the other lacks, and which hook command fires on which event. The full product record is [PRODUCT.md](PRODUCT.md).
 
-**Status: pre-release.** No public build exists yet. `v0.1.0` shipped under the product's old name, Reins, and is deprecated; it does not update to SpaceVibe ([B3, B9](AGENTS.md)).
+**Status: pre-release.** No public build exists yet. `v0.1.0` shipped under a former product name and is deprecated; it does not update to SpaceVibe ([B3, B9](AGENTS.md)).
 
 ## What is in the app
 

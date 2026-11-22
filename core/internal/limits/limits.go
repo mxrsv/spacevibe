@@ -1,7 +1,7 @@
 // Package limits reads the usage limits the CLIs left on disk: Claude Code's usage cache and the status line
 // snapshots the collector writes, Codex's rollout logs, and whether Gemini CLI is installed. It makes no
 // network request, starts no process and reads no credential (spec, Limits; S-R4, S-R5).
-// Ported from Sources/ReinsCore/Limits.swift, LimitsClaudeCache.swift, LimitsClaudeStatusline.swift (the read
+// Ported from the retired Swift core's Limits.swift, LimitsClaudeCache.swift, LimitsClaudeStatusline.swift (the read
 // side; the capture side belongs to internal/statusline) and LimitsCodexLogs.swift.
 package limits
 

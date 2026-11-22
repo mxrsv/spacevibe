@@ -1,7 +1,7 @@
 // Package ojson reads and edits JSON config files without disturbing the bytes an edit does not touch.
 //
 // It ports three Swift files as one package, because they are one dependency cycle there:
-// Sources/ReinsCore/JSONValue.swift (the value model), JSONParser.swift (the byte-position parser) and
+// the retired Swift core's JSONValue.swift (the value model), JSONParser.swift (the byte-position parser) and
 // OrderedJSON.swift (the document and its splice edits).
 //
 // encoding/json must not be used for config files: it sorts object keys, escapes <, > and & (and U+2028/2029),

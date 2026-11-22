@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-/// Screens compose base components; they never style themselves (spec `docs/specs/2026-11-03-reins-design-language.md`,
+/// Screens compose base components; they never style themselves (spec `docs/specs/2026-11-03-spacevibe-design-language.md`,
 /// "Component base", DL3). A restyle then means editing `Sources/SpaceVibe/Tokens` or `Sources/SpaceVibe/Components` only.
 ///
 /// This reads source text: every forbidden pattern is lexical. `allowed` was a ratchet while the screens moved onto components;

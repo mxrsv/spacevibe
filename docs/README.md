@@ -11,36 +11,36 @@ One current document per topic. When two documents disagree, the one named here 
 | Rules for agents: commands, toolchain rules (B), boundary rules (S-R) | [AGENTS.md](../AGENTS.md) |
 | What the repository is and how to build it | [README.md](../README.md) |
 | The interface as shipped: tokens, components, page conventions | [DESIGN-LANGUAGE.md](DESIGN-LANGUAGE.md) |
-| Interface requirements and acceptance | [design language v5 spec](specs/2026-11-06-reins-design-language-v5.md) |
-| Interface and vocabulary decisions (`D<n>`) | [Linear identity ledger](specs/2026-11-06-reins-linear-identity-decisions.md) |
+| Interface requirements and acceptance | [design language v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md) |
+| Interface and vocabulary decisions (`D<n>`) | [Linear identity ledger](specs/2026-11-06-spacevibe-linear-identity-decisions.md) |
 | Core, rename and distribution decisions (`SV<n>`) | [SV ledger](specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) |
-| Product requirements, acceptance criteria AC1 to AC10, SV traceability | [product spec](specs/2026-11-02-reins.md) |
+| Product requirements, acceptance criteria AC1 to AC10, SV traceability | [product spec](specs/2026-11-02-spacevibe.md) |
 | The Go core, one page per subsystem, and the shell-to-core protocol | [internals index](internals/README.md) |
 | Releasing and the update key | [release runbook](operations/release.md) |
-| The public site | [site/README.md](../site/README.md); requirements and deploy gates in the [landing spec](specs/2026-11-05-reins-landing.md) |
+| The public site | [site/README.md](../site/README.md); requirements and deploy gates in the [landing spec](specs/2026-11-05-spacevibe-landing.md) |
 
 [DESIGN-LANGUAGE.md](DESIGN-LANGUAGE.md) is this repo's `DESIGN.md` under the owner's global FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`). Where it or [PRODUCT.md](../PRODUCT.md) differs from them, this repo wins; the two icon sets are one such case (D72).
 
 ## Specs and plans
 
-A spec owns requirements and acceptance; a plan owns tasks, progress, verification and handoff, and links to its spec instead of copying it. Each record's own `Status` line is the truth; this table only says where to look. File names keep the `reins-` slug of the product's old name: paths are never renamed.
+A spec owns requirements and acceptance; a plan owns tasks, progress, verification and handoff, and links to its spec instead of copying it. Each record's own `Status` line is the truth; this table only says where to look. Paths are not renamed; the one exception was 2026-11-22, when the former product name left every file name (SV9).
 
 | Feature or track | Spec | Plan | State on 2026-11-20 |
 | --- | --- | --- | --- |
-| Go core, protocol, rename, release gates | [product spec](specs/2026-11-02-reins.md), [SV ledger](specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) | [go-core](plans/2026-11-07-go-core-and-spacevibe-identity.md) | active: built, the owner's checks and gates open |
-| Interface v5 | [v5 spec](specs/2026-11-06-reins-design-language-v5.md) | [UI v5 build](plans/2026-11-07-reins-ui-v5-build.md) | active: built and cut over, eye approval open |
-| Settings | [spec](specs/2026-11-04-reins-settings.md) | [plan](plans/2026-11-04-reins-settings.md) | active: built, eye approval open |
+| Go core, protocol, rename, release gates | [product spec](specs/2026-11-02-spacevibe.md), [SV ledger](specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) | [go-core](plans/2026-11-07-go-core-and-spacevibe-identity.md) | active: built, the owner's checks and gates open |
+| Interface v5 | [v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md) | [UI v5 build](plans/2026-11-07-spacevibe-ui-v5-build.md) | active: built and cut over, eye approval open |
+| Settings | [spec](specs/2026-11-04-spacevibe-settings.md) | [plan](plans/2026-11-04-spacevibe-settings.md) | active: built, eye approval open |
 | Session glance widget | [spec](specs/2026-11-19-session-glance-widget.md) | [plan](plans/2026-11-19-session-glance-widget.md) | active |
 | Limit reset countdown | [spec](specs/2026-11-19-limit-reset-countdown.md) | the widget plan (its task GL-T13) | active |
 | App-wide redesign (macOS frame, v2) | [spec](specs/2026-11-20-spacevibe-redesign.md) | [build plan](plans/2026-11-21-spacevibe-redesign-build.md) | spec decided and plan approved 2026-11-21; nothing built, next RB-T0 |
 | Design system of the redesign | [spec](specs/2026-11-21-spacevibe-design-system.md) | the redesign build plan (RB-S1, RB-S4) | decided 2026-11-21; nothing built |
 | Clean | [spec](specs/2026-11-18-clean.md), absorbed by the redesign spec | none | draft |
-| Tokens page | [product spec, "Tab: Tokens"](specs/2026-11-02-reins.md#tab-tokens) | [plan](plans/2026-11-03-reins-tokens.md) | active: not built |
-| Landing page | [spec](specs/2026-11-05-reins-landing.md) | none | draft, direction picked |
-| Internals pages | none | [plan](plans/2026-11-07-reins-internals-docs.md) | active: the owner's check open |
-| Agents settings panels | [spec](specs/2026-11-05-reins-agents.md) | [plan](plans/2026-11-05-reins-agents.md) | on hold, partly superseded, not built |
+| Tokens page | [product spec, "Tab: Tokens"](specs/2026-11-02-spacevibe.md#tab-tokens) | [plan](plans/2026-11-03-spacevibe-tokens.md) | active: not built |
+| Landing page | [spec](specs/2026-11-05-spacevibe-landing.md) | none | draft, direction picked |
+| Internals pages | none | [plan](plans/2026-11-07-spacevibe-internals-docs.md) | active: the owner's check open |
+| Agents settings panels | [spec](specs/2026-11-05-spacevibe-agents.md) | [plan](plans/2026-11-05-spacevibe-agents.md) | on hold, partly superseded, not built |
 
-Frozen or historical, kept as records and not maintained: the [2026-11-03 design-language spec](specs/2026-11-03-reins-design-language.md) (superseded by v5, D73) and the plans [Electron](plans/2026-11-02-reins-electron.md), [SwiftUI](plans/2026-11-02-reins-swiftui.md), design language [v2](plans/2026-11-03-reins-design-language.md), [v3](plans/2026-11-04-reins-design-language-v3.md) and [v4](plans/2026-11-05-reins-design-language-v4.md), [Limits](plans/2026-11-03-reins-limits.md), [site landing](plans/2026-11-03-reins-site-landing.md), [launch](plans/2026-11-03-reins-launch.md), [review fixes](plans/2026-11-10-review-fixes.md), [Swift review fixes](plans/2026-11-11-swift-review-fixes.md) and [docs normalization](plans/2026-11-19-docs-normalization.md). A frozen record describes its own date, not the app today.
+Frozen and historical records were removed from the tree on 2026-11-22 and live in git history (last present at `a5b36cc`): the 2026-11-03 design-language spec (superseded by v5, D73) and the plans Electron, SwiftUI, design language v2 to v4, Limits, site landing, launch, review fixes, Swift review fixes and docs normalization. A link to one of them from a remaining record is plain text marked "record removed".
 
 ## Templates
 
@@ -87,12 +87,12 @@ Short ids repeat across documents. Cite an id together with its document unless 
 
 | Id | Owner |
 | --- | --- |
-| `D<n>` (no hyphen), from `D1` | [Linear identity ledger](specs/2026-11-06-reins-linear-identity-decisions.md) |
+| `D<n>` (no hyphen), from `D1` | [Linear identity ledger](specs/2026-11-06-spacevibe-linear-identity-decisions.md) |
 | `SV<n>` | [SV ledger](specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) |
 | `B<n>`, `S-R<n>` | [AGENTS.md](../AGENTS.md) |
 | `D-<n>` (with a hyphen) | open owner decisions of the [go-core plan](plans/2026-11-07-go-core-and-spacevibe-identity.md) |
-| `AC<n>`, `RQ-SV<n>` | [product spec](specs/2026-11-02-reins.md) |
-| `V5-R<n>`, `V5-A<n>`, and inside it `S<n>` (mock substitutions), `C<n>` (conflicts), `G<n>` (data gaps) | [v5 spec](specs/2026-11-06-reins-design-language-v5.md) |
+| `AC<n>`, `RQ-SV<n>` | [product spec](specs/2026-11-02-spacevibe.md) |
+| `V5-R<n>`, `V5-A<n>`, and inside it `S<n>` (mock substitutions), `C<n>` (conflicts), `G<n>` (data gaps) | [v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md) |
 | `ST<n>`, `AG<n>`, `CL-…`, `GW…`, `LC…`, `DL<n>` | the Settings, Agents, Clean, glance widget, countdown and frozen design-language specs |
 | `RD<n>`, `RD-R<n>`, `RD-A<n>` | [redesign spec](specs/2026-11-20-spacevibe-redesign.md) |
 | `L<n>` | three owners: the landing spec's ledger, the launch plan's tasks, the Limits plan's tasks |

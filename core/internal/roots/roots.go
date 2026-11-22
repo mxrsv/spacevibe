@@ -1,6 +1,6 @@
 // Package roots finds the folders of the CLIs SpaceVibe reads and SpaceVibe's own data folder, and refuses
 // any of them under the real home when SPACEVIBE_TEST=1 (AC3).
-// Ported from Sources/ReinsCore/Roots.swift and FileEdit.refuseRealHomeUnderTest
+// Ported from the retired Swift core's Roots.swift and FileEdit.refuseRealHomeUnderTest
 // (Node inventory roots(), git b58269d).
 package roots
 

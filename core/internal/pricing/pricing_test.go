@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// swiftTable is the literal table of Sources/ReinsCore/Pricing.swift. In Go the table is the
+// swiftTable is the literal table of the retired Swift core's Pricing.swift. In Go the table is the
 // embedded JSON, so this is the expected value, not the source.
 var swiftTable = Table{
 	"claude-opus-5-5":   {Input: 4.0, Output: 20.0, CacheWrite: 5.0, CacheWriteLong: 8.0, CacheRead: 0.2},

@@ -1,7 +1,7 @@
 // Package fsx holds the filesystem primitives every SpaceVibe write goes through: the atomic write,
 // the symlink-aware target lookup, the write lock (in-process and cross-process) and the managed
 // directory check.
-// Ported from Sources/ReinsCore/FileEditAtomicWrite.swift, WriteLock.swift, TailReader.swift
+// Ported from the retired Swift core's FileEditAtomicWrite.swift, WriteLock.swift, TailReader.swift
 // (modificationTime), StatuslineSetup.swift (managedDirectory) and the filesystem parts of
 // FileEdit.swift (resolveTarget, the byte re-check before the rename). The orchestration of an edit
 // (backup, journal op) belongs to the mutate package.

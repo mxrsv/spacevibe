@@ -258,14 +258,14 @@
           }
         },
         "hook": {
-          "47c885b4654d": {
+          "a59355ec0f46": {
             "runs": 412,
             "ms": 16106,
             "timed": 412,
             "errors": 0,
             "last": "2026-11-01"
           },
-          "e7067f2456fc": {
+          "d9395b0046ea": {
             "runs": 96,
             "ms": 3600,
             "timed": 96,
@@ -279,14 +279,14 @@
             "errors": 17,
             "last": "2026-11-01"
           },
-          "487c8bee3fe1": {
+          "38b59e17c361": {
             "runs": 58,
             "ms": 2093,
             "timed": 58,
             "errors": 0,
             "last": "2026-11-01"
           },
-          "e33ea0a4c951": {
+          "a152e3085b89": {
             "runs": 203,
             "ms": 7963,
             "timed": 203,
@@ -509,7 +509,7 @@
         }
       },
       {
-        "id": "claude:agent:project:231074454cfd:migration-reviewer.md",
+        "id": "claude:agent:project:c5937184721a:migration-reviewer.md",
         "cli": "claude",
         "kind": "agent",
         "name": "migration-reviewer",
@@ -812,7 +812,7 @@
         }
       },
       {
-        "id": "claude:skill:project:231074454cfd:bench-checklist",
+        "id": "claude:skill:project:c5937184721a:bench-checklist",
         "cli": "claude",
         "kind": "skill",
         "name": "bench-checklist",
@@ -980,7 +980,7 @@
     ],
     "hooks": [
       {
-        "id": "claude:hook:0a18bd821ef5",
+        "id": "claude:hook:c9ebdd7a67c0",
         "cli": "claude",
         "kind": "hook",
         "event": "PreToolUse",
@@ -994,11 +994,11 @@
         "paths": [
           "$HOME/.claude/scripts/block-env-edit.sh"
         ],
-        "hash": "e7067f2456fc",
+        "hash": "d9395b0046ea",
         "file": "$HOME/.claude/settings.json",
         "scope": "global",
         "project": null,
-        "key": "hook::e7067f2456fc",
+        "key": "hook::d9395b0046ea",
         "cells": {
           "claude": {
             "state": "counted",
@@ -1019,7 +1019,7 @@
         }
       },
       {
-        "id": "claude:hook:0b3f174c44c9",
+        "id": "claude:hook:292956e7f21c",
         "cli": "claude",
         "kind": "hook",
         "event": "SessionStart",
@@ -1033,11 +1033,11 @@
         "paths": [
           "$HOME/.claude/scripts/load-context.sh"
         ],
-        "hash": "487c8bee3fe1",
+        "hash": "38b59e17c361",
         "file": "$HOME/.claude/settings.json",
         "scope": "global",
         "project": null,
-        "key": "hook::487c8bee3fe1",
+        "key": "hook::38b59e17c361",
         "cells": {
           "claude": {
             "state": "counted",
@@ -1058,7 +1058,7 @@
         }
       },
       {
-        "id": "claude:hook:520be5fccf31",
+        "id": "claude:hook:a5322b8604a7",
         "cli": "claude",
         "kind": "hook",
         "event": "Stop",
@@ -1072,11 +1072,11 @@
         "paths": [
           "$HOME/work/old-dotfiles/notify.sh"
         ],
-        "hash": "9f0dd7d87722",
+        "hash": "f9c7d0df581b",
         "file": "$HOME/.claude/settings.json",
         "scope": "global",
         "project": null,
-        "key": "hook::9f0dd7d87722",
+        "key": "hook::f9c7d0df581b",
         "cells": {
           "claude": {
             "state": "counted",
@@ -1097,7 +1097,7 @@
         }
       },
       {
-        "id": "claude:hook:542caf91b7c8",
+        "id": "claude:hook:b5c9db36e94e",
         "cli": "claude",
         "kind": "hook",
         "event": "PreToolUse",
@@ -1111,11 +1111,11 @@
         "paths": [
           "$HOME/.claude/scripts/guard-destructive.sh"
         ],
-        "hash": "47c885b4654d",
+        "hash": "a59355ec0f46",
         "file": "$HOME/.claude/settings.json",
         "scope": "global",
         "project": null,
-        "key": "hook::47c885b4654d",
+        "key": "hook::a59355ec0f46",
         "cells": {
           "claude": {
             "state": "counted",
@@ -1136,7 +1136,7 @@
         }
       },
       {
-        "id": "claude:hook:7a927295033e",
+        "id": "claude:hook:62de33e4d238",
         "cli": "claude",
         "kind": "hook",
         "event": "Stop",
@@ -1150,11 +1150,11 @@
         "paths": [
           "$HOME/.claude/scripts/notify-done.sh"
         ],
-        "hash": "e33ea0a4c951",
+        "hash": "a152e3085b89",
         "file": "$HOME/.claude/settings.json",
         "scope": "global",
         "project": null,
-        "key": "hook::e33ea0a4c951",
+        "key": "hook::a152e3085b89",
         "cells": {
           "claude": {
             "state": "counted",
@@ -1176,7 +1176,7 @@
         }
       },
       {
-        "id": "claude:hook:b9f92a37d758",
+        "id": "claude:hook:71be91746031",
         "cli": "claude",
         "kind": "hook",
         "event": "PostToolUse",
@@ -1190,11 +1190,11 @@
         "paths": [
           "$HOME/work/tools/tsc-watch.sh"
         ],
-        "hash": "06ec17491e86",
+        "hash": "b30cb257a118",
         "file": "$HOME/.claude/settings.json",
         "scope": "global",
         "project": null,
-        "key": "hook::06ec17491e86",
+        "key": "hook::b30cb257a118",
         "cells": {
           "claude": {
             "state": "counted",
@@ -1215,7 +1215,7 @@
         }
       },
       {
-        "id": "claude:hook:be21b7d68101",
+        "id": "claude:hook:e38277d4cc7c",
         "cli": "claude",
         "kind": "hook",
         "event": "PostToolUse",
@@ -1289,7 +1289,7 @@
         }
       },
       {
-        "id": "codex:hook:7a927295033e",
+        "id": "codex:hook:62de33e4d238",
         "cli": "codex",
         "kind": "hook",
         "event": "Stop",
@@ -1303,11 +1303,11 @@
         "paths": [
           "$HOME/.claude/scripts/notify-done.sh"
         ],
-        "hash": "e33ea0a4c951",
+        "hash": "a152e3085b89",
         "file": "$HOME/.codex/hooks.json",
         "scope": "global",
         "project": null,
-        "key": "hook::e33ea0a4c951",
+        "key": "hook::a152e3085b89",
         "cells": {
           "claude": {
             "state": "counted",

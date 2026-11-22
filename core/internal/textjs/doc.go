@@ -1,4 +1,4 @@
-// Package textjs ports Sources/ReinsCore/ActivityText.swift (ActivityText and
+// Package textjs ports the retired Swift core's ActivityText.swift (ActivityText and
 // OrderedMap): string, path and time helpers that behave like the JavaScript the
 // Node core used, so output matches the goldens byte for byte.
 //

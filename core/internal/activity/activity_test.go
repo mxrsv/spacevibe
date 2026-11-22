@@ -17,7 +17,7 @@ import (
 	"spacevibe.dev/core/internal/textjs"
 )
 
-// Ported from Tests/ReinsCoreTests/ActivityTests.swift. Not ported here because their subject lives in another
+// Ported from the retired Swift core tests' ActivityTests.swift. Not ported here because their subject lives in another
 // package: "process adapter parsers" (internal/proc), "text helpers" (internal/textjs, internal/hashes) and "a real
 // home is refused" (internal/roots).
 

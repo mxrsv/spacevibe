@@ -1,7 +1,7 @@
 // Package rules is the Claude Code permission rules of SpaceVibe: list the rules of a scope, add, remove and change a
 // verdict, derive the capability grid, replace a grid cell, and read the Codex permission keys (read-only).
 //
-// Ported from Sources/ReinsCore/Rules*.swift (RulesTypes, RulesParse, RulesStore, RulesSettingsFile,
+// Ported from the retired Swift core's Rules*.swift (RulesTypes, RulesParse, RulesStore, RulesSettingsFile,
 // RulesCapabilityWrite, RulesCapabilityGrid, RulesCodexPermissions) and, from Sources/SpaceVibe/Rules, RulesSnapshot.swift
 // (what a snapshot assembles) and RulesScopes.swift (scrub, and the live check of a rule).
 //
