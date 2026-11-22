@@ -97,14 +97,14 @@ struct FramePageSwitchTests {
         #expect(glass.titlebarHeight == 68)
         #expect(glass.origins == [CGPoint(x: 27, y: 27), CGPoint(x: 50, y: 27), CGPoint(x: 73, y: 27)])
         // `.sb{margin:8px;padding:0 8px}` + `.lights{height:52px;padding:0 12px}` + half a 12 pt dot.
-        #expect(FrameRole.trafficLightCenter(.glass) == RadiusRole.sidebarInset(.glass) + FrameRole.trafficLightClearance / 2)
+        #expect(FrameRole.trafficLightCenter(.glass) == SpaceRole.sidebarInset(.glass) + FrameRole.trafficLightClearance / 2)
         let solid = FrameWindowButtonsPlacement.make(look: .solid, buttonSize: size, pitch: 23)
         #expect(solid.titlebarHeight == 52 && solid.origins.first == CGPoint(x: 19, y: 19))
         for (look, placement) in [(MaterialLook.glass, glass), (.solid, solid)] {
             // With the sidebar hidden the toolbar starts at least 12 pt after the last light.
             #expect(placement.trailingEdge(buttonWidth: size.width) + SpaceRole.step12 <= FrameRole.trafficLightsWidth(look))
             // The lights sit inside the sidebar's light strip, clear of its rounded corner.
-            #expect(placement.origins[0].y >= RadiusRole.sidebarInset(look))
+            #expect(placement.origins[0].y >= SpaceRole.sidebarInset(look))
         }
     }
 
