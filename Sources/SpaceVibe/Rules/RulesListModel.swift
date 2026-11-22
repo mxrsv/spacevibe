@@ -146,6 +146,10 @@ struct RulesListModel: Equatable {
 
     func row(_ id: String?) -> RulesRuleRow? { rows.first { $0.id == id } }
 
+    /// The rule table's zebra, as the mock's group draws it (`.tr:nth-child(odd)`, `style.css:142`): the head row is the
+    /// group's first child, so the second rule, the fourth and so on carry the stripe.
+    static func isStriped(_ index: Int) -> Bool { !index.isMultiple(of: 2) }
+
     /// The capability a rule belongs to, by the engine's grid; nil for a rule outside the six (a `Skill` or MCP rule).
     func capability(of rule: CoreRule) -> RulesCapabilityRow? { capabilities.first { $0.cell.rules.contains { $0.id == rule.id } } }
 

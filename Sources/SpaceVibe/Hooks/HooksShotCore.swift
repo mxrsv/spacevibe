@@ -148,14 +148,20 @@ final class HooksShotCore: CoreService, @unchecked Sendable {
 
     private static func hook(_ hash: String, cli: CoreCLI = .claude, event: String, matcher: String? = nil, command: String, dead: Bool = false,
                              project: String? = nil, avg: Int? = nil, cells: CoreCLICells) -> CoreInventoryHook {
-        let file = project.map { "\($0)/.claude/settings.json" } ?? (cli == .claude ? "~/.claude/settings.json" : "~/.codex/hooks.json")
-        return CoreInventoryHook(
+        let file = project.map { "\($0)/.claude/settings.json" } ?? (cli == .claude ? "~/.claude/settings.json" : "~/.\(cli.rawValue)/hooks.json")
+        var made = CoreInventoryHook(
             id: "\(cli.rawValue):hook:\(hash)", cli: cli, kind: .hook, event: event, matcher: matcher, command: command, timeout: nil, async: false,
             owner: "user", removable: project == nil, dead: dead, paths: [], hash: hash, file: file, scope: project == nil ? .global : .project,
             project: project, key: "hook:\(project ?? ""):\(hash)", cells: nil, cliCells: cells,
             usage: avg.map { CoreHookUsage(runs: 1, avgMs: $0, totalMs: 0, errors: 0, last: nil) }
         )
+        // When SpaceVibe first saw it: the inspector's Added line (the mock's "80 days ago").
+        made.firstSeen = firstSeen
+        return made
     }
+
+    /// The mock's `seenOf` for its sample: about eighty days before the shots' week.
+    static let firstSeen = "2026-09-03T10:00:00Z"
 
     /// The mock's HOOKS, in its order.
     static let sample: [CoreInventoryHook] = [

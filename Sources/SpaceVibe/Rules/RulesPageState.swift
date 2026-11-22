@@ -26,6 +26,8 @@ final class RulesPageState {
     var isProjectMenuOpen = false
     private(set) var preview: RulesPreviewRequest?
     var addDraft: RulesAddDraft?
+    /// Verdict changes under way, by their write control: what each is writing.
+    private(set) var changing: [String: CoreVerdict] = [:]
 
     @ObservationIgnored private weak var model: FrameModel?
     /// The project the Project scope opens on: the one shown last.
@@ -147,11 +149,40 @@ final class RulesPageState {
 
     // MARK: Rule writes
 
-    /// The inspector's dial and `Change to Ask` on a whole-tool allow: `rules.changeVerdict`, one Undo.
+    /// The inspector's dial and `Change to Ask` on a whole-tool allow: `rules.changeVerdict`, one Undo. While one change of a
+    /// rule is pending its dial shows it (`pendingVerdict`) and a second press starts nothing: the control is claimed before
+    /// this returns (`FrameWrites.start`). `from` is the verdict the file holds now (the store), never the one the pressed
+    /// view drew. The changed rule stays selected under its new id.
     func change(_ rule: CoreRule, to verdict: CoreVerdict, fileName: String) {
-        guard let model, rule.verdict != verdict else { return }
-        run(.changeVerdict(rule.rule, from: rule.verdict, to: verdict, in: file, label: RulesWriteWording.changed(rule, to: verdict, in: fileName)),
-            model: model)
+        guard let model else { return }
+        let file = file
+        let current = Self.current(rule, in: model.store.snapshot.rules[file]) ?? rule
+        guard current.verdict != verdict else { return }
+        let write = FrameWrite.changeVerdict(current.rule, from: current.verdict, to: verdict, in: file,
+                                             label: RulesWriteWording.changed(current, to: verdict, in: fileName))
+        guard let task = model.writes.start(write) else { return }
+        changing[write.control] = verdict
+        Task { @MainActor in
+            let accepted = await task.value
+            changing[write.control] = nil
+            guard accepted, model.router.route.selection == current.id else { return }
+            model.router.select(Self.id(of: current, as: verdict))
+        }
+    }
+
+    /// The verdict a pending change of `rule` is writing, for its dial's pending step; nil when none is pending.
+    func pendingVerdict(_ rule: CoreRule) -> CoreVerdict? { changing[FrameWrite.verdictControl(rule.rule, in: file)] }
+
+    /// The rule as the store holds it now, by its text: the verdict a change starts from.
+    static func current(_ rule: CoreRule, in snapshot: CoreRulesSnapshot?) -> CoreRule? {
+        snapshot?.rules.first { $0.rule == rule.rule }
+    }
+
+    /// The rule's id once it says `verdict` (`<scope>:<verdict>:<rule>`).
+    static func id(of rule: CoreRule, as verdict: CoreVerdict) -> String {
+        let parts = rule.id.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
+        guard parts.count == 3 else { return rule.id }
+        return "\(parts[0]):\(verdict.rawValue):\(parts[2])"
     }
 
     /// `Remove Rule` on the selected row: `rules.removeMany` with one id, one Undo.

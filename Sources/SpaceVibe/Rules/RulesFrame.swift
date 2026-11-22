@@ -38,7 +38,7 @@ enum RulesFrame {
     static let removeTitle = "Remove Rule"
     static let addTitle = "Add Rule\u{2026}"
 
-    /// A row's actions, one list for its context menu, accessibility actions, the Item menu and the inspector (RD-R16): a
+    /// A row's actions, one list for its context menu, accessibility actions, the Item menu and the row's cell (RD-R16): a
     /// whole-tool allow gets `Change to Ask` first; every rule of a file the page may write gets `Remove Rule`, red on a
     /// whole-tool allow (the mock's `rbtn('Remove Rule', { d: w })`). A file that cannot be read gets none.
     @MainActor
@@ -57,9 +57,13 @@ enum RulesFrame {
         return out
     }
 
-    /// The buttons the selected row draws in its 172 action cell: `Remove Rule` only, as in the mock; `Change to Ask` sits in
-    /// the inspector, the context menu and the Item menu, where it fits.
+    /// The buttons the selected row draws in its 172 action cell: `Remove Rule` only, as in the mock; `Change to Ask` is the
+    /// inspector dial's Ask and sits in the context menu and the Item menu.
     static func rowButtons(_ actions: [FrameRowAction]) -> [FrameRowAction] { actions.filter { $0.id == "remove" } }
+
+    /// `Remove Rule`'s look: red on a whole-tool allow, otherwise the quiet button (the mock's `rbtn('Remove Rule', { q: !w,
+    /// d: w })`).
+    static func buttonKind(_ action: FrameRowAction) -> PushButtonStyle.Kind { action.isDestructive ? .destructive : .quiet }
 
     static func removeSelectedTitle(_ count: Int) -> String { "Remove \(NumberWording.count(count)) selected" }
 }
@@ -130,7 +134,7 @@ struct RulesRowActionButtons: View {
     var body: some View {
         ForEach(RulesFrame.rowButtons(actions)) { action in
             Button(action.title) { action.perform() }
-                .buttonStyle(PushButtonStyle(action.buttonKind, size: .small,
+                .buttonStyle(PushButtonStyle(RulesFrame.buttonKind(action), size: .small,
                                              isLoading: state.isPending(RulesPageState.removeControl(file))))
                 .focusEffectDisabled()
                 .disabled(!action.isEnabled)

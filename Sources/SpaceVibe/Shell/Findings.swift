@@ -92,8 +92,8 @@ struct InboxGroup: Identifiable, Equatable, Sendable {
 /// The inputs a finding needs beside the rows. Each one left nil or empty means "no such finding", never a made-up count
 /// (FE-D3).
 struct FindingFacts: Equatable, Sendable {
-    /// Hook errors in the last 7 days, by row key: `errorsLast7Days` of the row's `cliCells`, summed over CLIs
-    /// (`hookErrorsLastWeek(in:)`, filled by the store from each `loadout.rows`). A row with no 7-day count on any cell is
+    /// Hook errors in the last 7 days, by Hook row id: `errorsLast7Days` of the row's own CLI cell (one CLI per Hook row,
+    /// RD46; `hookErrorsLastWeek(in:)`, filled by the store from each `loadout.rows`). A row with no 7-day count on any cell is
     /// absent: unknown, never 0. Lifetime errors never stand in (RD26).
     var hookErrorsLastWeek: [String: Int]?
     /// The Keep list, finding ids: the store fills it from `findings.kept` (`<data>/kept-findings.json`).
@@ -101,13 +101,15 @@ struct FindingFacts: Equatable, Sendable {
     /// Balance pins from Settings › CLIs (RB-R8), registry ids. Fewer than two pins: no Balance finding.
     var pinned: [String] = []
 
-    /// Each Hook row's errors in the last 7 days over every CLI that reports them; rows whose cells carry no week are left
-    /// out. Every member of a row key holds the same `cliCells`, so the first one stands for the row.
+    /// Each Hook row's errors in the last 7 days, by the row ids `FrameRow.rows(from:)` gives (one CLI per Hook row, RD46):
+    /// its own CLI's count; a row whose cell carries no week is left out.
     static func hookErrorsLastWeek(in loadout: CoreLoadoutRows) -> [String: Int] {
         var out: [String: Int] = [:]
-        for hook in loadout.hooks where out[hook.key] == nil {
-            let week = (hook.cliCells ?? [:]).values.compactMap(\.errorsLast7Days)
-            if !week.isEmpty { out[hook.key] = week.reduce(0, +) }
+        for (key, members) in Dictionary(grouping: loadout.hooks, by: \.key) {
+            for part in FrameRow.hookParts(members) {
+                let week = part.cells.values.compactMap(\.errorsLast7Days)
+                if !week.isEmpty { out[part.id(key)] = week.reduce(0, +) }
+            }
         }
         return out
     }

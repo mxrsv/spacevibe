@@ -240,6 +240,16 @@ struct RulesPreviewWordingTests {
                                     fileName: "f")
         #expect(text.what == "Adds Bash as Allow in f. Path and command rules stay.")
         #expect(text.warning == "The cell will read Mixed, because Bash(rm -rf:*) (deny) still applies.")
+        // The rules and the file are code (mono), the words are not (the mock's `capPreview` spans).
+        #expect(text.whatSpans.filter(\.isCode).map(\.text) == ["Bash", "f"])
+        #expect(text.warningSpans?.filter(\.isCode).map(\.text) == ["Bash(rm -rf:*)"])
+    }
+
+    @Test("a preview naming several rules sets each in mono, joined by plain commas")
+    func previewSpans() {
+        #expect(InlineCodeText.codeList(["A", "B"]) == [.code("A"), .words(", "), .code("B")])
+        #expect(InlineCodeText.plain([.words("Changes "), .code("A")]) == "Changes A")
+        #expect(RulesListModel.isStriped(1) && !RulesListModel.isStriped(0))
     }
 
     @Test("a same-value press is Nothing to change, and the button is disabled")

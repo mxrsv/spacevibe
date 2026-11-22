@@ -184,7 +184,7 @@ struct FrameIntegrationTests {
         #expect(InspectorFact(key: "Runs", value: "4").valueRole == .quiet)
         let rows = HooksListModel(world: FrameWorld(snapshot: D.snapshot(D.loadout(hooks: [D.hook("h1", cells: ["claude": D.runs(2)])])), now: D.now),
                                   loading: [], failed: [], failure: nil, view: HooksViewState(), now: D.now)
-        let facts = HooksInspectorFacts.facts(rows.all[0], holders: [], now: D.now)
+        let facts = HooksInspectorFacts.facts(rows.all[0], cli: nil, now: D.now)
         #expect(facts.first { $0.key == "File" }?.isMono == true)
     }
 

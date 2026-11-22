@@ -12,27 +12,43 @@ enum HooksFrame {
             subtitle: list.subtitle,
             help: FramePage.hooks.help,
             toolbarControls: list.hasToolbarControls ? AnyView(HooksCLIMenu(model: model, state: state)) : nil,
-            // The mock draws no search on the empty page (`mid` is empty there).
-            searchItems: list.phase == .empty ? nil : searchItems,
+            // The mock draws no search on the empty page (`mid` is empty there), and a page that read no Hook has nothing to
+            // search.
+            searchItems: list.hasToolbarControls ? searchItems : nil,
             primary: AnyView(HooksRemoveSelectedButton(model: model, state: state)),
             body: AnyView(HooksList(model: model, state: state)),
             inspector: AnyView(HooksInspector(model: model, state: state)),
-            overlayActions: selected.map { AnyView(HooksRowActionButtons(actions: actions(for: $0, state: state), state: state, row: $0)) }
+            overlayActions: selected.map { AnyView(HooksOverlayActions(state: state, row: $0)) }
         )
     }
 
     static let searchItems = "hooks"
 
     /// A row's actions, one list for its buttons, context menu, accessibility actions and the Item menu (RD-R16): a Claude
-    /// Code Hook the page may write gets `Remove from Claude Code`; a project, plugin or Codex Hook gets none.
+    /// Code Hook the page may write gets `Remove from Claude Code`; every Hook gets `Copy Command` (⇧⌘C, also the inspector's
+    /// button), which writes nothing and says so in a toast.
     @MainActor
-    static func actions(for row: HooksListRow, state: HooksPageState) -> [FrameRowAction] {
-        guard row.isWritable else { return [] }
-        return [FrameRowAction(id: "remove", title: removeTitle, shortcut: .remove, isDestructive: true,
-                               isEnabled: !state.isPending(HooksRemoval.control(for: row))) { state.remove(row) }]
+    static func actions(for row: HooksListRow, state: HooksPageState, toasts: ToastCenter) -> [FrameRowAction] {
+        var out: [FrameRowAction] = []
+        if row.isWritable {
+            // Red on a dead or Never ran Hook, quiet on one that runs (the mock's `rmBtn(h, !(dead || never))`).
+            out.append(FrameRowAction(id: "remove", title: removeTitle, shortcut: .remove, isDestructive: row.isDeadOrNeverRan,
+                                      isEnabled: !state.isPending(HooksRemoval.control(for: row))) { state.remove(row) })
+        }
+        out.append(FrameRowAction(id: copyID, title: copyTitle, shortcut: .copyCommand) { state.copyCommand(row, toasts: toasts) })
+        return out
     }
 
+    /// The buttons the selected row draws in its action cell: `Remove from Claude Code` only, as in the mock; `Copy Command`
+    /// sits in the inspector, the context menu and the Item menu.
+    static func rowButtons(_ actions: [FrameRowAction]) -> [FrameRowAction] { actions.filter { $0.id != copyID } }
+
+    /// A row button's look: the red tint for a destructive action, otherwise the quiet button (the mock's `.rb.q`).
+    static func buttonKind(_ action: FrameRowAction) -> PushButtonStyle.Kind { action.isDestructive ? .destructive : .quiet }
+
     static let removeTitle = "Remove from Claude Code"
+    static let copyID = "copyCommand"
+    static let copyTitle = "Copy Command"
     /// The selected project row's action cell (the mock's `Read-only (project)`).
     static let projectReadOnly = "Read-only (project)"
 
@@ -95,19 +111,31 @@ struct HooksRowActionButtons: View {
     let row: HooksListRow
 
     var body: some View {
-        if actions.isEmpty, case .project = row.readOnly {
+        let buttons = HooksFrame.rowButtons(actions)
+        if buttons.isEmpty, case .project = row.readOnly {
             Text(HooksFrame.projectReadOnly)
                 .typeRole(.quiet)
                 .foregroundStyle(ColorRole.ink3)
                 .lineLimit(1)
         }
-        ForEach(actions) { action in
+        ForEach(buttons) { action in
             Button(action.title) { action.perform() }
-                .buttonStyle(PushButtonStyle(action.buttonKind, size: .small,
+                .buttonStyle(PushButtonStyle(HooksFrame.buttonKind(action), size: .small,
                                              isLoading: state.isPending(HooksRemoval.control(for: row))))
                 .focusEffectDisabled()
                 .disabled(!action.isEnabled)
                 .help(action.tooltip)
         }
+    }
+}
+
+/// The selected row's buttons at the top of the overlay inspector, with the toast centre the copy action needs.
+struct HooksOverlayActions: View {
+    let state: HooksPageState
+    let row: HooksListRow
+    @Environment(ToastCenter.self) private var toasts
+
+    var body: some View {
+        HooksRowActionButtons(actions: HooksFrame.actions(for: row, state: state, toasts: toasts), state: state, row: row)
     }
 }

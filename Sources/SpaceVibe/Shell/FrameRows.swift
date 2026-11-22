@@ -23,8 +23,11 @@ enum CellPresence: Equatable, Sendable {
     case on, off, unknown, notSupported
 }
 
-/// One row of Skills, Subagents or Hooks: every member of one `loadout.rows` row key, whichever CLI holds it. The cells are
-/// the core's `cliCells`, the same on every member of the key (inventory.md "CLI cells").
+/// One row of Skills, Subagents or Hooks. A Skill or Subagent row is every member of one `loadout.rows` row key, whichever CLI
+/// holds it; its cells are the core's `cliCells`, the same on every member of the key (inventory.md "CLI cells"). A Hook row
+/// is one CLI's members of a key (RD46, the mock's `pageHooks`: one CLI per Hook row): its own CLI keeps its cell, every other
+/// CLI reads Missing (Not supported and an unreadable CLI's Unknown stay), so its logo, status, counts and Inbox finding are
+/// that CLI's alone.
 struct FrameRow: Identifiable, Equatable, Sendable {
     /// The row key: `<kind>:<project or empty>:<bare name>`, or `hook:<project or empty>:<hash>`.
     let id: String
@@ -87,13 +90,22 @@ struct FrameRow: Identifiable, Equatable, Sendable {
 
     var status: ItemStatus {
         if kind == .hook, isDead { return .dead }
-        let all = Array(cells.values)
+        let all = judgedCells
         let counted = all.compactMap(\.count)
         if counted.contains(where: { $0 > 0 }) { return .ran }
         if all.contains(.unknown) { return .unknown }
         if !counted.isEmpty { return .neverRan }
         if all.contains(.scanning) { return .pending }
         return .unmeasurable
+    }
+
+    /// The cells `status` judges. A Skill or Subagent: every CLI's, so an unreadable folder makes an item with no counted use
+    /// unknown (the mock's `itemStatus`, `src/m-model.js:48`). A Hook: only the CLIs that hold it (RD-R10, mock
+    /// `m-model.js:45`: a Hook is judged by its own CLI), so an unreadable `~/.codex` never turns a Claude Code-only Never ran
+    /// Hook unknown.
+    private var judgedCells: [CoreCLICell] {
+        guard kind == .hook else { return Array(cells.values) }
+        return Set(hooks.map(\.cli.rawValue)).sorted().compactMap { cells[$0] }
     }
 
     /// The Never ran / Dead set every surface shares (Skills hero, Hooks hero, Inbox Clean up, Clean's Agents section).
@@ -128,15 +140,56 @@ extension FrameRow {
             if hooks[hook.key] == nil, items[hook.key] == nil { order.append(hook.key) }
             hooks[hook.key, default: []].append(hook)
         }
-        return order.map { key in
+        return order.flatMap { key -> [FrameRow] in
             let members = items[key] ?? []
-            let rowHooks = hooks[key] ?? []
-            let kind = members.first?.kind ?? .hook
-            let name = members.first.map { Self.bareName($0.name) } ?? rowHooks.first.map { HookLabel.of($0.command) } ?? key
-            let cells = members.first?.cliCells ?? rowHooks.first?.cliCells ?? [:]
-            let seen = (members.map(\.firstSeen) + rowHooks.map(\.firstSeen)).compactMap(ActivityFormat.date).max()
-            let isNew = now.flatMap { now in seen.map { now.timeIntervalSince($0) < addedGrace } } ?? false
-            return FrameRow(id: key, kind: kind, name: name, items: members, hooks: rowHooks, cells: cells, firstSeen: seen, isNewByClock: isNew)
+            guard members.isEmpty else {
+                return [row(id: key, items: members, hooks: hooks[key] ?? [], cells: members.first?.cliCells ?? [:], now: now)]
+            }
+            return hookParts(hooks[key] ?? []).map { part in
+                row(id: part.id(key), items: [], hooks: part.hooks, cells: part.cells, now: now)
+            }
+        }
+    }
+
+    private static func row(id: String, items: [CoreInventoryItem], hooks: [CoreInventoryHook], cells: CoreCLICells, now: Date?) -> FrameRow {
+        let kind = items.first?.kind ?? .hook
+        let name = items.first.map { Self.bareName($0.name) } ?? hooks.first.map { HookLabel.of($0.command) } ?? id
+        let seen = (items.map(\.firstSeen) + hooks.map(\.firstSeen)).compactMap(ActivityFormat.date).max()
+        let isNew = now.flatMap { now in seen.map { now.timeIntervalSince($0) < addedGrace } } ?? false
+        return FrameRow(id: id, kind: kind, name: name, items: items, hooks: hooks, cells: cells, firstSeen: seen, isNewByClock: isNew)
+    }
+
+    /// One CLI's members of a Hook key (RD46).
+    struct HookPart: Equatable, Sendable {
+        let cli: String
+        let hooks: [CoreInventoryHook]
+        let cells: CoreCLICells
+        /// Whether this part keeps the core key as its row id.
+        let keepsKey: Bool
+
+        /// The core key for the part that keeps it (every Hook held by one CLI, and Claude Code's part of a shared key, so a
+        /// Keep entry, a selection and Inbox ids stay what they were); `<key>@<cli>` for another CLI's part of a shared key.
+        func id(_ key: String) -> String { keepsKey ? key : "\(key)@\(cli)" }
+    }
+
+    /// Splits one key's Hook members by CLI, in the order the core sent them. A part's cells keep its own CLI's cell and
+    /// Not supported and Unknown (an unreadable folder); every other CLI reads Missing, so the part is that CLI's alone.
+    static func hookParts(_ hooks: [CoreInventoryHook]) -> [HookPart] {
+        var order: [String] = []
+        var byCLI: [String: [CoreInventoryHook]] = [:]
+        for hook in hooks {
+            let cli = hook.cli.rawValue
+            if byCLI[cli] == nil { order.append(cli) }
+            byCLI[cli, default: []].append(hook)
+        }
+        let keeper = order.contains(CoreCLI.claude.rawValue) ? CoreCLI.claude.rawValue : order.first
+        return order.map { cli in
+            let members = byCLI[cli] ?? []
+            let shared = members.first?.cliCells ?? [:]
+            let cells = shared.reduce(into: CoreCLICells()) { out, entry in
+                out[entry.key] = entry.key == cli || entry.value == .notSupported || entry.value == .unknown ? entry.value : .missing
+            }
+            return HookPart(cli: cli, hooks: members, cells: cells, keepsKey: cli == keeper)
         }
     }
 

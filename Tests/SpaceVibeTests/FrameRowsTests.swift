@@ -37,6 +37,49 @@ struct FrameRowsTests {
         #expect(rows[0].name == "guard.sh")
     }
 
+    @Test("RD-R10: a Hook is judged over the CLIs that hold it, so an unreadable Codex never turns a Claude Code-only Never ran Hook unknown; a Skill still does (mock m-model.js:45, :48)")
+    func hookIgnoresOtherCLIsUnknown() {
+        let hook = FrameRow.rows(from: D.loadout(hooks: [D.hook("aa", cells: ["claude": D.runs(0), "codex": .unknown])]))[0]
+        #expect(hook.status == .neverRan && hook.isCandidate)
+        #expect(hook.presence("codex") == .unknown)
+        #expect(row(["claude": D.sessions(0), "codex": .unknown]).status == .unknown)
+        // Its own CLI unreadable: unknown, as the mock's `x.unread`.
+        var codex = D.hook("bb", cells: ["claude": .missing, "codex": .unknown])
+        codex.cli = .codex
+        codex.id = "codex:hook:bb"
+        #expect(FrameRow.rows(from: D.loadout(hooks: [codex]))[0].status == .unknown)
+    }
+
+    @Test("RD46: a Hook key two CLIs hold is one row per CLI; Claude Code's keeps the key, the other is <key>@<cli> with its own cell")
+    func hookOneCLIPerRow() {
+        let cells: CoreCLICells = ["claude": D.runs(0), "codex": .unmeasurable(reason: "Codex logs no hook runs"), "cli2": .notSupported]
+        var codex = D.hook("both", cells: cells)
+        codex.cli = .codex
+        codex.id = "codex:hook:both"
+        let loadout = D.loadout(hooks: [codex, D.hook("both", cells: cells), D.hook("solo", cells: ["claude": D.runs(3), "codex": .missing])])
+        let rows = FrameRow.rows(from: loadout)
+        #expect(rows.map(\.id) == ["hook::both@codex", "hook::both", "hook::solo"])
+        #expect(rows[0].hooks.map(\.cli) == [.codex] && rows[1].hooks.map(\.cli) == [.claude])
+        #expect(rows[0].cells == ["claude": .missing, "codex": .unmeasurable(reason: "Codex logs no hook runs"), "cli2": .notSupported])
+        #expect(rows[1].cells == ["claude": D.runs(0), "codex": .missing, "cli2": .notSupported])
+        #expect(rows[0].status == .unmeasurable && rows[1].status == .neverRan)
+        #expect(rows[0].presence("claude") == .off && rows[1].presence("codex") == .off)
+        // Only Claude Code's row is a candidate SpaceVibe may suggest.
+        #expect(rows[1].isSuggested(kept: []) && !rows[0].isSuggested(kept: []))
+    }
+
+    @Test("a failing Hook's 7-day errors are its own CLI's, by its row id")
+    func hookErrorsPerRow() {
+        let week = [CoreHookDay(day: "2026-01-07", runs: 2, errors: 2)]
+        let cells: CoreCLICells = ["claude": .runs(count: 4, errors: 2, last: "2026-01-07", note: nil, week: week),
+                                   "codex": .runs(count: 9, errors: 5, last: "2026-01-07", note: nil, week: [CoreHookDay(day: "2026-01-07", runs: 9, errors: 5)])]
+        var codex = D.hook("both", cells: cells)
+        codex.cli = .codex
+        codex.id = "codex:hook:both"
+        let errors = FindingFacts.hookErrorsLastWeek(in: D.loadout(hooks: [D.hook("both", cells: cells), codex]))
+        #expect(errors == ["hook::both": 2, "hook::both@codex": 5])
+    }
+
     @Test("members of one row key become one row, items before Hooks, in the core's order")
     func grouping() {
         let cells: CoreCLICells = ["claude": D.sessions(1), "codex": D.sessions(2)]

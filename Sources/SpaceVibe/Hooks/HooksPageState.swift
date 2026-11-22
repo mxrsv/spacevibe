@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -50,6 +51,15 @@ final class HooksPageState {
     }
 
     func isPending(_ control: String) -> Bool { model?.writes.isPending(control) ?? false }
+
+    /// `Copy Command`: the whole command to the clipboard. Not a write, so no Undo (the mock's `say('Copied to the clipboard')`).
+    func copyCommand(_ row: HooksListRow, toasts: ToastCenter) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(row.command, forType: .string)
+        toasts.show(Self.copiedToast)
+    }
+
+    static let copiedToast = "Copied to the clipboard"
 
     private func run(_ write: FrameWrite, removing ids: Set<String>) {
         guard let model else { return }

@@ -20,6 +20,8 @@ struct RulesList: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frameListKeys(rows: list.rows.map(\.id), router: model.router, chrome: chrome)
+        // RD44: the first rule is selected on opening and whenever the scope, the file or the search hides the selected one.
+        .frameFirstRowSelection(page: .rules, rows: list.rows.map(\.id), router: model.router)
     }
 
     @ViewBuilder
@@ -73,6 +75,7 @@ struct RulesList: View {
     private func table(_ list: RulesListModel) -> some View {
         let ids = list.rows.map(\.id)
         let ticked = ids.filter(list.ticked.contains).count
+        // The head row stays pinned while the rules scroll under it (the mock's sticky `.th`).
         return RowGroup {
             HStack(spacing: SpaceRole.step12) {
                 CheckboxCell(.header(ticked: ticked, total: ids.count), label: "Select every Rule shown") { state.toggleAll(ids) }
@@ -89,8 +92,9 @@ struct RulesList: View {
             }
             .padding(.horizontal, SpaceRole.step12)
             .frame(height: TableColumnWidth.headerHeight)
+        } content: {
             ForEach(Array(list.rows.enumerated()), id: \.element.id) { index, row in
-                rowView(row, list: list).rowStripe(index.isMultiple(of: 2))
+                rowView(row, list: list).rowStripe(RulesListModel.isStriped(index))
             }
         }
     }
@@ -126,12 +130,10 @@ struct RulesList: View {
                     Text(PermissionDial.title(row.rule.verdict)).typeRole(.quiet).foregroundStyle(ColorRole.ink2).lineLimit(1)
                 }
                 .frame(width: TableColumnWidth.permission, alignment: .leading)
-                // The action column keeps its room on every row, so selecting one moves nothing (FE-L1).
-                HStack(spacing: SpaceRole.step8) {
-                    if isSelected { RulesRowActionButtons(actions: actions, state: state, file: list.file) }
-                }
-                .frame(width: TableColumnWidth.action, alignment: .trailing)
             }
+        } actions: {
+            // The action column keeps its room on every row (`ItemRow(actions:)`), so selecting one moves nothing (FE-L1).
+            RulesRowActionButtons(actions: actions, state: state, file: list.file)
         }
         .frameRowActions(actions)
         .frameSelectedRowActions(isSelected ? actions : nil)

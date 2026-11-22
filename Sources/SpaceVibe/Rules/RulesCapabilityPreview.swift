@@ -23,8 +23,12 @@ struct RulesPreviewText: Equatable, Sendable {
     let title: String
     /// What the write would change, or "Nothing to change: …".
     let what: String
+    /// `what` with its rules and file as code spans (mono).
+    let whatSpans: [InlineCodeText.Span]
     /// Said when the cell will still not read the chosen verdict (a rule that stays wins).
     let warning: String?
+    /// `warning` with its rules as code spans.
+    let warningSpans: [InlineCodeText.Span]?
     /// "Change to Deny", or "Nothing to change" (disabled).
     let confirmTitle: String
     /// The file already holds that: the write is not offered and nothing is written.
@@ -42,28 +46,36 @@ struct RulesPreviewText: Equatable, Sendable {
         let adds = preview.writes.filter { !replaced.contains($0.rule) }.map(\.rule)
         let removes = preview.replaces.filter { !written.contains($0.rule) }.map(\.rule)
         if isNothing {
-            what = "Nothing to change: the rules of this cell already say \(verdict)."
+            whatSpans = [.words("Nothing to change: the rules of this cell already say \(verdict).")]
         } else {
-            let parts = [
-                changes.isEmpty ? nil : "Changes \(changes.joined(separator: ", ")) to \(verdict)",
-                adds.isEmpty ? nil : "Adds \(adds.joined(separator: ", ")) as \(verdict)",
-                removes.isEmpty ? nil : "Removes \(removes.joined(separator: ", "))",
-            ]
-            what = parts.compactMap { $0 }.joined(separator: "; ") + " in \(fileName). Path and command rules stay."
+            typealias Span = InlineCodeText.Span
+            let parts: [[Span]] = [
+                changes.isEmpty ? nil : [.words("Changes ")] + InlineCodeText.codeList(changes) + [.words(" to \(verdict)")],
+                adds.isEmpty ? nil : [.words("Adds ")] + InlineCodeText.codeList(adds) + [.words(" as \(verdict)")],
+                removes.isEmpty ? nil : [.words("Removes ")] + InlineCodeText.codeList(removes),
+            ].compactMap { $0 }
+            // The rules and the file in mono, as the mock's `capPreview` sets them.
+            whatSpans = parts.enumerated().flatMap { index, part in index == 0 ? part : [Span.words("; ")] + part }
+                + [.words(" in "), .code(fileName), .words(". Path and command rules stay.")]
         }
+        what = InlineCodeText.plain(whatSpans)
         if preview.resulting != CoreCapabilityState(rawValue: preview.verdict.rawValue) {
             let replacedPairs = Set(preview.replaces)
             let kept = row.cell.rules.filter { !replacedPairs.contains(CoreVerdictRule(verdict: $0.verdict, rule: $0.rule)) && $0.verdict != preview.verdict }
             let reads = Self.stateWord(preview.resulting)
             if kept.isEmpty {
-                warning = "The cell will read \(reads): a rule that stays in this file still wins."
+                warningSpans = [.words("The cell will read \(reads): a rule that stays in this file still wins.")]
             } else {
-                let named = kept.map { "\($0.rule) (\($0.verdict.rawValue))" }.joined(separator: ", ")
-                warning = "The cell will read \(reads), because \(named) still \(kept.count == 1 ? "applies" : "apply")."
+                let named = kept.enumerated().flatMap { index, rule -> [InlineCodeText.Span] in
+                    (index == 0 ? [] : [.words(", ")]) + [.code(rule.rule), .words(" (\(rule.verdict.rawValue))")]
+                }
+                warningSpans = [.words("The cell will read \(reads), because ")] + named
+                    + [.words(" still \(kept.count == 1 ? "applies" : "apply").")]
             }
         } else {
-            warning = nil
+            warningSpans = nil
         }
+        warning = warningSpans.map(InlineCodeText.plain)
         confirmTitle = isNothing ? "Nothing to change" : "Change to \(verdict)"
         let rules = (changes + adds).isEmpty ? row.label : (changes + adds).joined(separator: ", ")
         doneLabel = "\(row.label): \(rules) now \(verdict) in \(fileName)"

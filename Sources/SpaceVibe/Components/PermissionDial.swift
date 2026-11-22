@@ -12,16 +12,28 @@ struct PermissionDial: View {
     let label: String
     /// The word a locked dial shows ("Mixed"); nil for a dial that can be pressed.
     var lockedWord: String?
+    /// The step a write is moving the rule to (FE-L2: pending at the control): it shows the pending mark, and no step takes a
+    /// press until the write is done.
+    var pending: CoreVerdict?
+    /// The track spans the width it is given, steps at its leading end (the mock's dial in the 190 grid column of a
+    /// capability row); otherwise it hugs its steps (the inspector).
+    var fillsWidth = false
     let pick: (CoreVerdict) -> Void
     /// The step that holds the keyboard focus itself (RD29, `FocusBarRule`).
     @FocusState private var focusedStep: CoreVerdict?
 
-    init(selection: CoreVerdict?, label: String, lockedWord: String? = nil, pick: @escaping (CoreVerdict) -> Void) {
+    init(selection: CoreVerdict?, label: String, lockedWord: String? = nil, pending: CoreVerdict? = nil, fillsWidth: Bool = false,
+         pick: @escaping (CoreVerdict) -> Void) {
         self.selection = selection
         self.label = label
         self.lockedWord = lockedWord
+        self.pending = pending
+        self.fillsWidth = fillsWidth
         self.pick = pick
     }
+
+    /// Whether a press on a step reaches `pick`: never while a change is pending. Pure, for the tests.
+    static func takesPress(pending: CoreVerdict?) -> Bool { pending == nil }
 
     var body: some View {
         let track = RoundedRectangle(cornerRadius: RadiusRole.step8, style: .continuous)
@@ -39,19 +51,28 @@ struct PermissionDial: View {
                 .accessibilityLabel("\(label), \(lockedWord), read only")
             } else {
                 ForEach(CoreVerdict.allCases, id: \.self) { verdict in
-                    Button { pick(verdict) } label: { Text(Self.title(verdict)) }
-                        .buttonStyle(PermissionStepStyle(isChosen: verdict == selection, isFocused: focusedStep == verdict))
-                        .focused($focusedStep, equals: verdict)
-                        .focusEffectDisabled()
-                        .accessibilityLabel(Self.title(verdict))
-                        .accessibilityAddTraits(verdict == selection ? [.isButton, .isSelected] : .isButton)
+                    Button {
+                        if Self.takesPress(pending: pending) { pick(verdict) }
+                    } label: {
+                        HStack(spacing: SpaceRole.step4) {
+                            if pending == verdict { PendingMark() }
+                            Text(Self.title(verdict))
+                        }
+                    }
+                    .buttonStyle(PermissionStepStyle(isChosen: verdict == selection, isFocused: focusedStep == verdict))
+                    .focused($focusedStep, equals: verdict)
+                    .focusEffectDisabled()
+                    .accessibilityLabel(Self.title(verdict))
+                    .accessibilityValue(pending == verdict ? "Changing" : "")
+                    .accessibilityAddTraits(verdict == selection ? [.isButton, .isSelected] : .isButton)
                 }
             }
         }
         .padding(SizeRole.segmentedInset)
+        .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
         .frame(height: SizeRole.segmentedSmall)
         .background(track.fill(ColorRole.controlFill))
-        .fixedSize()
+        .fixedSize(horizontal: !fillsWidth, vertical: true)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(label)
     }

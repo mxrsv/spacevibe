@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// The selected rule (the mock's `ruleInspector`): the Rules tone icon and "Rule", the rule whole in mono, its capability,
-/// scope and file, the warning on a whole-tool allow, the Permission dial, and the actions. Nothing selected: the empty
-/// state.
+/// scope and file, the warning on a whole-tool allow and the Permission dial. Nothing selected: the empty state.
 struct RulesInspector: View {
     let model: FrameModel
     let state: RulesPageState
@@ -10,7 +9,6 @@ struct RulesInspector: View {
     var body: some View {
         let list = RulesListModel.from(model.store, view: state.view, file: model.router.route.scope, query: model.search.query)
         if let row = list.row(model.router.route.selection) {
-            let actions = RulesFrame.actions(for: row, list: list, state: state)
             VStack(alignment: .leading, spacing: SpaceRole.step16) {
                 InspectorTitle("Rule") { FrameGlyph(.rules, side: SizeRole.icon20, ink: ColorRole.toneRules) }
                 CommandBlock(row.rule.rule)
@@ -26,17 +24,16 @@ struct RulesInspector: View {
                     .accessibilityElement(children: .combine)
                 }
                 InspectorSection("Permission") {
-                    PermissionDial(selection: row.rule.verdict, label: "Permission") { verdict in
+                    // Pending at the control while a change writes (FE-L2); the track spans the section as the mock's `.sec`
+                    // stretches it.
+                    PermissionDial(selection: row.rule.verdict, label: "Permission", pending: state.pendingVerdict(row.rule),
+                                   fillsWidth: true) { verdict in
                         state.change(row.rule, to: verdict, fileName: list.fileName)
                     }
                     .disabled(!list.isWritable)
                 }
-                if !actions.isEmpty {
-                    InspectorActions(actions: actions.map { action in
-                        InspectorAction(id: action.id, title: action.title, icon: action.id == "remove" ? .trash : .question,
-                                        isEnabled: action.isEnabled, perform: action.perform)
-                    })
-                }
+                // No action buttons here, as the mock's `ruleInspector` (RD46): Remove Rule sits in the row's action cell and
+                // the overlay's top; Change to Ask is the dial's Ask; both stay in the context and Item menus.
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         } else {

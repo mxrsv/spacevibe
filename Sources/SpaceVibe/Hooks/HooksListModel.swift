@@ -32,7 +32,8 @@ struct HooksViewState: Equatable, Sendable {
 enum HooksPhase: Equatable, Sendable {
     case normal
     case empty
-    /// No `loadout.rows` yet, or the usage scan is running: the rows read so far show with pending Runs.
+    /// No `loadout.rows` yet, or the usage scan is running: skeleton rows and no judged row, as the mock draws it, until the
+    /// counts are in (a row's state needs its runs).
     case scanning
     /// `loadout.rows` could not be read and nothing was read before: the core's sentence.
     case failed(String)
@@ -45,7 +46,8 @@ struct HooksStatusLine: Equatable, Sendable {
     let text: String
 }
 
-/// One row of the Hooks table: one `loadout.rows` hook key with every CLI that holds it.
+/// One row of the Hooks table: one CLI's members of a `loadout.rows` hook key (RD46, the mock's `pageHooks`: one CLI per
+/// row; `FrameRow.rows(from:)` splits a key two CLIs hold).
 struct HooksListRow: Identifiable, Equatable, Sendable {
     /// Why the page writes nothing for this row (D-rule: Hooks are written only into Claude Code, mutations.md).
     enum ReadOnly: Equatable, Sendable {
@@ -61,12 +63,12 @@ struct HooksListRow: Identifiable, Equatable, Sendable {
     /// The script it runs (`HookLabel`, RD-R17), the same on every surface.
     let label: String
     let command: String
-    /// The event as the first holding CLI names it, and its lifecycle stage.
+    /// The event as its CLI names it, and its lifecycle stage.
     let event: String
     let stage: String
     let matcher: String?
-    /// Registry ids of the CLIs that hold it, in registry order.
-    let clis: [String]
+    /// The registry id of the CLI that holds it.
+    let cli: String
     let status: ItemStatus
     /// Errors in the last 7 days over the CLIs that count them (RB-E5); nil when no CLI sent its week.
     let errorsLastWeek: Int?
@@ -111,7 +113,7 @@ struct HooksListModel: Sendable {
     let phase: HooksPhase
     let hero: PageHero.Figure
     let nodes: [LifecycleNode]
-    /// The rows shown (the event and CLI filters applied), grouped by stage in firing order.
+    /// The rows shown (the event and CLI filters applied), grouped by stage in firing order; none while scanning.
     let stages: [HooksStage]
     /// Every Hook row, unfiltered: the hero and the `Dead or never ran` head count these.
     let all: [HooksListRow]
@@ -149,11 +151,48 @@ struct HooksListModel: Sendable {
     /// The header checkbox covers the writable rows shown.
     var tickable: [String] { visible.filter(\.isWritable).map(\.id) }
     var subtitle: String? { view.event.map { "\($0) only" } }
-    /// The `All CLIs` menu shows except on the empty and failed pages (the mock draws it unless the page is empty).
+
+    /// The skeleton rows the scanning page draws (the mock's `skel(7)`).
+    static let skeletonRows = 7
+
+    /// One shown row with its zebra step.
+    struct StripedRow: Equatable, Sendable {
+        let row: HooksListRow
+        let isStriped: Bool
+    }
+
+    /// A stage with its rows' zebra steps.
+    struct StripedStage: Identifiable, Equatable, Sendable {
+        let stage: String
+        let rows: [StripedRow]
+        var id: String { stage }
+    }
+
+    /// The stages with the zebra of the mock's group (`.tr:nth-child(odd)`, `style.css:142`): the head row is the group's
+    /// first child and each stage's caption one more, so a row is striped when its place among them is odd.
+    var stripedStages: [StripedStage] {
+        var place = 1
+        return stages.map { stage in
+            place += 1
+            let rows = stage.rows.map { row -> StripedRow in
+                place += 1
+                return StripedRow(row: row, isStriped: !place.isMultiple(of: 2))
+            }
+            return StripedStage(stage: stage.stage, rows: rows)
+        }
+    }
+
+    /// The Status column folds into the sub-line when the main column (the window less the sidebar and a docked inspector,
+    /// `FrameChrome.listWidth`) is under the mock's 940; before the window is measured the wide layout stands.
+    static func foldsStatus(listWidth: CGFloat, windowMeasured: Bool) -> Bool {
+        windowMeasured && listWidth < TableColumnWidth.wideListWidth
+    }
+
+    /// The `All CLIs` menu and the search show except on the empty and failed pages (the mock draws `mid` unless the page is
+    /// empty; a page that could not read a Hook has nothing to filter or search).
     var hasToolbarControls: Bool {
         switch phase {
-        case .normal: true
-        case .scanning: !all.isEmpty
+        case .normal, .scanning: true
         case .empty, .failed: false
         }
     }
@@ -162,8 +201,8 @@ struct HooksListModel: Sendable {
 
     func row(_ id: String?) -> HooksListRow? { id.flatMap { id in all.first { $0.id == id } } }
 
-    /// The CLIs that hold a row, for its logos and sentences.
-    func holders(of row: HooksListRow) -> [CoreRegistryCLI] { clis.filter { row.clis.contains($0.id) } }
+    /// The CLI that holds a row, for its logo and sentences; nil for a CLI the registry no longer lists.
+    func holder(of row: HooksListRow) -> CoreRegistryCLI? { registry.first { $0.id == row.cli } }
 
     init(world: FrameWorld, loading: Set<FrameSource>, failed: Set<FrameSource>, failure: String?, view: HooksViewState,
          query: FrameSearchQuery = FrameSearchQuery(""), now: Date) {
@@ -179,7 +218,7 @@ struct HooksListModel: Sendable {
             .sorted { a, b in
                 let (ra, rb) = (HooksLifecycle.rank(a.stage, in: order), HooksLifecycle.rank(b.stage, in: order))
                 if ra != rb { return ra < rb }
-                let (ca, cb) = (a.clis.first.flatMap(registry.firstIndex) ?? registry.count, b.clis.first.flatMap(registry.firstIndex) ?? registry.count)
+                let (ca, cb) = (registry.firstIndex(of: a.cli) ?? registry.count, registry.firstIndex(of: b.cli) ?? registry.count)
                 return ca < cb
             }
         self.all = all
@@ -206,15 +245,17 @@ struct HooksListModel: Sendable {
         }
         self.phase = phase
 
-        let shown = all.filter { row in
-            (view.event.map { row.stage == $0 } ?? true) && (view.cli.map(row.clis.contains) ?? true)
+        let shown = phase == .scanning ? [] : all.filter { row in
+            (view.event.map { row.stage == $0 } ?? true) && (view.cli.map { row.cli == $0 } ?? true)
                 && query.matches(row.row.searchFields + [row.label])
         }
         let stageNames = shown.reduce(into: [String]()) { names, row in if !names.contains(row.stage) { names.append(row.stage) } }
         stages = stageNames.map { name in HooksStage(stage: name, rows: shown.filter { $0.stage == name }) }
 
         let withHooks = Set(all.map(\.stage))
-        nodes = phase == .empty ? [] : HooksLifecycle.strip(order: order, stagesWithHooks: withHooks).map { event in
+        // No strip on the empty page (the mock's `band`), nor while no Hook could be read yet: its nodes would all read 0.
+        let counted = world.snapshot.loadout != nil && !failed.contains(.loadout) && !loading.contains(.loadout)
+        nodes = phase == .empty || !counted ? [] : HooksLifecycle.strip(order: order, stagesWithHooks: withHooks).map { event in
             let here = all.filter { $0.stage == event }
             let mark: LifecycleNode.Mark = here.isEmpty ? .empty
                 : here.contains { $0.status == .dead } ? .critical
@@ -248,14 +289,14 @@ struct HooksListModel: Sendable {
     static func listRow(_ row: FrameRow, registry: [String], busiest: Int, errorsLastWeek: Int?, now: Date) -> HooksListRow {
         let first = row.hooks.first
         let event = first?.event ?? ""
-        let clis = registry.filter { row.presence($0) == .on }
+        let cli = first?.cli.rawValue ?? ""
         let claude = row.hooks.filter { $0.cli == .claude }
         let readOnly: HooksListRow.ReadOnly? = row.isProject ? .project(Self.projectName(row.project))
             : row.isPlugin ? .plugin
             : claude.isEmpty ? .notClaudeCode : nil
         return HooksListRow(
             row: row, label: row.name, command: first?.command ?? "", event: event,
-            stage: HooksLifecycle.stage(of: event, cli: first?.cli.rawValue ?? ""), matcher: first?.matcher, clis: clis,
+            stage: HooksLifecycle.stage(of: event, cli: cli), matcher: first?.matcher, cli: cli,
             status: row.status, errorsLastWeek: errorsLastWeek, runs: runs(row, busiest: busiest),
             statusLine: statusLine(row, errorsLastWeek: errorsLastWeek, now: now), readOnly: readOnly,
             removalIDs: readOnly == nil ? claude.map(\.id).filter(row.writableMembers.contains) : []
@@ -327,5 +368,12 @@ struct HooksListModel: Sendable {
     static func projectName(_ project: String?) -> String {
         guard let project, !project.isEmpty else { return "project" }
         return (project as NSString).lastPathComponent
+    }
+}
+
+/// A Hook row's spoken label, pure for the tests: "lint-staged.sh, PreToolUse, Claude Code, Script missing".
+enum HooksRowWording {
+    static func spoken(_ row: HooksListRow, cli: String?) -> String {
+        ([row.label, row.stage] + (cli.map { [$0] } ?? []) + [row.statusLine.text]).joined(separator: ", ")
     }
 }

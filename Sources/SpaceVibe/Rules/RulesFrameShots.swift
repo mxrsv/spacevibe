@@ -85,7 +85,11 @@ enum RulesFrameShots {
             Task { await model.store.start() }
             try? await Task.sleep(for: .milliseconds(1))
             await waitForReads(model)
+            // What the page does on opening and on a scope change (RD44, `frameFirstRowSelection`), which `ImageRenderer`
+            // never runs.
+            keepSelection(model, state)
             await shot.prepare(model, state)
+            keepSelection(model, state)
             ready = true
         }
         try ShotHarness.wait("the Rules shot \(shot.name)") { ready }
@@ -101,6 +105,11 @@ enum RulesFrameShots {
             if let state = model.store.states[.rules(.global)], state != .loading { return }
             try? await Task.sleep(for: .milliseconds(10))
         }
+    }
+
+    private static func keepSelection(_ model: FrameModel, _ state: RulesPageState) {
+        guard let list = state.list(), list.isClaudePage else { return }
+        model.router.keepSelection(onPage: .rules, among: list.rows.map(\.id))
     }
 
     private static func reread(_ model: FrameModel) async {

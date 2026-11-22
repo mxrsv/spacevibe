@@ -64,8 +64,11 @@ final class RulesFakeCore: UnservedCore, @unchecked Sendable {
     }
     override func rulesChangeVerdict(scope: CoreRuleScope, dir: String?, rule: String, from: CoreVerdict, to: CoreVerdict) async throws -> CoreEntryResult {
         record("rules.changeVerdict \(scope.rawValue) \(dir ?? "") \(rule) \(from.rawValue) \(to.rawValue)")
+        if let delay = lock.withLock({ verdictDelay }) { try await Task.sleep(for: delay) }
         return try answer("Changed")
     }
+    /// How long `rules.changeVerdict` takes before it answers: a write a test can press again while it is pending.
+    var verdictDelay: Duration?
     override func rulesRemoveMany(scope: CoreRuleScope, dir: String?, ids: [String]) async throws -> CoreEntryResult {
         record("rules.removeMany \(scope.rawValue) \(dir ?? "") \(ids)")
         return try answer("Removed")
@@ -141,6 +144,40 @@ struct RulesFrameWritesTests {
         #expect(await eventually { toasts.current != nil })
         #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash allow ask"])
         #expect(toasts.current?.message == "Changed Bash from Allow to Ask in ~/.claude/settings.json")
+        model.store.stop()
+    }
+
+    @Test("a second dial press while a verdict change is pending sends nothing, so no stale `from` reaches the core")
+    func dialPressWhilePending() async throws {
+        let (core, model, state, toasts) = await setUp()
+        core.verdictDelay = .milliseconds(300)
+        let list = try #require(state.list())
+        // The row as the inspector drew it before the first write: it still says Allow on every press below.
+        let bash = try #require(list.row("global:allow:Bash")).rule
+        model.router.select(bash.id)
+        state.change(bash, to: .ask, fileName: list.fileName)
+        // The dial shows the step being written at once, and takes no press until the write is done.
+        #expect(state.pendingVerdict(bash) == .ask && !PermissionDial.takesPress(pending: state.pendingVerdict(bash)))
+        state.change(bash, to: .deny, fileName: list.fileName)
+        try await Task.sleep(for: .milliseconds(60))
+        state.change(bash, to: .deny, fileName: list.fileName)
+        #expect(await eventually { toasts.current != nil && state.pendingVerdict(bash) == nil })
+        #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash allow ask"])
+        #expect(PermissionDial.takesPress(pending: state.pendingVerdict(bash)))
+        // The changed rule stays selected under its new id.
+        #expect(model.router.route.selection == "global:ask:Bash")
+        model.store.stop()
+    }
+
+    @Test("a change starts from the verdict the store holds now, not the one a stale view drew")
+    func changeStartsFromStore() async throws {
+        let (core, model, state, toasts) = await setUp()
+        let list = try #require(state.list())
+        var stale = try #require(list.row("global:allow:Bash")).rule
+        stale.verdict = .deny
+        state.change(stale, to: .ask, fileName: list.fileName)
+        #expect(await eventually { toasts.current != nil })
+        #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash allow ask"])
         model.store.stop()
     }
 

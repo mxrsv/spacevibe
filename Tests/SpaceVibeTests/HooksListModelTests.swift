@@ -111,6 +111,70 @@ struct HooksListModelTests {
         #expect(list.deadHeadSeverity == .critical)
     }
 
+    @Test("RD46: a Hook both CLIs hold is a row per CLI, each with its own logo, Runs and status; the hero, the head and the sidebar count rows")
+    func oneCLIPerRow() throws {
+        let shared = [Self.hook("both", event: "Stop", cells: ["claude": Self.runs(0), "codex": Self.codexUM]),
+                      Self.hook("both", cli: .codex, event: "Stop", cells: ["claude": Self.runs(0), "codex": Self.codexUM])]
+        let list = Self.model(Self.sample + shared)
+        let stop = try #require(list.stages.first { $0.stage == "Stop" })
+        #expect(stop.rows.map(\.id) == ["hook::notify", "hook::both", "hook::both@codex"])
+        #expect(stop.rows.map(\.cli) == ["claude", "claude", "codex"])
+        #expect(list.holder(of: stop.rows[2])?.name == "Codex")
+        #expect(list.row("hook::both")?.status == .neverRan && list.row("hook::both@codex")?.status == .unmeasurable)
+        let world = FrameWorld(snapshot: FrameTestData.snapshot(Self.loadout(Self.sample + shared)), now: FrameTestData.now)
+        #expect(list.hero == .value("5", unit: nil) && list.deadOrNeverRan.count == 5)
+        #expect(FrameSidebarValue(figure: world.figure(for: .hooks, loading: [], failed: []), page: .hooks).text == "5")
+        #expect(HooksRowWording.spoken(stop.rows[2], cli: "Codex") == "both.sh, Stop, Codex, No run log")
+    }
+
+    @Test("RD-R10: with ~/.codex unreadable a Claude Code-only Never ran Hook still counts (the mock's error state reads 3, not 2)")
+    func unreadableCodexKeepsNeverRan() {
+        let hooks = Self.sample.filter { $0.cli == .claude }.map { hook -> CoreInventoryHook in
+            var copy = hook
+            copy.cliCells?["codex"] = .unknown
+            return copy
+        }
+        let list = Self.model(hooks)
+        #expect(list.row("hook::prompt")?.status == .neverRan)
+        #expect(list.deadOrNeverRan.map(\.id).sorted() == ["hook:/w/payments-web:lint-p", "hook::lint", "hook::notify", "hook::prompt"])
+        #expect(list.unreadable.map(\.id) == ["codex"])
+        #expect(Set(list.suggested) == ["hook::lint", "hook::notify", "hook::prompt"])
+    }
+
+    @Test("scanning: skeleton only, no judged row, no Select Suggested; the strip counts the rows read, none before the first read")
+    func scanningShowsNoRows() {
+        let scanning = Self.model(usage: .scanning)
+        #expect(scanning.phase == .scanning && scanning.visible.isEmpty && scanning.suggested.isEmpty && scanning.tickable.isEmpty)
+        #expect(scanning.nodes.first { $0.event == "PreToolUse" }?.count == 3)
+        #expect(scanning.hasToolbarControls && !scanning.hasRemoveSelected)
+        let first = Self.model(loading: [.loadout])
+        #expect(first.nodes.isEmpty && first.visible.isEmpty)
+    }
+
+    @Test("a page that could not read its Hooks draws no strip of zeros and no search")
+    func failedHasNoStripOrSearch() {
+        let failed = Self.model(failed: [.loadout])
+        #expect(failed.nodes.isEmpty && !failed.hasToolbarControls)
+        #expect(!Self.model([]).hasToolbarControls && Self.model().hasToolbarControls)
+    }
+
+    @Test("the zebra follows the mock's group: the head row and each stage caption are children too")
+    func zebra() {
+        let list = Self.model()
+        let steps = list.stripedStages.map { $0.rows.map(\.isStriped) }
+        // th 1, SessionStart 2, load 3 (striped), UserPromptSubmit 4, prompt 5 (striped), PreToolUse 6, lint 7, guard 8, cx-guard 9 …
+        #expect(steps[0] == [true])
+        #expect(steps[1] == [true])
+        #expect(steps[2] == [true, false, true])
+    }
+
+    @Test("the Status column folds below the mock's 940 main column, measured as the window less the sidebar and a docked inspector")
+    func statusFolds() {
+        #expect(HooksListModel.foldsStatus(listWidth: 720, windowMeasured: true))
+        #expect(!HooksListModel.foldsStatus(listWidth: 1040, windowMeasured: true))
+        #expect(!HooksListModel.foldsStatus(listWidth: 0, windowMeasured: false))
+    }
+
     @Test("rows group by lifecycle stage in firing order at 2 and at 10 CLIs: one shape")
     func groupsByStage() {
         for registry in [FrameTestData.registry, FrameTestData.registry(count: 10)] {
@@ -170,6 +234,7 @@ struct HooksListModelTests {
         let hooks = Self.sample + [Self.hook("plug", owner: "acme", cells: ["claude": Self.runs(0), "codex": .missing])]
         let list = Self.model(hooks)
         let state = HooksPageState()
+        let toasts = ToastCenter(announce: false)
         #expect(list.row("hook::lint")?.isWritable == true)
         #expect(list.row("hook::lint")?.removalIDs == ["claude:hook:lint"])
         #expect(list.row("hook::cx-guard")?.readOnly == .notClaudeCode)
@@ -177,11 +242,17 @@ struct HooksListModelTests {
         #expect(list.row("hook::plug")?.readOnly == .plugin)
         for id in ["hook::cx-guard", "hook:/w/payments-web:lint-p", "hook::plug"] {
             let row = list.row(id)!
-            #expect(!row.isWritable && HooksFrame.actions(for: row, state: state).isEmpty)
+            // Copy Command only: no write.
+            #expect(!row.isWritable && HooksFrame.actions(for: row, state: state, toasts: toasts).map(\.id) == [HooksFrame.copyID])
             #expect(HooksRemoval.write([row], registry: list.registry) == nil)
         }
-        let actions = HooksFrame.actions(for: list.row("hook::lint")!, state: state)
-        #expect(actions.map(\.title) == ["Remove from Claude Code"] && actions[0].isDestructive)
+        let actions = HooksFrame.actions(for: list.row("hook::lint")!, state: state, toasts: toasts)
+        #expect(actions.map(\.title) == ["Remove from Claude Code", "Copy Command"] && actions[0].isDestructive)
+        #expect(actions[1].shortcut == .copyCommand && HooksFrame.rowButtons(actions).map(\.id) == ["remove"])
+        // A Hook that runs gets the quiet Remove, a dead or Never ran one the red tint (the mock's `rmBtn`).
+        #expect(HooksFrame.buttonKind(actions[0]) == .destructive)
+        let running = HooksFrame.actions(for: list.row("hook::guard")!, state: state, toasts: toasts)
+        #expect(!running[0].isDestructive && HooksFrame.buttonKind(running[0]) == .quiet)
         #expect(FrameRowAction.conflicts(in: actions).isEmpty)
     }
 
@@ -273,8 +344,11 @@ struct HooksListModelTests {
         let lint = list.row("hook::lint")!, notify = list.row("hook::notify")!
         #expect(HooksRemoval.write([lint], registry: list.registry)?.control == "hooks:remove:hook::lint")
         #expect(HooksRemoval.write([lint, notify], registry: list.registry)?.control == HooksRemoval.selectedControl)
+        // RD46: a key both CLIs hold is two rows, one per CLI; only Claude Code's is removed, and it keeps the key.
         let both = try #require(list.row("hook::both"))
-        #expect(both.clis == ["claude", "codex"] && both.removalIDs == ["claude:hook:both"])
+        #expect(both.cli == "claude" && both.removalIDs == ["claude:hook:both"])
+        let codex = try #require(list.row("hook::both@codex"))
+        #expect(codex.cli == "codex" && codex.readOnly == .notClaudeCode && codex.removalIDs.isEmpty && codex.runs == .unmeasurable)
     }
 
     @Test("one Hook removes at once with Undo (Hooks never ask); a refusal is the core's sentence")
@@ -341,17 +415,17 @@ struct HooksListModelTests {
     func inspector() {
         let list = Self.model()
         let format = list.row("hook::format")!
-        let facts = HooksInspectorFacts.facts(format, holders: list.holders(of: format), now: FrameTestData.now)
+        let facts = HooksInspectorFacts.facts(format, cli: list.holder(of: format), now: FrameTestData.now)
         #expect(facts.first { $0.key == "Runs" }?.value == "812")
         #expect(facts.first { $0.key == "Errors" }?.value == "14 in 7 days · 14 of 812 runs in all")
         #expect(facts.first { $0.key == "Average" }?.value == "214 ms")
-        #expect(HooksInspectorFacts.headline(format, holders: list.holders(of: format)) == "PostToolUse · Claude") // FrameTestData names a CLI by its capitalized id
+        #expect(HooksInspectorFacts.headline(format, cli: list.holder(of: format)) == "PostToolUse · Claude") // FrameTestData names a CLI by its capitalized id
         let lint = list.row("hook::lint")!
-        #expect(HooksInspectorFacts.facts(lint, holders: [], now: FrameTestData.now).contains(InspectorFact(key: "Script", value: "File is missing")))
+        #expect(HooksInspectorFacts.facts(lint, cli: nil, now: FrameTestData.now).contains(InspectorFact(key: "Script", value: "File is missing")))
         let codex = list.row("hook::cx-guard")!
-        #expect(HooksInspectorFacts.facts(codex, holders: list.holders(of: codex), now: FrameTestData.now).first?.value
+        #expect(HooksInspectorFacts.facts(codex, cli: list.holder(of: codex), now: FrameTestData.now).first?.value
                 == "Unmeasurable: Codex logs no Hook runs")
         let project = list.row("hook:/w/payments-web:lint-p")!
-        #expect(HooksInspectorFacts.facts(project, holders: [], now: FrameTestData.now).last?.value == "Project payments-web, read-only here")
+        #expect(HooksInspectorFacts.facts(project, cli: nil, now: FrameTestData.now).last?.value == "Project payments-web, read-only here")
     }
 }

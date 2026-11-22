@@ -39,7 +39,8 @@ struct RulesCapabilityGrid: View {
 
     private func dial(_ row: RulesCapabilityRow) -> some View {
         let isOpen = state.preview.map { $0.capability == row.id && $0.file == list.file } ?? false
-        return PermissionDial(selection: row.selection, label: row.label, lockedWord: row.isMixed ? "Mixed" : nil) { verdict in
+        // The track spans the 190 column (the mock's grid cell stretches `.dial`), its steps at the leading end.
+        return PermissionDial(selection: row.selection, label: row.label, lockedWord: row.isMixed ? "Mixed" : nil, fillsWidth: true) { verdict in
             state.requestPreview(row, to: verdict)
         }
         .disabled(!row.isEditable && !row.isMixed)
@@ -78,11 +79,11 @@ struct RulesPreviewPopover: View {
             case .ready(let preview):
                 let text = RulesPreviewText(row: row, preview: preview, fileName: fileName)
                 Text(text.title).typeRole(.bodyMedium).foregroundStyle(ColorRole.ink)
-                Text(text.what).typeRole(.quiet).foregroundStyle(ColorRole.ink2).fixedSize(horizontal: false, vertical: true)
-                if let warning = text.warning {
+                InlineCodeText(text.whatSpans)
+                if let warning = text.warningSpans {
                     HStack(alignment: .firstTextBaseline, spacing: SpaceRole.step6) {
                         FrameGlyph(.warningFill, side: SizeRole.icon12, ink: ColorRole.stateAttention, label: "Needs attention")
-                        Text(warning).typeRole(.quiet).foregroundStyle(ColorRole.ink2).fixedSize(horizontal: false, vertical: true)
+                        InlineCodeText(warning)
                     }
                 }
                 buttons(confirm: text.confirmTitle, enabled: !text.isNothing, loading: false)
