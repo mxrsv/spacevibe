@@ -54,6 +54,10 @@ final class EquipFakeCore: UnservedCore, @unchecked Sendable {
     override func loadoutRemoveMany(ids: [String]) async throws -> CoreRemoveManyResult {
         CoreRemoveManyResult(entry: try await write("removeMany \(ids)"), lost: ["claude", "opencode"])
     }
+    override func journalUndo(id: String) async throws -> CoreUndoResult {
+        lock.withLock { _writes.append("undo \(id)") }
+        return CoreUndoResult(label: "")
+    }
 }
 
 /// Holds a fake core's write until the test opens it, so the write is pending while the test presses again.
@@ -139,14 +143,72 @@ struct EquipWritesTests {
         #expect(state.shared == nil && toasts.current?.message == "Removed commit-helper for Claude Code and opencode")
     }
 
-    @Test("Copy to …, then remove: the copy first, then the removal, each with its Undo")
+    @Test("RD56: Copy to …, then remove: the copy first, then the removal, one toast whose one Undo reverts both, newest first")
     func sharedCopyThenRemove() async throws {
+        let (core, model, state, toasts) = await setUp(clis: 6)
+        let (row, claude) = try #require(toggle(state, "skill::commit-helper", "claude"))
+        state.press(claude, on: row, from: .tile)
+        let task = state.confirmShared(copyFirst: true)
+        #expect(model.writes.isRowBusy(row.id), "pending before the press returns")
+        await task?.value
+        #expect(core.writes == ["copyTo claude:skill:commit-helper [\"opencode\"]", "removeMany [\"claude:skill:commit-helper\"]"])
+        #expect(toasts.undoStack.count == 1)
+        #expect(toasts.current?.message == "Copied commit-helper to opencode, then removed it for Claude Code and opencode")
+        toasts.undoLast()
+        #expect(await eventually { core.writes.count == 4 })
+        #expect(core.writes.suffix(2) == ["undo e2", "undo e1"])
+    }
+
+    @Test("RD56: Copy to …, then remove with the removal refused: the partial toast keeps one Undo for the copy")
+    func sharedCopyThenRemoveRefused() async throws {
         let (core, _, state, toasts) = await setUp(clis: 6)
+        core.refusing = ["removeMany"]
         let (row, claude) = try #require(toggle(state, "skill::commit-helper", "claude"))
         state.press(claude, on: row, from: .tile)
         await state.confirmShared(copyFirst: true)?.value
-        #expect(core.writes == ["copyTo claude:skill:commit-helper [\"opencode\"]", "removeMany [\"claude:skill:commit-helper\"]"])
-        #expect(toasts.undoStack.count == 2)
+        #expect(toasts.current?.tone == .partial && toasts.undoStack.count == 1)
+        #expect(toasts.current?.message == "Copied commit-helper to opencode, but it was not removed: Codex already has it, so nothing was copied.")
+    }
+
+    @Test("RD56: Add to… for several rows: one toast, one Undo that reverts every copy, newest first; pending before it returns")
+    func sheetAddOneUndo() async {
+        let (core, model, state, toasts) = await setUp()
+        state.openSheet(.add, rows: ["skill::changelog-writer", "skill::review-pr"])
+        state.sheetToggle("codex")
+        let task = state.confirmSheet()
+        #expect(model.writes.isPending(EquipControl.sheet(.skills)), "pending before the press returns")
+        #expect(state.confirmSheet() == nil, "a second press in the same turn starts nothing")
+        await task?.value
+        #expect(core.writes == ["copyTo claude:skill:changelog-writer [\"codex\"]", "copyTo claude:skill:review-pr [\"codex\"]"])
+        #expect(toasts.undoStack.count == 1 && toasts.current?.message == "Added 2 Skills to Codex")
+        toasts.undoLast()
+        #expect(await eventually { core.writes.count == 4 })
+        #expect(core.writes.suffix(2) == ["undo e2", "undo e1"])
+    }
+
+    @Test("one busy key per row across pages: a write of the row started elsewhere holds every logo of it")
+    func rowBusyAcrossPages() async throws {
+        let (core, model, state, _) = await setUp()
+        let gate = PendingGate()
+        core.onWrite = { await gate.wait() }
+        let (row, codex) = try #require(toggle(state, "skill::changelog-writer", "codex"))
+        // The Inbox tile's write of the same row (its own control): the Skills logo must wait for it.
+        let other = model.writes.start(.copyTo(row.row, targets: ["codex"], registry: model.store.snapshot.registry, control: "tile:\(row.id)"))
+        #expect(other != nil && state.isRowBusy(row) && state.pendingToggles(row) == Set(row.toggles.map(\.cli.id)))
+        #expect(state.press(codex, on: row, from: .row) == nil)
+        await gate.open()
+        _ = await other?.value
+        #expect(core.writes == ["copyTo claude:skill:changelog-writer [\"codex\"]"] && !state.isRowBusy(row))
+    }
+
+    @Test("↑↓ select through the page's own select: the expanded description collapses on another row")
+    func keysCollapseDescription() async {
+        let (_, model, state, _) = await setUp()
+        model.router.select("skill::commit-helper")
+        state.isDescriptionExpanded = true
+        let keys = FrameListKeys.selection(router: model.router) { state.select($0) }
+        keys.wrappedValue = "skill::review-pr"
+        #expect(model.router.route.selection == "skill::review-pr" && !state.isDescriptionExpanded)
     }
 
     @Test("a refused copy stops before the removal and shows the refusal")
@@ -202,7 +264,7 @@ struct EquipWritesTests {
         let (_, _, state, _) = await setUp()
         state.selectSuggested()
         #expect(state.view.filter == .neverRan && state.view.ticked == ["skill::pdf-extract", "skill::changelog-writer"])
-        #expect(state.list().primaryTitle == "Remove 2 selected…")
+        #expect(state.list().primaryTitle == "Remove 2…")
         state.selectSuggested()
         #expect(state.view.ticked.isEmpty)
     }
@@ -308,7 +370,7 @@ struct EquipWritesTests {
         #expect(core.writes == ["copyTo claude:skill:changelog-writer [\"codex\"]", "copyTo claude:skill:review-pr [\"codex\"]",
                                 "copyTo claude:skill:api-docs [\"codex\"]"])
         #expect(toasts.current?.message == "Added 2 of 3; 1 refused: Codex already has it, so nothing was copied.")
-        #expect(toasts.current?.tone == .partial && toasts.undoStack.count == 2 && state.sheet == nil)
+        #expect(toasts.current?.tone == .partial && toasts.undoStack.count == 1 && state.sheet == nil, "RD56: one Undo for both rows added")
     }
 
     @Test("Add to… wording: one refused row alone is the refusal; all refused is a refusal; none refused leaves each row's toast")

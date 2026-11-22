@@ -3,7 +3,7 @@ import SwiftUI
 /// The Skills and Subagents regions of the redesign's frame (RB-R2; RD14–RD16, RD21/D53, RD31, RD-R11, RD-R12, RD-R13, RD-A6;
 /// the mock's `pageEquip`, `src/c-inbox-equip.js`): the parts one page hands the frame. Both pages are this one implementation
 /// with their `EquipKind` (`SkillsFrame`, `SubagentsFrame`). The list, the toolbar's `All / Never ran` control, `All CLIs` menu
-/// and `Remove N selected…`, and the inspector share the page's one `EquipPageState`.
+/// and `Remove N…`, and the inspector share the page's one `EquipPageState`.
 enum EquipFrame {
     @MainActor
     static func content(_ kind: EquipKind, model: FrameModel) -> FramePageContent {
@@ -81,7 +81,7 @@ struct EquipSheetDialog: View {
     }
 }
 
-/// The toolbar's destructive slot (RD-R17 Layout: one width): `Remove N selected…` opens the per-CLI sheet for the ticked
+/// The toolbar's destructive slot (RD-R17 Layout: one width): `Remove N…` opens the per-CLI sheet for the ticked
 /// rows shown, so it names who loses them before anything is written (the mock's `dstBtn(… 'bkopen')`); empty while the
 /// first scan runs or the page is empty, so the controls beside it never move.
 struct EquipRemoveSelectedButton: View {

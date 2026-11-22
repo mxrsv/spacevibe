@@ -160,14 +160,15 @@ enum InboxInspectorFacts {
     static func window(_ pace: WindowPace, entry: CoreLimitsEntry?, now: Date) -> [InspectorFact] {
         let left = pace.over > 0 ? "0% · over by \(InboxWording.percent(pace.over))" : InboxWording.percent(pace.left ?? 0)
         let time = pace.timeLeft.map { "\(Int($0.rounded()))%" } ?? "No window length"
-        let resetsIn = LimitsWording.resetsIn(pace.window, now: now).map { ", in \($0)" } ?? ""
+        // The redesign's clock wording, the same as the Limits page's (`LimitsClockWording`, RD46): "9:36 PM, in 4h 06m".
+        let resetsIn = LimitsClockWording.resetsIn(pace.window, now: now).map { ", in \($0)" } ?? ""
         var facts: [InspectorFact] = [
             InspectorFact(key: "Left", value: left),
             InspectorFact(key: "Time left", value: time),
-            InspectorFact(key: "Resets", value: "\(LimitsWording.resetsAt(pace.window, now: now))\(resetsIn)"),
+            InspectorFact(key: "Resets", value: "\(LimitsClockWording.resetsAt(pace.window, now: now))\(resetsIn)"),
         ]
         if let entry, let source = LimitsWording.source(entry) {
-            let age = entry.at.map { ", \(LimitsWording.readAge(at: Date(timeIntervalSince1970: $0), now: now))" } ?? ""
+            let age = entry.at.map { ", \(LimitsClockWording.ago(now.timeIntervalSince(Date(timeIntervalSince1970: $0))))" } ?? ""
             facts.append(InspectorFact(key: "Source", value: "\(source.title)\(age)"))
         }
         return facts

@@ -53,12 +53,13 @@ final class EquipPageState {
 
     func isPending(_ control: String) -> Bool { model?.writes.isPending(control) ?? false }
 
-    /// The row's CLIs whose logo or tile has a write running: that CLI's own toggle, or every one of the row while a
-    /// shared-file removal of it runs.
+    /// The row's CLIs whose logo or tile has a write running: that CLI's own toggle, or every one of the row while another
+    /// write of it runs (a shared-file removal, the sheet, or a write started on another page: one busy key per row).
     func pendingToggles(_ row: EquipListRow) -> Set<String> {
         let ids = row.toggles.map(\.cli.id)
-        if isPending(EquipControl.shared(row.id)) { return Set(ids) }
-        return Set(ids.filter { isPending(EquipControl.toggle(row.id, $0)) })
+        let own = Set(ids.filter { isPending(EquipControl.toggle(row.id, $0)) })
+        if own.isEmpty, model?.writes.isRowBusy(row.id) == true { return Set(ids) }
+        return own
     }
 
     // MARK: View state
@@ -126,8 +127,9 @@ final class EquipPageState {
         }
     }
 
-    /// The confirmation's `Remove for N CLIs`, or with `copyFirst` its `Copy to …, then remove`: the copy first (its own
-    /// Undo), then exactly the members it named, as one removal with one Undo.
+    /// The confirmation's `Remove for N CLIs`, or with `copyFirst` its `Copy to …, then remove`: exactly the members it named,
+    /// after the copy when there is one, as one press with one toast and one Undo (RD56, `FrameWrite.copyThenRemove`). The
+    /// write is pending before this returns, so a second press in the same turn starts nothing.
     @discardableResult
     func confirmShared(copyFirst: Bool) -> Task<Void, Never>? {
         guard let model, let prompt = shared, let row = list().row(prompt.removal.rowID) else {
@@ -138,24 +140,15 @@ final class EquipPageState {
         let registry = model.store.snapshot.registry
         let removal = prompt.removal
         let control = EquipControl.shared(row.id)
-        return Task { @MainActor in
-            let copied = copyFirst ? removal.savable : []
-            if !copied.isEmpty {
-                // A refused copy stops before the removal, and the toast says the item stayed.
-                let refused: @MainActor (String) -> Void = { sentence in
-                    model.writes.report(EquipSheet.copyRefused(row.name, reason: sentence), tone: .danger)
-                }
-                guard await model.writes.perform(.copyTo(row.row, targets: copied, registry: registry, control: control),
-                                                 refused: refused) else { return }
-            }
-            await model.writes.perform(.removeMembers([row.row], members: removal.members, registry: registry, control: control,
-                                                      shared: true, copiedTo: copied))
-        }
+        let copied = copyFirst ? removal.savable : []
+        return run(copied.isEmpty
+            ? .removeMembers([row.row], members: removal.members, registry: registry, control: control, shared: true)
+            : .copyThenRemove(row.row, copyTo: copied, members: removal.members, registry: registry, control: control))
     }
 
     // MARK: The per-CLI sheet
 
-    /// `Add to…`, `Remove from…` (the ticked rows), `Remove N selected…` (the same, Remove mode) and an item's `Remove…`.
+    /// `Add to…`, `Remove from…` (the ticked rows), `Remove N…` (the same, Remove mode) and an item's `Remove…`.
     func openSheet(_ mode: PerCLISheetModel.Mode, rows: [String]) {
         guard !rows.isEmpty else { return }
         shared = nil
@@ -179,42 +172,46 @@ final class EquipPageState {
         sheet = nil
     }
 
-    /// The sheet's confirm. A removal is one `loadout.removeMany` (one Undo); an add is one `loadout.copyTo` per row.
+    /// The sheet's confirm, as one write with one toast and one Undo (RD56): a removal is one `loadout.removeMany`, or one
+    /// `loadout.removeFrom` per row without a readers map; an add is one `loadout.copyTo` per row. The write is pending before
+    /// this returns (`FrameWrites.start`), so a second press in the same turn starts nothing; the sheet waits for the answer.
     @discardableResult
     func confirmSheet() -> Task<Void, Never>? {
         guard let model, let current = sheet, !current.ticked.isEmpty else { return nil }
+        guard let write = sheetWrite(current) else {
+            close(current)
+            return nil
+        }
+        guard let task = model.writes.start(write) else { return nil }
+        return Task { @MainActor in
+            _ = await task.value
+            close(current)
+        }
+    }
+
+    /// The rows the sheet acted on leave the selection either way (a refusal said so in its toast), and it closes.
+    private func close(_ current: EquipSheetState) {
+        view = EquipViewState(filter: view.filter, cli: view.cli, ticked: view.ticked.subtracting(current.rowIDs))
+        sheet = nil
+    }
+
+    /// What the sheet's confirm writes, nil when it would write nothing.
+    private func sheetWrite(_ current: EquipSheetState) -> FrameWrite? {
+        guard let model else { return nil }
         let list = list()
         let registry = model.store.snapshot.registry
         let order = list.clis.map(\.id)
         let control = EquipControl.sheet(kind.page)
-        return Task { @MainActor in
-            switch current.mode {
-            case .add:
-                // One copy per row; a refused row never stops the others, and one toast says how many were added and why
-                // the rest were not ("Added 2 of 3; 1 refused: …").
-                let steps = EquipSheet.additions(current, rows: list.all, order: order)
-                var refusals: [String] = []
-                for step in steps {
-                    await model.writes.perform(.copyTo(step.row, targets: step.targets, registry: registry, control: control),
-                                               refused: { refusals.append($0) })
-                }
-                if let summary = EquipSheet.addSummary(total: steps.count, refusals: refusals) {
-                    model.writes.report(summary.sentence, tone: summary.tone)
-                }
-            case .remove:
-                if let removal = EquipSheet.removal(current, rows: list.all) {
-                    if !removal.members.isEmpty {
-                        await model.writes.perform(.removeMembers(removal.rows, members: removal.members, registry: registry, control: control))
-                    }
-                } else {
-                    for step in EquipSheet.removeFromEach(current, rows: list.all, order: order) {
-                        guard await model.writes.perform(.removeFrom(step.row, clis: step.clis, registry: registry, control: control)) else { break }
-                    }
-                }
+        switch current.mode {
+        case .add:
+            let steps = EquipSheet.additions(current, rows: list.all, order: order)
+            return steps.isEmpty ? nil : .addEach(steps, registry: registry, control: control)
+        case .remove:
+            if let removal = EquipSheet.removal(current, rows: list.all) {
+                return removal.members.isEmpty ? nil : .removeMembers(removal.rows, members: removal.members, registry: registry, control: control)
             }
-            // The rows it acted on leave the selection either way: a refusal said so in its toast.
-            view = EquipViewState(filter: view.filter, cli: view.cli, ticked: view.ticked.subtracting(current.rowIDs))
-            sheet = nil
+            let steps = EquipSheet.removeFromEach(current, rows: list.all, order: order)
+            return steps.isEmpty ? nil : .removeFromEach(steps, registry: registry, control: control)
         }
     }
 

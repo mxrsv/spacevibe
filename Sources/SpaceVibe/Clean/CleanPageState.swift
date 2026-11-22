@@ -38,6 +38,13 @@ final class CleanPageState {
     }
 
     func toggleLock(_ id: String) { openLock = openLock == id ? nil : id }
+
+    /// A tick on a row that can no longer hold one (it became locked, read-only or went) is dropped, never kept for when the
+    /// lock ends: the next Remove takes only what the user sees ticked now.
+    func keepTicks(_ tickable: Set<String>) {
+        let kept = ticked.intersection(tickable)
+        if kept != ticked { ticked = kept }
+    }
 }
 
 /// Every press on Clean, through the one write path (AR4) or the store's on-demand read.
@@ -98,26 +105,29 @@ struct CleanActions {
     }
 
     /// `Remove …`: at once with Undo when no ticked file is shared; otherwise the confirmation names every reader first.
-    func remove() {
+    /// Returns the write's task (tests wait on it).
+    @discardableResult
+    func remove() -> Task<Bool, Never>? {
         let request = page.request(world)
-        guard !request.isEmpty, !writes.isPending(FrameWrite.cleanControl) else { return }
+        guard !request.isEmpty, !writes.isPending(FrameWrite.cleanControl) else { return nil }
         guard page.sharedRows(world).isEmpty else {
             state.confirming = CleanConfirmation(items: page.confirmationItems(world), request: request, routeRevision: model.router.revision)
-            return
+            return nil
         }
-        run(request)
+        return start(request)
     }
 
-    func confirm() {
-        guard let confirmation = state.confirming else { return }
-        Task {
-            await perform(confirmation.request)
-            state.confirming = nil
-        }
+    /// The confirmation's Remove: the write is pending before this returns (`FrameWrites.start`), and the dialog closes at
+    /// once, so the moving band's progress and Cancel are in reach while the files move (the dialog would cover them).
+    @discardableResult
+    func confirm() -> Task<Bool, Never>? {
+        guard let confirmation = state.confirming, let task = start(confirmation.request) else { return nil }
+        state.confirming = nil
+        return task
     }
 
-    /// Cancel, and Esc through the frame (`FrameDialog.cancel`): nothing while the confirmed write runs (the move's own
-    /// Cancel is in the band), so the dialog stays until the core answered.
+    /// Cancel, and Esc through the frame (`FrameDialog.cancel`). The dialog closes as the write starts, so it never waits for
+    /// one; the guard is for a write started elsewhere while it shows.
     func cancelConfirmation() {
         guard !isConfirming else { return }
         state.confirming = nil
@@ -128,15 +138,14 @@ struct CleanActions {
     /// Cancel in the moving band: the move stops before its next file.
     func cancelMove() { state.run.cancel() }
 
-    private func run(_ request: CleanRequest) {
-        Task { await perform(request) }
-    }
-
-    private func perform(_ request: CleanRequest) async {
+    /// Clean's write, pending at once. The ticks it took are dropped as soon as the core answered (before the re-read), so
+    /// Remove is never drawn enabled for rows that already moved.
+    private func start(_ request: CleanRequest) -> Task<Bool, Never>? {
         let ids = request.rows.map(\.id) + request.logs.map { CleanPlan.LogRow.id($0.cli) } + request.caches
+        let state = state
+        let write = FrameWrite.clean(request, run: state.run, registry: world.snapshot.registry) { state.ticked.subtract(ids) }
+        guard let task = writes.start(write) else { return nil }
         state.openLock = nil
-        if await writes.perform(.clean(request, run: state.run, registry: world.snapshot.registry)) {
-            state.ticked.subtract(ids)
-        }
+        return task
     }
 }

@@ -196,15 +196,24 @@ final class FrameChrome {
     }
 }
 
+/// The selection binding the list keys move (`frameListKeys`): it reads the route and writes through the page's own `select`
+/// when given, else the router's.
+@MainActor
+enum FrameListKeys {
+    static func selection(router: FrameRouter, select: ((String?) -> Void)?) -> Binding<String?> {
+        Binding(get: { router.route.selection }, set: { id in if let select { select(id) } else { router.select(id) } })
+    }
+}
+
 extension View {
     /// The list keys of a page (RD39, RD-R16): ↑↓ and j/k move the route's selection over `rows` (the rows shown, in order)
     /// through the one selection rule, `ListSelection` with `listKeyboardSelection`, and the moved-to row shows the RD29
     /// focus bar (`chrome.keyboardRow`). Arrows never open the inspector; Return does, at the frame (`AppFrame`). A region
     /// applies it on its list and draws `ItemRow(isKeyboardFocused: chrome.keyboardRow == row.id)`; a click selects through the
-    /// router and clears the bar (`chrome.pointerSelected()`).
-    func frameListKeys(rows: [String], router: FrameRouter, chrome: FrameChrome) -> some View {
-        listKeyboardSelection(ids: rows,
-                              selection: Binding(get: { router.route.selection }, set: { router.select($0) }),
+    /// router and clears the bar (`chrome.pointerSelected()`). `select` is the page's own selection call when it does more
+    /// than the router's (Skills and Subagents collapse the description), the same one its clicks use.
+    func frameListKeys(rows: [String], router: FrameRouter, chrome: FrameChrome, select: ((String?) -> Void)? = nil) -> some View {
+        listKeyboardSelection(ids: rows, selection: FrameListKeys.selection(router: router, select: select),
                               keyboardRow: Binding(get: { chrome.keyboardRow }, set: { chrome.keyboardRow = $0 }))
     }
 

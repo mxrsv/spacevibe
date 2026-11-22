@@ -97,7 +97,7 @@ struct InboxWording {
             return InboxRowModel(
                 finding: finding, glyph: InboxRowGlyph(icon: .limits), title: windowTitle(pace), isMono: false,
                 sub: pace.over > 0 ? "Over the limit" : pace.isLow ? "Almost used up" : "Faster than time passes",
-                evidence: "\(Self.percent(pace.left ?? 0)) left · resets \(LimitsWording.resetsAt(pace.window, now: now))",
+                evidence: "\(Self.percent(pace.left ?? 0)) left · resets \(LimitsClockWording.resetsAt(pace.window, now: now))",
                 isRemovable: false, isKept: kept, actions: [keep])
         case .session(let session):
             let waited = session.lastWriteAgoMs.map { "Waiting \(ActivityFormat.span($0))" } ?? "Waiting"

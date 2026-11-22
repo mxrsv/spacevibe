@@ -58,7 +58,7 @@ struct EquipListRow: Identifiable, Sendable {
 }
 
 /// Everything the Skills or Subagents page shows, from the store and the page's view state. Pure, so the hero, the rows, the
-/// group head, the toolbar's `Remove N selected…` and the inspector read one value and cannot disagree (AR3).
+/// group head, the toolbar's `Remove N…` and the inspector read one value and cannot disagree (AR3).
 struct EquipListModel: Sendable {
     enum Phase: Equatable, Sendable {
         /// `loadout.rows` has not answered yet.
@@ -102,7 +102,7 @@ struct EquipListModel: Sendable {
     /// The top total of the kind: the Sessions bars are drawn against it.
     var maxTotal: Int { max(1, all.map(\.total).max() ?? 0) }
 
-    /// The ticked rows shown that SpaceVibe may write: what `Remove N selected…`, `Add to…` and `Remove from…` act on.
+    /// The ticked rows shown that SpaceVibe may write: what `Remove N…`, `Add to…` and `Remove from…` act on.
     var picked: [EquipListRow] { visible.filter { view.ticked.contains($0.id) && $0.isTickable } }
     var tickable: [String] { visible.filter(\.isTickable).map(\.id) }
     var allSuggestedTicked: Bool { !suggested.isEmpty && suggested.allSatisfy(view.ticked.contains) }
@@ -129,9 +129,10 @@ struct EquipListModel: Sendable {
     var neverRanSeverity: GroupSeverity { suggested.isEmpty ? .none : .attention }
 
     /// The toolbar's destructive slot: nil (an empty slot) while scanning or empty; otherwise its title, disabled at 0.
+    /// `Remove 104…` (RD52: short enough never to be cut in the 196 slot; the ellipsis because it opens the sheet first).
     var primaryTitle: String? {
         guard phase == .normal, !isScanning else { return nil }
-        return picked.isEmpty ? "Select rows to remove" : "Remove \(NumberWording.count(picked.count)) selected…"
+        return picked.isEmpty ? "Select rows to remove" : "Remove \(NumberWording.count(picked.count))\u{2026}"
     }
 
     /// The search hides every row the filters would show: the page says "No skills match" with Clear Search.

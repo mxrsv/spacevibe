@@ -28,6 +28,12 @@ struct RowGroup<Head: View, Content: View>: View {
                         head.background(ColorRole.groupSurface)
                     }
                 }
+            } else if Self.isLazy(isShotRendering: isShotRendering) {
+                // Rows are built as they scroll in, so a list of 1,000 Clean or Inbox rows never builds them all at once.
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    head
+                    content
+                }
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     head
@@ -41,6 +47,9 @@ struct RowGroup<Head: View, Content: View>: View {
 
     /// Only a group with a head pins it, and never in a headless shot (no scroll view there). Pure, so it is tested.
     static func pinsHead(hasHead: Bool, isShotRendering: Bool) -> Bool { hasHead && !isShotRendering }
+
+    /// Every group builds its rows lazily inside the page's scroll view; a headless shot (no scroll view) draws them all.
+    static func isLazy(isShotRendering: Bool) -> Bool { !isShotRendering }
 }
 
 extension RowGroup where Head == EmptyView {

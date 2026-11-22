@@ -148,8 +148,8 @@ enum CleanBanner: Equatable, Sendable {
 }
 
 /// The toolbar's slot (RD-R2: the primary carries the real number, FE-D3): `Remove 1.02 GB` while bytes are selected, else
-/// `Remove N selected`, disabled with "Select rows to remove" at zero; `Measuring…` and `Moving 58%` disabled with their
-/// spinner; nothing when the page is Tidy.
+/// `Remove N` (RD52: short enough never to be cut in the 196 slot), disabled with "Select rows to remove" at zero;
+/// `Measuring…` and `Moving 58%` disabled with their spinner; nothing when the page is Tidy.
 enum CleanPrimary: Equatable, Sendable {
     case hidden
     case measuring
@@ -163,7 +163,7 @@ enum CleanPrimary: Equatable, Sendable {
         case .moving(let percent): percent.map { "Moving \($0)%" } ?? "Moving…"
         case .remove(let bytes, let count):
             count == 0 ? (narrow ? "Select rows" : "Select rows to remove")
-                : bytes > 0 ? "Remove \(NumberWording.bytes(bytes))" : "Remove \(NumberWording.count(count)) selected"
+                : bytes > 0 ? "Remove \(NumberWording.bytes(bytes))" : "Remove \(NumberWording.count(count))"
         }
     }
 
@@ -176,20 +176,24 @@ enum CleanPrimary: Equatable, Sendable {
     }
 }
 
-/// The band under the hero while a move runs: the progress at the control that started it, and Cancel.
+/// The band under the hero while a move runs: the progress at the control that started it, and Cancel while logs or caches
+/// move. A removal of equipment alone has no file to stop before, so it offers no Cancel.
 struct CleanMoveBand: Equatable, Sendable {
     let share: Double
     let text: String
     let isCancelling: Bool
+    let canCancel: Bool
 
     static let note = "Cancel stops before the next file. What already moved stays in the Trash, and Undo puts it back."
+    static let removingOnly = "Removing to SpaceVibe's trash…"
 
     /// `reading` archives the usage of the picked logs first (CL-R3), then `moving` renames; before the first note, nothing.
-    init(progress: CoreCleanProgress?, selectedBytes: Int64, isCancelling: Bool) {
+    init(progress: CoreCleanProgress?, selectedBytes: Int64, isCancelling: Bool, canCancel: Bool = true) {
         self.isCancelling = isCancelling
+        self.canCancel = canCancel
         guard let progress, progress.total > 0 else {
             share = 0
-            text = "Starting…"
+            text = canCancel ? "Starting…" : Self.removingOnly
             return
         }
         share = Double(progress.done) / Double(progress.total)

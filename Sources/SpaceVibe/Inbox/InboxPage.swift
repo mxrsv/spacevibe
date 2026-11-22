@@ -2,7 +2,7 @@ import Foundation
 
 /// One thing an Inbox row offers, in the order its buttons sit (the reference mock's `actOf` in `src/c-inbox-equip.js`): Keep
 /// first, then the finding's own fix. Keep and Stop Keeping act on one row at a time (RD40); Remove has a checkbox beside it
-/// for the bulk `Remove N selected` (RD41).
+/// for the bulk `Remove N` (RD41).
 enum InboxAction: Equatable, Sendable {
     case keep
     case stopKeeping
@@ -85,7 +85,7 @@ struct InboxRowModel: Identifiable, Equatable, Sendable {
     let sub: String
     /// The short evidence column ("Never ran", "2 failures in 7 days").
     let evidence: String
-    /// A Clean up row: it has a checkbox and counts in `Remove N selected` (RD40). Never on a kept row.
+    /// A Clean up row: it has a checkbox and counts in `Remove N` (RD40). Never on a kept row.
     let isRemovable: Bool
     let isKept: Bool
     let actions: [InboxAction]
@@ -144,17 +144,18 @@ enum InboxBanner: Equatable, Sendable {
     }
 }
 
-/// The toolbar's slot: empty while scanning or with nothing to remove from, otherwise `Remove N selected` (RD-R2: the primary
-/// carries the real number, FE-D3), disabled at zero.
+/// The toolbar's slot: empty while scanning or with nothing to remove from, otherwise `Remove N` (RD-R2: the primary carries
+/// the real number, FE-D3), disabled at zero.
 enum InboxPrimary: Equatable, Sendable {
     case hidden
     case remove(count: Int)
 
-    /// "Remove 3 selected"; at zero "Select rows to remove" (the mock's `dstBtn`), "Select rows" in a list under 700 pt.
+    /// "Remove 104" (RD52: short enough never to be cut in the 196 slot); at zero "Select rows to remove" (the mock's
+    /// `dstBtn`), "Select rows" in a list under 700 pt.
     func title(narrow: Bool) -> String? {
         guard case .remove(let count) = self else { return nil }
         if count == 0 { return narrow ? "Select rows" : "Select rows to remove" }
-        return "Remove \(NumberWording.count(count)) selected"
+        return "Remove \(NumberWording.count(count))"
     }
 }
 
@@ -172,7 +173,7 @@ struct InboxPage: Equatable, Sendable {
     /// Balance compares pinned CLIs only and needs two (RD-R10): with fewer pins the page says so.
     let isBalanceOff: Bool
     let primary: InboxPrimary
-    /// The ticked removable rows among those shown, in page order: what `Remove N selected` takes.
+    /// The ticked removable rows among those shown, in page order: what `Remove N` takes.
     let ticked: [String]
     /// False while scanning or failed: the list is skeleton rows or nothing.
     let showsList: Bool
@@ -199,7 +200,7 @@ struct InboxPage: Equatable, Sendable {
     /// - `failure`: the store's sentence for a failed source, shown when `figure` is `.failed`.
     /// - `hasHost`: whether a session pid has a host app to bring forward (`HostAppResolver`), so a missing one is drawn
     ///   disabled before it is pressed.
-    /// - `query`: the toolbar's search; the groups, the kept rows and what `Remove N selected` takes keep only the rows it
+    /// - `query`: the toolbar's search; the groups, the kept rows and what `Remove N` takes keep only the rows it
     ///   matches, while the hero counts every open finding (AR3).
     init(world: FrameWorld, figure: PageFigure, failure: String? = nil, ticked: Set<String> = [], showsKept: Bool = false,
          hasHost: (Int) -> Bool = { _ in true }, query: FrameSearchQuery = FrameSearchQuery(""), now: Date) {

@@ -35,7 +35,13 @@ private final class CleanFakeCore: UnservedCore, @unchecked Sendable {
         record("journal.undo \(id)")
         return CoreUndoResult(label: id == "e-move" ? "Moved 4 files to the Trash: Codex logs" : "Removed 2 items")
     }
-    override func cleanScan() async throws -> CoreCleanScan { record("clean.scan"); return FrameTestData.cleanScan() }
+    /// Holds every `clean.scan` until the test opens it: the re-read after a write is still running.
+    var scanGate: PendingGate?
+    override func cleanScan() async throws -> CoreCleanScan {
+        record("clean.scan")
+        if let scanGate { await scanGate.wait() }
+        return FrameTestData.cleanScan()
+    }
     override func inventoryRead() async throws -> CoreInventorySnapshot { CoreInventorySnapshot(items: [], hooks: [], problems: [], events: [:], roots: [:]) }
     override func loadoutRows() async throws -> CoreLoadoutRows { FrameTestData.loadout() }
     override func journalHistory() async throws -> CoreJournalHistory { CoreJournalHistory(entries: []) }
@@ -220,7 +226,7 @@ struct CleanWriteTests {
         store.stop()
     }
 
-    @Test("Esc on a running Clean confirmation does nothing; a route changed from outside closes a waiting one")
+    @Test("P-001: confirming closes the dialog at once with the write pending, so the band's Cancel is in reach; a route changed from outside closes a waiting one")
     func confirmationEscAndRoute() async {
         let core = CleanFakeCore()
         core.blocksUntilCancelled = true
@@ -230,18 +236,104 @@ struct CleanWriteTests {
         let actions = CleanActions(model: model, state: state, page: CleanPage(inputs), world: inputs.world)
         state.confirming = CleanConfirmation(items: [], request: request(), routeRevision: model.router.revision)
         #expect(FramePageContent.clean(model: model, fixed: inputs, state: state).dialog != nil)
-        actions.confirm()
+        let task = actions.confirm()
+        #expect(task != nil && model.writes.isPending(FrameWrite.cleanControl), "pending before the press returns")
+        #expect(state.confirming == nil && FramePageContent.clean(model: model, fixed: inputs, state: state).dialog == nil,
+                "the dialog no longer covers the moving band")
+        #expect(actions.confirm() == nil, "nothing left to confirm a second time")
         for _ in 0..<400 where !core.calls.contains(where: { $0.hasPrefix("clean.move") }) { try? await Task.sleep(for: .milliseconds(5)) }
-        #expect(actions.isConfirming)
-        FramePageContent.clean(model: model, fixed: inputs, state: state).dialog?.cancel()
-        #expect(state.confirming != nil, "Esc reaches the dialog's cancel through the frame; it must wait for the move")
+        let moving = CleanPage(inputs, move: state.run.snapshot, isWriting: true)
+        #expect(moving.phase == .moving && moving.moveBand?.canCancel == true, "the band offers Cancel while files move")
         actions.cancelMove()
-        for _ in 0..<400 where state.confirming != nil { try? await Task.sleep(for: .milliseconds(5)) }
-        #expect(state.confirming == nil)
+        #expect(await task?.value == true)
         // A confirmation waiting for its answer closes when the glance widget routes elsewhere.
         state.confirming = CleanConfirmation(items: [], request: request(), routeRevision: model.router.revision)
         model.router.go(to: .session("claude:s1"))
         model.router.go(to: FrameRoute(page: .clean))
         #expect(FramePageContent.clean(model: model, fixed: inputs, state: state).dialog == nil)
+    }
+
+    // MARK: RB-F3 (round 2)
+
+    private func actions(_ core: CleanFakeCore, ticked: Set<String>) -> (FrameModel, CleanPageState, CleanActions, CleanInputs) {
+        let model = FrameModel(core: core, toasts: ToastCenter(announce: false))
+        let state = CleanPageState()
+        state.ticked = ticked
+        let inputs = CleanSynthetic.inputs(.normal, clis: 2)
+        let page = CleanPage(inputs, ticked: state.ticked)
+        return (model, state, CleanActions(model: model, state: state, page: page, world: inputs.world), inputs)
+    }
+
+    @Test("the ticks go as soon as the core answered, before the re-read; while it runs nothing can be ticked and Remove waits")
+    func untickOnAnswer() async {
+        let core = CleanFakeCore()
+        let gate = PendingGate()
+        core.scanGate = gate
+        let (model, state, actions, inputs) = actions(core, ticked: ["logs:codex"])
+        let task = actions.remove()
+        #expect(task != nil && model.writes.isPending(FrameWrite.cleanControl), "pending before the press returns")
+        #expect(actions.remove() == nil, "a second press in the same turn starts nothing")
+        for _ in 0..<400 where !core.calls.contains("clean.scan") { try? await Task.sleep(for: .milliseconds(5)) }
+        #expect(state.ticked.isEmpty, "unticked once the move answered, while the re-read still runs")
+        #expect(model.writes.isPending(FrameWrite.cleanControl))
+        let during = CleanPage(inputs, ticked: ["caches:none", "logs:codex"], move: state.run.snapshot, isWriting: true)
+        #expect(during.phase == .ready && !during.primary.isEnabled && during.rows.allSatisfy { !$0.isOpen })
+        #expect(during.sections.allSatisfy { $0.pick == .none })
+        await gate.open()
+        #expect(await task?.value == true)
+        #expect(!model.writes.isPending(FrameWrite.cleanControl))
+    }
+
+    @Test("a refused move keeps the ticks: nothing changed")
+    func refusedKeepsTicks() async {
+        let core = CleanFakeCore()
+        core.moveResult = .failure(CoreError("Codex has 1 running session, so its logs stay until it ends. Nothing was moved.", status: 409))
+        let (_, state, actions, _) = actions(core, ticked: ["logs:codex"])
+        #expect(await actions.remove()?.value == false)
+        #expect(state.ticked == ["logs:codex"])
+    }
+
+    @Test("Cancel only while files move: a removal of equipment alone offers none")
+    func cancelOnlyWhenFilesMove() async {
+        let core = CleanFakeCore()
+        let (writes, _, _, run) = setUp(core)
+        #expect(await writes.perform(.clean(request(logs: []), run: run, registry: FrameTestData.registry)))
+        #expect(!core.calls.contains { $0.hasPrefix("clean.move") } && !run.snapshot.movesFiles, "the run began without files to move")
+        run.begin(movesFiles: false)
+        let equipment = CleanPage(CleanSynthetic.inputs(.normal, clis: 2), move: run.snapshot)
+        #expect(equipment.moveBand?.canCancel == false && equipment.moveBand?.text == CleanMoveBand.removingOnly)
+        run.end()
+        run.begin(movesFiles: true)
+        #expect(CleanPage(CleanSynthetic.inputs(.normal, clis: 2), move: run.snapshot).moveBand?.canCancel == true)
+        run.end()
+    }
+
+    @Test("a locked row's tick is dropped, never kept for when the lock ends")
+    func lockedTickDropped() {
+        let state = CleanPageState()
+        state.ticked = ["logs:codex", "logs:claude"]
+        let page = CleanPage(CleanSynthetic.inputs(.normal, clis: 2), ticked: state.ticked)
+        #expect(!page.tickable.contains("logs:claude") && page.tickable.contains("logs:codex"), "Claude Code's logs are locked")
+        state.keepTicks(page.tickable)
+        #expect(state.ticked == ["logs:codex"])
+    }
+
+    @Test("one scan in flight from the page's own calls: opening, Scan Again and Try Again join it")
+    func oneScanInFlight() async {
+        let core = CleanFakeCore()
+        let gate = PendingGate()
+        core.scanGate = gate
+        let (_, _, actions, _) = actions(core, ticked: [])
+        let opened = Task { await actions.measure() }
+        for _ in 0..<400 where !core.calls.contains("clean.scan") { try? await Task.sleep(for: .milliseconds(5)) }
+        actions.scanAgain()
+        actions.tryAgain()
+        let again = Task { await actions.measure() }
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(core.calls.filter { $0 == "clean.scan" }.count == 1)
+        await gate.open()
+        await opened.value
+        await again.value
+        #expect(core.calls.filter { $0 == "clean.scan" }.count == 1)
     }
 }

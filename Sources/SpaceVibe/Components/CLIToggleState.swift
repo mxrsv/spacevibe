@@ -159,10 +159,11 @@ struct CLIToggleState: Hashable, Sendable {
     }
 
     /// The figure a tile shows under the name: the session count, `?` when unmeasurable, `…` while pending, "Add" when off,
-    /// a dash when Not supported or when it cannot be added.
+    /// a dash when Not supported or when it cannot be added. The inspector's tile shows the full count (`4,830,112`, RD53);
+    /// only the list's narrow cells keep `4.8M`.
     var tileFigure: String {
         switch presence {
-        case .on(.sessions(let n)): NumberWording.compactCount(n)
+        case .on(.sessions(let n)): NumberWording.count(n)
         case .on(.neverRan): NumberWording.count(0)
         case .on(.unmeasurable), .unreadable: "?"
         case .on(.pending): "…"

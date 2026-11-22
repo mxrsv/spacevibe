@@ -46,7 +46,7 @@ struct CleanPageTests {
         #expect(!page(.normal).primary.isEnabled)
         let hooks = page(.normal).rows.filter { $0.section == .agents && $0.isMono && $0.isOpen }.map(\.id)
         let onlyHooks = page(.normal, ticked: Set(hooks))
-        #expect(onlyHooks.primary.title(narrow: false) == "Remove \(hooks.count) selected")
+        #expect(onlyHooks.primary.title(narrow: false) == "Remove \(hooks.count)", "RD52")
         let locked = page(.normal, ticked: ["logs:claude", "claude:debug"])
         #expect(locked.ticked.isEmpty && !locked.primary.isEnabled)
     }
@@ -244,5 +244,23 @@ struct CleanPageTests {
             #expect(!texts.contains { $0.contains("NaN") || $0.contains("nil") })
             #expect(shown.primary.isEnabled)
         }
+    }
+
+    @Test("a row just added says when once: \"added 2 hours ago, not suggested\", never \"just added\" and \"added …\" together")
+    func justAddedOnce() throws {
+        let world = S.world(.normal, clis: 2)
+        var row = try #require(world.clean.agentRows.first { $0.row.kind == .skill && $0.readOnly == nil }).row
+        row.firstSeen = S.now.addingTimeInterval(-2 * 3600)
+        row.isNewByClock = true
+        let rows = CleanRows(world: world, wording: InboxWording(world: world, now: S.now), now: S.now, phase: .ready, open: [])
+        let sub = rows.agent(CleanPlan.AgentRow(row: row, readOnly: nil, isSuggested: false, bytes: 4_096)).sub ?? ""
+        #expect(sub == "added 2 hours ago, not suggested · Never ran Skill")
+        #expect(sub.components(separatedBy: "added").count == 2, "\"added\" once")
+    }
+
+    @Test("RD52: a three-digit count stays short in the 196 slot: Remove 104")
+    func shortRemove() {
+        #expect(CleanPrimary.remove(bytes: 0, count: 104).title(narrow: false) == "Remove 104")
+        #expect(InboxPrimary.remove(count: 1_006).title(narrow: false) == "Remove 1,006")
     }
 }

@@ -10,7 +10,7 @@ import SwiftUI
 /// - `selected-2`, `selected-10` (a Never ran Skill selected: its row actions and the CLI tiles), `session-2` (the waiting
 ///   session: Show Terminal), `window-2` (the Window behind pace: Keep only), `rule-2` (the dial and the Capability), `hook-2`
 ///   (a failing Hook), `balance-2` (Claude Code and Codex pinned, the Balance finding selected: Add to Codex),
-///   `balance-off-2` (fewer than two pins: "Balance is off"), `ticked-2` (`Select N Suggested` pressed: `Remove 6 selected`),
+///   `balance-off-2` (fewer than two pins: "Balance is off"), `ticked-2` (`Select N Suggested` pressed: `Remove 6`),
 ///   `kept-2` (Show Kept open);
 /// - `empty-2` (Clear, one kept finding), `scanning-2`, `error-2` (Codex folder unreadable), `worst-2`, `worst-10` (break-ui
 ///   data: long and right-to-left names, huge counts, a Window over the limit, no host app);
@@ -27,7 +27,7 @@ enum InboxShots {
         /// Claude Code and Codex pinned (Balance on).
         var pinned = true
         var selection: (FrameWorld) -> String? = { _ in nil }
-        var prepare: @MainActor (InboxPageState, FrameWorld, ToastCenter) -> Void = { _, _, _ in }
+        var prepare: @MainActor (InboxPageState, FrameWorld, ToastCenter, FrameRouter) -> Void = { _, _, _, _ in }
     }
 
     static let skill = "skill::pdf-extract"
@@ -45,30 +45,32 @@ enum InboxShots {
         Shot(name: "hook-2", state: .normal, selection: { _ in "hook::h4@claude:fail" }),
         Shot(name: "balance-2", state: .normal, selection: { world in world.findings.first { $0.job == .balance }?.id }),
         Shot(name: "balance-off-2", state: .normal, pinned: false),
-        Shot(name: "ticked-2", state: .normal) { state, world, _ in
+        Shot(name: "ticked-2", state: .normal) { state, world, _, _ in
             state.pickSuggested(InboxPage(world: world, figure: figure(world), now: InboxSynthetic.now).groups.first?.suggested ?? [])
         },
-        Shot(name: "kept-2", state: .empty) { state, _, _ in state.showsKept = true },
+        Shot(name: "kept-2", state: .empty) { state, _, _, _ in state.showsKept = true },
         Shot(name: "empty-2", state: .empty),
         Shot(name: "scanning-2", state: .scanning),
         Shot(name: "error-2", state: .error),
         Shot(name: "worst-2", state: .worst, selection: { _ in "S:claude:s-waiting" }),
         Shot(name: "worst-10", state: .worst, clis: 10),
-        Shot(name: "write-2", state: .normal) { _, world, toasts in
+        Shot(name: "write-2", state: .normal) { _, world, toasts, _ in
             // What `FrameWrites` shows once the core removed the Hook from Claude Code (`removeMany`'s toast, with Undo).
             let rows = world.rows.filter { $0.id == "hook::h1@claude" }
             toasts.show(FrameWrite.removedMany(rows, lost: ["claude"], registry: world.snapshot.registry), journalEntries: ["shot"], asyncUndo: {})
         },
-        Shot(name: "refused-2", state: .normal) { _, _, toasts in
+        Shot(name: "refused-2", state: .normal) { _, _, toasts, _ in
             // The core's 409 when the file changed under the edit (`mutate/file-edit.go`), in the refused-write toast.
             FrameWrites.showRefused("~/.claude/settings.json changed while SpaceVibe was editing it, so it was left alone. Try again.",
                                     on: toasts) {}
         },
-        Shot(name: "dialog-10", state: .normal, clis: 10) { state, world, _ in
+        Shot(name: "dialog-10", state: .normal, clis: 10) { state, world, _, router in
             guard let row = world.rows.first(where: { $0.id == skill }) else { return }
             let wording = InboxWording(world: world, now: InboxSynthetic.now)
+            // Opened on the router the frame draws with, as the page opens it: the region shows it while the revision holds.
             state.confirming = InboxConfirmation(items: [InboxActions.item(row, losers: wording.losers(row).map(wording.name))],
-                                                 write: .removeMany([row], registry: world.snapshot.registry), rowIDs: [row.id])
+                                                 write: .removeMany([row], registry: world.snapshot.registry), rowIDs: [row.id],
+                                                 routeRevision: router.revision)
         },
     ]
 
@@ -94,13 +96,15 @@ enum InboxShots {
         let world = InboxSynthetic.world(shot.state, clis: shot.clis, pinned: shot.pinned)
         let toasts = ToastCenter(announce: false)
         let state = InboxPageState()
-        shot.prepare(state, world, toasts)
+        let env = AppEnvironment.shared
+        // The shot owns the frame's model, so a dialog it prepares records the revision of the router that draws it.
+        let model = FrameModel(core: env.goCore, toasts: env.toasts, route: FrameRoute(page: .inbox))
+        shot.prepare(state, world, toasts, model.router)
         // What the page does on opening (RD44, `frameFirstRowSelection`), which `ImageRenderer` never runs.
         let shown = InboxPage(world: world, figure: figure(world), ticked: state.ticked, showsKept: state.showsKept, now: InboxSynthetic.now)
         let selection = FrameFirstRow.selection(current: shot.selection(world), rows: shown.order)
         let inputs = InboxInputs(world: world, figure: figure(world), now: InboxSynthetic.now, selection: selection)
-        let env = AppEnvironment.shared
-        let view = AppFrame(page: .inbox, env: env, look: look, sidebarValues: sidebar(world, state: shot.state)) { page, model in
+        let view = AppFrame(model: model, look: look, sidebarValues: sidebar(world, state: shot.state)) { page, model in
             page == .inbox ? .inbox(model: model, fixed: inputs, host: host(shot.state), state: state) : .notBuilt(page)
         }
         .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)), toasts: toasts, env: env)

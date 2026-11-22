@@ -167,7 +167,7 @@ extension InboxNoteLine where Action == EmptyView {
     }
 }
 
-/// The toolbar's `Remove N selected` (RD-R2, RD-R17 Layout: one width in the slot): the red tint, never primary (RD-R9), the
+/// The toolbar's `Remove N` (RD-R2, RD-R17 Layout: one width in the slot): the red tint, never primary (RD-R9), the
 /// trash glyph, the real count; disabled with "Select rows to remove" until a row is ticked; pending while the removal runs.
 struct InboxRemoveButton: View {
     let page: InboxPage

@@ -62,7 +62,7 @@ struct InboxPageTests {
         let ids = start.groups[0].suggested
         let (ticked, _) = page(.normal, ticked: Set(ids + ["R::global:allow:Bash", "gone"]))
         #expect(ticked.ticked == ids)
-        #expect(ticked.primary.title(narrow: false) == "Remove \(ids.count) selected")
+        #expect(ticked.primary.title(narrow: false) == "Remove \(ids.count)", "RD52: never cut in the 196 slot")
     }
 
     // MARK: Rows and actions
@@ -578,5 +578,70 @@ struct InboxBuildReviewTests {
             #expect(FrameRowAction.conflicts(in: actions).isEmpty, "\(row.title)")
             #expect(actions.allSatisfy { $0.shortcut == nil || $0.menuShortcut != nil }, "menu keys, never a plain letter")
         }
+    }
+
+    // MARK: RB-F3 (round 2)
+
+    @Test("the confirmation's Remove is pending before it returns: Return twice writes once")
+    func confirmClaimsAtOnce() async throws {
+        let gate = PendingGate()
+        let core = FrameFakeCore()
+        core.onCall = { name in if name == "loadout.removeMany" { await gate.wait() } }
+        let world = S.world(.normal, clis: 10)
+        let (_, model, state, actions) = actions(world, core: core)
+        let row = try #require(InboxPage(world: world, figure: .count(0, tone: nil), now: S.now).row("skill::pdf-extract"))
+        actions.perform(row.actions.last!, on: row)
+        let first = actions.confirm()
+        #expect(first != nil && actions.isConfirming && model.writes.isRowBusy("skill::pdf-extract"), "pending before the press returns")
+        #expect(actions.confirm() == nil, "the second press in the same turn starts nothing")
+        await gate.open()
+        await first?.value
+        #expect(core.count("loadout.removeMany") == 1 && state.confirming == nil)
+    }
+
+    @Test("one busy key per row across pages: a Skills write of the item holds the Inbox tiles of it")
+    func rowBusyAcrossPages() async throws {
+        let world = S.world(.normal, clis: 2)
+        let item = try #require(world.rows.first { $0.id == "skill::code-review" })
+        let claude = try #require(CLIToggleStates.states(of: item, in: world).first { $0.cli.id == "claude" })
+        let gate = PendingGate()
+        let core = FrameFakeCore()
+        core.onCall = { name in if name == "loadout.removeFrom" { await gate.wait() } }
+        let (_, model, _, actions) = actions(world, core: core)
+        let skills = model.writes.start(.removeFrom(item, clis: ["codex"], registry: world.snapshot.registry,
+                                                    control: EquipControl.toggle(item.id, "codex")))
+        #expect(skills != nil && actions.isItemBusy(item.id))
+        #expect(actions.toggleTile(claude, row: item) == nil)
+        await gate.open()
+        _ = await skills?.value
+        #expect(core.count("loadout.removeFrom") == 1 && !actions.isItemBusy(item.id))
+    }
+
+    @Test("a Window finding's times are the Limits page's (LimitsClockWording), not v5's")
+    func windowTimes() throws {
+        let page = InboxPage(world: S.world(.normal, clis: 2), figure: .count(0, tone: nil), now: S.now)
+        let row = try #require(page.rows.first { $0.id.hasPrefix("W:codex:") })
+        guard case .window(let pace) = row.finding.subject else {
+            Issue.record("not a Window finding")
+            return
+        }
+        #expect(row.evidence.hasSuffix("resets \(LimitsClockWording.resetsAt(pace.window, now: S.now))"))
+        let resets = try #require(InboxInspectorFacts.window(pace, entry: nil, now: S.now).first { $0.key == "Resets" })
+        let span = LimitsClockWording.resetsIn(pace.window, now: S.now).map { ", in \($0)" } ?? ""
+        #expect(resets.value == LimitsClockWording.resetsAt(pace.window, now: S.now) + span)
+    }
+
+    @Test("the dialog-10 shot draws its dialog, after the first-row rule the page runs on opening")
+    func dialogShotDraws() throws {
+        let shot = try #require(InboxShots.shots.first { $0.name == "dialog-10" })
+        let world = S.world(shot.state, clis: shot.clis)
+        let model = FrameModel(core: FrameFakeCore(), toasts: ToastCenter(announce: false), route: FrameRoute(page: .inbox))
+        models.all.append(model)
+        let state = InboxPageState()
+        shot.prepare(state, world, ToastCenter(announce: false), model.router)
+        let page = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), now: S.now)
+        model.router.keepSelection(onPage: .inbox, among: page.order)
+        let fixed = InboxInputs(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), now: S.now)
+        #expect(FramePageContent.inbox(model: model, fixed: fixed, host: InboxShots.host(shot.state), state: state).dialog != nil)
     }
 }

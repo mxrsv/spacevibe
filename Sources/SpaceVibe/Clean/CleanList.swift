@@ -51,6 +51,8 @@ struct CleanList: View {
         }
         .frameListKeys(rows: page.order, router: actions.model.router, chrome: chrome)
         .onKeyPress(.space) { actions.toggleFocused(chrome.keyboardRow) ? .handled : .ignored }
+        // A row that became locked or read-only loses its tick for good (it never comes back when the lock ends).
+        .onChange(of: page.tickable, initial: true) { state.keepTicks(page.tickable) }
         .task { if measuresOnOpen { await actions.measure() } }
     }
 
@@ -157,16 +159,23 @@ struct CleanMovingBand: View {
                     .truncationMode(.tail)
                     .frame(minWidth: TableColumnWidth.cleanBandFigure, alignment: .trailing)
             }
-            HStack(spacing: SpaceRole.step12) {
-                Text(CleanMoveBand.note)
+            if band.canCancel {
+                HStack(spacing: SpaceRole.step12) {
+                    Text(CleanMoveBand.note)
+                        .typeRole(.quiet)
+                        .foregroundStyle(ColorRole.ink2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(action: cancel) { PushButtonLabel(band.isCancelling ? "Cancelling…" : "Cancel", icon: .x, size: .small) }
+                        .buttonStyle(PushButtonStyle(.control, size: .small, isLoading: band.isCancelling))
+                        .focusEffectDisabled()
+                        .disabled(band.isCancelling)
+                }
+            } else {
+                Text(CleanPage.note)
                     .typeRole(.quiet)
-                    .foregroundStyle(ColorRole.ink2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .foregroundStyle(ColorRole.ink3)
                     .fixedSize(horizontal: false, vertical: true)
-                Button(action: cancel) { PushButtonLabel(band.isCancelling ? "Cancelling…" : "Cancel", icon: .x, size: .small) }
-                    .buttonStyle(PushButtonStyle(.control, size: .small, isLoading: band.isCancelling))
-                    .focusEffectDisabled()
-                    .disabled(band.isCancelling)
             }
         }
         .padding(.bottom, SpaceRole.step4)

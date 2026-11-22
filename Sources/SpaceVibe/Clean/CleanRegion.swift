@@ -7,7 +7,8 @@ extension FramePageContent {
     static func clean(model: FrameModel, fixed: CleanInputs? = nil, state: CleanPageState? = nil) -> FramePageContent {
         let state = state ?? CleanPageState.of(model)
         let inputs = fixed ?? .live(model.store)
-        let page = CleanPage(inputs, ticked: state.ticked, move: inputs.move ?? state.run.snapshot)
+        let page = CleanPage(inputs, ticked: state.ticked, move: inputs.move ?? state.run.snapshot,
+                             isWriting: model.writes.isPending(FrameWrite.cleanControl))
         let actions = CleanActions(model: model, state: state, page: page, world: inputs.world)
         return FramePageContent(
             help: FramePage.clean.help,
@@ -30,7 +31,7 @@ struct CleanConfirmationDialog: View {
 
     var body: some View {
         RemoveConfirmation(items: confirmation.items, isWorking: actions.isConfirming, cancel: actions.cancelConfirmation,
-                           remove: actions.confirm)
+                           remove: { actions.confirm() })
     }
 }
 

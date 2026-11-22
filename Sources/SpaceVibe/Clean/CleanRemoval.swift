@@ -29,25 +29,29 @@ final class CleanMoveRun {
     private(set) var progress: CoreCleanProgress?
     /// Cancel was pressed; the move has not answered yet.
     private(set) var isCancelling = false
+    /// The run moves logs or caches (`clean.move`): only then is there a file to stop before, so only then is Cancel offered.
+    private(set) var movesFiles = false
 
     /// The run as one value, for the pure page model.
     struct Snapshot: Equatable, Sendable {
         var isRunning = false
         var progress: CoreCleanProgress?
         var isCancelling = false
+        var movesFiles = true
 
         static let idle = Snapshot()
     }
 
-    var snapshot: Snapshot { Snapshot(isRunning: isRunning, progress: progress, isCancelling: isCancelling) }
+    var snapshot: Snapshot { Snapshot(isRunning: isRunning, progress: progress, isCancelling: isCancelling, movesFiles: movesFiles) }
 
     @ObservationIgnored private var task: Task<CoreCleanMoveResult, Error>?
     @ObservationIgnored private var generation = 0
 
-    func begin() {
+    func begin(movesFiles: Bool = true) {
         generation += 1
         isRunning = true
         isCancelling = false
+        self.movesFiles = movesFiles
         progress = nil
     }
 
@@ -96,15 +100,22 @@ extension FrameWrite {
     /// `run` for progress and Cancel). One toast, one Undo for both entries. A refused removal changes nothing and stops
     /// there; once the equipment is gone, a refused, cancelled or partial move is a partial result, never a refusal, because
     /// something did change.
-    static func clean(_ request: CleanRequest, run: CleanMoveRun, registry: [CoreRegistryCLI]) -> FrameWrite {
+    ///
+    /// `answered` runs in the same main-actor turn as the move's end, once the core answered with something other than a
+    /// refusal, before the re-read: the page drops its ticks there, so Remove is never drawn enabled while the re-read runs.
+    static func clean(_ request: CleanRequest, run: CleanMoveRun, registry: [CoreRegistryCLI],
+                      answered: (@MainActor @Sendable () -> Void)? = nil) -> FrameWrite {
         let what = request.rows.isEmpty ? nil : selection(request.rows)
         let editsSettings = request.rows.contains { $0.kind == .hook }
         return FrameWrite(control: cleanControl, label: CleanWording.done(what: what, moved: nil, editsSettings: editsSettings),
-                          touches: cleanSources) { core in
-            await run.begin()
+                          touches: cleanSources, rows: Set(request.rows.map(\.id))) { core in
+            await run.begin(movesFiles: request.movesFiles)
             do {
                 let outcome = try await cleanOutcome(request, what: what, editsSettings: editsSettings, run: run, core: core)
-                await run.end()
+                await MainActor.run {
+                    run.end()
+                    answered?()
+                }
                 return outcome
             } catch {
                 await run.end()

@@ -1,6 +1,6 @@
 import Foundation
 
-/// The open per-CLI sheet (RD-R11 "Bulk and Remove…"): `Add to…`, `Remove from…`, `Remove N selected…` and an item's
+/// The open per-CLI sheet (RD-R11 "Bulk and Remove…"): `Add to…`, `Remove from…`, `Remove N…` and an item's
 /// `Remove…`. Holds the rows it acts on (fixed when it opened, so nothing hidden is touched) and the CLIs ticked. Nothing is
 /// ticked at first.
 struct EquipSheetState: Equatable, Sendable {
@@ -111,8 +111,8 @@ enum EquipSheet {
         }
     }
 
-    /// An add the sheet confirms: per row, the ticked CLIs that lack it, in the fixed order. One `loadout.copyTo` each: the
-    /// engine copies one item per call, so several rows are several writes, each with its Undo.
+    /// An add the sheet confirms: per row, the ticked CLIs that lack it, in the fixed order. One `loadout.copyTo` each (the
+    /// engine copies one item per call), run as one write with one Undo (`FrameWrite.addEach`, RD56).
     static func additions(_ sheet: EquipSheetState, rows: [EquipListRow], order: [String]) -> [(row: FrameRow, targets: [String])] {
         sheet.rowIDs.compactMap { id in rows.first { $0.id == id } }.compactMap { row in
             let targets = order.filter { sheet.ticked.contains($0) && row.row.presence($0) == .off }
@@ -121,8 +121,8 @@ enum EquipSheet {
     }
 
     /// The toast after `Add to…` when a row was refused: "Added 2 of 3; 1 refused: <the core's sentence>" as the partial
-    /// toast (each row added keeps its Undo on the session stack); nothing added is the refused toast, the core's sentence
-    /// alone for one row. Nil when nothing was refused: each row's own toast stands.
+    /// toast, whose one Undo reverts every row added; nothing added is the refused toast, the core's sentence alone for one
+    /// row. Nil when nothing was refused: the press's one "Added …" toast stands.
     static func addSummary(total: Int, refusals: [String]) -> (sentence: String, tone: ToastTone)? {
         guard let first = refusals.first else { return nil }
         if total == 1 { return (first, .danger) }

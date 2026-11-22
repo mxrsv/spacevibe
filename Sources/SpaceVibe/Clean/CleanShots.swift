@@ -11,7 +11,7 @@ import SwiftUI
 /// - `empty-2` (Tidy), `scanning-2` (the first scan: `…`, `Measuring…`, skeleton rows), `error-2` (Codex folder and logs
 ///   unreadable), `worst-2`, `worst-10` (huge counts, long and right-to-left names, a long cache path, an unreadable usage
 ///   archive and a stranded move);
-/// - `moving-2` (progress at the control, Cancel), `write-2` (the toast with Undo), `partial-2` (the mock's "Moved 2 of 3"),
+/// - `moving-2` (progress at the control, Cancel), `moving-equipment-2` (equipment alone: no Cancel), `write-2` (the toast with Undo), `partial-2` (the mock's "Moved 2 of 3"),
 ///   `refused-2` (every row locked: nothing moved), `dialog-10` (a shared `~/.agents/skills` file and Codex's logs: the
 ///   confirmation names every reader and the logs it moves). Every toast is in the write path's own words (`CleanWording`,
 ///   `FrameWrites.showRefused`). At 2 CLIs no file is shared, so Clean never asks (mock `MOCK.na`).
@@ -46,6 +46,10 @@ enum CleanShots {
         Shot(name: "moving-2", state: .normal,
              move: CleanMoveRun.Snapshot(isRunning: true, progress: CoreCleanProgress(phase: "moving", done: 760, total: 1_310, bytes: 452_000_000)),
              prepare: suggested),
+        // Equipment alone: nothing to stop before, so the band offers no Cancel and keeps the page's note.
+        Shot(name: "moving-equipment-2", state: .normal, move: CleanMoveRun.Snapshot(isRunning: true, movesFiles: false)) { state, world, _ in
+            state.ticked = Set(world.clean.suggestedAgents)
+        },
         Shot(name: "write-2", state: .normal) { _, world, toasts in
             // `Remove …` on every suggested row, in `FrameWrite.clean`'s words with what the move reported.
             let page = CleanPage(CleanSynthetic.inputs(.normal, clis: 2), ticked: Set(world.clean.suggestedAgents + world.clean.suggestedLogs

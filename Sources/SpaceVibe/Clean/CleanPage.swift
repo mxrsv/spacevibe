@@ -66,6 +66,9 @@ struct CleanPage: Equatable, Sendable {
     /// The ticked open rows, in page order: what `Remove …` takes.
     let ticked: [String]
     let selectedBytes: Int64
+    /// Every row that may hold a tick now (not locked, not read-only, measured): a tick on any other row is dropped, never
+    /// kept for when the lock ends (`CleanPageState.keepTicks`).
+    let tickable: Set<String>
 
     var rows: [CleanRowModel] { sections.flatMap(\.rows) }
     /// The rows the arrow keys walk.
@@ -74,7 +77,9 @@ struct CleanPage: Equatable, Sendable {
 
     func row(_ id: String?) -> CleanRowModel? { id.flatMap { id in rows.first { $0.id == id } } }
 
-    init(_ inputs: CleanInputs, ticked: Set<String> = [], move: CleanMoveRun.Snapshot = .idle) {
+    /// `isWriting`: Clean's write is pending (`FrameWrite.cleanControl`), its move or the re-read after it: nothing can be
+    /// ticked and Remove waits, so it is never drawn enabled while a press would do nothing.
+    init(_ inputs: CleanInputs, ticked: Set<String> = [], move: CleanMoveRun.Snapshot = .idle, isWriting: Bool = false) {
         let world = inputs.world
         let plan = world.clean
         let wording = InboxWording(world: world, now: inputs.now)
@@ -89,7 +94,8 @@ struct CleanPage: Equatable, Sendable {
         self.phase = phase
         // Ticks stay drawn while a move runs (the mock's `simPick`); only a ready page lets a row be ticked.
         let openAll = plan.openIDs
-        let open = phase == .ready ? openAll : []
+        tickable = openAll
+        let open = phase == .ready && !isWriting ? openAll : []
         let order = plan.agentRows.map(\.id) + plan.logs.map(\.id) + plan.caches.map(\.id)
         self.ticked = order.filter { openAll.contains($0) && ticked.contains($0) }
         let selected = plan.selectedBytes(Set(self.ticked)) ?? 0
@@ -118,7 +124,9 @@ struct CleanPage: Equatable, Sendable {
         barText = phase == .measuring ? "Measuring…"
             : "\(NumberWording.bytes(selectedBytes)) selected" + (plan.lockedBytes > 0 ? " · \(NumberWording.bytes(plan.lockedBytes)) more in use" : "")
         showsBand = !isTidy && phase != .failed
-        moveBand = phase == .moving ? CleanMoveBand(progress: move.progress, selectedBytes: selectedBytes, isCancelling: move.isCancelling) : nil
+        moveBand = phase == .moving
+            ? CleanMoveBand(progress: move.progress, selectedBytes: selectedBytes, isCancelling: move.isCancelling, canCancel: move.movesFiles)
+            : nil
 
         var banners: [CleanBanner] = []
         if phase == .failed { banners.append(.failed(inputs.failure ?? "SpaceVibe could not measure your CLI folders.")) }
@@ -134,7 +142,7 @@ struct CleanPage: Equatable, Sendable {
             if rows.isEmpty {
                 return phase == .measuring ? CleanSectionModel(section: kind, title: title, rows: [], suggested: [], pick: .none, skeletons: 2) : nil
             }
-            let offered = phase == .ready ? suggested : []
+            let offered = phase == .ready && !isWriting ? suggested : []
             let pick: CleanSectionModel.Pick = offered.isEmpty ? .none : offered.allSatisfy(tickedSet.contains) ? .clear : .select(offered.count)
             return CleanSectionModel(section: kind, title: title, rows: rows, suggested: offered, pick: pick, skeletons: 0)
         }
@@ -153,7 +161,8 @@ struct CleanPage: Equatable, Sendable {
         case .measuring: primary = .measuring
         case .failed: primary = .hidden
         case .moving: primary = .moving(percent: CleanMoveBand.percent(move.progress))
-        case .ready: primary = isTidy ? .hidden : .remove(bytes: selected, count: self.ticked.count)
+        // While the write's re-read runs, Remove waits (disabled), so a press never meets a pending control.
+        case .ready: primary = isTidy ? .hidden : isWriting ? .remove(bytes: 0, count: 0) : .remove(bytes: selected, count: self.ticked.count)
         }
     }
 
@@ -221,14 +230,17 @@ struct CleanRows {
 
     func agent(_ agent: CleanPlan.AgentRow) -> CleanRowModel {
         let row = agent.row
+        let added = wording.added(row)
+        // A row just added says when once: "added 2 hours ago, not suggested", never "just added … · added 2 hours ago".
+        let fresh = agent.readOnly == nil && row.isRecentlyAdded
         let why: String? = switch agent.readOnly {
         case .plugin(let owner): "Owned by the \(owner) plugin · read-only"
         case .project(let name): "Project item of \(name) · read-only"
         case .hookNotWritten: "SpaceVibe edits only Claude Code Hooks · read-only"
-        case nil: row.isRecentlyAdded ? "just added, not suggested" : world.facts.findings.kept.contains(row.id) ? "kept, not suggested" : nil
+        case nil: fresh ? "\(added ?? "just added"), not suggested" : world.facts.findings.kept.contains(row.id) ? "kept, not suggested" : nil
         }
         let state = row.status == .dead ? "Dead Hook" : "Never ran \(InboxWording.kindWord(row.kind))"
-        let seen = wording.added(row)
+        let seen = fresh ? nil : added
         let loaded = wording.loadedBy(row)
         let measuring = phase == .measuring || world.snapshot.clean == nil
         let size: CleanRowModel.Size = switch (row.kind, agent.bytes) {

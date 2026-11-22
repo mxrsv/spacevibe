@@ -79,7 +79,7 @@ struct EquipListModelTests {
         let view = EquipViewState(ticked: ["skill::pdf-extract", "skill::brand-voice", "skill:~/work/payments-web:checkout-flows", "skill::lint-fixer"])
         let list = Self.model(view: view)
         #expect(list.picked.map(\.name) == ["lint-fixer", "pdf-extract"])
-        #expect(list.primaryTitle == "Remove 2 selected…")
+        #expect(list.primaryTitle == "Remove 2…")
         #expect(!list.row("skill::brand-voice")!.isTickable && !list.row("skill:~/work/payments-web:checkout-flows")!.isTickable)
         #expect(!list.tickable.contains("skill::brand-voice"))
         // A tick on a row the filter hides is not acted on.

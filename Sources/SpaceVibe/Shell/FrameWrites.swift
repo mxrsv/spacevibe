@@ -28,6 +28,9 @@ struct FrameWrite: Sendable {
     let label: String
     /// The sources read again once the core answered, and again after its Undo.
     let touches: Set<FrameSource>
+    /// The row ids it writes: each is busy on every page while it runs (`FrameWrites.isRowBusy`), so a press on the same row
+    /// from another page (a Skills logo, an Inbox tile, Clean) starts nothing until the core answered (D53).
+    var rows: Set<String> = []
     let run: @Sendable (any CoreService) async throws -> FrameWriteOutcome
 }
 
@@ -62,6 +65,12 @@ final class FrameWrites {
 
     func isPending(_ control: String) -> Bool { shared.controls.contains(control) }
 
+    /// A write on the row runs, started from any page (`FrameWrite.rows`): one busy key per row.
+    func isRowBusy(_ rowID: String) -> Bool { shared.controls.contains(Self.rowKey(rowID)) }
+
+    /// The pending key of a row a write touches.
+    static func rowKey(_ rowID: String) -> String { "row:\(rowID)" }
+
     /// An Undo runs, from a toast, the Undo command or Z, or from the Journal window: it may change any row, so a row lock
     /// (D53) waits for it as for a write on the row itself, and the press is then judged on the world the Undo leaves.
     var isUndoing: Bool { shared.controls.contains { $0.hasPrefix(Self.undoPrefix) || $0.hasPrefix(FrameWrite.journalUndoPrefix) } }
@@ -74,7 +83,7 @@ final class FrameWrites {
     /// Add Rule sheet).
     @discardableResult
     func perform(_ write: FrameWrite, refused: (@MainActor (String) -> Void)? = nil) async -> Bool {
-        guard claim(write.control) else { return false }
+        guard claim(write) else { return false }
         return await run(write, refused: refused)
     }
 
@@ -83,8 +92,16 @@ final class FrameWrites {
     /// is already pending.
     @discardableResult
     func start(_ write: FrameWrite, refused: (@MainActor (String) -> Void)? = nil) -> Task<Bool, Never>? {
-        guard claim(write.control) else { return nil }
+        guard claim(write) else { return nil }
         return Task { @MainActor in await self.run(write, refused: refused) }
+    }
+
+    /// The write's control and every row it touches: all free, then all claimed together.
+    private func claim(_ write: FrameWrite) -> Bool {
+        let keys = [write.control] + write.rows.map(Self.rowKey)
+        guard !keys.contains(where: shared.controls.contains) else { return false }
+        shared.controls.formUnion(keys)
+        return true
     }
 
     private func claim(_ control: String) -> Bool {
@@ -95,7 +112,7 @@ final class FrameWrites {
 
     /// The write itself, its control already pending; the pending ends when it returns.
     private func run(_ write: FrameWrite, refused: (@MainActor (String) -> Void)?) async -> Bool {
-        defer { shared.controls.remove(write.control) }
+        defer { shared.controls.subtract([write.control] + write.rows.map(Self.rowKey)) }
         let outcome: Result<FrameWriteOutcome, Error>
         do { outcome = .success(try await write.run(core)) } catch { outcome = .failure(error) }
         switch outcome {
@@ -125,12 +142,6 @@ final class FrameWrites {
         await store.reread(write.touches.union([.journal]))
         if case .success = outcome { return true }
         return false
-    }
-
-    /// A sentence about several writes together, after they ran (Add to…'s "Added 2 of 3; 1 refused: …"): the toast only,
-    /// no Undo of its own (each write that landed already put its Undo on the session stack).
-    func report(_ sentence: String, tone: ToastTone) {
-        toasts.show(sentence, tone: tone)
     }
 
     /// The Journal entry `id` was undone from another window: this window's session stack drops its Undo (`ToastCenter`).
@@ -272,19 +283,28 @@ extension FrameWrite {
     /// Turns CLIs on for a row: copies its Skill or Subagent into each target's own folder (`loadout.copyTo`). The toast
     /// names the CLIs that read a folder the copy went into ("… read the same folder, so they have it too").
     static func copyTo(_ row: FrameRow, targets: [String], registry: [CoreRegistryCLI], control: String? = nil) -> FrameWrite {
-        let source = row.writableMembers.first { id in row.items.contains { $0.id == id } } ?? row.items.first?.id ?? row.id
+        let source = copySource(row)
         let added = "Added \(row.name) to \(names(targets, registry))"
-        return FrameWrite(control: control ?? "copyTo:\(row.id)", label: added, touches: loadoutSources) { core in
+        return FrameWrite(control: control ?? "copyTo:\(row.id)", label: added, touches: loadoutSources, rows: [row.id]) { core in
             let result = try await core.loadoutCopyTo(id: source, targets: targets)
             return .entryToast(result.entry, label: added + alsoReaders(result.alsoReaders, registry))
         }
     }
 
+    /// The member `loadout.copyTo` copies from: a writable one the row holds.
+    static func copySource(_ row: FrameRow) -> String {
+        row.writableMembers.first { id in row.items.contains { $0.id == id } } ?? row.items.first?.id ?? row.id
+    }
+
+    /// The member `loadout.removeFrom` names; the engine finds the CLIs' files from it.
+    static func removeSource(_ row: FrameRow) -> String { row.writableMembers.first ?? row.items.first?.id ?? row.id }
+
     /// Turns CLIs off for a row: every file those CLIs read it from goes (`loadout.removeFrom`). The core refuses when a
     /// CLI not named reads one of those files; the toast names who lost it (the mock's "Removed pdf-extract from Codex").
     static func removeFrom(_ row: FrameRow, clis: [String], registry: [CoreRegistryCLI], control: String? = nil) -> FrameWrite {
-        let member = row.writableMembers.first ?? row.items.first?.id ?? row.id
-        return FrameWrite(control: control ?? "removeFrom:\(row.id)", label: "Removed \(row.name)", touches: loadoutSources) { core in
+        let member = removeSource(row)
+        return FrameWrite(control: control ?? "removeFrom:\(row.id)", label: "Removed \(row.name)", touches: loadoutSources,
+                          rows: [row.id]) { core in
             let result = try await core.loadoutRemoveFrom(id: member, clis: clis)
             return .entryToast(result.entry, label: removedLabel(row.name, lost: result.lost, registry))
         }
@@ -299,7 +319,8 @@ extension FrameWrite {
     static func removeMany(_ rows: [FrameRow], members: Set<String>? = nil, ids given: [String]? = nil, registry: [CoreRegistryCLI],
                            control: String = "removeMany") -> FrameWrite {
         let ids = given ?? rows.flatMap(\.memberIDs).filter { members?.contains($0) ?? true }
-        return FrameWrite(control: control, label: removedMany(rows, lost: [], registry: registry), touches: loadoutSources) { core in
+        return FrameWrite(control: control, label: removedMany(rows, lost: [], registry: registry), touches: loadoutSources,
+                          rows: Set(rows.map(\.id))) { core in
             let result = try await core.loadoutRemoveMany(ids: ids)
             return .entryToast(result.entry, label: removedMany(rows, lost: result.lost, registry: registry))
         }

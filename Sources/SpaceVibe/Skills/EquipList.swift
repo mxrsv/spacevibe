@@ -23,7 +23,8 @@ struct EquipList: View {
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frameListKeys(rows: list.visible.map(\.id), router: state.router ?? FrameRouter(), chrome: chrome)
+        // ↑↓ select through the page's own `select`, as a click does: the description collapses on another row.
+        .frameListKeys(rows: list.visible.map(\.id), router: state.router ?? FrameRouter(), chrome: chrome) { state.select($0) }
         // RD44: the first shown row is selected on opening and whenever the filter, the CLI menu or the search hides the
         // selected one.
         .frameFirstRowSelection(page: list.kind.page, rows: list.visible.map(\.id), router: state.router ?? FrameRouter()) { state.select($0) }

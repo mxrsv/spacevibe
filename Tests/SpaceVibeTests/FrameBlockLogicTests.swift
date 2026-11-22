@@ -177,7 +177,7 @@ struct FrameBlockLogicTests {
 
     @Test("a tile's figure: compact counts, 0 for Never ran, ? for Unmeasurable, Add when off, a dash when Not supported")
     func tileFigures() {
-        #expect(CLIToggleState(cli: .claude, presence: .on(.sessions(4_830_112))).tileFigure == "4.8M")
+        #expect(CLIToggleState(cli: .claude, presence: .on(.sessions(4_830_112))).tileFigure == "4,830,112", "RD53: the inspector tile shows the full number")
         #expect(CLIToggleState(cli: .claude, presence: .on(.sessions(1_204))).tileFigure == "1,204")
         #expect(CLIToggleState(cli: .claude, presence: .on(.neverRan)).tileFigure == "0")
         #expect(CLIToggleState(cli: .claude, presence: .on(.unmeasurable)).tileFigure == "?")
@@ -362,6 +362,12 @@ struct FrameBlockLogicTests {
         #expect(RowGroup<Text, EmptyView>.pinsHead(hasHead: true, isShotRendering: false))
         #expect(!RowGroup<Text, EmptyView>.pinsHead(hasHead: true, isShotRendering: true))
         #expect(!RowGroup<EmptyView, EmptyView>.pinsHead(hasHead: false, isShotRendering: false))
+    }
+
+    @Test("a group builds its rows lazily in the app, a headless list too (1,000 Clean or Inbox rows); a shot draws them all")
+    func lazyRows() {
+        #expect(RowGroup<EmptyView, EmptyView>.isLazy(isShotRendering: false))
+        #expect(!RowGroup<EmptyView, EmptyView>.isLazy(isShotRendering: true))
     }
 
     @Test("the segmented control comes in the two DS-R5 sizes, and ← → step without wrapping")

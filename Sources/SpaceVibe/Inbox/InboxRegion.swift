@@ -111,7 +111,7 @@ struct InboxConfirmationDialog: View {
 
     var body: some View {
         RemoveConfirmation(items: confirmation.items, isWorking: actions.isConfirming, cancel: actions.cancelConfirmation,
-                           remove: actions.confirm)
+                           remove: { actions.confirm() })
     }
 }
 
@@ -168,10 +168,11 @@ struct InboxActions {
     static func addControl(_ rowID: String) -> String { "copyTo:\(rowID)" }
     static func tileControl(_ rowID: String) -> String { "tile:\(rowID)" }
 
-    /// A write on the item runs (its Remove, Add or a tile): no tile of it starts another until the core answered and the
+    /// A write on the item runs (its Remove, Add or a tile here, or any write of the same row started on Skills, Subagents or
+    /// Clean: one busy key per row, `FrameWrites.isRowBusy`): no tile of it starts another until the core answered and the
     /// store read it again, so two quick presses never act on the same world (D53).
     func isItemBusy(_ rowID: String) -> Bool {
-        [Self.removeControl(rowID), Self.addControl(rowID), Self.tileControl(rowID)].contains(where: writes.isPending)
+        writes.isRowBusy(rowID) || [Self.removeControl(rowID), Self.addControl(rowID), Self.tileControl(rowID)].contains(where: writes.isPending)
     }
 
     /// No press on the item starts a write: one runs on it, or an Undo runs (from a toast or the Journal window), which may
@@ -220,7 +221,7 @@ struct InboxActions {
             remove([item], control: Self.removeControl(row.id))
         case .addTo(let cli, _):
             guard case .balance(let item, _, _) = finding.subject, !isItemLocked(item.id) else { return }
-            Task { await writes.perform(.copyTo(item, targets: [cli], registry: world.snapshot.registry, control: Self.addControl(item.id))) }
+            writes.start(.copyTo(item, targets: [cli], registry: world.snapshot.registry, control: Self.addControl(item.id)))
         case .copyCommand(let command):
             copy(command)
         case .changeToAsk:
@@ -234,7 +235,7 @@ struct InboxActions {
         }
     }
 
-    /// `Remove N selected`: the ticked rows shown (`FrameWorld.removalSet`), as one change with one Undo.
+    /// `Remove N`: the ticked rows shown (`FrameWorld.removalSet`), as one change with one Undo.
     func removeTicked() {
         let shown = page.rows.compactMap { row -> FrameRow? in if case .row(let item) = row.finding.subject { item } else { nil } }
         let rows = world.removalSet(selected: Set(page.ticked), shown: shown)
@@ -294,10 +295,14 @@ struct InboxActions {
         return Task { _ = await task.value }
     }
 
-    func confirm() {
-        guard let confirmation = state.confirming else { return }
-        Task {
-            if await writes.perform(confirmation.write) { state.ticked.subtract(confirmation.rowIDs) }
+    /// The confirmation's Remove: the write is pending before this returns (`FrameWrites.start`), so a second press (Return
+    /// twice) starts nothing; the dialog shows it working and closes once the core answered.
+    @discardableResult
+    func confirm() -> Task<Void, Never>? {
+        guard let confirmation = state.confirming, let task = writes.start(confirmation.write) else { return nil }
+        let state = state
+        return Task {
+            if await task.value { state.ticked.subtract(confirmation.rowIDs) }
             state.confirming = nil
         }
     }
@@ -346,8 +351,11 @@ struct InboxActions {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: (path as NSString).expandingTildeInPath)])
     }
 
+    /// Pending before this returns (`FrameWrites.start`), so a second press in the same turn starts nothing.
     private func run(_ write: FrameWrite, unticking ids: [String]) {
-        Task { if await writes.perform(write) { state.ticked.subtract(ids) } }
+        guard let task = writes.start(write) else { return }
+        let state = state
+        Task { if await task.value { state.ticked.subtract(ids) } }
     }
 
     nonisolated static func item(_ row: FrameRow, losers: [String]) -> RemoveConfirmation.Item {

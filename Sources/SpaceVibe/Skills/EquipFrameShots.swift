@@ -5,7 +5,7 @@ import SwiftUI
 /// (`mock.html?page=skills&state=<state>&nclis=<n>`). Files are `frame-<page>-<state>-<look>-<appearance>.png`:
 ///
 /// - `normal`, `normal-1000`, `normal-1600` (window widths), `sidebar-hidden` (Hide Sidebar, RD47), `selected` (a used row: its tiles), `neverran` (a Never ran row
-///   selected, the mock's `neverran`), `ticked` (Select N Suggested pressed: the `N selected` head and `Remove N selected…`);
+///   selected, the mock's `neverran`), `ticked` (Select N Suggested pressed: the `N selected` head and `Remove N…`);
 /// - `six-illustration`, `ten-illustration` (RD13, RD28: the same layout at 6 and 10 CLIs, a row selected; RD42 illustration);
 /// - `sheet` (an item's `Remove…`: the per-CLI sheet, nothing ticked), `dialog-six-illustration` (a shared file turned off:
 ///   the anchored confirmation), `inspop-six-illustration` (the same from the inspector's tile), `menu-six-illustration`
