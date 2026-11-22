@@ -210,13 +210,13 @@ struct CleanWriteTests {
         #expect(model.store.facts.cleanLogAges == ["codex": 30])
     }
 
-    @Test("the usage scan's problems are kept for Clean's band, and start never reads clean.scan")
+    @Test("the usage scan's problems are kept for Clean's band, and start reads clean.scan once (RD45)")
     func usageProblems() async {
         let core = CleanFakeCore()
         let (_, _, store, _) = setUp(core)
         await store.start()
         #expect(store.snapshot.usageProblems == ["The usage archive could not be read, so the logs Clean moved are not counted."])
-        #expect(!core.calls.contains("clean.scan"))
+        #expect(core.calls.filter { $0 == "clean.scan" }.count == 1, "one scan at launch, so the sidebar shows Clean's figure")
         store.stop()
     }
 

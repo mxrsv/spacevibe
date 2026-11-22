@@ -108,7 +108,7 @@ final class FrameWrites {
         case .success(.notice(let sentence)):
             toasts.show(sentence)
         case .failure(let error):
-            if let refused { refused(AppEnvironment.message(error)) } else { toasts.show(AppEnvironment.message(error), tone: .danger) }
+            if let refused { refused(AppEnvironment.message(error)) } else { showRefused(AppEnvironment.message(error), touches: write.touches) }
         }
         // A refusal re-reads too: the core may have refused because the file moved under the page.
         await store.reread(write.touches.union([.journal]))
@@ -140,6 +140,18 @@ final class FrameWrites {
         try await core.rulesCheck(rule: rule)
     }
 
+    /// The refused-write toast with Reload beside Dismiss (the mock's `writefail`): Reload reads the sources the write touched
+    /// again, so a file that changed under the page shows as it is now before the user tries again.
+    private func showRefused(_ message: String, touches: Set<FrameSource>) {
+        toasts.show(message, tone: .danger, action: ToastAction(title: Self.reloadTitle) { [weak self] in
+            guard let self else { return }
+            Task { await self.store.reread(touches.union([.journal])) }
+        })
+    }
+
+    /// The refused-write toast's action.
+    static let reloadTitle = "Reload"
+
     /// Several entries of one write, newest first; the first refusal stops and says so, and what was undone stays undone.
     private func undo(_ entries: [CoreJournalEntry], label: String, touches: Set<FrameSource>) async {
         var labels: [String] = []
@@ -150,7 +162,7 @@ final class FrameWrites {
             }
             toasts.show("Undid \(CLINames.sentence(labels.isEmpty ? [label] : labels))")
         } catch {
-            toasts.show(AppEnvironment.message(error), tone: .danger)
+            showRefused(AppEnvironment.message(error), touches: touches)
         }
         await store.reread(touches.union([.journal]))
     }
@@ -160,7 +172,7 @@ final class FrameWrites {
             let undone = try await core.journalUndo(id: entry.id)
             toasts.show("Undid \(undone.label.isEmpty ? label : undone.label)")
         } catch {
-            toasts.show(AppEnvironment.message(error), tone: .danger)
+            showRefused(AppEnvironment.message(error), touches: touches)
         }
         await store.reread(touches.union([.journal]))
     }

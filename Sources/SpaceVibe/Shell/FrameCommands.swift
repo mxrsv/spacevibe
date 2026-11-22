@@ -10,6 +10,8 @@ enum FrameCommandMap {
     }
 
     static let inspector = FrameShortcut("i")
+    /// Hide Sidebar / Show Sidebar (RD47), the macOS shortcut for it.
+    static let sidebar = FrameShortcut("s", modifiers: [.command, .control])
     /// Reads every source again (`FrameStore.refresh(force:)`).
     static let refresh = FrameShortcut("r")
     static let settings = FrameShortcut(",")
@@ -69,6 +71,13 @@ struct FrameCommands: Commands {
             Button("Find\u{2026}") { target?.model.search.requestFocus() }
                 .keyboardShortcut(FrameCommandMap.find.keyboardShortcut)
                 .disabled(target?.chrome.pageHasSearch != true || modal)
+        }
+        CommandGroup(replacing: .sidebar) {
+            Button(target?.chrome.sidebarCommandTitle ?? FrameChrome.sidebarCommandTitle(hidden: false)) {
+                target?.chrome.toggleSidebar()
+            }
+            .keyboardShortcut(FrameCommandMap.sidebar.keyboardShortcut)
+            .disabled(target == nil || modal)
         }
         CommandGroup(before: .sidebar) {
             ForEach(FrameCommandMap.pageShortcuts, id: \.page) { item in

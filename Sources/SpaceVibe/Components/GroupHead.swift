@@ -93,17 +93,34 @@ extension GroupHead where Action == EmptyView {
     }
 }
 
-/// The group head's pick (RD41): `Select N Suggested`, link-coloured and quiet, ticking the suggested rows only when pressed.
+/// The group head's pick (RD41): `Select N Suggested`, ticking the suggested rows only when pressed. A neutral small control
+/// button (the mock's `.rb`), never a link.
 struct SelectSuggestedButton: View {
     let count: Int
     let select: () -> Void
 
     var body: some View {
         Button(action: select) { Text(Self.title(count)) }
-            .buttonStyle(PushButtonStyle(.link, size: .small))
+            .buttonStyle(PushButtonStyle(Self.kind, size: .small))
             .focusEffectDisabled()
             .disabled(count == 0)
     }
 
     static func title(_ count: Int) -> String { "Select \(NumberWording.count(count)) Suggested" }
+
+    /// The mock's `.rb`: both picks of a group head take it.
+    static let kind = PushButtonStyle.Kind.control
+}
+
+/// The same place once every suggested row is ticked: `Clear Selection`, the same neutral small button (the mock's `.rb`).
+struct ClearSelectionButton: View {
+    let clear: () -> Void
+
+    var body: some View {
+        Button(action: clear) { Text(Self.title) }
+            .buttonStyle(PushButtonStyle(SelectSuggestedButton.kind, size: .small))
+            .focusEffectDisabled()
+    }
+
+    static let title = "Clear Selection"
 }

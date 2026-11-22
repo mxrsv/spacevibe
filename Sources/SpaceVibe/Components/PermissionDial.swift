@@ -13,6 +13,8 @@ struct PermissionDial: View {
     /// The word a locked dial shows ("Mixed"); nil for a dial that can be pressed.
     var lockedWord: String?
     let pick: (CoreVerdict) -> Void
+    /// The step that holds the keyboard focus itself (RD29, `FocusBarRule`).
+    @FocusState private var focusedStep: CoreVerdict?
 
     init(selection: CoreVerdict?, label: String, lockedWord: String? = nil, pick: @escaping (CoreVerdict) -> Void) {
         self.selection = selection
@@ -38,7 +40,8 @@ struct PermissionDial: View {
             } else {
                 ForEach(CoreVerdict.allCases, id: \.self) { verdict in
                     Button { pick(verdict) } label: { Text(Self.title(verdict)) }
-                        .buttonStyle(PermissionStepStyle(isChosen: verdict == selection))
+                        .buttonStyle(PermissionStepStyle(isChosen: verdict == selection, isFocused: focusedStep == verdict))
+                        .focused($focusedStep, equals: verdict)
                         .focusEffectDisabled()
                         .accessibilityLabel(Self.title(verdict))
                         .accessibilityAddTraits(verdict == selection ? [.isButton, .isSelected] : .isButton)
@@ -70,16 +73,17 @@ struct PermissionDial: View {
 
 private struct PermissionStepStyle: ButtonStyle {
     let isChosen: Bool
+    let isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
-        StepBody(configuration: configuration, isChosen: isChosen)
+        StepBody(configuration: configuration, isChosen: isChosen, isFocused: isFocused)
     }
 
     private struct StepBody: View {
         let configuration: ButtonStyle.Configuration
         let isChosen: Bool
+        let isFocused: Bool
         @Environment(\.isEnabled) private var isEnabled
-        @Environment(\.isFocused) private var isFocused
         @Environment(\.specimenInteraction) private var specimen
         @State private var hovering = false
 
@@ -101,7 +105,7 @@ private struct PermissionStepStyle: ButtonStyle {
                 }
                 .contentShape(shape)
                 .opacity(isEnabled ? 1 : OpacityRole.disabled)
-                .focusBar(isFocused || specimen.contains(.focus), inset: SpaceRole.step2)
+                .focusBar(FocusBarRule.isShown(ownFocus: isFocused, specimen: specimen.contains(.focus)), edge: .radius(RadiusRole.step6))
                 .pointerCursor()
                 .onHover { hovering = $0 }
         }

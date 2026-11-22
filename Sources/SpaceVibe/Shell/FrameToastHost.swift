@@ -28,9 +28,13 @@ enum FrameToastKind: Equatable, Sendable {
         }
     }
 
-    /// Undo carries its arrow; any other action is its verb alone.
+    /// Undo carries its arrow back, Reload its arrow round (the mock's `failToast`); any other action is its verb alone.
     static func icon(for action: String?) -> FrameIcon? {
-        action == ToastText.undoTitle ? .arrowCounterClockwise : nil
+        switch action {
+        case ToastText.undoTitle: .arrowCounterClockwise
+        case FrameWrites.reloadTitle: .arrowClockwise
+        default: nil
+        }
     }
 }
 
@@ -42,6 +46,8 @@ enum FrameToastKind: Equatable, Sendable {
 /// While mounted it tells the center not to announce (`ToastCenter.hostAnnounces`): each block announces its own sentence
 /// with the action it offers, a refusal at high priority (RD-R16), so VoiceOver hears it once.
 struct FrameToastHost: View {
+    /// What the toast keeps clear of each side of its window: the main window's 160, the Settings window's 5 %.
+    var windowMargin: CGFloat = BlockRole.toastWindowMargin
     @Environment(ToastCenter.self) private var toasts
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -50,7 +56,7 @@ struct FrameToastHost: View {
             Spacer(minLength: 0)
             if let toast = toasts.current {
                 block(for: toast)
-                    .padding(.horizontal, BlockRole.toastWindowMargin)
+                    .padding(.horizontal, windowMargin)
                     .padding(.bottom, SpaceRole.step20)
                     .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                     .id(toast.id)

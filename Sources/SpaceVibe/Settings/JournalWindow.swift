@@ -157,7 +157,8 @@ struct JournalWindow: View {
         case .empty:
             PageEmptyState(icon: .clockCounterClockwise, title: JournalList.emptyTitle, text: JournalList.emptyText) { EmptyView() }
         case .rows(let rows):
-            ScrollView {
+            // The screens' scroll view, so a headless shot draws the rows (a bare `ScrollView` renders blank there).
+            SpaceVibeScrollView {
                 RowGroup {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                         SettingsRow(row.label, detail: row.time, index: index) { trailing(row, store: store) }

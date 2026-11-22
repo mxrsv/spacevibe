@@ -270,6 +270,19 @@ struct FrameWritesTests {
         store.stop()
     }
 
+    @Test("a refused write's toast offers Reload beside Dismiss, and Reload reads the touched sources again")
+    func refusedReload() async {
+        let (core, store, writes, toasts) = await setUp()
+        core.writeResult = .failure(CoreError("The file changed on disk.", status: 409))
+        await writes.perform(.removeItem(id: "claude:skill:a", label: "Removed a"))
+        #expect(toasts.current?.action?.title == FrameWrites.reloadTitle)
+        core.reset()
+        toasts.runCurrentAction()
+        #expect(await eventually { Set(core.calls) == ["inventory.read", "loadout.rows", "journal.history"] })
+        #expect(toasts.current == nil, "Reload closes the toast")
+        store.stop()
+    }
+
     @Test("Undo runs journal.undo on the returned id, names what was undone, and reads the touched sources again")
     func undo() async {
         let (core, store, writes, toasts) = await setUp()
@@ -291,6 +304,7 @@ struct FrameWritesTests {
         toasts.undoLast()
         #expect(await eventually { toasts.current?.message == "Already undone." })
         #expect(toasts.current?.tone == .danger)
+        #expect(toasts.current?.action?.title == FrameWrites.reloadTitle, "a refused Undo offers Reload too")
         store.stop()
     }
 

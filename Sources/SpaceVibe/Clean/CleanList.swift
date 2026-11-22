@@ -81,9 +81,7 @@ struct CleanList: View {
         case .select(let count):
             SelectSuggestedButton(count: count) { actions.pick(section) }
         case .clear:
-            Button("Clear Selection") { actions.pick(section) }
-                .buttonStyle(PushButtonStyle(.link, size: .small))
-                .focusEffectDisabled()
+            ClearSelectionButton { actions.pick(section) }
         }
     }
 

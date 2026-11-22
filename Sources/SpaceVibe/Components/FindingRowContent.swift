@@ -7,7 +7,7 @@ import SwiftUI
 enum FindingRowLayout {
     /// The evidence column (`168px`): the tables' status width.
     static let evidenceWidth = TableColumnWidth.status
-    /// The action column (`172px`): it grows only when a row's buttons are wider.
+    /// The action column (`172px`), fixed: wider buttons cut their labels instead of growing it.
     static let actionsWidth = TableColumnWidth.action
     /// Below this list width the evidence column is left out (the mock's `mw >= 700`), so the name keeps its room.
     static let evidenceFromListWidth: CGFloat = 700
@@ -59,9 +59,10 @@ struct FindingRowContent<Actions: View>: View {
                     .help(evidence)
                     .frame(width: FindingRowLayout.evidenceWidth, alignment: .leading)
             }
+            // One width on every row, buttons or not: a label that does not fit is cut, the column never grows (FE-L1).
             HStack(spacing: SpaceRole.step8) { actions }
-                .fixedSize()
-                .frame(minWidth: FindingRowLayout.actionsWidth, alignment: .trailing)
+                .lineLimit(1)
+                .frame(width: FindingRowLayout.actionsWidth, alignment: .trailing)
         }
     }
 }

@@ -39,12 +39,12 @@ struct FrameShortcut: Hashable, Sendable, CustomStringConvertible {
     /// A waiting session's Show Terminal (Inbox). Not ⌥⌘T: the window's toolbar puts Hide Toolbar there.
     static let showTerminal = FrameShortcut("t", modifiers: [.command, .shift])
 
-    /// What the frame's own commands hold (`FrameCommands`): ⌘1 to ⌘8, ⌘I, ⌘R, ⌘,, ⌘F and the two Undo keys, and the plain
-    /// letters the frame reads itself (RD39): j and k move the selection, Z undoes, A toggles the focused logo. A row action
-    /// may not take one of these.
+    /// What the frame's own commands hold (`FrameCommands`): ⌘1 to ⌘8, ⌘I, ⌃⌘S, ⌘R, ⌘,, ⌘F and the two Undo keys, and the
+    /// plain letters the frame reads itself (RD39): j and k move the selection, Z undoes, A toggles the focused logo. A row
+    /// action may not take one of these.
     static let reserved: [FrameShortcut] =
         FrameCommandMap.pageShortcuts.map(\.shortcut)
-        + [FrameCommandMap.inspector, FrameCommandMap.refresh, FrameCommandMap.settings, FrameCommandMap.find,
+        + [FrameCommandMap.inspector, FrameCommandMap.sidebar, FrameCommandMap.refresh, FrameCommandMap.settings, FrameCommandMap.find,
            FrameCommandMap.undo, FrameCommandMap.redo]
         + (["j", "k", "z", "a"] as [Character]).map { FrameShortcut($0, modifiers: []) }
 
@@ -169,7 +169,7 @@ extension View {
 
     /// The selected row's actions go to the menu bar's Item menu with their shortcuts (RD39: every command is also in the
     /// menu bar). A shortcut the frame holds is dropped there (`FrameRowAction.conflicts`). Nil publishes nothing, so every
-    /// row can carry it and only the selected one fills the menu (`FrameItemRow`).
+    /// row can carry it and only the selected one fills the menu.
     func frameSelectedRowActions(_ actions: [FrameRowAction]?) -> some View {
         focusedSceneValue(\.frameRowActions, actions.map(FrameRowActionList.init(actions:)))
     }
@@ -183,44 +183,10 @@ extension FrameRowAction {
     var tooltip: String { shortcut.map { "\(title) (\($0))" } ?? title }
 }
 
-/// A row of a list or table with its actions given once (RD-R16 Keyboard, R3): `ItemRow` with `actions` as small buttons on
-/// the selected row (RD41), the same list as the row's context-menu items and accessibility actions, and, while the row is
-/// selected, as the menu bar's Item menu with their shortcuts. A page builds one `[FrameRowAction]` per row and hands it
-/// here, so the four places cannot drift. Below 1100 pt the page repeats the selected row's list in the overlay inspector
-/// with `FrameRowActionButtons` (`FramePageContent.overlayActions`).
-struct FrameItemRow<Content: View>: View {
-    typealias Check = ItemRow<Content, FrameRowActionButtons>.Check
-
-    let label: String
-    var height: ItemRowHeight = .table
-    var isSelected = false
-    var isKeyboardFocused = false
-    var check: Check?
-    let actions: [FrameRowAction]
-    let select: () -> Void
-    @ViewBuilder var content: Content
-
-    init(label: String, height: ItemRowHeight = .table, isSelected: Bool = false, isKeyboardFocused: Bool = false,
-         check: Check? = nil, actions: [FrameRowAction], select: @escaping () -> Void, @ViewBuilder content: () -> Content) {
-        self.label = label
-        self.height = height
-        self.isSelected = isSelected
-        self.isKeyboardFocused = isKeyboardFocused
-        self.check = check
-        self.actions = actions
-        self.select = select
-        self.content = content()
-    }
-
-    var body: some View {
-        ItemRow(label: label, height: height, isSelected: isSelected, isKeyboardFocused: isKeyboardFocused, check: check,
-                select: select) { content } actions: { FrameRowActionButtons(actions: actions) }
-            .frameRowActions(actions)
-            .frameSelectedRowActions(isSelected ? actions : nil)
-    }
-}
-
-/// A row's actions as buttons, in the list's order: on the selected row (`FrameItemRow`) and at the overlay inspector's top.
+/// A row's actions as buttons, in the list's order: in the selected row's fixed action column (Inbox's
+/// `FindingRowContent`, or `ItemRow(actions:)`) and at the overlay inspector's top. A page hands the same
+/// `[FrameRowAction]` to `frameRowActions` and `frameSelectedRowActions`, so buttons, context menu, accessibility actions
+/// and the Item menu cannot drift.
 struct FrameRowActionButtons: View {
     let actions: [FrameRowAction]
 

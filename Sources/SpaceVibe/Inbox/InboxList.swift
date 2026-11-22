@@ -86,9 +86,7 @@ struct InboxList: View {
     @ViewBuilder
     private func pick(_ ids: [String]) -> some View {
         if ids.allSatisfy(state.ticked.contains) {
-            Button("Clear Selection") { state.pickSuggested(ids) }
-                .buttonStyle(PushButtonStyle(.link, size: .small))
-                .focusEffectDisabled()
+            ClearSelectionButton { state.pickSuggested(ids) }
         } else {
             SelectSuggestedButton(count: ids.count) { state.pickSuggested(ids) }
         }

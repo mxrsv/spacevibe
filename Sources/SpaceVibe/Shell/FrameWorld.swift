@@ -205,7 +205,7 @@ struct FrameWorld: Sendable {
             if let early = gate([.activity], usageToo: false) { return early }
             return .count(waiting.isEmpty ? running.count : waiting.count, tone: waiting.isEmpty ? nil : .attention)
         case .clean:
-            // `.clean` is loading or failed only once Clean has asked for a scan (`FrameStore.readClean`).
+            // `.clean` is loading or failed once a scan was asked for (`FrameStore.readClean`: at launch, RD45, and after).
             if let early = gate(usage.union([.activity, .clean]), usageToo: true) { return early }
             return clean.cleanableBytes.map(PageFigure.bytes) ?? .notMeasured
         }

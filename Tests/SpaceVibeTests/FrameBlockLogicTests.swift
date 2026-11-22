@@ -247,5 +247,67 @@ struct FrameBlockLogicTests {
         #expect(ShareMeter.tickOffset(0.5, width: 100) == 49)
     }
 
+    // MARK: RB-F1 shared fixes
+
+    @Test("the focus bar shows for the control's own focus only: a focused list, inspector or dialog around it lights nothing")
+    func focusBarOwnFocus() {
+        // The region around a button is focused, keyboard navigation off: `\.isFocused` reads true for every button inside,
+        // and the old blocks drew the bar on all of them at once (the owner's 2026-11-22 shot).
+        #expect(!FocusBarRule.buttonOwnsFocus(environmentFocus: true, keyboardNavigation: false))
+        #expect(FocusBarRule.buttonOwnsFocus(environmentFocus: true, keyboardNavigation: true), "the button itself is focused")
+        #expect(!FocusBarRule.buttonOwnsFocus(environmentFocus: false, keyboardNavigation: true))
+        #expect(FocusBarRule.isShown(ownFocus: true) && !FocusBarRule.isShown(ownFocus: false))
+        #expect(FocusBarRule.isShown(ownFocus: false, specimen: true), "the gallery's focus state")
+        #expect(!FocusBarRule.isShown(ownFocus: true, isEnabled: false), "never on a disabled control")
+    }
+
+    @Test("the focus bar sits at the control's leading edge, 3 pt wide and full height, at every size and corner")
+    func focusBarAtTheEdge() {
+        // The old bar was inset by half the height on a capsule (16 pt on a 32 control), across the label.
+        for size in [CGSize(width: 120, height: SizeRole.controlRegular), CGSize(width: 80, height: SizeRole.controlSmall),
+                     CGSize(width: 28, height: SizeRole.hitCell)] {
+            let bar = FocusBarRule.barRect(in: size)
+            #expect(bar.minX == 0 && bar.width == SizeRole.focusBar && bar.height == size.height)
+        }
+    }
+
+    @Test("a row inserts nothing on selection without actions; with actions its trailing cell has one width selected or not")
+    func itemRowCellNeverMoves() {
+        #expect(ItemRowLayout.actionsCellWidth(nil) == nil, "no actions: no cell, selected or not")
+        #expect(ItemRowLayout.actionsCellWidth(TableColumnWidth.action) == TableColumnWidth.action)
+        #expect(ItemRowLayout.fillsActions(isSelected: true) && !ItemRowLayout.fillsActions(isSelected: false))
+        #expect(FindingRowLayout.actionsWidth == TableColumnWidth.action, "Inbox's action column is the tables' fixed one")
+    }
+
+    @Test("Select N Suggested and Clear Selection are the neutral small control button, never a link")
+    func groupHeadPicks() {
+        #expect(SelectSuggestedButton.kind == .control)
+        #expect(ClearSelectionButton.title == "Clear Selection")
+        #expect(PushButtonStyle(SelectSuggestedButton.kind, size: .small).typeRole == .quietMedium, "the mock's `.rb`: 12 pt at 500")
+    }
+
+    @Test("a table head is pinned over its rows, never in a headless shot and never on a list without a head")
+    func stickyHead() {
+        #expect(RowGroup<Text, EmptyView>.pinsHead(hasHead: true, isShotRendering: false))
+        #expect(!RowGroup<Text, EmptyView>.pinsHead(hasHead: true, isShotRendering: true))
+        #expect(!RowGroup<EmptyView, EmptyView>.pinsHead(hasHead: false, isShotRendering: false))
+    }
+
+    @Test("the segmented control comes in the two DS-R5 sizes, and ← → step without wrapping")
+    func segmentedSizes() {
+        typealias S = FrameSegmentedControl.Size
+        #expect(S.regular.track == 32 && S.regular.segment == 28)
+        #expect(S.small.track == 26 && S.small.segment == 22)
+        let segments = [FrameSegment(id: "a", title: "A"), FrameSegment(id: "b", title: "B"), FrameSegment(id: "c", title: "C")]
+        #expect(FrameSegmentedControl.step(from: "b", by: -1, in: segments) == "a")
+        #expect(FrameSegmentedControl.step(from: "c", by: 1, in: segments) == "c")
+    }
+
+    @Test("the switch's light Off knob carries the shadow that keeps it visible, disabled too; nothing else does")
+    func switchKnobShadow() {
+        #expect(FrameSwitch.knobHasShadow(isOn: false, dark: false))
+        #expect(!FrameSwitch.knobHasShadow(isOn: true, dark: false) && !FrameSwitch.knobHasShadow(isOn: false, dark: true))
+    }
+
     private func id(_ value: String, _ name: String? = nil) -> CLIIdentity { CLIIdentity(id: value, name: name ?? value) }
 }

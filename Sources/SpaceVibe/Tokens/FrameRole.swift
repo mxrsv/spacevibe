@@ -44,4 +44,8 @@ enum FrameRole {
 
     /// The sidebar's top, where the window's traffic lights sit: `.lights{height:52px}` (style.css:67).
     static let trafficLightClearance: CGFloat = 52
+
+    /// With the sidebar hidden (RD47) the toolbar starts after the window's traffic lights, as a macOS toolbar does when its
+    /// sidebar collapses: the three 12 pt buttons, their 8 pt gaps and the 20 pt the system keeps on each side of them.
+    static let trafficLightsWidth: CGFloat = 92
 }

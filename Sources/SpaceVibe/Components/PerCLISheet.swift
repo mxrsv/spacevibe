@@ -72,39 +72,19 @@ struct PerCLISheet: View {
     }
 }
 
-/// The sheet's Add to / Remove from switch: two segments on a control fill, the chosen one on the selection fill.
+/// The sheet's Add to / Remove from switch: the frame's segmented control at its regular size, as the mock's sheet draws its
+/// `.seg` (`b-chrome.js`), so it has the control's hover, press, keyboard focus and ← →.
 private struct ModeSwitch: View {
     let mode: PerCLISheetModel.Mode
     let select: (PerCLISheetModel.Mode) -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
-            segment("Add to", .add)
-            segment("Remove from", .remove)
+        FrameSegmentedControl(segments: Self.segments, selection: Self.id(mode), label: "Mode") { id in
+            select(id == Self.id(.remove) ? .remove : .add)
         }
-        .padding(SizeRole.segmentedInset)
-        .frame(height: SizeRole.segmentedSmall)
-        .background(RoundedRectangle(cornerRadius: RadiusRole.step6, style: .continuous).fill(ColorRole.controlFill))
-        .fixedSize()
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Mode")
     }
 
-    private func segment(_ title: String, _ value: PerCLISheetModel.Mode) -> some View {
-        let isOn = mode == value
-        return Button { select(value) } label: {
-            Text(title)
-                .typeRole(.quietMedium)
-                .foregroundStyle(isOn ? ColorRole.ink : ColorRole.controlSecondaryInk)
-                .padding(.horizontal, SpaceRole.step10)
-                .frame(height: SizeRole.segmentSmall)
-                .background(RoundedRectangle(cornerRadius: RadiusRole.step4, style: .continuous)
-                    .fill(isOn ? ColorRole.selectionFill : .clear))
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .pointerCursor()
-        .focusEffectDisabled()
-        .accessibilityAddTraits(isOn ? [.isSelected] : [])
-    }
+    static let segments = [FrameSegment(id: id(.add), title: "Add to"), FrameSegment(id: id(.remove), title: "Remove from")]
+
+    static func id(_ mode: PerCLISheetModel.Mode) -> String { mode == .add ? "add" : "remove" }
 }

@@ -4,7 +4,7 @@ import SwiftUI
 /// state of RD-R13 from the in-memory engine `EquipShotCore`, in both looks and appearances, beside the mock's same state
 /// (`mock.html?page=skills&state=<state>&nclis=<n>`). Files are `frame-<page>-<state>-<look>-<appearance>.png`:
 ///
-/// - `normal`, `normal-1000`, `normal-1600` (window widths), `selected` (a used row: its tiles), `neverran` (a Never ran row
+/// - `normal`, `normal-1000`, `normal-1600` (window widths), `sidebar-hidden` (Hide Sidebar, RD47), `selected` (a used row: its tiles), `neverran` (a Never ran row
 ///   selected, the mock's `neverran`), `ticked` (Select N Suggested pressed: the `N selected` head and `Remove N selected…`);
 /// - `six-illustration`, `ten-illustration` (RD13, RD28: the same layout at 6 and 10 CLIs, a row selected; RD42 illustration);
 /// - `sheet` (an item's `Remove…`: the per-CLI sheet, nothing ticked), `dialog-six-illustration` (a shared file turned off:
@@ -21,6 +21,8 @@ enum EquipFrameShots {
         let name: String
         let scenario: EquipShotCore.Scenario
         var width: CGFloat = 1280
+        /// Hide Sidebar pressed (RD47).
+        var sidebarHidden = false
         var prepare: @MainActor (FrameModel, EquipPageState) async -> Void = { _, _ in }
     }
 
@@ -35,6 +37,7 @@ enum EquipFrameShots {
             Shot(name: "normal", scenario: .normal),
             Shot(name: "normal-1000", scenario: .normal, width: 1000),
             Shot(name: "normal-1600", scenario: .normal, width: 1600),
+            Shot(name: "sidebar-hidden", scenario: .normal, sidebarHidden: true),
             Shot(name: "selected", scenario: .normal) { _, state in state.select(used) },
             Shot(name: "neverran", scenario: .normal) { _, state in state.select(never) },
             Shot(name: "ticked", scenario: .normal) { _, state in state.selectSuggested() },
@@ -82,11 +85,13 @@ enum EquipFrameShots {
             Task { await model.store.start() }
             try? await Task.sleep(for: .milliseconds(1))
             try? await waitForReads(model)
+            // What the page does on opening (RD44, `frameFirstRowSelection`), which `ImageRenderer` never runs.
+            model.router.keepSelection(onPage: kind.page, among: state.list().visible.map(\.id)) { state.select($0) }
             await shot.prepare(model, state)
             ready = true
         }
         try ShotHarness.wait("the \(kind.page.title) shot \(shot.name)") { ready }
-        let view = AppFrame(model: model, look: look, sidebarValues: .from(model.store))
+        let view = AppFrame(model: model, look: look, sidebarValues: .from(model.store), sidebarHidden: shot.sidebarHidden)
             .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)), toasts: toasts, env: env)
             .frame(width: shot.width, height: ShotRenderer.size.height)
         try ShotRenderer.write(view, name: "frame-\(kind.page.rawValue)-\(shot.name)-\(look)", choice: choice, to: directory)

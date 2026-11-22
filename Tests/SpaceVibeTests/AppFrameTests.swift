@@ -281,4 +281,38 @@ struct AppFrameTests {
         #expect(ran == ["remove", "keep"], "chosen in the menu (pointer, or Return in a menu opened from the keyboard), it acts")
         #expect(!FramePlainKeys.isKeyEquivalent(.remove, of: Self.key("\u{7F}", .command)), "⌘⌫ is not ⇧⌘⌫")
     }
+
+    // MARK: RB-F1 shared fixes
+
+    @Test("RD47: Hide Sidebar toggles the sidebar, names its next state, is ⌃⌘S and frees the sidebar's width for the list")
+    func hideSidebar() {
+        let chrome = FrameChrome()
+        chrome.setWindowWidth(1280)
+        let sidebar = FrameRole.sidebarWidth(.solid), inspector = InspectorWidth.wide.points
+        let shown = chrome.listWidth(sidebar: sidebar, inspector: inspector)
+        #expect(chrome.sidebarCommandTitle == "Hide Sidebar")
+        chrome.toggleSidebar()
+        #expect(chrome.isSidebarHidden && chrome.sidebarCommandTitle == "Show Sidebar")
+        #expect(chrome.listWidth(sidebar: sidebar, inspector: inspector) == shown + sidebar)
+        chrome.toggleSidebar()
+        #expect(!chrome.isSidebarHidden)
+        #expect(FrameCommandMap.sidebar == FrameShortcut("s", modifiers: [.command, .control]))
+        #expect(FrameCommandMap.sidebar.description == "⌃⌘S")
+        #expect(FrameShortcut.reserved.contains(FrameCommandMap.sidebar), "no row action may take ⌃⌘S")
+    }
+
+    @Test("the toolbar keeps its 196 pt slot on every page that has a primary, empty or not; Limits has none")
+    func toolbarSlot() {
+        #expect(FramePage.allCases.filter { !$0.hasToolbarSlot } == [.limits])
+        #expect(FrameRole.toolbarSlotWidth == 196)
+    }
+
+    @Test("a refused write's toast offers Reload with its arrow, as the mock's writefail; the Settings toast keeps 90 % of 660")
+    func refusedToastReload() {
+        let refused = Toast(message: "Nothing changed. x", tone: .danger, action: ToastAction(title: FrameWrites.reloadTitle) {})
+        #expect(FrameToastKind(refused) == .refused(action: "Reload"))
+        #expect(FrameToastKind.icon(for: FrameWrites.reloadTitle) == .arrowClockwise)
+        #expect(abs(FrameRole.settingsWindowWidth - 2 * BlockRole.settingsToastWindowMargin - FrameRole.settingsWindowWidth * 0.9) < 0.001)
+        #expect(BlockRole.settingsToastWindowMargin < BlockRole.toastWindowMargin, "the main window's 160 would leave 340 of 660")
+    }
 }

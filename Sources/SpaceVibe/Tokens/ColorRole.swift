@@ -335,6 +335,9 @@ enum ColorRole {
     static let controlQuietInk = ColorRoleValues.controlQuietInk.color
     static let scrimFill = ColorRoleValues.scrimFill.color
     static let floatShadow = ColorRoleValues.floatShadow.color
+    /// Under the white Off knob of a switch in light (the mock's `.swt:not(.on)::after` `0 1px 2px #0003`), so the knob still
+    /// shows on the `faint` track, at the disabled opacity too.
+    static let switchKnobShadow = Color.black.opacity(0.2)
     /// The destructive button's ground and edge: `stateCritical` at its share, over whatever surface the button sits on.
     static let destructiveTint = stateCritical.opacity(ColorRoleValues.destructiveTintShare)
     static let destructiveTintHover = stateCritical.opacity(ColorRoleValues.destructiveTintHoverShare)

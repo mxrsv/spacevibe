@@ -20,6 +20,9 @@ struct EquipList: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frameListKeys(rows: list.visible.map(\.id), router: state.router ?? FrameRouter(), chrome: chrome)
+        // RD44: the first shown row is selected on opening and whenever the filter, the CLI menu or the search hides the
+        // selected one.
+        .frameFirstRowSelection(page: list.kind.page, rows: list.visible.map(\.id), router: state.router ?? FrameRouter()) { state.select($0) }
         .onDisappear { state.closeOverlays() }
     }
 
@@ -82,6 +85,7 @@ struct EquipList: View {
                 EquipTableHeader(list: list, isLegendOpen: Binding(get: { state.isLegendOpen }, set: { state.isLegendOpen = $0 })) {
                     state.toggleAll(list.tickable)
                 }
+            } content: {
                 if list.visible.isEmpty {
                     Text(list.noMatch)
                         .typeRole(.quiet)
@@ -110,9 +114,7 @@ struct EquipList: View {
             GroupHead("Never ran", count: list.neverRan.count, severity: list.neverRanSeverity) {
                 if !list.suggested.isEmpty {
                     if list.allSuggestedTicked {
-                        Button("Clear Selection") { state.selectSuggested() }
-                            .buttonStyle(PushButtonStyle(.link, size: .small))
-                            .focusEffectDisabled()
+                        ClearSelectionButton { state.selectSuggested() }
                     } else {
                         SelectSuggestedButton(count: list.suggested.count) { state.selectSuggested() }
                     }

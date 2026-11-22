@@ -69,6 +69,9 @@ final class FrameChrome {
     /// The row an arrow key moved the selection to (`frameListKeys`); nil after a pointer click, on another page and when the
     /// list loses focus. Only that row draws the focus bar.
     var keyboardRow: String?
+    /// Hide Sidebar (RD47): the toolbar's first button and ⌃⌘S fold the sidebar away and bring it back. The window keeps the
+    /// choice across launches (`AppFrame` stores it per window with `@SceneStorage`).
+    var isSidebarHidden = false
 
     var presentation: InspectorPresentation {
         inspector.presentation(windowWidth: windowWidth, pageHasInspector: pageHasInspector)
@@ -76,10 +79,18 @@ final class FrameChrome {
 
     var isInspectorShown: Bool { presentation != .hidden }
 
-    /// The main column's width: the window less the sidebar and a docked inspector (the mock's `mw`).
+    /// The main column's width: the window less the sidebar (none while it is hidden) and a docked inspector (the mock's `mw`).
     func listWidth(sidebar: CGFloat, inspector: CGFloat) -> CGFloat {
-        max(0, windowWidth - sidebar - (presentation == .docked ? inspector : 0))
+        max(0, windowWidth - (isSidebarHidden ? 0 : sidebar) - (presentation == .docked ? inspector : 0))
     }
+
+    /// The toolbar's Hide Sidebar button and ⌃⌘S.
+    func toggleSidebar() { isSidebarHidden.toggle() }
+
+    /// The button's and the menu item's title for the state now.
+    var sidebarCommandTitle: String { Self.sidebarCommandTitle(hidden: isSidebarHidden) }
+
+    static func sidebarCommandTitle(hidden: Bool) -> String { hidden ? "Show Sidebar" : "Hide Sidebar" }
 
     func setWindowWidth(_ width: CGFloat) {
         let wasOverlayWidth = FrameInspectorState.isOverlayWidth(windowWidth)
@@ -122,4 +133,22 @@ extension View {
                               selection: Binding(get: { router.route.selection }, set: { router.select($0) }),
                               keyboardRow: Binding(get: { chrome.keyboardRow }, set: { chrome.keyboardRow = $0 }))
     }
+
+    /// RD44 on a page's list: `rows` are the ids it shows, in order (the same list `frameListKeys` takes). When the page
+    /// opens, and whenever its selection is not among them (a filter, the scope or the search hid it, or a write removed
+    /// it), the router selects the first, so the inspector shows that row (`FrameRouter.keepSelection`). `select` is the
+    /// page's own selection call when it does more than the router's.
+    func frameFirstRowSelection(page: FramePage, rows: [String], router: FrameRouter,
+                                select: ((String?) -> Void)? = nil) -> some View {
+        onChange(of: FrameFirstRowInput(page: router.route.page, selection: router.route.selection, rows: rows), initial: true) {
+            router.keepSelection(onPage: page, among: rows, select: select)
+        }
+    }
+}
+
+/// What the first-row rule watches: a change in any of these may leave the page without a selected row it shows.
+private struct FrameFirstRowInput: Equatable {
+    let page: FramePage
+    let selection: String?
+    let rows: [String]
 }

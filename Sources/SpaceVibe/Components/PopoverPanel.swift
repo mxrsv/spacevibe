@@ -61,21 +61,56 @@ struct CLILegend: View {
     }
 }
 
-/// The head of the CLIs column: "CLIs" and the info glyph, a button that opens `CLILegend`.
+/// The head of the CLIs column: "CLIs" and the info glyph, a button that opens `CLILegend` (the mock's `.lgb`): the head's
+/// own text, no padding and no fill, never cut. It keeps its full width even in a one-CLI 28 pt column and runs on into the
+/// column gap, as the mock's `white-space: nowrap` does, so the head never reads "C…".
 struct CLILegendButton: View {
     let isOpen: Bool
     let toggle: () -> Void
+    @FocusState private var focused: Bool
 
     var body: some View {
         Button(action: toggle) {
             HStack(spacing: SpaceRole.step4) {
-                Text("CLIs")
+                Text(Self.title)
                 FrameGlyph(.info, side: SizeRole.icon12)
             }
         }
-        .buttonStyle(PushButtonStyle(.quiet, size: .small, isActive: isOpen))
+        .buttonStyle(CLILegendButtonStyle(isOpen: isOpen, isFocused: focused))
+        .focused($focused)
         .focusEffectDisabled()
-        .accessibilityLabel("CLIs")
+        .fixedSize()
+        .accessibilityLabel(Self.title)
         .accessibilityHint("Shows which logo is which")
+    }
+
+    static let title = "CLIs"
+}
+
+private struct CLILegendButtonStyle: ButtonStyle {
+    let isOpen: Bool
+    let isFocused: Bool
+
+    func makeBody(configuration: Configuration) -> some View { Face(configuration: configuration, isOpen: isOpen, isFocused: isFocused) }
+
+    private struct Face: View {
+        let configuration: ButtonStyle.Configuration
+        let isOpen: Bool
+        let isFocused: Bool
+        @Environment(\.specimenInteraction) private var specimen
+        @State private var hovering = false
+
+        var body: some View {
+            let lifted = isOpen || hovering || configuration.isPressed || specimen.contains(.hover)
+            configuration.label
+                .typeRole(.quiet)
+                .lineLimit(1)
+                .foregroundStyle(lifted ? ColorRole.ink : ColorRole.ink3)
+                .frame(minHeight: SizeRole.minimumHitTarget)
+                .contentShape(Rectangle())
+                .focusBar(FocusBarRule.isShown(ownFocus: isFocused, specimen: specimen.contains(.focus)))
+                .pointerCursor()
+                .onHover { hovering = $0 }
+        }
     }
 }

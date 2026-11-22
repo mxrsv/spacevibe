@@ -11,6 +11,8 @@ struct CLILogoToggle: View {
     let state: CLIToggleState
     var isPending = false
     let toggle: () -> Void
+    /// The button's own keyboard focus (RD29, `FocusBarRule`).
+    @FocusState private var focused: Bool
 
     init(_ state: CLIToggleState, isPending: Bool = false, toggle: @escaping () -> Void) {
         self.state = state
@@ -21,7 +23,8 @@ struct CLILogoToggle: View {
     var body: some View {
         if state.isToggle {
             Button { press() } label: { CLIToggleFace(state: state, hovered: false) }
-                .buttonStyle(CLIToggleStyle(state: state, isPending: isPending))
+                .buttonStyle(CLIToggleStyle(state: state, isPending: isPending, isFocused: focused))
+                .focused($focused)
                 .focusEffectDisabled()
                 .help(isPending ? CLIToggleState.pendingTooltip : state.tooltip)
                 .accessibilityLabel(state.cli.name)
@@ -52,14 +55,17 @@ struct CLILogoToggle: View {
 private struct CLIToggleStyle: ButtonStyle {
     let state: CLIToggleState
     let isPending: Bool
+    let isFocused: Bool
 
-    func makeBody(configuration: Configuration) -> some View { StyledFace(configuration: configuration, state: state, isPending: isPending) }
+    func makeBody(configuration: Configuration) -> some View {
+        StyledFace(configuration: configuration, state: state, isPending: isPending, isFocused: isFocused)
+    }
 
     private struct StyledFace: View {
         let configuration: ButtonStyle.Configuration
         let state: CLIToggleState
         let isPending: Bool
-        @Environment(\.isFocused) private var isFocused
+        let isFocused: Bool
         @Environment(\.specimenInteraction) private var specimen
         @State private var hovering = false
 
@@ -74,7 +80,7 @@ private struct CLIToggleStyle: ButtonStyle {
                 .frame(width: SizeRole.hitCell, height: SizeRole.hitCell)
                 .background(shape.fill(pressed ? ColorRole.selectionFill : hovered ? ColorRole.hoverFill : .clear))
                 .contentShape(shape)
-                .focusBar(isFocused || specimen.contains(.focus), inset: SpaceRole.step2)
+                .focusBar(FocusBarRule.isShown(ownFocus: isFocused, specimen: specimen.contains(.focus)), edge: .radius(RadiusRole.step8))
                 .pointerCursor()
                 .onHover { hovering = $0 }
         }

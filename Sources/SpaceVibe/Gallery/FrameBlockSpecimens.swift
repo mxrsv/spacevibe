@@ -48,6 +48,13 @@ struct FrameBlockSpecimens: View {
                 Button {} label: { Text("Dismiss") }.buttonStyle(PushButtonStyle(.quiet, size: .small))
                 Button {} label: { Text("Loading") }.buttonStyle(PushButtonStyle(.control, size: .small, isLoading: true))
             }
+            // RD29 at the control's own leading edge, clipped to its corner (the mock's `inset 3px 0 0`), never across the label.
+            line {
+                Button {} label: { Text("Focus, small") }.buttonStyle(PushButtonStyle(.control, size: .small)).specimen(.focus)
+                Button {} label: { FrameGlyph(.magnifyingGlass) }.buttonStyle(PushButtonStyle(.icon)).accessibilityLabel("Focus, icon").specimen(.focus)
+                Button {} label: { Text("Focus, quiet") }.buttonStyle(PushButtonStyle(.quiet, size: .small)).specimen(.focus)
+                Button {} label: { PushButtonLabel("Focus, destructive", icon: .trash) }.buttonStyle(PushButtonStyle(.destructive)).specimen(.focus)
+            }
         }
     }
 
@@ -97,9 +104,10 @@ struct FrameBlockSpecimens: View {
     }
 
     private var groupHeads: some View {
-        FrameSpecimenGroup(title: "Group heads: critical with Select N Suggested, attention, none, a huge count") {
+        FrameSpecimenGroup(title: "Group heads: critical with Select N Suggested, Clear Selection, attention, none, a huge count") {
             VStack(alignment: .leading, spacing: 0) {
                 GroupHead("Clean up", count: 6, severity: .critical) { SelectSuggestedButton(count: 6) {} }
+                GroupHead("Never ran", count: 6, severity: .attention) { ClearSelectionButton {} }
                 GroupHead("Control", count: 3, severity: .attention)
                 GroupHead("Balance", count: 1)
                 GroupHead("Watch", count: 1_204_331, severity: .attention) { SelectSuggestedButton(count: 1_204_331) {} }
@@ -115,6 +123,7 @@ struct FrameBlockSpecimens: View {
                 FrameSwitch("On", isOn: true) {}
                 FrameSwitch("Off", isOn: false) {}
                 FrameSwitch("Disabled", isOn: true) {}.disabled(true)
+                FrameSwitch("Disabled off", isOn: false) {}.disabled(true)
             }
             line {
                 SearchField(text: .constant(""), label: "Search skills")
@@ -125,6 +134,10 @@ struct FrameBlockSpecimens: View {
             line {
                 FrameSegmentedControl(segments: [FrameSegment(id: "all", title: "All"), FrameSegment(id: "never", title: "Never ran")],
                                       selection: "all", label: "Skills shown") { _ in }
+                FrameSegmentedControl(segments: [FrameSegment(id: "7", title: "7d"), FrameSegment(id: "30", title: "30d"), FrameSegment(id: "90", title: "90d")],
+                                      selection: "30", label: "Small", size: .small) { _ in }
+                FrameSegmentedControl(segments: [FrameSegment(id: "add", title: "Add to"), FrameSegment(id: "remove", title: "Remove from")],
+                                      selection: "add", label: "Focus") { _ in }.specimen(.focus)
             }
             line {
                 PermissionDial(selection: .allow, label: "Allow") { _ in }

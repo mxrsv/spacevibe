@@ -78,7 +78,7 @@ struct SettingsWindowFrame: View {
             ZStack(alignment: .top) {
                 FrameWindowSurface(hasSidebar: false)
                 VStack(spacing: 0) {
-                    HStack(spacing: SpaceRole.step4) {
+                    FramePaneTabBar {
                         ForEach(SettingsPane.allCases) { item in
                             FramePaneTab(title: item.title, icon: item.icon, isCurrent: item == pane) { pane = item }
                         }
@@ -86,11 +86,10 @@ struct SettingsWindowFrame: View {
                     .padding(.top, SpaceRole.titleBarClearance)
                     .padding(.horizontal, SpaceRole.step16)
                     .padding(.bottom, SpaceRole.step10)
-                    .accessibilityElement(children: .contain)
-                    .accessibilityLabel("Settings panes")
                     SettingsPaneBody(pane: pane, context: context(now: preview?.now ?? timeline.date))
                 }
-                FrameToastHost()
+                // The mock's `.toast` in the 660 window: at most 90 % of its width, so the toast keeps room for its text.
+                FrameToastHost(windowMargin: BlockRole.settingsToastWindowMargin)
             }
         }
         .environment(toasts)

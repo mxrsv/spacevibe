@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// The toolbar's search field (DS-R10 "Search field", regular 32, normal and focused; the mock's `srch`): the magnifying
-/// glass, the text in `bodyText`, the `⌘F` hint while it is empty, on the control fill in the look's control corner. Focus is
-/// the RD29 bar, never a ring (D57). Esc clears the text, and on an empty field gives the focus back. `folded` draws only
+/// glass, the text in `bodyText`, the `⌘F` hint while it is empty, with the toolbar controls' edge in the look's control
+/// corner (glass in Glass, the control fill and a hairline in Solid). Focus is the RD29 bar at its leading edge, never a ring
+/// (D57). Esc clears the text, and on an empty field gives the focus back. `folded` draws only
 /// the icon button (the mock below an 860 pt main column) until it is pressed or ⌘F asks for it; a field with text never
 /// folds. `focusRequest` changing moves the focus into it (⌘F).
 struct SearchField: View {
@@ -57,11 +58,16 @@ struct SearchField: View {
         }
         .padding(.horizontal, SpaceRole.step10)
         .frame(width: BlockRole.searchFieldWidth, height: SizeRole.controlRegular)
-        .background(shape.fill(isFocused ? ColorRole.controlHoverFill : ColorRole.controlFill))
+        // The toolbar controls' edge (the mock's `.ctl.srch`): the system glass in Glass, the control fill with a hairline in
+        // Solid; focused, the plain control fill in both, with the bar at its leading edge (`.srch:focus-within`).
+        .background { if isFocused { shape.fill(ColorRole.controlFill) } }
+        .frameGlass(in: RadiusRole.controlCorner(look), interactive: true, solid: isFocused ? .clear : ColorRole.controlFill,
+                    when: !isFocused)
+        .overlay { if look == .solid && !isFocused { shape.strokeBorder(ColorRole.hairline, lineWidth: 1) } }
         .contentShape(shape)
         // The whole field takes the click and shows the text cursor, not only the text.
         .pointerStyle(.horizontalText)
-        .focusBar(isFocused, inset: RadiusRole.controlCorner(look) == .capsule ? SizeRole.controlRegular / 2 : SpaceRole.step2)
+        .focusBar(FocusBarRule.isShown(ownFocus: isFocused), edge: RadiusRole.controlCorner(look))
         .onTapGesture { focused = true }
         .onExitCommand { escape() }
         .onChange(of: focusRequest) { focused = true }

@@ -17,7 +17,8 @@ struct FrameRoute: Equatable, Sendable {
         self.scope = scope
     }
 
-    /// Another page: its own selection starts empty (RD41: nothing is pre-selected); the scope stays.
+    /// Another page: its own selection starts empty, and the page's first row is selected once its rows are known (RD44,
+    /// `FrameRouter.keepSelection`; RD41's "nothing is pre-selected" is about ticks); the scope stays.
     func opening(_ next: FramePage) -> FrameRoute {
         next == page ? self : FrameRoute(page: next, selection: nil, scope: scope)
     }
@@ -76,4 +77,24 @@ final class FrameRouter {
     func setScope(_ scope: FrameScope) { route = route.scoped(scope) }
 
     func go(to next: FrameRoute) { route = next }
+
+    /// RD44: `page` shows `rows`, in order. While it is the page showing and its selection is none of them (the page just
+    /// opened, or a filter, the scope or the search hid the selected row), the first row is selected, so the inspector shows
+    /// it; with no rows, nothing is. `select` is the page's own way to select (it may reset view state); the router's by
+    /// default. A page that is not showing changes nothing, so a list leaving the screen never selects on the next page.
+    func keepSelection(onPage page: FramePage, among rows: [String], select: ((String?) -> Void)? = nil) {
+        guard route.page == page else { return }
+        let next = FrameFirstRow.selection(current: route.selection, rows: rows)
+        guard next != route.selection else { return }
+        if let select { select(next) } else { self.select(next) }
+    }
+}
+
+/// The first-row rule of RD44, pure: a selection among `rows` stays; any other (none, or a row now hidden) becomes the first
+/// row; no rows, no selection.
+enum FrameFirstRow {
+    static func selection(current: String?, rows: [String]) -> String? {
+        if let current, rows.contains(current) { return current }
+        return rows.first
+    }
 }

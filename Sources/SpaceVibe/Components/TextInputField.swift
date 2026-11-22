@@ -30,7 +30,7 @@ struct TextInputField: View {
                 .frame(height: SizeRole.controlRegular)
                 .background(shape.fill(ColorRole.controlFill))
                 .overlay(shape.strokeBorder(message == nil ? ColorRole.hairline : ColorRole.criticalInk, lineWidth: 1))
-                .focusBar(focused, inset: SpaceRole.step2)
+                .focusBar(FocusBarRule.isShown(ownFocus: focused), edge: .radius(RadiusRole.step6))
                 .accessibilityLabel(label)
                 .accessibilityHint(Self.hint(message))
             if let message {

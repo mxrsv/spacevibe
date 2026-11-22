@@ -49,6 +49,8 @@ struct CLITile: View {
     /// Its write runs: drawn pending, and a second press does nothing (FE-P: pending at the control that started it).
     var isPending = false
     let toggle: () -> Void
+    /// The tile's own keyboard focus (RD29, `FocusBarRule`).
+    @FocusState private var focused: Bool
 
     init(state: CLIToggleState, step: HeatStep, width: CGFloat = BlockRole.tileWidth, isPending: Bool = false,
          toggle: @escaping () -> Void) {
@@ -62,7 +64,8 @@ struct CLITile: View {
     var body: some View {
         if state.isToggle {
             Button { if CLIToggleState.acceptsPress(isPending: isPending) { toggle() } } label: { EmptyView() }
-                .buttonStyle(CLITileStyle(state: state, step: step, width: width, isPending: isPending))
+                .buttonStyle(CLITileStyle(state: state, step: step, width: width, isPending: isPending, isFocused: focused))
+                .focused($focused)
                 .focusEffectDisabled()
                 .help(isPending ? CLIToggleState.pendingTooltip : state.tooltip)
                 .accessibilityLabel(state.cli.name)
@@ -90,9 +93,10 @@ private struct CLITileStyle: ButtonStyle {
     let step: HeatStep
     let width: CGFloat
     let isPending: Bool
+    let isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
-        Styled(configuration: configuration, state: state, step: step, width: width, isPending: isPending)
+        Styled(configuration: configuration, state: state, step: step, width: width, isPending: isPending, isFocused: isFocused)
     }
 
     private struct Styled: View {
@@ -101,7 +105,7 @@ private struct CLITileStyle: ButtonStyle {
         let step: HeatStep
         let width: CGFloat
         let isPending: Bool
-        @Environment(\.isFocused) private var isFocused
+        let isFocused: Bool
         @Environment(\.specimenInteraction) private var specimen
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var hovering = false
@@ -113,7 +117,7 @@ private struct CLITileStyle: ButtonStyle {
                 .offset(y: hovered && !pressed ? -MotionRole.lift(reduceMotion: reduceMotion) : 0)
                 .scaleEffect(MotionRole.scale(pressed: pressed, reduceMotion: reduceMotion))
                 .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.tileDuration), value: hovered)
-                .focusBar(isFocused || specimen.contains(.focus), inset: SpaceRole.step4)
+                .focusBar(FocusBarRule.isShown(ownFocus: isFocused, specimen: specimen.contains(.focus)), edge: .radius(RadiusRole.step10))
                 .contentShape(RoundedRectangle(cornerRadius: RadiusRole.step10, style: .continuous))
                 .pointerCursor()
                 .onHover { hovering = $0 }

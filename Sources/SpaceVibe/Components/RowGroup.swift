@@ -2,17 +2,51 @@ import SwiftUI
 
 /// A group of rows on the group surface (DS-R10 "Row" sits inside it; the mock's `.grp`): the one block every list, table and
 /// skeleton stacks its rows in, top to bottom with no gap, full width, on `groupSurface()`. A padded card is `GroupCard`.
-struct RowGroup<Content: View>: View {
+///
+/// A table gives its head row as `head` (a `RowTableHead` or the page's own): the head is pinned while its rows scroll under
+/// it, on the group's ground, until the group itself leaves the screen (the mock's `.grp>.th{position:sticky}`). Pinning
+/// needs the group inside the page's `SpaceVibeScrollView`; the head sticks at the scroll view's top edge, below the toolbar's
+/// clearance. A headless shot has no scroll view, so it draws the same rows in a plain stack.
+struct RowGroup<Head: View, Content: View>: View {
+    @ViewBuilder var head: Head
     @ViewBuilder var content: Content
+    @Environment(\.isShotRendering) private var isShotRendering
 
-    init(@ViewBuilder content: () -> Content) {
+    /// A table: `head` pinned over the rows.
+    init(@ViewBuilder head: () -> Head, @ViewBuilder content: () -> Content) {
+        self.head = head()
         self.content = content()
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) { content }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .groupSurface()
+        Group {
+            if Self.pinsHead(hasHead: Head.self != EmptyView.self, isShotRendering: isShotRendering) {
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        content
+                    } header: {
+                        head.background(ColorRole.groupSurface)
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    head
+                    content
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .groupSurface()
+    }
+
+    /// Only a group with a head pins it, and never in a headless shot (no scroll view there). Pure, so it is tested.
+    static func pinsHead(hasHead: Bool, isShotRendering: Bool) -> Bool { hasHead && !isShotRendering }
+}
+
+extension RowGroup where Head == EmptyView {
+    /// A list without a head row.
+    init(@ViewBuilder content: () -> Content) {
+        self.init(head: { EmptyView() }, content: content)
     }
 }
 

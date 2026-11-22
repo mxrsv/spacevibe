@@ -67,9 +67,7 @@ struct HooksList: View {
                 GroupHead("Dead or never ran", count: list.deadOrNeverRan.count, severity: list.deadHeadSeverity) {
                     if !list.suggested.isEmpty {
                         if list.allSuggestedTicked {
-                            Button("Clear Selection") { state.toggleAll(list.suggested) }
-                                .buttonStyle(PushButtonStyle(.link, size: .small))
-                                .focusEffectDisabled()
+                            ClearSelectionButton { state.toggleAll(list.suggested) }
                         } else {
                             SelectSuggestedButton(count: list.suggested.count) { state.toggleAll(list.suggested) }
                         }

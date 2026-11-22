@@ -21,7 +21,9 @@ struct SpaceVibeScrollView<Content: View>: View {
 
     var body: some View {
         if isShotRendering {
-            content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            // Content taller than the scroll view is cut at its bottom edge, as a page scrolled to the top, instead of
+            // growing the view and pushing the frame's toolbar and sidebar out of the shot.
+            content.frame(maxWidth: .infinity, alignment: .topLeading).modifier(ShotFit())
         } else {
             ScrollView { content.frame(maxWidth: .infinity, alignment: .topLeading) }
         }

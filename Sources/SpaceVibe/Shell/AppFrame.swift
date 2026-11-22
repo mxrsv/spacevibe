@@ -15,7 +15,7 @@ struct AppFrame: View {
     typealias PageContent = @MainActor (FramePage, FrameModel) -> FramePageContent
 
     @State private var model: FrameModel
-    @State private var chrome = FrameChrome()
+    @State private var chrome: FrameChrome
     private let forcedLook: MaterialLook?
     private let sidebarValues: FrameSidebarValues?
     private let content: PageContent
@@ -23,10 +23,14 @@ struct AppFrame: View {
     /// - `model`: the app's (`SpaceVibeFrameApp`) or a screenshot's.
     /// - `look`: pins Glass or Solid (a screenshot); nil decides from the OS and Reduce Transparency.
     /// - `sidebarValues`: fixed values (a screenshot); nil reads them from the store.
+    /// - `sidebarHidden`: a screenshot of Hide Sidebar (RD47); the app reads the window's stored state instead.
     @MainActor
-    init(model: FrameModel, look: MaterialLook? = nil, sidebarValues: FrameSidebarValues? = nil,
+    init(model: FrameModel, look: MaterialLook? = nil, sidebarValues: FrameSidebarValues? = nil, sidebarHidden: Bool = false,
          content: @escaping PageContent = { page, model in .region(page, model: model) }) {
         _model = State(initialValue: model)
+        let chrome = FrameChrome()
+        chrome.isSidebarHidden = sidebarHidden
+        _chrome = State(initialValue: chrome)
         forcedLook = look
         self.sidebarValues = sidebarValues
         self.content = content
@@ -79,6 +83,10 @@ private struct FrameWindow: View {
     @FocusedValue(\.frameRowActions) private var rowActions
     @FocusState private var focus: FrameFocusTarget?
     @State private var focusBeforeDialog: FrameFocusTarget?
+    /// Hide Sidebar (RD47), kept per window across launches, as macOS keeps a window's sidebar state.
+    @SceneStorage("frame.sidebarHidden") private var storedSidebarHidden = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isShotRendering) private var isShotRendering
 
     var body: some View {
         let page = model.router.route.page
@@ -87,12 +95,15 @@ private struct FrameWindow: View {
         let modal = parts.dialog != nil
         let sidebarWidth = FrameRole.sidebarWidth(look)
         ZStack(alignment: .topTrailing) {
-            FrameWindowSurface()
+            FrameWindowSurface(hasSidebar: !chrome.isSidebarHidden)
             HStack(spacing: 0) {
-                FrameSidebar(current: page, values: sidebarValues ?? .from(model.store),
-                             open: { model.router.open($0) },
-                             openSettings: { openWindow(id: SettingsWindowFrame.windowID) })
-                    .frame(width: sidebarWidth)
+                if !chrome.isSidebarHidden {
+                    FrameSidebar(current: page, values: sidebarValues ?? .from(model.store),
+                                 open: { model.router.open($0) },
+                                 openSettings: { openWindow(id: SettingsWindowFrame.windowID) })
+                        .frame(width: sidebarWidth)
+                        .transition(.move(edge: .leading))
+                }
                 ZStack(alignment: .top) {
                     parts.body
                         .safeAreaPadding(EdgeInsets(top: SpaceRole.toolbarClearance(look), leading: SpaceRole.step12,
@@ -127,6 +138,7 @@ private struct FrameWindow: View {
                         .frame(width: page.inspectorWidth.points)
                 }
             }
+            .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.sidebarDuration), value: chrome.isSidebarHidden)
             .accessibilityHidden(modal)
             if presentation == .overlay, let inspector = parts.inspector {
                 FrameInspector(content: inspector, overlayActions: parts.overlayActions, isOverlay: true) { chrome.closeOverlays() }
@@ -152,6 +164,11 @@ private struct FrameWindow: View {
         .ignoresSafeArea()
         .frameWindowBackground()
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chrome.setWindowWidth($0) }
+        .onAppear {
+            // A shot draws the state it was given; the app takes the window's stored one.
+            if !isShotRendering, chrome.isSidebarHidden != storedSidebarHidden { chrome.isSidebarHidden = storedSidebarHidden }
+        }
+        .onChange(of: chrome.isSidebarHidden) { _, hidden in if !isShotRendering { storedSidebarHidden = hidden } }
         .onChange(of: parts.inspector != nil, initial: true) { _, has in chrome.pageHasInspector = has }
         .onChange(of: parts.searchItems != nil, initial: true) { _, has in chrome.pageHasSearch = has }
         .onChange(of: parts.dialog?.id, initial: true) { old, new in

@@ -31,6 +31,8 @@ struct CheckboxCell: View {
     let value: CheckboxValue
     let label: String
     let toggle: () -> Void
+    /// The button's own keyboard focus (RD29): never the list's or the dialog's around it (`FocusBarRule`).
+    @FocusState private var focused: Bool
 
     init(_ value: CheckboxValue, label: String, toggle: @escaping () -> Void) {
         self.value = value
@@ -40,7 +42,8 @@ struct CheckboxCell: View {
 
     var body: some View {
         Button(action: toggle) { EmptyView() }
-            .buttonStyle(CheckboxCellStyle(value: value))
+            .buttonStyle(CheckboxCellStyle(value: value, isFocused: focused))
+            .focused($focused)
             .focusEffectDisabled()
             .accessibilityLabel(label)
             .accessibilityValue(value.spoken)
@@ -53,14 +56,17 @@ private let checkboxEdge: CGFloat = 1.4
 
 private struct CheckboxCellStyle: ButtonStyle {
     let value: CheckboxValue
+    let isFocused: Bool
 
-    func makeBody(configuration: Configuration) -> some View { BoxBody(configuration: configuration, value: value) }
+    func makeBody(configuration: Configuration) -> some View {
+        BoxBody(configuration: configuration, value: value, isFocused: isFocused)
+    }
 
     private struct BoxBody: View {
         let configuration: ButtonStyle.Configuration
         let value: CheckboxValue
+        let isFocused: Bool
         @Environment(\.isEnabled) private var isEnabled
-        @Environment(\.isFocused) private var isFocused
         @Environment(\.specimenInteraction) private var specimen
         @State private var hovering = false
 
@@ -79,7 +85,7 @@ private struct CheckboxCellStyle: ButtonStyle {
             .opacity(isEnabled ? 1 : OpacityRole.ghost)
             .frame(width: SizeRole.hitCell, height: SizeRole.hitCell)
             .contentShape(Rectangle())
-            .focusBar(isFocused || specimen.contains(.focus))
+            .focusBar(FocusBarRule.isShown(ownFocus: isFocused, specimen: specimen.contains(.focus)))
             .pointerCursor()
             .onHover { hovering = $0 }
         }

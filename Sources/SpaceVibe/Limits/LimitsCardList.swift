@@ -23,7 +23,8 @@ struct LimitsCardList: View {
     var tryAgain: () -> Void = {}
 
     var body: some View {
-        ScrollView(.vertical) {
+        // The screens' scroll view, so a headless shot draws the cards (a bare `ScrollView` renders blank there).
+        SpaceVibeScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 hero
                     .padding(.top, SpaceRole.step4)
@@ -41,7 +42,6 @@ struct LimitsCardList: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .scrollIndicators(.automatic)
     }
 
     // MARK: Hero

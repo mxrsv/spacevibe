@@ -133,6 +133,9 @@ enum ShadowRole {
     static let floatOffsetY: CGFloat = 16
     static let floatSpread: CGFloat = -10
     static var floatRadius: CGFloat { floatBlur / 2 }
+    /// The light Off knob's shadow (`0 1px 2px`): blur 2, so radius 1, one point down.
+    static let switchKnobRadius: CGFloat = 1
+    static let switchKnobOffsetY: CGFloat = 1
 }
 
 /// The motion there is (DS-R9): the switch knob, a 1 pt tile lift on hover and a press scale. No loops, no shimmer, no
@@ -145,6 +148,8 @@ enum MotionRole {
     static let pressScale: CGFloat = 0.98
     /// A toast sliding in from the bottom edge (opacity only with Reduce Motion).
     static let toastSlideDuration: TimeInterval = 0.2
+    /// The sidebar folding away and back (Hide Sidebar, RD47); at once with Reduce Motion.
+    static let sidebarDuration: TimeInterval = 0.2
 
     static func lift(reduceMotion: Bool) -> CGFloat { reduceMotion ? 0 : tileLift }
     static func scale(pressed: Bool, reduceMotion: Bool) -> CGFloat { pressed && !reduceMotion ? pressScale : 1 }

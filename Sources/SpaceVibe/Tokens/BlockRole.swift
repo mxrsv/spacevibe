@@ -26,6 +26,8 @@ enum BlockRole {
     static let toastMaxWidth: CGFloat = 620
     /// What a toast keeps clear of each side of the window (`max-width: min(620px, calc(100% - 320px))`).
     static let toastWindowMargin: CGFloat = 160
+    /// The Settings window's toast keeps 5 % of the 660 window clear on each side (the mock's `.toast` `max-width: 90%`).
+    static let settingsToastWindowMargin: CGFloat = FrameRole.settingsWindowWidth * 0.05
     /// The per-CLI sheet and the remove confirmation (`.alert.sheet`, width 392).
     static let sheetWidth: CGFloat = 392
     /// A menu (`.cpop`, 252 wide) and an anchored popover (`.tpop`, 300 wide).

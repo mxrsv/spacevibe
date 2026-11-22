@@ -40,6 +40,31 @@ struct FrameRouteTests {
         #expect(router.route.page == .limits && router.route.selection == "claude:5-hour")
     }
 
+    @Test("RD44: a page opens on its first row; a selection the filter, scope or search hid moves to the first shown row")
+    func firstRowSelection() {
+        #expect(FrameFirstRow.selection(current: nil, rows: ["a", "b"]) == "a", "the page just opened")
+        #expect(FrameFirstRow.selection(current: "b", rows: ["a", "b"]) == "b", "a shown selection stays")
+        #expect(FrameFirstRow.selection(current: "x", rows: ["a", "b"]) == "a", "the selected row was hidden")
+        #expect(FrameFirstRow.selection(current: "x", rows: []) == nil, "nothing shown, nothing selected")
+
+        let router = FrameRouter(FrameRoute(page: .skills))
+        router.keepSelection(onPage: .skills, among: ["skill::a", "skill::b"])
+        #expect(router.route.selection == "skill::a")
+        router.select("skill::b")
+        router.keepSelection(onPage: .skills, among: ["skill::a", "skill::b"])
+        #expect(router.route.selection == "skill::b")
+        // A search hides the selected row (reviewer B, M1): the inspector must not keep showing it.
+        router.keepSelection(onPage: .skills, among: ["skill::a"])
+        #expect(router.route.selection == "skill::a")
+        // A list that is leaving the screen never selects on the page that replaced it.
+        router.open(.hooks)
+        router.keepSelection(onPage: .skills, among: ["skill::a"])
+        #expect(router.route == FrameRoute(page: .hooks))
+        var picked: [String?] = []
+        router.keepSelection(onPage: .hooks, among: ["hook::x"]) { picked.append($0) }
+        #expect(picked == ["hook::x"], "the page's own select runs instead of the router's")
+    }
+
     @Test("the store on the fixture home: registry, rows with a cell per registry CLI after the scan, rules, and figures")
     func fixtureHome() async throws {
         let fixture = try await CoreFixtureHome.make()

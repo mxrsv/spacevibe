@@ -329,7 +329,7 @@ struct FrameIntegrationTests {
 
     // MARK: 10. Clean is never polled
 
-    @Test("clean.scan runs on readClean and ⌘R only, never on start or the activation refresh")
+    @Test("clean.scan runs once at launch (RD45), then on readClean and ⌘R only, never on the activation refresh")
     func cleanNotPolled() async {
         let core = FrameFakeCore()
         let store = FrameStore(core: core)
@@ -340,13 +340,29 @@ struct FrameIntegrationTests {
         }
         let t0 = Date(timeIntervalSince1970: 1_000)
         await store.start(now: t0)
-        #expect(scans == 0)
+        #expect(scans == 1, "the sidebar shows Clean's figure from launch, on every page")
+        #expect(store.snapshot.clean == CoreCleanScan(clis: [], items: []) && store.states[.clean] == .ready)
+        await store.start(now: t0)
+        #expect(scans == 1, "start runs once")
         await store.refresh(now: t0.addingTimeInterval(FrameStore.refreshInterval + 1))
-        #expect(scans == 0, "the 10 s refresh never walks the logs")
+        #expect(scans == 1, "the 10 s refresh never walks the logs")
         await store.readClean()
-        #expect(scans == 1 && store.snapshot.clean == CoreCleanScan(clis: [], items: []) && store.states[.clean] == .ready)
+        #expect(scans == 2)
         await store.refresh(force: true, now: t0.addingTimeInterval(2 * FrameStore.refreshInterval + 2))
-        #expect(scans == 2, "⌘R reads Clean again")
+        #expect(scans == 3, "⌘R reads Clean again")
+        store.stop()
+    }
+
+    @Test("RD45: the sidebar's Clean value is measured on every page from launch, not blank until Clean opens")
+    func cleanFigureAtLaunch() async {
+        let core = FrameFakeCore()
+        let store = FrameStore(core: core)
+        store.cleanScanner = { FrameTestData.cleanScan() }
+        await store.start()
+        core.push(FrameTestData.activity([]))
+        for _ in 0..<200 where store.states[.activity] != .ready { try? await Task.sleep(for: .milliseconds(5)) }
+        let figure = store.world().figure(for: .clean, loading: store.loading, failed: store.failedEmpty)
+        #expect(figure != .notMeasured && figure != .pending, "\(figure)")
         store.stop()
     }
 }

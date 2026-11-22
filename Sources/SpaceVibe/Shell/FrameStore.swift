@@ -24,7 +24,8 @@ enum FrameSourceState: Equatable, Sendable {
 /// read `world(now:)`.
 ///
 /// - Reads everything at `start()`, again on app activation (`refresh()`, skipped inside `refreshInterval`) and on ⌘R
-///   (`refresh(force: true)`); a write re-reads only the sources it touched (`reread`).
+///   (`refresh(force: true)`); a write re-reads only the sources it touched (`reread`). `clean.scan` joins `start()` and ⌘R
+///   only (RD45).
 /// - Owns the usage scan the core keeps (`usage.scan`): one at start and on each refresh, then `loadout.rows` again. A
 ///   core that restarted answers `scanning` with no scan running, which starts one.
 /// - Activity comes from one live subscription; without one (it failed or ended), `activity.read` stands in and the next
@@ -52,9 +53,9 @@ final class FrameStore {
     var facts = FrameFacts()
 
     /// Reads `clean.scan` (RB-R5 sets it). The scan walks every log of every CLI (the RB-E7 build-review), so it is never
-    /// polled: the 10 s activation refresh skips it, and only `readClean()` runs it, which RB-R5 calls when Clean opens and
-    /// ⌘R (`refresh(force: true)`) calls too. `FrameModel` sets it to the core's `clean.scan`; nil (a test, a shot) reads
-    /// nothing.
+    /// polled: the 10 s activation refresh skips it, and only `readClean()` runs it: once at `start()` (RD45), when Clean
+    /// opens, on Scan Again, after a write that touched it, and on ⌘R (`refresh(force: true)`). `FrameModel` sets it to the
+    /// core's `clean.scan`; nil (a test, a shot) reads nothing.
     @ObservationIgnored var cleanScanner: (@MainActor () async throws -> CoreCleanScan)?
 
     /// Settings › CLIs (Show, Balance pins). Nil: `facts.hidden` and `facts.findings.pinned` stand as set (tests).
@@ -97,13 +98,17 @@ final class FrameStore {
 
     // MARK: Reading
 
-    /// The first read of everything, the scan and the subscription. Safe to call again.
+    /// The first read of everything, the scan, the subscription and one `clean.scan` (RD45: the sidebar shows Clean's figure
+    /// on every page from launch). Safe to call again.
     func start(now: Date = Date()) async {
         guard !isStarted else { return }
         isStarted = true
         lastRefresh = now
         subscribe()
-        await readEverything(refreshProjects: true)
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.readEverything(refreshProjects: true) }
+            group.addTask { await self.readClean() }
+        }
     }
 
     /// Files may have changed outside the app. Skipped inside `refreshInterval` of the last refresh unless `force` (⌘R).
@@ -118,7 +123,7 @@ final class FrameStore {
         }
     }
 
-    /// `clean.scan` now, through `cleanScanner`: on opening Clean and on ⌘R only, never on the activation refresh. A failure
+    /// `clean.scan` now, through `cleanScanner`: at launch, on opening Clean and on ⌘R, never on the activation refresh. A failure
     /// keeps the last scan (`failed` with data). Nothing happens without a scanner.
     func readClean() async {
         guard let cleanScanner else { return }

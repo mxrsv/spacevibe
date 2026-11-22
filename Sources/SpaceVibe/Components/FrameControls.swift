@@ -3,7 +3,9 @@ import SwiftUI
 // The controls of the redesign's window frame (RB-S3), from the reference mock's `src/style.css`: the sidebar's page items,
 // group heads and Settings foot, the page help button, the fixed-width primary slot and the Settings window's pane tabs. The
 // toolbar's icon buttons are `PushButtonStyle(.icon)`, empty states `PageEmptyState`. Every one that takes a click sets the
-// pointer and shows hover, press, disabled and the 3 pt keyboard focus bar (`focusBar`, RD29).
+// pointer and shows hover, press, disabled and the 3 pt keyboard focus bar (`focusBar`, RD29) for its own focus only: each
+// wrapper binds an own `@FocusState` to its `Button` and hands the value to its style (`FocusBarRule`). The button stays the
+// one focusable, as every macOS button, so keyboard navigation reaches it and Space presses it.
 
 // MARK: - Sidebar
 
@@ -25,6 +27,7 @@ struct FrameSidebarItem: View {
     /// What VoiceOver reads for the whole item, value included ("Inbox, 11 need you, 2 critical").
     let spokenLabel: String
     let action: () -> Void
+    @FocusState private var focused: Bool
 
     var body: some View {
         Button(action: action) {
@@ -37,7 +40,8 @@ struct FrameSidebarItem: View {
                 Spacer(minLength: 0)
                 if value != nil || mark != nil {
                     HStack(spacing: SpaceRole.step6) {
-                        if let value { Text(value).typeRole(.quiet).lineLimit(1) }
+                        // DS-R2: sidebar values are figures, in SF Pro Rounded (the mock's `.nv .tv`).
+                        if let value { Text(value).typeRole(.quiet.figures).lineLimit(1) }
                         if let mark { FrameSeverityMark(mark: mark) }
                     }
                     .foregroundStyle(isCurrent ? ColorRole.ink2 : ColorRole.ink3)
@@ -45,7 +49,9 @@ struct FrameSidebarItem: View {
                 }
             }
         }
-        .buttonStyle(FrameSidebarItemStyle(isCurrent: isCurrent))
+        .buttonStyle(FrameSidebarItemStyle(isCurrent: isCurrent, isFocused: focused))
+        .focused($focused)
+        .focusEffectDisabled()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel)
         .accessibilityAddTraits(isCurrent ? [.isButton, .isSelected] : .isButton)
@@ -66,9 +72,9 @@ private struct FrameSeverityMark: View {
 
 private struct FrameSidebarItemStyle: ButtonStyle {
     let isCurrent: Bool
+    let isFocused: Bool
     @Environment(\.materialLook) private var look
     @State private var isHovered = false
-    @FocusState private var isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         let corner = FrameRole.sidebarItemCorner(look)
@@ -78,10 +84,7 @@ private struct FrameSidebarItemStyle: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: FrameRole.sidebarItemHeight(look), alignment: .leading)
             .background(fill(pressed: configuration.isPressed), in: CornerRoleShape(corner))
             .contentShape(CornerRoleShape(corner))
-            .focusBar(isFocused, inset: SpaceRole.step2)
-            .focusable()
-            .focused($isFocused)
-            .focusEffectDisabled()
+            .focusBar(FocusBarRule.isShown(ownFocus: isFocused), edge: corner)
             .onHover { isHovered = $0 }
             .pointerCursor()
     }
@@ -112,6 +115,7 @@ struct FrameSidebarFootItem: View {
     let title: String
     let shortcutHint: String
     let action: () -> Void
+    @FocusState private var focused: Bool
 
     var body: some View {
         Button(action: action) {
@@ -122,14 +126,16 @@ struct FrameSidebarFootItem: View {
                 Text(shortcutHint).typeRole(.quiet).foregroundStyle(ColorRole.ink3).accessibilityHidden(true)
             }
         }
-        .buttonStyle(FrameSidebarFootStyle())
+        .buttonStyle(FrameSidebarFootStyle(isFocused: focused))
+        .focused($focused)
+        .focusEffectDisabled()
         .accessibilityLabel(title)
     }
 }
 
 private struct FrameSidebarFootStyle: ButtonStyle {
+    let isFocused: Bool
     @State private var isHovered = false
-    @FocusState private var isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -139,10 +145,7 @@ private struct FrameSidebarFootStyle: ButtonStyle {
             .background(configuration.isPressed ? ColorRole.selectionFill : isHovered ? ColorRole.hoverFill : .clear,
                         in: CornerRoleShape(FrameRole.sidebarFootCorner))
             .contentShape(CornerRoleShape(FrameRole.sidebarFootCorner))
-            .focusBar(isFocused, inset: SpaceRole.step2)
-            .focusable()
-            .focused($isFocused)
-            .focusEffectDisabled()
+            .focusBar(FocusBarRule.isShown(ownFocus: isFocused), edge: FrameRole.sidebarFootCorner)
             .onHover { isHovered = $0 }
             .pointerCursor()
     }
@@ -155,12 +158,15 @@ struct FrameHelpButton: View {
     let label: String
     let isOpen: Bool
     let action: () -> Void
+    @FocusState private var focused: Bool
 
     var body: some View {
         Button(action: action) {
             SpaceVibeIcon(frame: .question, size: .inline)
         }
-        .buttonStyle(FrameHelpButtonStyle(isOpen: isOpen))
+        .buttonStyle(FrameHelpButtonStyle(isOpen: isOpen, isFocused: focused))
+        .focused($focused)
+        .focusEffectDisabled()
         .help(label)
         .accessibilityLabel(label)
         .accessibilityValue(isOpen ? "Shown" : "Hidden")
@@ -169,8 +175,8 @@ struct FrameHelpButton: View {
 
 private struct FrameHelpButtonStyle: ButtonStyle {
     let isOpen: Bool
+    let isFocused: Bool
     @State private var isHovered = false
-    @FocusState private var isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -179,36 +185,46 @@ private struct FrameHelpButtonStyle: ButtonStyle {
             .background(isOpen || isHovered || configuration.isPressed ? ColorRole.hoverFill : .clear,
                         in: CornerRoleShape(.capsule))
             .contentShape(CornerRoleShape(.capsule))
-            .focusBar(isFocused, inset: SpaceRole.step2)
-            .focusable()
-            .focused($isFocused)
-            .focusEffectDisabled()
+            .focusBar(FocusBarRule.isShown(ownFocus: isFocused), edge: .capsule)
             .onHover { isHovered = $0 }
             .pointerCursor()
     }
 }
 
-/// The toolbar's primary or destructive button keeps one width whatever its label (RD-R17 Layout, `style.css` `.slot`).
+/// The toolbar's primary or destructive button keeps one width whatever its label (RD-R17 Layout, `style.css` `.slot`): the
+/// slot is 196 wide with or without a button in it (the mock's empty `span.slot`), and the button inside fills those 196
+/// (`.dst.slot` / `.pri.slot` min = max 196, label centred and cut with an ellipsis).
 struct FrameToolbarSlot<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        content
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .frame(width: FrameRole.toolbarSlotWidth)
+        ZStack {
+            // Holds the width when `content` draws nothing (no primary on this page or in this state).
+            Color.clear.frame(width: FrameRole.toolbarSlotWidth, height: 0)
+            content
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .environment(\.pushButtonFillsWidth, true)
+        }
+        .frame(width: FrameRole.toolbarSlotWidth)
     }
+}
+
+extension FrameToolbarSlot where Content == EmptyView {
+    /// The empty slot.
+    init() { self.init { EmptyView() } }
 }
 
 // MARK: - Settings window
 
-/// One pane tab of the Settings window (`style.css` `.panes b`): the icon over the name; the open pane by fill, ink and
-/// weight 500.
+/// One pane tab of the Settings window (`style.css` `.panes b`, `role="tab"`): the icon over the name; the open pane by fill,
+/// ink and weight 500, and read as selected. The row that holds them is the tab bar (`FramePaneTabBar`).
 struct FramePaneTab: View {
     let title: String
     let icon: FrameIcon
     let isCurrent: Bool
     let action: () -> Void
+    @FocusState private var focused: Bool
 
     var body: some View {
         Button(action: action) {
@@ -217,16 +233,30 @@ struct FramePaneTab: View {
                 Text(title).typeRole(isCurrent ? .quietMedium : .quiet).lineLimit(1)
             }
         }
-        .buttonStyle(FramePaneTabStyle(isCurrent: isCurrent))
+        .buttonStyle(FramePaneTabStyle(isCurrent: isCurrent, isFocused: focused))
+        .focused($focused)
+        .focusEffectDisabled()
         .accessibilityLabel(title)
         .accessibilityAddTraits(isCurrent ? [.isButton, .isSelected] : .isButton)
     }
 }
 
+/// The Settings window's row of pane tabs (the mock's `.panes`, `role="tablist"`): exposed to VoiceOver as a tab bar.
+struct FramePaneTabBar<Tabs: View>: View {
+    @ViewBuilder var tabs: Tabs
+
+    var body: some View {
+        HStack(spacing: SpaceRole.step4) { tabs }
+            .accessibilityElement(children: .contain)
+            .accessibilityAddTraits(.isTabBar)
+            .accessibilityLabel("Settings panes")
+    }
+}
+
 private struct FramePaneTabStyle: ButtonStyle {
     let isCurrent: Bool
+    let isFocused: Bool
     @State private var isHovered = false
-    @FocusState private var isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         let corner = CornerRole.radius(RadiusRole.step10)
@@ -238,10 +268,7 @@ private struct FramePaneTabStyle: ButtonStyle {
             .background(isCurrent || configuration.isPressed ? ColorRole.selectionFill : isHovered ? ColorRole.hoverFill : .clear,
                         in: CornerRoleShape(corner))
             .contentShape(CornerRoleShape(corner))
-            .focusBar(isFocused, inset: SpaceRole.step2)
-            .focusable()
-            .focused($isFocused)
-            .focusEffectDisabled()
+            .focusBar(FocusBarRule.isShown(ownFocus: isFocused), edge: corner)
             .onHover { isHovered = $0 }
             .pointerCursor()
     }

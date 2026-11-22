@@ -3,8 +3,8 @@ import SwiftUI
 /// The new frame's buttons (DS-R10, DS-R11; the mock's `.pri`, `.ctl`, `.rb`, `.rb.q`, `.dst`, `.rb.d`), beside v5's
 /// `ActionButtonStyle`. One primary per surface; destructive is a red tint, never a solid red fill; Cancel and secondary
 /// actions stay quiet (FE-E2). Every state: hover, pressed, disabled (.42), loading (a still ring, no loop, DS-R9), keyboard
-/// focus as the 3 pt bar (RD29), the pointing hand, and the whole button as the hit area. The caller adds
-/// `.focusEffectDisabled()` so the system ring never shows (D57).
+/// focus as the 3 pt bar at the button's leading edge for the button's own focus only (RD29, `FocusBarRule`), the pointing
+/// hand, and the whole button as the hit area. The caller adds `.focusEffectDisabled()` so the system ring never shows (D57).
 ///
 ///     Button(action: undo) { PushButtonLabel("Undo", icon: .arrowCounterClockwise) }
 ///         .buttonStyle(PushButtonStyle(.control, size: .small))
@@ -18,7 +18,7 @@ struct PushButtonStyle: ButtonStyle {
         case icon
         /// No fill until hovered, `ink3` text at 400: Cancel beside a destructive action, Dismiss, Details.
         case quiet
-        /// Link-coloured, no fill: the group head's `Select N Suggested`.
+        /// Link-coloured, no fill: an inline text action (the inspector's More / Less).
         case link
         /// The red tint for an undoable removal.
         case destructive
@@ -124,10 +124,12 @@ private struct PushButtonBody: View {
     let style: PushButtonStyle
 
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.isFocused) private var isFocused
+    /// The nearest focusable ancestor's focus: the button's own only while keyboard navigation is on (`FocusBarRule`).
+    @Environment(\.isFocused) private var environmentFocus
     @Environment(\.specimenInteraction) private var specimen
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.materialLook) private var look
+    @Environment(\.pushButtonFillsWidth) private var fillsWidth
     @State private var hovering = false
 
     var body: some View {
@@ -145,7 +147,8 @@ private struct PushButtonBody: View {
         .lineLimit(1)
         .foregroundStyle(style.ink(hovered: hovered, enabled: isEnabled))
         .padding(.horizontal, style.sidePadding)
-        .frame(minWidth: style.size.height, minHeight: style.size.height, maxHeight: style.size.height)
+        .frame(minWidth: style.size.height, maxWidth: fillsWidth ? .infinity : nil, minHeight: style.size.height,
+               maxHeight: style.size.height)
         .background {
             if let fill = style.fill(hovered: hovered, pressed: pressed, enabled: isEnabled, onGlass: onGlass) { shape.fill(fill) }
         }
@@ -156,10 +159,25 @@ private struct PushButtonBody: View {
         .opacity(isEnabled ? 1 : OpacityRole.disabled)
         .scaleEffect(MotionRole.scale(pressed: pressed, reduceMotion: reduceMotion))
         .contentShape(shape)
-        .focusBar(isFocused || specimen.contains(.focus), inset: corner == .capsule ? style.size.height / 2 : SpaceRole.step2)
+        .focusBar(FocusBarRule.isShown(ownFocus: FocusBarRule.buttonOwnsFocus(environmentFocus: environmentFocus,
+                                                                              keyboardNavigation: FocusBarRule.keyboardNavigation),
+                                       specimen: specimen.contains(.focus)),
+                  edge: corner)
         .pointerCursor()
         .onHover { hovering = $0 }
         .accessibilityAddTraits(style.isLoading ? .updatesFrequently : [])
+    }
+}
+
+private struct PushButtonFillsWidthKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// A button in the toolbar's fixed slot fills the slot's width (`FrameToolbarSlot`); elsewhere it takes its label's.
+    var pushButtonFillsWidth: Bool {
+        get { self[PushButtonFillsWidthKey.self] }
+        set { self[PushButtonFillsWidthKey.self] = newValue }
     }
 }
 

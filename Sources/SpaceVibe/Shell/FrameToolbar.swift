@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// A page's toolbar (RD-R1, RD32, RD-R17 Layout): the title with its click-only `?` and quiet line, the page's own
-/// controls, the inspector button and the fixed-width primary slot at the end. Glass controls on macOS 26; a solid strip
-/// with a hairline under it on macOS 15 and with Reduce Transparency.
+/// A page's toolbar (RD-R1, RD32, RD-R17 Layout): Hide Sidebar (RD47), the title with its click-only `?` and quiet line,
+/// the page's own controls, the inspector button and the fixed-width primary slot at the end, kept empty on a page that has
+/// one but shows no button now (`FramePage.hasToolbarSlot`). With the sidebar hidden it starts after the traffic lights.
+/// Glass controls on macOS 26; a solid strip with a hairline under it on macOS 15 and with Reduce Transparency.
 struct FrameToolbar: View {
     let page: FramePage
     let content: FramePageContent
@@ -19,6 +20,13 @@ struct FrameToolbar: View {
         @Bindable var chrome = chrome
         let topInset = look == .glass ? SpaceRole.step12 : 0
         HStack(spacing: SpaceRole.step8) {
+            // RD47: Hide Sidebar first (the mock's `b-chrome.js` toolbar), the same command as ⌃⌘S.
+            let sidebarLabel = "\(chrome.sidebarCommandTitle) (\(FrameCommandMap.sidebar))"
+            Button { chrome.toggleSidebar() } label: { SpaceVibeIcon(frame: .sidebarSimple, size: .control) }
+                .buttonStyle(PushButtonStyle(.icon))
+                .focusEffectDisabled()
+                .help(sidebarLabel)
+                .accessibilityLabel(chrome.sidebarCommandTitle)
             if !hidesTitle {
                 HStack(alignment: .center, spacing: SpaceRole.step10) {
                     HStack(spacing: SpaceRole.step4) {
@@ -57,9 +65,14 @@ struct FrameToolbar: View {
                     .accessibilityAddTraits(chrome.isInspectorShown ? .isSelected : [])
                     .accessibilityValue(chrome.isInspectorShown ? "On" : "Off")
             }
-            if let primary = content.primary { FrameToolbarSlot { primary } }
+            if let primary = content.primary {
+                FrameToolbarSlot { primary }
+            } else if page.hasToolbarSlot {
+                FrameToolbarSlot()
+            }
         }
-        .padding(.horizontal, SpaceRole.step12)
+        .padding(.leading, chrome.isSidebarHidden ? FrameRole.trafficLightsWidth : SpaceRole.step12)
+        .padding(.trailing, SpaceRole.step12)
         .frame(height: FrameRole.toolbarHeight(look) - topInset)
         .padding(.top, topInset)
         .frame(maxWidth: .infinity)
