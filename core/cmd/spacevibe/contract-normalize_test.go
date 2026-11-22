@@ -46,6 +46,20 @@ func (n *normalizer) text(s string) string {
 // clockKeys are members whose value moves with the wall clock.
 var clockKeys = map[string]bool{"current": true, "ageMs": true, "lastWriteAgoMs": true}
 
+// diskMask stands for a size that follows the filesystem. It is as long as the 4-digit sizes it replaces: a transcript line over 2048 bytes is recorded as its length
+// only, and a longer mask pushed the scan line of clean_move_locked over that limit.
+const diskMask = "$D"
+
+// diskSized reports whether m is one entry of clean.scan's "items": a loadout key with the allocated size of its
+// folder. That size follows the filesystem, not the core: a folder holds no blocks of its own on APFS and one block
+// on ext4, so the same skill reads 4096 on macOS and 8192 on the Linux runner. Sizes of single files (logs, caches)
+// are the same on both and stay in the transcript.
+func diskSized(m map[string]any) bool {
+	_, hasKey := m["key"].(string)
+	_, hasBytes := m["bytes"].(json.Number)
+	return len(m) == 2 && hasKey && hasBytes
+}
+
 // line renders one wire line; a line that is not JSON gets only the text masks.
 func (n *normalizer) line(l string) string {
 	dec := json.NewDecoder(strings.NewReader(l))
@@ -74,6 +88,9 @@ func (n *normalizer) walk(key string, v any) any {
 	case []any:
 		out := make([]any, len(t))
 		for i, child := range t {
+			if m, ok := child.(map[string]any); ok && key == "items" && diskSized(m) {
+				child = map[string]any{"key": m["key"], "bytes": diskMask}
+			}
 			out[i] = n.walk(key, child)
 		}
 		return out
