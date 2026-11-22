@@ -76,6 +76,16 @@ Pending items of the third readiness review, all accepted by the owner on 2026-1
 | RD41 | Nothing is pre-selected; row actions sit on the selected row, and a group head holds `Select N Suggested`. This replaces the earlier "every action visible" answer for row buttons; the two rail axes `preselect` and `rowact` are removed (RD17). | "nhận hết" (2026-11-21) | RD-R4 | every list; group heads on Inbox, Skills, Subagents, Hooks |
 | RD42 | Clean covers what Claude Code and Codex leave behind; `.cursor`, `.gemini` and other CLIs' folders wait for a later spec, once the engine supports those CLIs. This narrows CL1 ("bất kỳ cái gì"). | "nhận hết" (2026-11-21) | CL-R4 | Clean at 2 CLIs; 3+ CLI rows are illustration |
 
+Decisions of 2026-11-22, after the owner opened the built app and a five-reviewer pass compared it with the mock. Each was the recommendation offered; the owner's answer to all of them was "nhận hết".
+
+| ID | Decision | Owner's words | Req | Where in the mock |
+| --- | --- | --- | --- | --- |
+| RD43 | The frame stays drawn by the app (sidebar, toolbar, lists) instead of the system `NavigationSplitView` and toolbar; it must behave like the native frame RD4 names (keyboard, focus, scroll edge, sidebar collapse). Narrows RD4's "native lists and tables" to native behaviour. | "nhận hết" (2026-11-22) | RD-R1 | every page |
+| RD44 | A page opens with its first row selected and the inspector filled, as the mock draws it; RD41's "nothing is pre-selected" covers ticks only. | "nhận hết" (2026-11-22) | RD-R2, RD-R4 | Inbox, Skills, Subagents, Hooks, Rules, Activity first row |
+| RD45 | Clean scans once at launch, then on opening Clean, Scan Again, ⌘R and after a write, never on the refresh timer, so the sidebar shows Clean's figure on every page. | "nhận hết" (2026-11-22) | RD-R2, RD10 | sidebar Clean value |
+| RD46 | Where the build chose to differ from the mock without an owner decision, it follows the mock: one-decimal percentages, the mock's time wording, Activity session glyphs at 16 pt and group heads at the quiet size, Keep as a quiet button, the small age control, one CLI per Hook row, the Allow / Ask / Deny dial in the rule inspector, no `Show in Limits` on a Window finding, the mock's CLI logos instead of letters. The destructive Stop keeps its red tint (RD-R9). | "nhận hết" (2026-11-22) | RD-R1, RD-R9 | each page's own state |
+| RD47 | The toolbar's Hide Sidebar button collapses the sidebar the standard macOS way, ⌃⌘S, as in the mock. | "nhận hết" (2026-11-22) | RD-R1 | toolbar, first button |
+
 Earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
 | ID | Decision | Owner's words | Req | Where in the mock |
