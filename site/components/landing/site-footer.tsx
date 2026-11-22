@@ -13,7 +13,7 @@ export function SiteFooter({ nav = FOOTER.nav }: { readonly nav?: readonly NavLi
         </span>
         <nav className="flex gap-6 max-md:order-3 max-md:w-full md:mr-auto" aria-label="Sections (footer)">
           {nav.map((link) => (
-            <a key={link.href} href={link.href} className="text-sec text-ink-2 no-underline transition-colors duration-150 hover:text-ink-1">
+            <a key={link.href} href={link.href} className="inline-flex min-h-6 items-center text-sec text-ink-2 no-underline transition-colors duration-150 hover:text-ink-1">
               {link.label}
             </a>
           ))}
@@ -22,9 +22,10 @@ export function SiteFooter({ nav = FOOTER.nav }: { readonly nav?: readonly NavLi
           href={FOOTER.github.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sec text-ink-2 no-underline transition-colors duration-150 hover:text-ink-1"
+          className="inline-flex min-h-6 items-center text-sec text-ink-2 no-underline transition-colors duration-150 hover:text-ink-1"
         >
           {FOOTER.github.label}
+          <span className="sr-only">(opens in a new tab)</span>
         </a>
         <span className="text-sec text-ink-2 max-md:ml-auto">
           © {year} {FOOTER.by}

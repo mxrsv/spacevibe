@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
 
-import { SHOTS, type ShotKey } from "./shots";
+import { SHOTS, type Shot, type ShotKey } from "./shots";
 
 /** macOS window buttons at the app's own place, as fractions of the window width (a 1440 pt window). */
 const LIGHTS = [
@@ -12,7 +12,7 @@ const LIGHTS = [
 
 interface AppWindowProps {
   readonly shot: ShotKey;
-  /** Draw the window buttons the headless capture leaves out. Only for a whole window. */
+  /** Draw the window buttons the headless capture leaves out. Only for a whole window; hidden where a phone shows the capture cut. */
   readonly lights?: boolean;
   /** A page that is not in the download: dashed outline, and the caption says so. */
   readonly preview?: boolean;
@@ -31,6 +31,7 @@ interface AppWindowProps {
  */
 export function AppWindow({ shot, lights = false, preview = false, caption, priority = false, bleed = false, className = "", style }: AppWindowProps) {
   const { src, width, height, alt } = SHOTS[shot];
+  const phoneShift: number | undefined = (SHOTS[shot] as Shot).phoneShift;
   return (
     <figure className={`grid gap-3 ${className}`} style={style}>
       <div
@@ -45,11 +46,12 @@ export function AppWindow({ shot, lights = false, preview = false, caption, prio
           height={height}
           priority={priority}
           sizes="(min-width: 1280px) 1120px, 100vw"
-          className="block h-auto w-full"
+          className={`block h-auto w-full ${phoneShift === undefined ? "" : "max-md:w-[190%] max-md:max-w-none max-md:-translate-x-(--phone-shift)"}`}
+          style={phoneShift === undefined ? undefined : ({ "--phone-shift": `${phoneShift * 100}%` } as CSSProperties)}
         />
         {lights
           ? LIGHTS.map((place) => (
-              <span key={place} aria-hidden="true" className={`absolute top-[1.04cqw] size-[0.84cqw] rounded-full ${place}`} />
+              <span key={place} aria-hidden="true" className={`absolute top-[1.04cqw] size-[0.84cqw] rounded-full ${place} ${phoneShift === undefined ? "" : "max-md:hidden"}`} />
             ))
           : null}
       </div>

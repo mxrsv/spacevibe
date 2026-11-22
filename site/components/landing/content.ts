@@ -19,6 +19,13 @@ export const SITE = {
   title: "SpaceVibe — see what Claude Code and Codex carry",
   description:
     "A local Mac app that shows every skill, subagent and hook Claude Code and Codex carry, how often each ran, what each may do, and what it cost. Nothing leaves the machine.",
+  // The first viewport at 1200 x 630 without the header, saved from the built page; retake it when the hero changes.
+  ogImage: {
+    src: "/og.jpg",
+    width: 1200,
+    height: 630,
+    alt: "SpaceVibe: Which of your skills actually run? Above the app's Inbox with 12 rows that need you.",
+  },
 } as const;
 
 export type CLI = "claude" | "codex";

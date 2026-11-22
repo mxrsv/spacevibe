@@ -13,7 +13,7 @@ export function CliBands() {
   return (
     <div>
       {BANDS.map((band) => (
-        <section key={band.id} id={band.id} className="border-t border-edge py-[clamp(64px,6.7vw,96px)]">
+        <section key={band.id} id={band.id} className="border-t border-edge band">
           <div className={`shell grid gap-10 ${band.narrow ? "md:grid-cols-[minmax(0,1fr)_minmax(0,420px)] md:items-start" : ""}`}>
             <div className="grid content-start gap-10">
               <header className="grid max-w-[680px] gap-4" data-reveal>

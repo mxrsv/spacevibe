@@ -5,7 +5,7 @@ import { Scene } from "./scene";
 /** The scene returns once, dimmer, cropped to its lower-right corner, behind the one download panel. */
 export function DownloadBand() {
   return (
-    <section id={DOWNLOAD.id} className="border-t border-edge py-[clamp(64px,6.7vw,96px)]">
+    <section id={DOWNLOAD.id} className="border-t border-edge band">
       <div className="shell">
         <div className="relative isolate overflow-clip rounded-panel border border-edge bg-s1 px-8 py-16 text-center max-md:px-5 max-md:py-10">
           <Scene variant="download" />

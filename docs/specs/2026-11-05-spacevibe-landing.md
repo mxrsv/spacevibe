@@ -72,6 +72,7 @@ Owner feedback on the first round: the four categories looked alike and the opti
 | LP-A4 `grep -n "licen" site/components/landing/content.ts` is empty and the download band holds "Free", "macOS 15 or later" and "Apple silicon". | LP-R6 |
 | LP-A5 The preview frame carries the dashed outline and its caption; no `<form>` or `<input>` is in `site/out/index.html`. | LP-R5 |
 | LP-A6 The owner approves the page by eye at 1440 and at 390, beside the app. | L10 |
+| LP-A8 Audit of 2026-11-22 holds: text contrast at least 4.5:1, every link at least 24 px tall, no horizontal scroll at 320, 390 and 1440, a link that opens a new tab says so to a screen reader, headings read as separate words. | LP-R2 |
 | LP-A7 No Vercel project, deploy or DNS change was made by an agent. | LP-R7 |
 
 ## Traceability (W20)
@@ -97,6 +98,10 @@ Lines with no owner decision behind them. The build follows them; the owner sett
 - **Band order is Clean, Skills, Rules, Limits, Activity**, replacing L13's Loadout, Limits, Activity, Rules. Source: the app's pages today and the job order in `PRODUCT.md`; L13 named pages the app no longer has.
 - **"In development" holds Tokens only**, where L8 named Agents and Tokens. Source: the Agents pages (Skills, Subagents, Hooks, Rules) are in the app. L13's "when Agents ships, that release's PR replaces the Rules band" is read as overtaken by the same fact.
 - **The hero window is the Inbox**, not a usage list. Source: agent's choice; the Inbox is where "never ran" is shown first in the redesign, which is the evidence L5 asks the hero to lead with.
+- **The scene's stars and planet keep moving while the page is idle** (loops of 7 to 96 s, off under reduced motion). The owner's rule FE-M1 says nothing loops while idle; L2 keeps the scene. Source: carried over with the scene; left as is until the owner says which wins.
+- **A phone has no section links in the header**, only the brand and the download button; the footer carries them. Source: the first-generation header, unchanged.
+- **On a phone a whole capture is shown at about twice the frame's width and cut on the right**, so its text can be read. Source: agent's choice (audit 2026-11-22).
+- **The Codex dot is neutral, not teal**, as in the app (`PRODUCT.md`, Colour). Source: app convention.
 - **The Tokens preview is the 2026-11-03 mock**, drawn in the earlier look. Source: the only tracked render of that page.
 
 ## Deploy gates
@@ -104,4 +109,5 @@ Lines with no owner decision behind them. The build follows them; the owner sett
 Moved here from `AGENTS.md` on 2026-11-20.
 
 - **WEB0, before WEB1.** The owner picks a landing direction (L16) and `/` is replaced with it: done 2026-11-22. What still holds WEB0 open is the owner's eye approval (LP-A6) and the lines under "Inferred, not decided"; until then the page must never be deployed.
+- **WEB0b, before WEB1.** `Download for macOS` goes to `releases/latest`, which on 2026-11-22 is still the deprecated `v0.1.0` under the former name (`gh release view -R mxrsv/spacevibe`). The page is deployed only after REL1 of the go-core plan has published a SpaceVibe build as the latest release.
 - **WEB1 to WEB3.** Creating the Vercel project, repointing `spacevibe.dev` and the DNS check for the retired product subdomain are the owner's gates, done in that order after WEB0 and after `kyant.dev` is verified. They are tracked in the [go-core plan](../plans/2026-11-07-go-core-and-spacevibe-identity.md) (SV16).

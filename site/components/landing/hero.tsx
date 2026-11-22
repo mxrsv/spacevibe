@@ -19,7 +19,7 @@ export function Hero() {
         <div className="flex max-w-[860px] flex-col items-start">
           <h1 className="grid text-h1 font-semibold text-ink-0" data-rise style={{ "--rise": "80ms" } as CSSProperties}>
             {HERO.headingLines.map((line) => (
-              <span key={line}>{line}</span>
+              <span key={line}>{line} </span>
             ))}
           </h1>
 

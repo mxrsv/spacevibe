@@ -16,8 +16,8 @@ const BASE =
   "group inline-flex items-center gap-2 rounded-ctl whitespace-nowrap font-medium leading-none tracking-[-0.005em] no-underline transition-[background-color,border-color,color] duration-150 ease-out";
 
 const VARIANT: Record<Variant, string> = {
-  solid: "bg-accent text-white border border-transparent hover:bg-accent-hover",
-  ghost: "bg-transparent text-ink-1 border border-edge-strong hover:border-edge-hover hover:text-ink-0",
+  solid: "bg-accent text-white border border-transparent hover:bg-accent-hover active:bg-accent",
+  ghost: "bg-transparent text-ink-1 border border-edge-strong hover:border-edge-hover hover:text-ink-0 active:bg-s2",
 };
 
 const SIZE = {
@@ -35,6 +35,7 @@ export function ButtonLink({ href, variant = "solid", external = false, size = "
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
       <span>{children}</span>
+      {external ? <span className="sr-only">(opens in a new tab)</span> : null}
       <Arrow
         size={14}
         aria-hidden="true"

@@ -8,7 +8,7 @@ import { UPCOMING } from "./content";
  */
 export function Upcoming() {
   return (
-    <section id={UPCOMING.id} className="relative border-t border-edge bg-bg py-[clamp(64px,6.7vw,96px)]">
+    <section id={UPCOMING.id} className="relative border-t border-edge bg-bg band">
       <div className="shell grid gap-12">
         <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
           <h2 className="max-w-[560px] text-h2 font-medium" data-reveal>
@@ -24,12 +24,10 @@ export function Upcoming() {
         <div className="grid max-w-[720px] content-start gap-5" data-reveal>
           <AppWindow shot={UPCOMING.item.shot} preview caption={UPCOMING.previewCaption} />
           <div className="grid gap-2">
-            <h3 className="flex items-center gap-3 text-[17px] font-medium leading-6 tracking-[-0.01em]">
-              {UPCOMING.item.name}
-              <span className="rounded-full border border-dashed border-edge-strong px-2.5 py-0.5 text-tiny font-normal text-ink-2">
-                {UPCOMING.label}
-              </span>
-            </h3>
+            <div className="flex items-center gap-3">
+              <h3 className="text-h3 font-medium">{UPCOMING.item.name}</h3>
+              <span className="rounded-full border border-dashed border-edge-strong px-2.5 py-0.5 text-tiny text-ink-2">{UPCOMING.label}</span>
+            </div>
             <p className="max-w-[520px] text-sec text-ink-1">{UPCOMING.item.body}</p>
           </div>
         </div>

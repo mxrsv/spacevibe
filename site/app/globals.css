@@ -2,8 +2,8 @@
 @import "./scene.css";
 
 /* ----------------------------------------------------------------------------
-   Tokens. One graphite ground, one accent (the planet's light), two CLI colours
-   carried over from the app (Claude Code clay, Codex teal). Everything in the
+   Tokens. One graphite ground, one accent (the planet's light), two CLI identities
+   carried over from the app (Claude Code clay, Codex mono: PRODUCT.md, Colour). Everything in the
    components reads these names; no raw colour lives in a className.
    ---------------------------------------------------------------------------- */
 @theme {
@@ -31,7 +31,7 @@
   --color-glass: rgb(13 15 18 / 62%);
 
   --color-claude: #f69a65;
-  --color-codex: #4fcdcd;
+  --color-codex: #c9cdd4;
   --color-warn: #e8b457;
   --color-danger: #f07070;
   --color-ok: #62c290;
@@ -57,6 +57,9 @@
   --text-h2: clamp(28px, 2.5vw, 36px);
   --text-h2--line-height: 1.15;
   --text-h2--letter-spacing: -0.025em;
+  --text-h3: 17px;
+  --text-h3--line-height: 24px;
+  --text-h3--letter-spacing: -0.01em;
   --text-stat: 28px;
   --text-stat--line-height: 1;
   --text-stat--letter-spacing: -0.03em;
@@ -118,6 +121,11 @@
 @utility shell {
   width: min(100% - 2 * var(--gutter, 48px), 1280px);
   margin-inline: auto;
+}
+
+/* One band of the page: the same breathing room above and below every section. */
+@utility band {
+  padding-block: clamp(64px, 6.7vw, 96px);
 }
 
 @utility tnum {

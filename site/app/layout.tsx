@@ -22,7 +22,9 @@ export const metadata: Metadata = {
     url: SITE.url,
     siteName: SITE.brand,
     type: "website",
+    images: [{ url: SITE.ogImage.src, width: SITE.ogImage.width, height: SITE.ogImage.height, alt: SITE.ogImage.alt }],
   },
+  twitter: { card: "summary_large_image", title: SITE.title, description: SITE.description, images: [SITE.ogImage.src] },
   icons: { icon: "/icon.svg" },
 };
 
