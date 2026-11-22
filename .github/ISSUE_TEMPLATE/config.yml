@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea to talk through
+    url: https://github.com/mxrsv/spacevibe/discussions
+    about: Ask how something works or float an idea before it is a request.
+  - name: Security problem
+    url: https://github.com/mxrsv/spacevibe/security/advisories/new
+    about: Report privately anything that writes, reads, runs or sends more than it should.

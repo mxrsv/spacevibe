@@ -10,10 +10,11 @@ One current document per topic. When two documents disagree, the one named here 
 | Vocabulary: one word, one meaning | [GLOSSARY.md](../GLOSSARY.md) |
 | Rules for agents: commands, toolchain rules (B), boundary rules (S-R) | [AGENTS.md](../AGENTS.md) |
 | What the repository is and how to build it | [README.md](../README.md) |
+| Licence (SV18), brand, how to contribute, how to report a vulnerability | [LICENSE](../LICENSE), [TRADEMARK.md](../TRADEMARK.md), [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURITY.md](../SECURITY.md) |
 | The interface as shipped: tokens, components, page conventions | [DESIGN-LANGUAGE.md](DESIGN-LANGUAGE.md) |
 | Interface requirements and acceptance | [design language v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md) |
 | Interface and vocabulary decisions (`D<n>`) | [Linear identity ledger](specs/2026-11-06-spacevibe-linear-identity-decisions.md) |
-| Core, rename and distribution decisions (`SV<n>`) | [SV ledger](specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) |
+| Core, rename, distribution and licence decisions (`SV<n>`) | [SV ledger](specs/2026-11-07-core-port-and-spacevibe-identity-decisions.md) |
 | Product requirements, acceptance criteria AC1 to AC10, SV traceability | [product spec](specs/2026-11-02-spacevibe.md) |
 | The Go core, one page per subsystem, and the shell-to-core protocol | [internals index](internals/README.md) |
 | Releasing and the update key | [release runbook](operations/release.md) |

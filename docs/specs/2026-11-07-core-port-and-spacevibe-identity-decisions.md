@@ -33,6 +33,7 @@ The 2026-11-02 spec made the engine a Swift library (`SpaceVibeCore`). Owner on 
 | SV15 | No data migration from `~/.reins` to `~/.spacevibe`. The owner copies the folder by hand; the release notes say so. | "approve đủ" |
 | SV16 | Deploy host is Vercel. Old Hub routes redirect to the same path on `kyant.dev`. The `/live` family (`/live`, `/en/live`, `/vi/live`, `/live/<slug>`) keeps its 308 to `https://active.spacevibe.dev` (U4). Order: build Hub on `kyant.dev`, verify, then repoint `spacevibe.dev`. The retired product subdomain did not answer HTTP on 2026-11-07, so it needs no redirect unless DNS for it exists. Every DNS and deploy step needs the owner's approval when it runs. | "approve đủ" |
 | SV17 | The other products (Deck, Bench, Academy, Active) keep their own names. "SpaceVibe" names this app. Workspace-level records move to a separate workspace session (X1). | "approve đủ" |
+| SV18 | The repository is open source under GPL-3.0-only. The SpaceVibe name and app icon stay reserved by a trademark policy. | Picked "GPL-3.0-only" in the agent's question dialog, 2026-11-22 |
 
 ## Open (not assumed)
 
@@ -119,6 +120,16 @@ Still holding the former name, each waiting on a step outside the repo:
 | `dev.spacevibe.reins` in `generate-update-feed.sh`, `test-update.sh`, `Info.plist`'s comment, AGENTS.md B3 and B8, the release runbook | It is the Keychain account of the only update key that exists, and the bundle id of the shipped `v0.1.0` | The owner creates the new key (runbook, "Before the first SpaceVibe release"), then the account flips and the lines go |
 | `reins-statusline` and the old data folder in `core/internal/statusline` (`quote.go`, `install_test.go`), `scripts/test-statusline.sh`, `docs/internals/limits.md` | The owner's own `~/.claude/settings.json` still runs that wrapper (seen 2026-11-22, read only); without the unwrap an install would wrap it a second time | The owner reinstalls the capture from the app once, then the recognition and its tests are deleted |
 | The local folder name in `Checkout:` lines and `~/scratch/` paths | The folders on disk still have that name; other sessions and the agent memory path depend on it | A workspace session renames the checkout and the scratch folder, then the lines follow |
+
+## Owner answer on the licence (2026-11-22)
+
+Asked which licence SpaceVibe takes, with GPL-3.0-only, MIT, Apache-2.0 and "not yet" offered, the owner picked "GPL-3.0-only" in the agent's question dialog. The offered line read: the same as the owner's TinySift engine; a redistributed change must stay open; a `TRADEMARK.md` keeps the name and logo.
+
+- SV18 is recorded above. [`LICENSE`](../../LICENSE) holds the GPL version 3 text; "only" means no "or any later version" grant, stated in the [README](../../README.md#licence).
+- Shipped dependencies were checked for compatibility the same day from [`Resources/Licenses`](../../Resources/Licenses): Sparkle (MIT), `klauspost/compress` and Go (BSD-3-Clause), MingCute (Apache-2.0); Phosphor is MIT and Inter is OFL ([`Credits.swift`](../../Sources/SpaceVibe/App/Credits.swift)).
+- Added with it, as the agent's choice and not the owner's wording: [`TRADEMARK.md`](../../TRADEMARK.md) including the line that SpaceVibe is not affiliated with Anthropic or OpenAI, [`CONTRIBUTING.md`](../../CONTRIBUTING.md), [`SECURITY.md`](../../SECURITY.md), the issue forms and the pull request template.
+- Not done: L14 and LP-R6 of the [landing spec](2026-11-05-spacevibe-landing.md) say the page names no licence and labels the link "GitHub" until a `LICENSE` exists. One exists now; the page's wording is a site change with its own gates.
+- SV18 has no row yet in the product spec's SV traceability table.
 
 ## Out of scope for this ledger
 

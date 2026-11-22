@@ -1,5 +1,10 @@
 # SpaceVibe
 
+[![core](https://github.com/mxrsv/spacevibe/actions/workflows/core.yml/badge.svg)](https://github.com/mxrsv/spacevibe/actions/workflows/core.yml)
+[![swift](https://github.com/mxrsv/spacevibe/actions/workflows/swift.yml/badge.svg)](https://github.com/mxrsv/spacevibe/actions/workflows/swift.yml)
+[![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue)](LICENSE)
+[![macOS 15+](https://img.shields.io/badge/macOS-15+-black?logo=apple)](#build-from-source)
+
 A native macOS app that shows and edits what Claude Code and Codex CLI are equipped with: every skill, subagent, hook and rule, joined to how often each one actually ran according to local logs. It answers three questions a pile of installed extras never does: what is never used, what one CLI has and the other lacks, and which hook command fires on which event. The full product record is [PRODUCT.md](PRODUCT.md).
 
 **Status: pre-release.** No public build exists yet. `v0.1.0` shipped under a former product name and is deprecated; it does not update to SpaceVibe ([B3, B9](AGENTS.md)).
@@ -43,6 +48,12 @@ Every other command and the toolchain rules are in [AGENTS.md](AGENTS.md); the r
 
 Terms are fixed in [GLOSSARY.md](GLOSSARY.md): a CLI is Claude Code or Codex, and is never called an agent.
 
+## Contributing
+
+A bug or an idea: [open an issue](https://github.com/mxrsv/spacevibe/issues/new/choose). A question: [Discussions](https://github.com/mxrsv/spacevibe/discussions). A security problem goes privately, as the [security policy](SECURITY.md) describes. Pull requests are welcome; read [CONTRIBUTING](CONTRIBUTING.md) first, because the interface follows recorded decisions and the tests must never touch a real configuration.
+
 ## Licence
 
-No licence has been chosen yet. Third-party notices are in [`Resources/Licenses`](Resources/Licenses) and in the app's About panel ([`Credits.swift`](Sources/SpaceVibe/App/Credits.swift)).
+SpaceVibe is open source under [GPL-3.0-only](LICENSE) (SV18). The code is open; the SpaceVibe name and app icon are not, see the [trademark policy](TRADEMARK.md). Third-party notices are in [`Resources/Licenses`](Resources/Licenses) and in the app's About panel ([`Credits.swift`](Sources/SpaceVibe/App/Credits.swift)).
+
+SpaceVibe is an independent project. It is not affiliated with, endorsed by or sponsored by Anthropic or OpenAI; Claude Code and Codex are their products.

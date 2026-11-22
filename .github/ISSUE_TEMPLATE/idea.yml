@@ -1,0 +1,16 @@
+name: Idea
+description: Something SpaceVibe should show or do and does not.
+title: "Idea: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation you are in with Claude Code or Codex, before any solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
