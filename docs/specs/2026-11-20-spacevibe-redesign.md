@@ -100,6 +100,14 @@ Decisions of 2026-11-22, after the second review round (design system, build-rev
 | RD55 | Balance pins: none turns Balance off; two or three are valid; exactly one is refused. Mechanism (RB-F3, lead's call within the decision): unpinning one of two clears both; pinning one when none is pinned also pins the first other installed CLI that can be compared, refused when there is none; the Settings toast says which ("Balance needs two CLIs, so it is off.", "Pinned Codex too: Balance compares two CLIs."); a stored single pin reads as none. | "theo rec" (2026-11-22) | RD-R10 | Settings › CLIs |
 | RD56 | One press, one toast, one Undo: `Add to…` for several rows and "Copy to …, then remove" each give one toast whose Undo reverts everything that press wrote, newest first. | "theo rec" (2026-11-22) | RD-R11, RD39 | Skills sheet, shared-file confirmation |
 
+Decisions of 2026-11-22, after RB-F4 measured the page-switch jumps. Each was the recommended option of the question asked.
+
+| ID | Decision | Owner's words | Req | Where in the mock |
+| --- | --- | --- | --- | --- |
+| RD57 | The toolbar spans the whole window; its right-hand group (search, inspector button, the 196 slot) is pinned to the window's right edge and the inspector starts below the toolbar, as a native macOS inspector does (RD43), so switching pages never moves that group. Changes the mock's toolbar, which sits over the list column only. | picked "Toolbar kéo hết cửa sổ (Recommended)" (2026-11-22) | RD-R1, RD-R17 Layout | every page's toolbar |
+| RD58 | A page's hero is aligned to the top of its header, so a note beside it that wraps (Clean at 1000 pt) never pushes the hero down. | picked "Canh hero lên trên (Recommended)" (2026-11-22) | RD-R2 | Clean header |
+| RD59 | The floating sidebar keeps the mock's 18 pt corner. | picked "Giữ 18 như mock (Recommended)" (2026-11-22) | RD-R1 | sidebar |
+
 Earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
 
 | ID | Decision | Owner's words | Req | Where in the mock |
