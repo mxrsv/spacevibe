@@ -3,8 +3,8 @@
  * (`SPACEVIBE_REDESIGN=1 SPACEVIBE_SHOT_SCREEN=<page> scripts/dev-fixture.sh --shots <dir>`, 2x, the
  * `solid-dark` variants, captured 2026-11-22): the whole Inbox window for the hero, the page without its
  * sidebar for Clean, Skills and Rules, and the inspector alone for a limit window and a session. Their
- * rows are the app's synthetic illustration data, never a real home. `previewTokens` is a render of the
- * tracked mock in `mocks/` for a page that is still in development; the page labels it a design preview.
+ * rows are the app's synthetic illustration data, never a real home. A page that is still in development
+ * has no capture here: it gets one when a render in the app's current look exists.
  */
 export interface Shot {
   readonly src: string;
@@ -59,13 +59,6 @@ export const SHOTS = {
     width: 672,
     height: 680,
     alt: "A Claude Code session waiting for an answer: project, process id, age, estimated cost and the question it asked, with Show Terminal and Copy Session Id.",
-  },
-  previewTokens: {
-    src: "/landing/app/preview-tokens.webp",
-    width: 1440,
-    height: 900,
-    phoneShift: 0.1,
-    alt: "Design preview of the Tokens page: estimated cost for Claude Code and Codex over 30 days, a bar chart by day, cache reuse and an estimated cost table.",
   },
 } as const satisfies Record<string, Shot>;
 

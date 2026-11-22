@@ -58,7 +58,7 @@ Owner feedback on the first round: the four categories looked alike and the opti
 | LP-R2 | The planet scene and stars sit behind the hero and the download band only; the page is dark only, English only, Next.js static export with Tailwind, and the CTA goes to GitHub Releases. | L2, L3, L4 |
 | LP-R3 | The hero asks which skills actually run and shows a real app window; Limits is a later band. | L5 |
 | LP-R4 | Every shipped screen is a real capture of the app on synthetic data, captioned "demo data". Owed: the Limits and Activity bands show the inspector of an Inbox row, because the redesigned Limits and Activity pages do not render in a headless capture; whole-page captures replace them once those pages can be captured. | L7 |
-| LP-R5 | A page that is not in the download is shown in a dashed frame captioned "Design preview · not in the current download", labelled "In development", with no date and no version, beside a "Watch releases on GitHub" link. No form, no email capture. Settings is not on the page. | L6, L8, L9 |
+| LP-R5 | A page that is not in the download is named and labelled "In development", says it is not in the current download, carries no date and no version, and sits beside a "Watch releases on GitHub" link. It shows no screen until a render in the app's current look exists; that render then takes a dashed frame captioned "Design preview · not in the current download" (L7). The 2026-11-03 Tokens mock was removed from the page on 2026-11-22: the owner pointed at it as "version đã cũ". No form, no email capture. Settings is not on the page. | L6, L8, L9 |
 | LP-R6 | The download band says "Free" and names no licence; the repository link reads "GitHub"; the page says "macOS 15 or later" and "Apple silicon". | L14, L15 |
 | LP-R7 | Nothing is deployed and no DNS changes without the owner's separate approval; reviews happen locally or on a preview that is not public. | L10, L12 |
 
@@ -70,7 +70,7 @@ Owner feedback on the first round: the four categories looked alike and the opti
 | LP-A2 `node --test site/tests/*.test.mjs` passes: every screen the page names is a file, every band has a screen and a line per CLI, the Limits copy names the usage cache, no redirect shadows a served route. | LP-R1, LP-R4 |
 | LP-A3 At 1440 and at 390 the page has no horizontal scroll and every image loads. | LP-R2, LP-R3 |
 | LP-A4 `grep -n "licen" site/components/landing/content.ts` is empty and the download band holds "Free", "macOS 15 or later" and "Apple silicon". | LP-R6 |
-| LP-A5 The preview frame carries the dashed outline and its caption; no `<form>` or `<input>` is in `site/out/index.html`. | LP-R5 |
+| LP-A5 The "In development" band shows no capture in an older look, and says "Not in the current download"; no `<form>` or `<input>` is in `site/out/index.html`. | LP-R5 |
 | LP-A6 The owner approves the page by eye at 1440 and at 390, beside the app. | L10 |
 | LP-A8 Audit of 2026-11-22 holds: text contrast at least 4.5:1, every link at least 24 px tall, no horizontal scroll at 320, 390 and 1440, a link that opens a new tab says so to a screen reader, headings read as separate words. | LP-R2 |
 | LP-A7 No Vercel project, deploy or DNS change was made by an agent. | LP-R7 |
@@ -102,7 +102,6 @@ Lines with no owner decision behind them. The build follows them; the owner sett
 - **A phone has no section links in the header**, only the brand and the download button; the footer carries them. Source: the first-generation header, unchanged.
 - **On a phone a whole capture is shown at about twice the frame's width and cut on the right**, so its text can be read. Source: agent's choice (audit 2026-11-22).
 - **The Codex dot is neutral, not teal**, as in the app (`PRODUCT.md`, Colour). Source: app convention.
-- **The Tokens preview is the 2026-11-03 mock**, drawn in the earlier look. Source: the only tracked render of that page.
 
 ## Deploy gates
 

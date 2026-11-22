@@ -14,8 +14,6 @@ interface AppWindowProps {
   readonly shot: ShotKey;
   /** Draw the window buttons the headless capture leaves out. Only for a whole window; hidden where a phone shows the capture cut. */
   readonly lights?: boolean;
-  /** A page that is not in the download: dashed outline, and the caption says so. */
-  readonly preview?: boolean;
   readonly caption?: string;
   readonly priority?: boolean;
   /** The section cuts the window's bottom edge: no bottom corners and no bottom border. */
@@ -29,15 +27,13 @@ interface AppWindowProps {
  * One app screen, or one region of it, in a frame. The frame is only an edge and a shadow: the pixels
  * are the app's. The caption sits under the frame so it never covers the screen.
  */
-export function AppWindow({ shot, lights = false, preview = false, caption, priority = false, bleed = false, className = "", style }: AppWindowProps) {
+export function AppWindow({ shot, lights = false, caption, priority = false, bleed = false, className = "", style }: AppWindowProps) {
   const { src, width, height, alt } = SHOTS[shot];
   const phoneShift: number | undefined = (SHOTS[shot] as Shot).phoneShift;
   return (
     <figure className={`grid gap-3 ${className}`} style={style}>
       <div
-        className={`@container relative overflow-hidden rounded-panel bg-s2 ${
-          preview ? "border border-dashed border-edge-hover" : "border border-edge-strong shadow-panel"
-        } ${bleed ? "rounded-b-none border-b-0" : ""}`}
+        className={`@container relative overflow-hidden rounded-panel border border-edge-strong bg-s2 shadow-panel ${bleed ? "rounded-b-none border-b-0" : ""}`}
       >
         <Image
           src={src}

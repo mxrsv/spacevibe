@@ -150,12 +150,7 @@ export const UPCOMING = {
   id: "next",
   heading: "Tokens is in development.",
   label: "In development",
-  previewCaption: "Design preview · not in the current download",
-  item: {
-    name: "Tokens",
-    body: "Tokens and estimated cost per day, model and project for both CLIs, kept as a local history.",
-    shot: "previewTokens",
-  } satisfies { readonly name: string; readonly body: string; readonly shot: ShotKey },
+  body: "Tokens and estimated cost per day, model and project for both CLIs, kept as a local history. Not in the current download.",
   watch: { href: `${GITHUB_URL}/releases`, label: "Watch releases on GitHub" },
 } as const;
 
