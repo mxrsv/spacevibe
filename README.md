@@ -1,7 +1,6 @@
 # SpaceVibe
 
 [![core](https://github.com/mxrsv/spacevibe/actions/workflows/core.yml/badge.svg)](https://github.com/mxrsv/spacevibe/actions/workflows/core.yml)
-[![swift](https://github.com/mxrsv/spacevibe/actions/workflows/swift.yml/badge.svg)](https://github.com/mxrsv/spacevibe/actions/workflows/swift.yml)
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue)](LICENSE)
 [![macOS 15+](https://img.shields.io/badge/macOS-15+-black?logo=apple)](#build-from-source)
 
