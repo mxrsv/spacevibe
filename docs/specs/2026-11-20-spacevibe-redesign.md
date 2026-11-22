@@ -97,7 +97,7 @@ Decisions of 2026-11-22, after the second review round (design system, build-rev
 | RD52 | The toolbar's primary or destructive label is short enough never to be cut in its 196 slot: "Remove 104", "Stop 1,006". | "theo rec" (2026-11-22) | RD-R17 | toolbar slot |
 | RD53 | Compact counts (`4.8M`) stay in lists; the inspector shows the full number. | "theo rec" (2026-11-22) | RD-R17 | Skills inspector tiles |
 | RD54 | The sidebar Limits value reads "Over limit" when the Window that needs you is over its limit, not "0% left". | "theo rec" (2026-11-22) | RD-R2, RD10 | sidebar |
-| RD55 | Balance pins: none turns Balance off; two or three are valid; exactly one is refused. | "theo rec" (2026-11-22) | RD-R10 | Settings › CLIs |
+| RD55 | Balance pins: none turns Balance off; two or three are valid; exactly one is refused. Mechanism (RB-F3, lead's call within the decision): unpinning one of two clears both; pinning one when none is pinned also pins the first other installed CLI that can be compared, refused when there is none; the Settings toast says which ("Balance needs two CLIs, so it is off.", "Pinned Codex too: Balance compares two CLIs."); a stored single pin reads as none. | "theo rec" (2026-11-22) | RD-R10 | Settings › CLIs |
 | RD56 | One press, one toast, one Undo: `Add to…` for several rows and "Copy to …, then remove" each give one toast whose Undo reverts everything that press wrote, newest first. | "theo rec" (2026-11-22) | RD-R11, RD39 | Skills sheet, shared-file confirmation |
 
 Earlier owner answers are also carried here. They come from the paused layout-frame grilling of 2026-11-18, recorded in the auto-memory, not in this chat:
