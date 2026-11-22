@@ -238,6 +238,38 @@ export const PRIVATE = {
   ],
 } as const;
 
+export const FAQ = {
+  id: "faq",
+  heading: "Before you download.",
+  /** Only what the bands and the privacy panel do not already answer; every answer is a fact from PRODUCT.md. */
+  items: [
+    {
+      q: "Is it free?",
+      a: "Yes. The download is free and needs no account.",
+    },
+    {
+      q: "Which CLIs does it read?",
+      a: "Claude Code and Codex CLI. Gemini CLI keeps no usage file, so its limit reads as not measurable instead of a guess.",
+    },
+    {
+      q: "Do I have to sign in to Claude or OpenAI?",
+      a: "No. Everything is read from files the CLIs already keep on your Mac: no login, no API key, no API call.",
+    },
+    {
+      q: "What does it change in my setup?",
+      a: "Only what you ask for, in the skill, subagent, hook and permission locations of each CLI. MCP servers, the model, CLAUDE.md and AGENTS.md are never written, and plugin-owned items are read only.",
+    },
+    {
+      q: "How exact is the cost?",
+      a: "It is an estimate at API-equivalent rates and says so. A model with no known price reads as not measured, never as 0.",
+    },
+    {
+      q: "How do updates work?",
+      a: "SpaceVibe checks once a day and installing takes a click. The check can be turned off in Settings.",
+    },
+  ],
+} as const;
+
 export const DOWNLOAD = {
   id: "download",
   heading: "Download SpaceVibe for macOS",

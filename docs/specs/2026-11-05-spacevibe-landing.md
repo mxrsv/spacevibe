@@ -102,6 +102,7 @@ Lines with no owner decision behind them. The build follows them; the owner sett
 - **A phone has no section links in the header**, only the brand and the download button; the footer carries them. Source: the first-generation header, unchanged.
 - **On a phone a whole capture is shown at about twice the frame's width and cut on the right**, so its text can be read. Source: agent's choice (audit 2026-11-22).
 - **Each band opens with the screen's name and an icon, and the two per-CLI text cards are one ledger**: a row per CLI with a verdict (a green check for read in full, an amber eye-off where the CLI logs nothing for part of it, a lock for read only) before the reason. Source: agent's choice (design-direction pass, 2026-11-22), to make what a CLI does not log the page's signature; the verdict words are the agent's.
+- **A band of six questions sits before the download band** (free, which CLIs, sign-in, what is written, how exact the cost is, updates), as native disclosures. Source: agent's choice, from the landing guide the owner pasted on 2026-11-22; every answer restates `PRODUCT.md`. The guide's other missing elements were not built: user counts, ratings and testimonials do not exist and are never invented, a signup form is ruled out by L9, a display typeface other than Inter by L2, and ShadCN by L4.
 - **The Codex dot is neutral, not teal**, as in the app (`PRODUCT.md`, Colour). Source: app convention.
 
 ## Deploy gates
