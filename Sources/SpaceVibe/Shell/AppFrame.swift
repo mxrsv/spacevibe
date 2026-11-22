@@ -177,10 +177,8 @@ private struct FrameWindow: View {
             if new != nil { focus = .dialog }
             if new == nil, old != nil { focus = FrameFocusTarget.returning(to: focusBeforeDialog) }
         }
-        .onChange(of: page) {
-            chrome.pageChanged()
-            model.search.clear()
-        }
+        // The search is cleared by the router itself, before the new page's first-row rule runs (`FrameRouter.open`).
+        .onChange(of: page) { chrome.pageChanged() }
         .onChange(of: presentation) { old, new in
             let opened = new == .overlay, closed = old == .overlay && !opened
             if opened { focus = .inspector }

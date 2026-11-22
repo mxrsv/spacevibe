@@ -27,6 +27,9 @@ final class FrameFakeCore: UnservedCore, @unchecked Sendable {
     private var _sent: [String: String] = [:]
 
     var calls: [String] { lock.withLock { _calls } }
+    /// `activityRefresh` calls: the subscription asked for a report now (GW23).
+    private var _refreshes = 0
+    var refreshes: Int { lock.withLock { _refreshes } }
     /// The params each write was last sent, as text.
     var sent: [String: String] { lock.withLock { _sent } }
     func count(_ method: String) -> Int { calls.filter { $0 == method }.count }
@@ -99,6 +102,11 @@ final class FrameFakeCore: UnservedCore, @unchecked Sendable {
     override func limitsRead() async throws -> CoreLimitsResult { try await record("limits.read"); return CoreLimitsResult(limits: []) }
     override func journalHistory() async throws -> CoreJournalHistory { try await record("journal.history"); return CoreJournalHistory(entries: []) }
     override func activityRead() async throws -> CoreActivityReport { try await record("activity.read"); return FrameTestData.activity([]) }
+    override func activityRefresh() async { lock.withLock { _refreshes += 1 } }
+    override func activityStop(cli: CoreCLI, id: String) async throws -> CoreStopResult {
+        try await record("activity.stop", sent: "\(cli.rawValue) \(id)")
+        return CoreStopResult(exited: true)
+    }
     override func activitySubscribe() -> AsyncThrowingStream<CoreActivityReport, Error> {
         lock.withLock { _calls.append("activity.subscribe") }
         return AsyncThrowingStream { continuation in lock.withLock { self.continuation = continuation } }
@@ -393,4 +401,152 @@ struct FrameStoreProjectTests {
         #expect(Set(store.snapshot.rules.keys) == [.global])
         #expect(store.states[.rules(.shared("/p"))] == nil && !store.reading.contains(.rules(.local("/p"))))
     }
+}
+
+/// Round-2 fixes of the store and the write path (RB-F3, reviewers R, P and Q): Activity read on Stop and on activation,
+/// one Clean scan at a time, the shared pending set and the kept Hook ids.
+@Suite("Frame store: round 2")
+@MainActor
+struct FrameStoreRoundTwoTests {
+    private func eventually(_ done: () -> Bool) async -> Bool {
+        for _ in 0..<400 where !done() { try? await Task.sleep(for: .milliseconds(5)) }
+        return done()
+    }
+
+    @Test("Stop's re-read asks the live subscription for a report now, so the stopped row goes without the 20 s poll")
+    func stopRefreshesActivity() async {
+        let core = FrameFakeCore()
+        let store = FrameStore(core: core)
+        await store.start()
+        #expect(store.isSubscribed)
+        let before = core.refreshes
+        let writes = FrameWrites(core: core, store: store, toasts: ToastCenter(announce: false))
+        #expect(await writes.perform(.stop(cli: .claude, sessionID: "s1", label: "Stopped 1 session")))
+        #expect(core.refreshes == before + 1, "the touched Activity source is refreshed, not skipped")
+        #expect(core.count("activity.read") == 0, "a read would race the subscription's pushes")
+        store.stop()
+    }
+
+    @Test("activation inside the 10 s interval still asks Activity for a report (GW23); nothing else is read")
+    func activationRefreshesActivityFirst() async {
+        let core = FrameFakeCore()
+        let store = FrameStore(core: core)
+        let t0 = Date(timeIntervalSince1970: 1_000)
+        await store.start(now: t0)
+        core.reset()
+        let before = core.refreshes
+        await store.refresh(now: t0.addingTimeInterval(1))
+        #expect(core.refreshes == before + 1 && core.calls.isEmpty)
+        store.stop()
+    }
+
+    @Test("a second readClean while a scan runs joins it: one clean.scan, both get its answer")
+    func readCleanJoins() async {
+        let store = FrameStore(core: FrameFakeCore())
+        let gate = PendingGate()
+        let scans = CallCounter()
+        store.cleanScanner = {
+            scans.add()
+            await gate.wait()
+            return FrameTestData.cleanScan()
+        }
+        async let first = store.readClean()
+        async let second = store.readClean()
+        #expect(await eventually { scans.value == 1 })
+        await gate.open()
+        let answers = await [first, second]
+        #expect(answers == [true, true] && scans.value == 1)
+        // After a write, a scan that starts after the one in flight: a joined one could not see the move.
+        await store.readCleanAfterWrite()
+        #expect(scans.value == 2)
+    }
+
+    @Test("Scan Again takes its own scan's answer: a failed one shows no \u{201C}Measured again\u{201D}")
+    func scanAgainOwnResult() async {
+        let store = FrameStore(core: FrameFakeCore())
+        store.cleanScanner = { FrameTestData.cleanScan() }
+        #expect(await store.readClean())
+        store.cleanScanner = { throw CoreError("The logs could not be read.", status: 500) }
+        #expect(await store.readClean() == false, "the last scan stays, but this press's answer is a failure")
+    }
+
+    @Test("Clean's Try Again runs one clean.scan, with every other source")
+    func tryAgainScansOnce() async {
+        let core = FrameFakeCore()
+        let model = FrameModel(core: core, toasts: ToastCenter(announce: false), cliPreferences: CLIPreferences(defaults: nil))
+        let scans = CallCounter()
+        model.store.cleanScanner = {
+            scans.add()
+            return FrameTestData.cleanScan()
+        }
+        await model.store.start()
+        #expect(scans.value == 1)
+        let inputs = CleanSynthetic.inputs(.normal, clis: 2)
+        let actions = CleanActions(model: model, state: CleanPageState(), page: CleanPage(inputs), world: inputs.world)
+        core.reset()
+        actions.tryAgain()
+        #expect(await eventually { core.count("loadout.rows") >= 1 && scans.value >= 2 })
+        try? await Task.sleep(for: .milliseconds(100))
+        #expect(scans.value == 2, "refresh(force:) scans; Try Again adds no second scan")
+        model.store.stop()
+    }
+
+    @Test("the Journal window's Undo is pending for the main window: its row locks wait for it")
+    func journalUndoSharesPending() async {
+        let core = FrameFakeCore()
+        let gate = PendingGate()
+        core.onCall = { name in if name.hasPrefix("journal.undo") { await gate.wait() } }
+        let store = FrameStore(core: core)
+        await store.start()
+        let main = FrameWrites(core: core, store: store, toasts: ToastCenter(announce: false))
+        let journal = store.makeWrites(toasts: ToastCenter(announce: false))
+        let undo = Task { await journal.undoFromJournal(FrameTestData.entry("e1"), label: "Added a to Codex", store: store, main: main) }
+        #expect(await eventually { main.isPending(FrameWrite.journalUndoControl("e1")) })
+        #expect(main.isUndoing, "a row lock (D53) sees the Undo the other window runs")
+        await gate.open()
+        _ = await undo.value
+        #expect(!main.isUndoing && main.pending.isEmpty)
+        store.stop()
+    }
+
+    @Test("a toast's Undo is pending while it runs, so a logo press waits for the world it leaves")
+    func toastUndoIsPending() async {
+        let core = FrameFakeCore()
+        let store = FrameStore(core: core)
+        await store.start()
+        let toasts = ToastCenter(announce: false)
+        let writes = FrameWrites(core: core, store: store, toasts: toasts)
+        await writes.perform(.removeItem(id: "claude:skill:a", label: "Removed a"))
+        let gate = PendingGate()
+        core.onCall = { name in if name.hasPrefix("journal.undo") { await gate.wait() } }
+        toasts.undoLast()
+        #expect(await eventually { writes.isUndoing })
+        await gate.open()
+        #expect(await eventually { !writes.isUndoing && !toasts.isUndoing })
+        store.stop()
+    }
+
+    @Test("kept Hook findings move once to the per-CLI row ids at start, so they stay kept")
+    func keptHookIDsMigrate() async {
+        let core = FrameFakeCore()
+        core.loadout = FrameTestData.loadout(hooks: [FrameTestData.hook("h1", cells: ["claude": FrameTestData.runs(0), "codex": .missing])])
+        core.kept = ["hook::h1", "hook::h1:fail", "skill::other"]
+        let store = FrameStore(core: core)
+        await store.start()
+        #expect(store.facts.findings.kept == ["hook::h1@claude", "hook::h1@claude:fail", "skill::other"])
+        #expect(core.count("findings.keep") == 2 && core.count("findings.unkeep") == 2)
+        #expect(store.world(now: FrameTestData.now).findings.allSatisfy { $0.id != "hook::h1@claude" }, "the Never ran Hook stays kept")
+        core.reset()
+        await store.migrateKeptHookIDs()
+        #expect(core.count("findings.keep") == 0, "once per launch")
+        store.stop()
+    }
+}
+
+/// A count shared with a `@Sendable` closure.
+final class CallCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    var value: Int { lock.withLock { count } }
+    func add() { lock.withLock { count += 1 } }
 }

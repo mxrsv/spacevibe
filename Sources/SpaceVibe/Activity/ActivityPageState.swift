@@ -74,6 +74,19 @@ final class ActivityPageState {
         router.select(parkedSelection[next])
     }
 
+    /// An outside route to a session (the glance widget, GW6; `FrameRouter.go(to:)` runs it first): the Sessions tab, and
+    /// the CLI menu cleared unless it shows that session's CLI, so the first-row rule finds the session shown and keeps it.
+    /// `itemID` is `cli:sessionID`.
+    func reveal(sessionItemID itemID: String, router: FrameRouter) {
+        if tab != .sessions {
+            if router.route.page == .activity { parkedSelection[tab] = router.route.selection }
+            tab = .sessions
+            ticked = []
+        }
+        let cli = itemID.split(separator: ":", maxSplits: 1).first.map(String.init)
+        if let scope, scope != cli { setScope(nil) }
+    }
+
     func setScope(_ next: String?) {
         scope = next
         ticked = []

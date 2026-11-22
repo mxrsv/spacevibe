@@ -39,9 +39,9 @@ struct FrameWorldTests {
             let inbox = Set(w.findings.filter { $0.job == .cleanUp }.map(\.id))
             #expect(inbox == w.suggested, "N=\(registry.count)")
             #expect(Set(w.clean.agentRows.map(\.id)) == Set(w.candidates.map(\.id)))
-            #expect(!w.candidates.contains { $0.id == "skill::used" || $0.id == "hook::busy" })
+            #expect(!w.candidates.contains { $0.id == "skill::used" || $0.id == "hook::busy@claude" })
             #expect(!w.candidates.contains { $0.id == "skill::unread" }, "an unknown cell never makes an item Never ran")
-            #expect(w.suggested == ["skill::never", "agent::agent-never", "hook::dead", "hook::quiet"])
+            #expect(w.suggested == ["skill::never", "agent::agent-never", "hook::dead@claude", "hook::quiet@claude"])
         }
     }
 

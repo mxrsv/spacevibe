@@ -63,7 +63,7 @@ struct FindingsTests {
             D.item("used", cells: ["claude": D.sessions(4), "codex": .missing]),
         ], hooks: [D.hook("dd", dead: true, cells: ["claude": D.runs(0)])]))
         let w = world(snapshot)
-        #expect(w.findings.map(\.id) == ["hook::dd", "skill::old"])
+        #expect(w.findings.map(\.id) == ["hook::dd@claude", "skill::old"])
         #expect(w.findings.map(\.severity) == [.critical, .attention])
         // The Skills hero still counts every Never ran row: plugin and project items are a fact, only never suggested (RD-R2).
         #expect(w.figure(for: .skills, loading: [], failed: []) == .count(4, tone: .attention))
@@ -75,9 +75,9 @@ struct FindingsTests {
         let snapshot = D.snapshot(D.loadout(hooks: [D.hook("hh", cells: ["claude": D.runs(9, errors: 9)])]))
         #expect(world(snapshot).findings.isEmpty)
         var facts = FrameFacts()
-        facts.findings.hookErrorsLastWeek = ["hook::hh": 2]
+        facts.findings.hookErrorsLastWeek = ["hook::hh@claude": 2]
         let failing = world(snapshot, facts: facts).findings
-        #expect(failing.map(\.id) == ["hook::hh:fail"])
+        #expect(failing.map(\.id) == ["hook::hh@claude:fail"])
         #expect(failing.first?.job == .control)
     }
 

@@ -70,7 +70,7 @@ struct InboxPageTests {
     @Test("Clean up: Dead and Never ran, Keep then Remove; at 2 CLIs nothing is shared, so it goes at once")
     func cleanUpRows() {
         let (page, _) = page(.normal)
-        let dead = row(page, "hook::h1")
+        let dead = row(page, "hook::h1@claude")
         #expect(dead?.glyph.icon == .prohibit && dead?.evidence == "Script file is missing" && dead?.isMono == true)
         #expect(dead?.actions == [.keep, .remove(title: "Remove from Claude Code", asks: false)])
         let never = row(page, "skill::pdf-extract")
@@ -93,7 +93,7 @@ struct InboxPageTests {
     @Test("Control and Watch rows: failing Hook, whole-tool Rules in Global and a project, Window behind pace, waiting session")
     func otherRows() {
         let (page, _) = page(.normal, hasHost: { _ in false })
-        let failing = row(page, "hook::h4:fail")
+        let failing = row(page, "hook::h4@claude:fail")
         #expect(failing?.evidence == "2 failures in 7 days" && failing?.isRemovable == false)
         #expect(failing?.actions == [.keep, .copyCommand("pnpm prettier --write \"$CLAUDE_FILE\"")])
         let global = row(page, "R::global:allow:Bash")
@@ -139,7 +139,7 @@ struct InboxPageTests {
         let (page, _) = page(.normal)
         let router = FrameRouter()
         router.keepSelection(onPage: .inbox, among: page.order)
-        #expect(router.route.selection == page.rows.first?.id && router.route.selection == "hook::h1")
+        #expect(router.route.selection == page.rows.first?.id && router.route.selection == "hook::h1@claude")
         router.select("R::global:allow:Bash")
         let world = S.world(.normal, clis: 2)
         let searched = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), query: FrameSearchQuery("pdf"),
@@ -222,8 +222,8 @@ struct InboxPageTests {
         let claudeHook = D.hook("cl", command: "~/.claude/hooks/y.sh", dead: true, cells: ["claude": D.runs(0), "codex": .missing])
         let world = FrameWorld(snapshot: D.snapshot(D.loadout(hooks: [codexHook, claudeHook])), now: D.now)
         #expect(world.deadHooks.count == 2)
-        #expect(world.findings.map(\.id) == ["hook::cl"])
-        #expect(world.suggested == ["hook::cl"])
+        #expect(world.findings.map(\.id) == ["hook::cl@claude"])
+        #expect(world.suggested == ["hook::cl@claude"])
         #expect(InboxWording.removableMembers(world.rows) == ["claude:hook:cl"])
     }
 
@@ -319,6 +319,34 @@ struct InboxActionsTests {
         model.router.select(first.id)
         actions.perform(.keep, on: first)
         #expect(await eventually { core.sent["findings.keep"] == first.id && model.router.route.selection == page.rows[1].id })
+    }
+
+    @Test("Keep's move to the next finding happens only on Inbox, and only while the kept row is still selected")
+    func keepSelectionStaysPut() async {
+        let (core, model, _, actions, page) = await setUp(clis: 2)
+        let gate = PendingGate()
+        core.onCall = { name in if name == "findings.keep" { await gate.wait() } }
+        let first = page.rows[0]
+        model.router.open(.inbox)
+        model.router.select(first.id)
+        actions.perform(.keep, on: first)
+        // While the write runs the user opens another page.
+        model.router.open(.skills)
+        model.router.select("skill::chosen")
+        await gate.open()
+        #expect(await eventually { core.sent["findings.keep"] == first.id && model.writes.pending.isEmpty })
+        #expect(model.router.route == FrameRoute(page: .skills, selection: "skill::chosen"), "Keep never selects on another page")
+        // On Inbox, a row the user picked meanwhile is not pulled back either.
+        let second = page.rows[1]
+        model.router.open(.inbox)
+        model.router.select(second.id)
+        let gate2 = PendingGate()
+        core.onCall = { name in if name == "findings.keep" { await gate2.wait() } }
+        actions.perform(.keep, on: second)
+        model.router.select(page.rows[0].id)
+        await gate2.open()
+        #expect(await eventually { core.sent["findings.keep"] == second.id && model.writes.pending.isEmpty })
+        #expect(model.router.route.selection == page.rows[0].id)
     }
 
     @Test("the head's pick ticks every suggested row, then clears them")

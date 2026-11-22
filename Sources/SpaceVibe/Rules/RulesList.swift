@@ -22,6 +22,8 @@ struct RulesList: View {
         .frameListKeys(rows: list.rows.map(\.id), router: model.router, chrome: chrome)
         // RD44: the first rule is selected on opening and whenever the scope, the file or the search hides the selected one.
         .frameFirstRowSelection(page: .rules, rows: list.rows.map(\.id), router: model.router)
+        // The capability preview and a sheet the route hid never come back on the next visit.
+        .onDisappear { state.pageLeft() }
     }
 
     @ViewBuilder

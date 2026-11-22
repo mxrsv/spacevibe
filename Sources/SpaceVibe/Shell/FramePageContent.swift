@@ -95,10 +95,14 @@ struct FrameSidebarValue: Equatable, Sendable {
         case .failed, .unmeasurable: self.init(text: "Unmeasurable")
         case .notMeasured: self.init()
         case .count(let n, let tone): self.init(text: NumberWording.count(n), mark: mark(tone), criticalCount: criticalCount)
-        case .percentLeft(let left, _): self.init(text: "\(WindowPace.percentText(left)) left")
+        case .percentLeft(_, _, isOver: true): self.init(text: Self.overLimit)
+        case .percentLeft(let left, _, _): self.init(text: "\(WindowPace.percentText(left)) left")
         case .bytes(let bytes): self.init(text: NumberWording.bytes(bytes))
         }
     }
+
+    /// The Limits value while the Window that needs you is over its limit (RD54).
+    static let overLimit = "Over limit"
 
     /// What VoiceOver reads for the item: "Inbox, 11 need you, 2 critical"; "Skills, 4" elsewhere; the title alone without a
     /// value.

@@ -62,7 +62,7 @@ struct FrameCommands: Commands {
                 .keyboardShortcut(FrameCommandMap.settings.keyboardShortcut)
         }
         CommandGroup(replacing: .undoRedo) {
-            Button("Undo") { if !modal { Self.undo(toasts) } }
+            Button("Undo") { Self.undo(toasts, target: target) }
                 .keyboardShortcut(FrameCommandMap.undo.keyboardShortcut)
             Button("Redo") { NSApp.sendAction(Selector(("redo:")), to: nil, from: nil) }
                 .keyboardShortcut(FrameCommandMap.redo.keyboardShortcut)
@@ -119,13 +119,27 @@ struct FrameCommands: Commands {
         }
     }
 
-    /// ⌘Z: a text field being edited keeps its own Undo; otherwise the session's newest Undo (the toast's, RD39).
+    /// ⌘Z (`FrameUndoCommand`): a text field being edited keeps its own Undo; otherwise the session's newest Undo (the
+    /// toast's, RD39), only while a frame window is key and no dialog covers it. From the Settings or Journal window
+    /// (`target` nil) it never reaches the main window's stack, so it cannot undo behind a dialog there.
     @MainActor
-    static func undo(_ toasts: ToastCenter) {
-        if let editor = NSApp.keyWindow?.firstResponder as? NSTextView, editor.undoManager?.canUndo == true {
-            editor.undoManager?.undo()
-        } else if toasts.canUndoByKey {
-            toasts.undoKey()
+    static func undo(_ toasts: ToastCenter, target: FrameCommandTarget?) {
+        let editor = NSApp.keyWindow?.firstResponder as? NSTextView
+        switch FrameUndoCommand.target(editorCanUndo: editor?.undoManager?.canUndo == true, isFrameKey: target != nil,
+                                       isModal: target?.isModal == true, sessionCanUndo: toasts.canUndoByKey) {
+        case .editor: editor?.undoManager?.undo()
+        case .session: toasts.undoKey()
+        case .nothing: break
         }
+    }
+}
+
+/// What ⌘Z acts on. Pure, so the rule is tested without a window.
+enum FrameUndoCommand: Equatable {
+    case editor, session, nothing
+
+    static func target(editorCanUndo: Bool, isFrameKey: Bool, isModal: Bool, sessionCanUndo: Bool) -> FrameUndoCommand {
+        if editorCanUndo { return .editor }
+        return isFrameKey && !isModal && sessionCanUndo ? .session : .nothing
     }
 }

@@ -117,3 +117,16 @@ struct WindowPaceTests {
         #expect(WindowPace.shareText(69.5) == "69.5")
     }
 }
+
+@Suite("Window pace: absurd shares")
+struct WindowPaceAbsurdShareTests {
+    @Test("a share past Int's range, infinity or NaN is shown at a bound, never trapping Int()")
+    func clampedShares() {
+        #expect(WindowPace.shareText(1e300) == NumberWording.count(Int(WindowPace.shareBound)))
+        #expect(WindowPace.shareText(-.infinity) == NumberWording.count(-Int(WindowPace.shareBound)))
+        #expect(WindowPace.shareText(.nan) == "0")
+        #expect(InboxWording.percent(1e300) == "\(Int(WindowPace.shareBound))%")
+        #expect(InboxWording.percent(.nan) == "0%")
+        #expect(WindowPace.shareText(69.46) == "69.5", "ordinary shares are unchanged")
+    }
+}

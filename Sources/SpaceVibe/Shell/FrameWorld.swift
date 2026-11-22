@@ -37,7 +37,8 @@ enum PageFigure: Equatable, Sendable {
     /// The source could not be read and nothing was read before.
     case failed
     case count(Int, tone: FindingSeverity?)
-    case percentLeft(Double, tone: FindingSeverity?)
+    /// `isOver`: the Window is over its limit, which the sidebar says in words ("Over limit", RD54), never "0% left".
+    case percentLeft(Double, tone: FindingSeverity?, isOver: Bool = false)
     case bytes(Int64)
     /// No CLI gives the data (Limits without a measured Window).
     case unmeasurable
@@ -99,6 +100,13 @@ struct FrameWorld: Sendable {
     // MARK: Pages
 
     func rows(_ kind: CoreKind) -> [FrameRow] { rows.filter { $0.kind == kind } }
+
+    /// A page's `All CLIs` pick as the lists apply it: a CLI hidden in Settings › CLIs since it was picked (or one the
+    /// registry no longer lists) reads as nil, All CLIs, as the menu then shows it (`CLIMenuEntries.scope`).
+    func shownScope(_ cli: String?) -> String? {
+        guard let cli, clis.contains(where: { $0.id == cli }) else { return nil }
+        return cli
+    }
 
     /// The Never ran rows of one kind; Hooks add their dead ones (the Hooks hero is "dead or never ran", RD-R2). Plugin and
     /// project rows count: they are a fact, only never suggested.
@@ -200,7 +208,7 @@ struct FrameWorld: Sendable {
         case .limits:
             if let early = gate([.limits], usageToo: false) { return early }
             guard let hero = heroWindow, let left = hero.left else { return .unmeasurable }
-            return .percentLeft(left, tone: hero.isBehind ? FindingSeverity(hero.severity) : nil)
+            return .percentLeft(left, tone: hero.isBehind ? FindingSeverity(hero.severity) : nil, isOver: hero.over > 0)
         case .activity:
             if let early = gate([.activity], usageToo: false) { return early }
             return .count(waiting.isEmpty ? running.count : waiting.count, tone: waiting.isEmpty ? nil : .attention)

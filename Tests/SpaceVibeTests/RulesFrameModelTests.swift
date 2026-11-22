@@ -101,7 +101,7 @@ struct RulesFrameModelTests {
     func ticks() {
         let snap = snapshot(global: [D.rule("Read"), D.rule("Bash", wide: true), D.rule("Edit(~/.ssh/**)", verdict: .deny)])
         var view = RulesViewState()
-        view.ticked = ["global:allow:Bash", "global:allow:Read", "project:allow:Gone"]
+        view.ticked = ["global::Bash", "global::Read", "project::Gone"]
         let list = model(snap, view: view)
         #expect(list.rows.map(\.rule.rule) == ["Bash", "Edit(~/.ssh/**)", "Read"])
         #expect(list.removal.map(\.rule) == ["Bash", "Read"] && list.primary == .removeSelected(2))

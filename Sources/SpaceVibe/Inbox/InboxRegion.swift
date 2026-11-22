@@ -171,6 +171,15 @@ struct InboxActions {
         [Self.removeControl(rowID), Self.addControl(rowID), Self.tileControl(rowID)].contains(where: writes.isPending)
     }
 
+    /// No press on the item starts a write: one runs on it, or an Undo runs (from a toast or the Journal window), which may
+    /// change any item, so the press would be judged on the world before it (D53).
+    func isItemLocked(_ rowID: String) -> Bool { isItemBusy(rowID) || writes.isUndoing }
+
+    /// Keep's move to the next finding, once the write landed: only on Inbox, and only while the kept row is still selected.
+    static func keepMovesSelection(route: FrameRoute, keptRow: String) -> Bool {
+        route.page == .inbox && route.selection == keptRow
+    }
+
     func select(_ id: String?) {
         model.router.select(id)
     }
@@ -196,7 +205,9 @@ struct InboxActions {
             Task {
                 if await writes.perform(.keep(findingID: finding.id)) {
                     state.ticked.remove(row.id)
-                    if wasSelected { model.router.select(next) }
+                    // Only while Inbox still shows and the kept row is still the selected one: a page change or another
+                    // selection made while the write ran is never pulled back.
+                    if wasSelected, Self.keepMovesSelection(route: model.router.route, keptRow: row.id) { model.router.select(next) }
                 }
             }
         case .stopKeeping:
@@ -205,7 +216,7 @@ struct InboxActions {
             guard case .row(let item) = finding.subject else { return }
             remove([item], control: Self.removeControl(row.id))
         case .addTo(let cli, _):
-            guard case .balance(let item, _, _) = finding.subject, !isItemBusy(item.id) else { return }
+            guard case .balance(let item, _, _) = finding.subject, !isItemLocked(item.id) else { return }
             Task { await writes.perform(.copyTo(item, targets: [cli], registry: world.snapshot.registry, control: Self.addControl(item.id))) }
         case .copyCommand(let command):
             copy(command)
@@ -251,7 +262,7 @@ struct InboxActions {
     @discardableResult
     func toggleTile(_ tile: CLIToggleState, row: FrameRow) -> Task<Void, Never>? {
         // While any write on the item runs, no tile of it starts another (the tiles show it pending).
-        guard !isItemBusy(row.id) else { return nil }
+        guard !isItemLocked(row.id) else { return nil }
         let world = currentWorld
         let row = world.rows.first { $0.id == row.id } ?? row
         guard let state = CLIToggleStates.states(of: row, in: world).first(where: { $0.cli.id == tile.cli.id }) else { return nil }

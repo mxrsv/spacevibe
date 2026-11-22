@@ -186,7 +186,8 @@ struct EquipListModel: Sendable {
         // Most sessions first; equal totals keep the core's order (RD22).
         let all = built.enumerated().sorted { a, b in a.element.total != b.element.total ? a.element.total > b.element.total : a.offset < b.offset }
             .map(\.element)
-        let inScope = all.filter { row in view.cli.map { row.row.presence($0) == .on } ?? true }
+        // A CLI hidden in Settings › CLIs since it was picked reads as All CLIs, as the menu shows it.
+        let inScope = all.filter { row in world.shownScope(view.cli).map { row.row.presence($0) == .on } ?? true }
         let visible = inScope.filter { (view.filter == .all || scanning || $0.isNeverRan) && query.matches($0.row.searchFields) }
         let suggestedIDs = world.suggested
         let suggested = inScope.filter { $0.isNeverRan && suggestedIDs.contains($0.id) && $0.isTickable && query.matches($0.row.searchFields) }

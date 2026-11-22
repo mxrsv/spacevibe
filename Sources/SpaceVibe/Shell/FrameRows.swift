@@ -29,7 +29,8 @@ enum CellPresence: Equatable, Sendable {
 /// CLI reads Missing (Not supported and an unreadable CLI's Unknown stay), so its logo, status, counts and Inbox finding are
 /// that CLI's alone.
 struct FrameRow: Identifiable, Equatable, Sendable {
-    /// The row key: `<kind>:<project or empty>:<bare name>`, or `hook:<project or empty>:<hash>`.
+    /// The row key: `<kind>:<project or empty>:<bare name>`; a Hook row's is its CLI's part of the key,
+    /// `hook:<project or empty>:<hash>@<cli>` (`HookPart.id`).
     let id: String
     let kind: CoreKind
     /// The item's name, or for a Hook the script it runs (`HookLabel`, RD-R17).
@@ -164,12 +165,13 @@ extension FrameRow {
         let cli: String
         let hooks: [CoreInventoryHook]
         let cells: CoreCLICells
-        /// Whether this part keeps the core key as its row id.
-        let keepsKey: Bool
+        /// The part that held the bare core key as its row id before every part carried its CLI (Claude Code's, else the
+        /// first CLI's): the one whose Keep entries `keptHookIDMoves` moves.
+        let wasKeyHolder: Bool
 
-        /// The core key for the part that keeps it (every Hook held by one CLI, and Claude Code's part of a shared key, so a
-        /// Keep entry, a selection and Inbox ids stay what they were); `<key>@<cli>` for another CLI's part of a shared key.
-        func id(_ key: String) -> String { keepsKey ? key : "\(key)@\(cli)" }
+        /// `<key>@<cli>` for every part, so a part's id (its selection, ticks, Keep entry and Inbox ids) never changes when
+        /// another CLI's member of the same key comes or goes.
+        func id(_ key: String) -> String { "\(key)@\(cli)" }
     }
 
     /// Splits one key's Hook members by CLI, in the order the core sent them. A part's cells keep its own CLI's cell and
@@ -189,8 +191,36 @@ extension FrameRow {
             let cells = shared.reduce(into: CoreCLICells()) { out, entry in
                 out[entry.key] = entry.key == cli || entry.value == .notSupported || entry.value == .unknown ? entry.value : .missing
             }
-            return HookPart(cli: cli, hooks: members, cells: cells, keepsKey: cli == keeper)
+            return HookPart(cli: cli, hooks: members, cells: cells, wasKeyHolder: cli == keeper)
         }
+    }
+
+    /// One Keep entry to move: the finding id under the old Hook row id and the same finding under the new one.
+    struct KeptIDMove: Equatable, Sendable {
+        let old: String
+        let new: String
+    }
+
+    /// The Keep entries stored under a Hook row id of the old shape (the bare core key, for the part that held it), each
+    /// with its id under `HookPart.id`: the Clean up finding (the row id) and the failing Hook (`<row id>:fail`). Only keys
+    /// `loadout` still lists move; an entry whose new id is kept already is left alone.
+    static func keptHookIDMoves(kept: Set<String>, loadout: CoreLoadoutRows) -> [KeptIDMove] {
+        let itemKeys = Set((loadout.items + loadout.extraItems).map(\.key))
+        var order: [String] = []
+        var byKey: [String: [CoreInventoryHook]] = [:]
+        for hook in loadout.hooks where !itemKeys.contains(hook.key) {
+            if byKey[hook.key] == nil { order.append(hook.key) }
+            byKey[hook.key, default: []].append(hook)
+        }
+        var moves: [KeptIDMove] = []
+        for key in order {
+            guard let holder = hookParts(byKey[key] ?? []).first(where: \.wasKeyHolder) else { continue }
+            let id = holder.id(key)
+            for (old, new) in [(key, id), ("\(key):fail", "\(id):fail")] where kept.contains(old) && !kept.contains(new) {
+                moves.append(KeptIDMove(old: old, new: new))
+            }
+        }
+        return moves
     }
 
     /// A plugin item's name carries its plugin (`plugin:name`); the row key holds the bare name.

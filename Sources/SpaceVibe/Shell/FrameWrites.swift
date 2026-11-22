@@ -44,19 +44,30 @@ final class FrameWrites {
     /// The sentence for a write the core found nothing to do for (the same as the v5 Rules page's).
     static let nothingToChange = "Nothing to change: the file already holds that."
 
-    private(set) var pending: Set<String> = []
+    /// The controls with a write running, shared by every write service over the same store (`FrameStore.writesPending`):
+    /// the Journal window's Undo is pending for the main window's row locks too.
+    var pending: Set<String> { shared.controls }
 
     @ObservationIgnored private let core: any CoreService
     @ObservationIgnored private let store: FrameStore
     @ObservationIgnored private let toasts: ToastCenter
+    @ObservationIgnored private let shared: FrameWritesPending
 
     init(core: any CoreService, store: FrameStore, toasts: ToastCenter) {
         self.core = core
         self.store = store
         self.toasts = toasts
+        shared = store.writesPending
     }
 
-    func isPending(_ control: String) -> Bool { pending.contains(control) }
+    func isPending(_ control: String) -> Bool { shared.controls.contains(control) }
+
+    /// An Undo runs, from a toast, the Undo command or Z, or from the Journal window: it may change any row, so a row lock
+    /// (D53) waits for it as for a write on the row itself, and the press is then judged on the world the Undo leaves.
+    var isUndoing: Bool { shared.controls.contains { $0.hasPrefix(Self.undoPrefix) || $0.hasPrefix(FrameWrite.journalUndoPrefix) } }
+
+    /// The pending key of a toast's Undo (`undo:<entry ids>`); the Journal window's is `FrameWrite.journalUndoControl`.
+    static let undoPrefix = "undo:"
 
     /// Runs one write; true when the core accepted it. A control that is already pending starts nothing. `refused`, when
     /// given, takes the core's sentence instead of the refused-write toast: a form shows it next to its field (Rules'
@@ -77,14 +88,14 @@ final class FrameWrites {
     }
 
     private func claim(_ control: String) -> Bool {
-        guard !pending.contains(control) else { return false }
-        pending.insert(control)
+        guard !shared.controls.contains(control) else { return false }
+        shared.controls.insert(control)
         return true
     }
 
     /// The write itself, its control already pending; the pending ends when it returns.
     private func run(_ write: FrameWrite, refused: (@MainActor (String) -> Void)?) async -> Bool {
-        defer { pending.remove(write.control) }
+        defer { shared.controls.remove(write.control) }
         let outcome: Result<FrameWriteOutcome, Error>
         do { outcome = .success(try await write.run(core)) } catch { outcome = .failure(error) }
         switch outcome {
@@ -159,6 +170,9 @@ final class FrameWrites {
 
     /// Several entries of one write, newest first; the first refusal stops and says so, and what was undone stays undone.
     private func undo(_ entries: [CoreJournalEntry], label: String, touches: Set<FrameSource>) async {
+        let control = Self.undoPrefix + entries.map(\.id).joined(separator: ",")
+        guard claim(control) else { return }
+        defer { shared.controls.remove(control) }
         var labels: [String] = []
         do {
             for entry in entries.reversed() {
@@ -173,6 +187,9 @@ final class FrameWrites {
     }
 
     private func undo(_ entry: CoreJournalEntry, label: String, touches: Set<FrameSource>) async {
+        let control = Self.undoPrefix + entry.id
+        guard claim(control) else { return }
+        defer { shared.controls.remove(control) }
         do {
             let undone = try await core.journalUndo(id: entry.id)
             toasts.show("Undid \(undone.label.isEmpty ? label : undone.label)")
@@ -181,6 +198,14 @@ final class FrameWrites {
         }
         await store.reread(touches.union([.journal]))
     }
+}
+
+/// The controls with a write running, one set per store, so every write service over it (the main window's, the Journal
+/// window's) sees the others' (`FrameWrites.pending`).
+@MainActor
+@Observable
+final class FrameWritesPending {
+    var controls: Set<String> = []
 }
 
 // MARK: The engine's writes today

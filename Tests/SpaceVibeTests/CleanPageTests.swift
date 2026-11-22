@@ -115,7 +115,7 @@ struct CleanPageTests {
         if case .lock(let note) = logs?.rows.first?.detail { #expect(note.title == "In use by 1 session") } else {
             Issue.record("Claude Code's running session holds its logs before any count")
         }
-        let hook = measuring.rows.first { $0.id == "hook::h1" }
+        let hook = measuring.rows.first { $0.id == "hook::h1@claude" }
         #expect(hook?.size == .pending, "no figure, not even a Hook's note, while measuring")
         #expect(measuring.sections.contains { $0.section == .caches && $0.skeletons > 0 })
         #expect(measuring.rows.allSatisfy { !$0.isOpen })

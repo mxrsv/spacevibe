@@ -106,7 +106,8 @@ final class EquipPageState {
     /// with. The write's control is pending before this returns, so two presses in one main-actor turn cannot both pass.
     @discardableResult
     func press(_ drawn: CLIToggleState, on drawnRow: EquipListRow, from anchor: Anchor) -> Task<Void, Never>? {
-        guard let model, !isRowBusy(drawnRow), let row = list().row(drawnRow.id),
+        // An Undo that runs (a toast's, or the Journal window's) may change the row too: wait for it as for a write on it.
+        guard let model, !isRowBusy(drawnRow), !model.writes.isUndoing, let row = list().row(drawnRow.id),
               let toggle = row.toggles.first(where: { $0.cli.id == drawn.cli.id }) else { return nil }
         let registry = model.store.snapshot.registry
         let control = EquipControl.toggle(row.id, toggle.cli.id)

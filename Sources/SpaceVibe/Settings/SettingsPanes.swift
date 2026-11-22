@@ -73,7 +73,9 @@ private struct SettingsGeneralPane: View {
                 FrameSwitch(SettingsWording.glanceWidget, isOn: context.glance.isEnabled) { context.glance.isEnabled.toggle() }
             }
         }
-        .onAppear { context.loginItem.refresh() }
+        // Read from macOS on appearance, on the pane's timeline and when the app comes forward, so a choice made in System
+        // Settings › Login Items shows here without reopening the window.
+        .loginItemStatusFollows(context.loginItem, now: context.now)
     }
 
     static let widgetDetail = "A small strip over every app that shows running and waiting sessions; drag it to any corner or edge"
@@ -126,9 +128,12 @@ private struct SettingsCLIRowView: View {
             .disabled(!row.canChangeShow)
             Text("Balance").typeRole(.quiet).foregroundStyle(ColorRole.ink3).accessibilityHidden(true)
             FrameSwitch("Compare \(row.cli.name) in Balance", isOn: row.isPinned) {
-                if let refusal = context.cli.setPinned(!row.isPinned, for: row.id, in: registry,
-                                                            installed: context.facts.installedForBalance) {
+                let change = context.cli.changePin(!row.isPinned, for: row.id, in: registry, installed: context.facts.installedForBalance)
+                if let refusal = change.refusal {
                     context.toast(SettingsCLIRow.refusal(refusal, name: row.cli.name), .danger)
+                } else if let note = SettingsCLIRow.pinNote(change, registry: registry) {
+                    // A second switch moved with this one (RD55): said in place, so the change is never silent.
+                    context.toast(note, .info)
                 }
             }
             .disabled(!row.canChangePin)

@@ -30,8 +30,29 @@ struct SettingsWindowTests {
         #expect(prefs.setPinned(false, for: "codex", in: ten) == nil)
         #expect(prefs.setPinned(true, for: "qwen", in: ten) == nil, "Qwen Code holds Subagents only: it can be compared")
         #expect(prefs.pins(in: ten) == ["claude", "cursor", "qwen"], "registry order, not click order")
-        #expect(prefs.setPinned(false, for: "claude", in: ten) == nil && prefs.setPinned(false, for: "cursor", in: ten) == nil)
-        #expect(prefs.pins(in: ten) == ["qwen"], "below two pins Balance is off, and the choice stays")
+        #expect(prefs.setPinned(false, for: "claude", in: ten) == nil)
+        #expect(prefs.pins(in: ten) == ["cursor", "qwen"])
+    }
+
+    @Test("RD55: pins are none, two or three, never one: unpinning one of two turns Balance off, pinning from none pins a partner")
+    func pinsNeverOne() {
+        let prefs = CLIPreferences(defaults: nil)
+        #expect(prefs.changePin(false, for: "codex", in: two) == .alsoUnpinned("claude"))
+        #expect(prefs.pins(in: two).isEmpty, "none: Balance is off")
+        #expect(prefs.changePin(true, for: "codex", in: two) == .alsoPinned("claude"))
+        #expect(prefs.pins(in: two) == ["claude", "codex"])
+        #expect(prefs.changePin(true, for: "cursor", in: ten) == .changed && prefs.changePin(false, for: "cursor", in: ten) == .changed)
+        // The partner is an installed CLI that can be compared; with none, the pin is refused and nothing changes.
+        let off = CLIPreferences(defaults: nil, pins: [])
+        #expect(off.changePin(true, for: "cursor", in: ten, installed: ["cursor"]) == .refused(.noPartner))
+        #expect(off.pins(in: ten).isEmpty)
+        #expect(off.changePin(true, for: "cursor", in: ten, installed: ["cursor", "qwen"]) == .alsoPinned("qwen"))
+        // An older stored single pin reads as none.
+        #expect(CLIPreferences(defaults: nil, pins: ["codex"]).pins(in: two).isEmpty)
+        // The pane says when a second switch moved.
+        #expect(SettingsCLIRow.pinNote(.alsoUnpinned("claude"), registry: two) == "Balance needs two CLIs, so it is off.")
+        #expect(SettingsCLIRow.pinNote(.alsoPinned("claude"), registry: two) == "Pinned Claude too: Balance compares two CLIs.")
+        #expect(SettingsCLIRow.pinNote(.changed, registry: two) == nil)
     }
 
     @Test("at least one CLI stays shown, also when an older stored value hides every one")
@@ -96,7 +117,7 @@ struct SettingsWindowTests {
         prefs.setShown(true, for: "codex", in: store.snapshot.registry)
         prefs.setPinned(false, for: "codex", in: store.snapshot.registry)
         #expect(store.world().clis.map(\.id) == ["claude", "codex"], "a change shows at once")
-        #expect(store.world().facts.findings.pinned == ["claude"])
+        #expect(store.world().facts.findings.pinned.isEmpty, "one of two unpinned turns Balance off (RD55)")
 
         let plain = FrameStore(core: FrameFakeCore())
         plain.facts.hidden = ["claude"]
@@ -106,6 +127,19 @@ struct SettingsWindowTests {
     }
 
     // MARK: Open at login
+
+    @Test("Open at login follows a change made in System Settings: the pane re-reads it on its timeline and on activation")
+    func loginItemFollowsSystemSettings() throws {
+        let service = StandInLoginItem(status: .off)
+        let item = LoginItem(service: service)
+        service.status = .on
+        item.refresh()
+        #expect(item.status == .on)
+        let panes = try String(contentsOf: StyleBoundaryTests.appSources.appendingPathComponent("Settings/SettingsPanes.swift"), encoding: .utf8)
+        #expect(panes.contains(".loginItemStatusFollows(context.loginItem, now: context.now)"), "not only on appearance")
+        let source = try String(contentsOf: StyleBoundaryTests.appSources.appendingPathComponent("Settings/LoginItem.swift"), encoding: .utf8)
+        #expect(source.contains(".onChange(of: now)") && source.contains("didBecomeActiveNotification"))
+    }
 
     @Test("Open at login is off until the switch asks; macOS's answer is reported as it is and a refusal changes nothing")
     func loginItem() {

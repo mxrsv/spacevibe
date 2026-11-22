@@ -268,7 +268,10 @@ struct LimitsCardsTests {
         for scenario in LimitsFrameShotData.Scenario.allCases {
             let cards = scenario.cards
             switch cards.hero {
-            case .window(_, let left, _): #expect(scenario.sidebarValue.text == "\(WindowPace.percentText(left)) left", "\(scenario)")
+            case .window(_, let left, _):
+                // RD54: over its limit, the sidebar says so in words; the hero keeps its figure.
+                let over = scenario.sidebarValue.text == FrameSidebarValue.overLimit && left == 0
+                #expect(over || scenario.sidebarValue.text == "\(WindowPace.percentText(left)) left", "\(scenario)")
             case .reading: #expect(scenario.sidebarValue.text == "\u{2026}", "\(scenario)")
             case .unmeasurable: #expect(scenario.sidebarValue.text == "Unmeasurable", "\(scenario)")
             }

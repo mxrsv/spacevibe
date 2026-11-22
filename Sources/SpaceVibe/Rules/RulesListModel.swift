@@ -55,8 +55,24 @@ struct RulesCapabilityRow: Identifiable, Equatable, Sendable {
 /// One rule row of the table (the mock's Rules `.tr`).
 struct RulesRuleRow: Identifiable, Equatable, Sendable {
     let rule: CoreRule
+    /// The file and the rule's text, never its verdict (`rowIDs`): a verdict change, or its Undo, keeps the row selected
+    /// and ticked.
+    let id: String
 
-    var id: String { rule.id }
+    /// The row ids of one file's rules, in order: `<scope>:<dir>:<rule>`. A hand-edited file can hold one text under two
+    /// verdicts; the later ones add `#<verdict>` so no two rows share an id.
+    static func rowIDs(_ rules: [CoreRule], in file: FrameScope) -> [String] {
+        var seen: Set<String> = []
+        return rules.map { rule in
+            let base = "\(file.scope.rawValue):\(file.dir ?? ""):\(rule.rule)"
+            defer { seen.insert(base) }
+            return seen.contains(base) ? "\(base)#\(rule.verdict.rawValue)" : base
+        }
+    }
+
+    static func rows(_ rules: [CoreRule], in file: FrameScope) -> [RulesRuleRow] {
+        zip(rules, rowIDs(rules, in: file)).map { RulesRuleRow(rule: $0, id: $1) }
+    }
     /// An allow that covers a whole tool (the engine's `wide`, RB-E6): the `Whole tool` chip, the red `Remove Rule` and
     /// `Change to Ask`. A bare MCP tool name is never one (RD-R17 Honesty): the engine never flags it.
     var isWideAllow: Bool { rule.verdict == .allow && WholeToolRule.isWide(rule) }
@@ -217,9 +233,10 @@ struct RulesListModel: Equatable {
             problem = reading.notReadable || !reading.problems.isEmpty
                 ? (reading.problems.first ?? "\(fileName) could not be read, so its rules are unknown, not empty.") : nil
             capabilities = reading.grid.map { RulesCapabilityRow(cell: $0, isEditable: editable.isEditable($0)) }
-            rows = reading.rules.filter { $0.scope == file.scope && $0.dir == file.dir && query.matches([$0.rule]) }
+            // The ids are made over the whole file, before the search, so a row keeps its id while the search changes.
+            let fileRules = reading.rules.filter { $0.scope == file.scope && $0.dir == file.dir }
                 .sorted { $0.rule.localizedCompare($1.rule) == .orderedAscending }
-                .map(RulesRuleRow.init)
+            rows = RulesRuleRow.rows(fileRules, in: file).filter { query.matches([$0.rule.rule]) }
         } else {
             problem = nil
             capabilities = []

@@ -126,7 +126,7 @@ struct InboxWording {
 
     /// One decimal only when there is one: "77%", "4.5%".
     static func percent(_ share: Double) -> String {
-        let rounded = (share * 10).rounded() / 10
+        let rounded = (WindowPace.clamped(share) * 10).rounded() / 10
         return rounded == rounded.rounded() ? "\(Int(rounded))%" : "\(rounded)%"
     }
 

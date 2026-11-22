@@ -117,10 +117,10 @@ struct HooksListModelTests {
                       Self.hook("both", cli: .codex, event: "Stop", cells: ["claude": Self.runs(0), "codex": Self.codexUM])]
         let list = Self.model(Self.sample + shared)
         let stop = try #require(list.stages.first { $0.stage == "Stop" })
-        #expect(stop.rows.map(\.id) == ["hook::notify", "hook::both", "hook::both@codex"])
+        #expect(stop.rows.map(\.id) == ["hook::notify@claude", "hook::both@claude", "hook::both@codex"])
         #expect(stop.rows.map(\.cli) == ["claude", "claude", "codex"])
         #expect(list.holder(of: stop.rows[2])?.name == "Codex")
-        #expect(list.row("hook::both")?.status == .neverRan && list.row("hook::both@codex")?.status == .unmeasurable)
+        #expect(list.row("hook::both@claude")?.status == .neverRan && list.row("hook::both@codex")?.status == .unmeasurable)
         let world = FrameWorld(snapshot: FrameTestData.snapshot(Self.loadout(Self.sample + shared)), now: FrameTestData.now)
         #expect(list.hero == .value("5", unit: nil) && list.deadOrNeverRan.count == 5)
         #expect(FrameSidebarValue(figure: world.figure(for: .hooks, loading: [], failed: []), page: .hooks).text == "5")
@@ -135,10 +135,10 @@ struct HooksListModelTests {
             return copy
         }
         let list = Self.model(hooks)
-        #expect(list.row("hook::prompt")?.status == .neverRan)
-        #expect(list.deadOrNeverRan.map(\.id).sorted() == ["hook:/w/payments-web:lint-p", "hook::lint", "hook::notify", "hook::prompt"])
+        #expect(list.row("hook::prompt@claude")?.status == .neverRan)
+        #expect(list.deadOrNeverRan.map(\.id).sorted() == ["hook:/w/payments-web:lint-p@claude", "hook::lint@claude", "hook::notify@claude", "hook::prompt@claude"])
         #expect(list.unreadable.map(\.id) == ["codex"])
-        #expect(Set(list.suggested) == ["hook::lint", "hook::notify", "hook::prompt"])
+        #expect(Set(list.suggested) == ["hook::lint@claude", "hook::notify@claude", "hook::prompt@claude"])
     }
 
     @Test("scanning: skeleton only, no judged row, no Select Suggested; the strip counts the rows read, none before the first read")
@@ -180,7 +180,7 @@ struct HooksListModelTests {
         for registry in [FrameTestData.registry, FrameTestData.registry(count: 10)] {
             let list = Self.model(registry: registry)
             #expect(list.stages.map(\.stage) == ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Interrupt", "Stop"])
-            #expect(list.stages.first { $0.stage == "PreToolUse" }?.rows.map(\.id) == ["hook::lint", "hook::guard", "hook::cx-guard"])
+            #expect(list.stages.first { $0.stage == "PreToolUse" }?.rows.map(\.id) == ["hook::lint@claude", "hook::guard@claude", "hook::cx-guard@codex"])
             #expect(list.visible.count == 9)
         }
     }
@@ -188,26 +188,26 @@ struct HooksListModelTests {
     @Test("a Hook is named by the script it runs; the sub-line names the project or says Every event")
     func names() {
         let list = Self.model()
-        #expect(list.row("hook::guard")?.label == "guard.py")
-        #expect(list.row("hook::guard")?.subLine(foldsStatus: false) == "Every event")
-        #expect(list.row("hook:/w/payments-web:lint-p")?.subLine(foldsStatus: false) == "Project · payments-web")
-        #expect(list.row("hook::lint")?.subLine(foldsStatus: true) == "Script missing")
-        #expect(list.row("hook::format")?.subLine(foldsStatus: true) == "14 errors · 7 days")
+        #expect(list.row("hook::guard@claude")?.label == "guard.py")
+        #expect(list.row("hook::guard@claude")?.subLine(foldsStatus: false) == "Every event")
+        #expect(list.row("hook:/w/payments-web:lint-p@claude")?.subLine(foldsStatus: false) == "Project · payments-web")
+        #expect(list.row("hook::lint@claude")?.subLine(foldsStatus: true) == "Script missing")
+        #expect(list.row("hook::format@claude")?.subLine(foldsStatus: true) == "14 errors · 7 days")
     }
 
     @Test("the Runs and Status cells: counted bar, zero for dead and never ran, Unmeasurable for Codex, failing first")
     func cells() throws {
         let list = Self.model()
-        let guardRow = try #require(list.row("hook::guard"))
+        let guardRow = try #require(list.row("hook::guard@claude"))
         #expect(guardRow.runs == .count(1204, share: 1))
         #expect(guardRow.statusLine == HooksStatusLine(tone: .quiet, text: "6 errors, none in 7 days"))
-        #expect(list.row("hook::format")?.statusLine == HooksStatusLine(tone: .attention, text: "14 errors · 7 days"))
-        #expect(list.row("hook::load")?.statusLine.text == "120 ms avg")
-        #expect(list.row("hook::lint")?.runs == .zero)
-        #expect(list.row("hook::lint")?.statusLine == HooksStatusLine(tone: .critical, text: "Script missing"))
-        #expect(list.row("hook::prompt")?.statusLine.text == "Never ran")
-        #expect(list.row("hook::cx-guard")?.runs == .unmeasurable)
-        #expect(list.row("hook::cx-guard")?.statusLine.text == "No run log")
+        #expect(list.row("hook::format@claude")?.statusLine == HooksStatusLine(tone: .attention, text: "14 errors · 7 days"))
+        #expect(list.row("hook::load@claude")?.statusLine.text == "120 ms avg")
+        #expect(list.row("hook::lint@claude")?.runs == .zero)
+        #expect(list.row("hook::lint@claude")?.statusLine == HooksStatusLine(tone: .critical, text: "Script missing"))
+        #expect(list.row("hook::prompt@claude")?.statusLine.text == "Never ran")
+        #expect(list.row("hook::cx-guard@codex")?.runs == .unmeasurable)
+        #expect(list.row("hook::cx-guard@codex")?.statusLine.text == "No run log")
         #expect(RunsCell.spoken(.zero) == "0 runs" && RunsCell.spoken(.count(1204, share: 1)) == "1,204 runs")
     }
 
@@ -215,16 +215,16 @@ struct HooksListModelTests {
     func failingIsSevenDays() {
         let hooks = [Self.hook("old", cells: ["claude": Self.runs(40, errors: 9), "codex": .missing])]
         let list = Self.model(hooks)
-        #expect(list.row("hook::old")?.errorsLastWeek == nil)
-        #expect(list.row("hook::old")?.statusLine.tone == .quiet)
+        #expect(list.row("hook::old@claude")?.errorsLastWeek == nil)
+        #expect(list.row("hook::old@claude")?.statusLine.tone == .quiet)
         #expect(list.nodes.first { $0.event == "PreToolUse" }?.mark == .plain)
     }
 
     @Test("a dead Hook with runs in the logs shows them (inventory.md: counted like any other)")
     func deadWithRuns() {
         let list = Self.model([Self.hook("gone", dead: true, cells: ["claude": Self.runs(3), "codex": .missing])])
-        #expect(list.row("hook::gone")?.runs == .count(3, share: 1))
-        #expect(list.row("hook::gone")?.status == .dead)
+        #expect(list.row("hook::gone@claude")?.runs == .count(3, share: 1))
+        #expect(list.row("hook::gone@claude")?.status == .dead)
     }
 
     // MARK: Writes offered
@@ -235,23 +235,23 @@ struct HooksListModelTests {
         let list = Self.model(hooks)
         let state = HooksPageState()
         let toasts = ToastCenter(announce: false)
-        #expect(list.row("hook::lint")?.isWritable == true)
-        #expect(list.row("hook::lint")?.removalIDs == ["claude:hook:lint"])
-        #expect(list.row("hook::cx-guard")?.readOnly == .notClaudeCode)
-        #expect(list.row("hook:/w/payments-web:lint-p")?.readOnly == .project("payments-web"))
-        #expect(list.row("hook::plug")?.readOnly == .plugin)
-        for id in ["hook::cx-guard", "hook:/w/payments-web:lint-p", "hook::plug"] {
+        #expect(list.row("hook::lint@claude")?.isWritable == true)
+        #expect(list.row("hook::lint@claude")?.removalIDs == ["claude:hook:lint"])
+        #expect(list.row("hook::cx-guard@codex")?.readOnly == .notClaudeCode)
+        #expect(list.row("hook:/w/payments-web:lint-p@claude")?.readOnly == .project("payments-web"))
+        #expect(list.row("hook::plug@claude")?.readOnly == .plugin)
+        for id in ["hook::cx-guard@codex", "hook:/w/payments-web:lint-p@claude", "hook::plug@claude"] {
             let row = list.row(id)!
             // Copy Command only: no write.
             #expect(!row.isWritable && HooksFrame.actions(for: row, state: state, toasts: toasts).map(\.id) == [HooksFrame.copyID])
             #expect(HooksRemoval.write([row], registry: list.registry) == nil)
         }
-        let actions = HooksFrame.actions(for: list.row("hook::lint")!, state: state, toasts: toasts)
+        let actions = HooksFrame.actions(for: list.row("hook::lint@claude")!, state: state, toasts: toasts)
         #expect(actions.map(\.title) == ["Remove from Claude Code", "Copy Command"] && actions[0].isDestructive)
         #expect(actions[1].shortcut == .copyCommand && HooksFrame.rowButtons(actions).map(\.id) == ["remove"])
         // A Hook that runs gets the quiet Remove, a dead or Never ran one the red tint (the mock's `rmBtn`).
         #expect(HooksFrame.buttonKind(actions[0]) == .destructive)
-        let running = HooksFrame.actions(for: list.row("hook::guard")!, state: state, toasts: toasts)
+        let running = HooksFrame.actions(for: list.row("hook::guard@claude")!, state: state, toasts: toasts)
         #expect(!running[0].isDestructive && HooksFrame.buttonKind(running[0]) == .quiet)
         #expect(FrameRowAction.conflicts(in: actions).isEmpty)
     }
@@ -262,7 +262,7 @@ struct HooksListModelTests {
         var view = HooksViewState()
         let list = Self.model(hooks, view: view)
         #expect(list.view.ticked.isEmpty && list.removal.isEmpty)
-        #expect(Set(list.suggested) == ["hook::lint", "hook::notify", "hook::prompt"])
+        #expect(Set(list.suggested) == ["hook::lint@claude", "hook::notify@claude", "hook::prompt@claude"])
         view = view.togglingAll(list.suggested)
         let ticked = Self.model(hooks, view: view)
         #expect(ticked.allSuggestedTicked && ticked.removal.count == 3)
@@ -273,14 +273,14 @@ struct HooksListModelTests {
 
     @Test("a filter clears the ticks, and a tick the filter hides never reaches a removal")
     func filters() {
-        let view = HooksViewState().toggling("hook::lint").toggling("hook::notify")
+        let view = HooksViewState().toggling("hook::lint@claude").toggling("hook::notify@claude")
         let stopOnly = Self.model(view: HooksViewState(ticked: view.ticked, event: "Stop"))
-        #expect(stopOnly.removal.map(\.id) == ["hook::notify"])
+        #expect(stopOnly.removal.map(\.id) == ["hook::notify@claude"])
         #expect(stopOnly.subtitle == "Stop only")
         #expect(view.filtering(event: "Stop").ticked.isEmpty)
         #expect(view.filtering(cli: "codex").ticked.isEmpty)
         let codex = Self.model(view: HooksViewState(cli: "codex"))
-        #expect(codex.visible.map(\.id) == ["hook::cx-guard", "hook::cx-int"])
+        #expect(codex.visible.map(\.id) == ["hook::cx-guard@codex", "hook::cx-int@codex"])
         #expect(codex.hero == .value("4", unit: nil))
     }
 
@@ -327,8 +327,8 @@ struct HooksListModelTests {
         var hooks = [Self.hook("big", command: long, cells: ["claude": Self.runs(4_830_112, week: [0, 0, 0, 0, 0, 0, 1]), "codex": .missing])]
         hooks += (0..<60).map { Self.hook("h\($0)", event: Self.claudeEvents[$0 % 17], cells: ["claude": Self.runs($0), "codex": .missing]) }
         let list = Self.model(hooks)
-        #expect(list.row("hook::big")?.label == "guard.py")
-        #expect(list.row("hook::big")?.runs == .count(4_830_112, share: 1))
+        #expect(list.row("hook::big@claude")?.label == "guard.py")
+        #expect(list.row("hook::big@claude")?.runs == .count(4_830_112, share: 1))
         #expect(NumberWording.compactCount(4_830_112) == "4.8M")
         #expect(list.visible.count == 61)
         #expect(list.nodes.count == 17)
@@ -341,11 +341,11 @@ struct HooksListModelTests {
         let shared = [Self.hook("both", cells: ["claude": Self.runs(0), "codex": Self.codexUM]),
                       Self.hook("both", cli: .codex, cells: ["claude": Self.runs(0), "codex": Self.codexUM])]
         let list = Self.model(Self.sample + shared)
-        let lint = list.row("hook::lint")!, notify = list.row("hook::notify")!
-        #expect(HooksRemoval.write([lint], registry: list.registry)?.control == "hooks:remove:hook::lint")
+        let lint = list.row("hook::lint@claude")!, notify = list.row("hook::notify@claude")!
+        #expect(HooksRemoval.write([lint], registry: list.registry)?.control == "hooks:remove:hook::lint@claude")
         #expect(HooksRemoval.write([lint, notify], registry: list.registry)?.control == HooksRemoval.selectedControl)
-        // RD46: a key both CLIs hold is two rows, one per CLI; only Claude Code's is removed, and it keeps the key.
-        let both = try #require(list.row("hook::both"))
+        // RD46: a key both CLIs hold is two rows, one per CLI; only Claude Code's is removed.
+        let both = try #require(list.row("hook::both@claude"))
         #expect(both.cli == "claude" && both.removalIDs == ["claude:hook:both"])
         let codex = try #require(list.row("hook::both@codex"))
         #expect(codex.cli == "codex" && codex.readOnly == .notClaudeCode && codex.removalIDs.isEmpty && codex.runs == .unmeasurable)
@@ -359,7 +359,7 @@ struct HooksListModelTests {
         let model = FrameModel(core: core, toasts: toasts, route: FrameRoute(page: .hooks))
         await model.store.start()
         let list = HooksListModel.from(model.store, view: HooksViewState())
-        let write = try #require(HooksRemoval.write([list.row("hook::lint")!], registry: list.registry))
+        let write = try #require(HooksRemoval.write([list.row("hook::lint@claude")!], registry: list.registry))
         #expect(await model.writes.perform(write))
         #expect(core.count("loadout.removeMany") == 1)
         #expect(core.sent["loadout.removeMany"] == "[\"claude:hook:lint\"]")
@@ -380,8 +380,8 @@ struct HooksListModelTests {
         let toasts = ToastCenter(announce: false)
         let model = FrameModel(core: core, toasts: toasts, route: FrameRoute(page: .hooks))
         await model.store.start()
-        let list = HooksListModel.from(model.store, view: HooksViewState().togglingAll(["hook::lint", "hook::notify", "hook::cx-guard"]))
-        #expect(list.removal.map(\.id) == ["hook::lint", "hook::notify"])
+        let list = HooksListModel.from(model.store, view: HooksViewState().togglingAll(["hook::lint@claude", "hook::notify@claude", "hook::cx-guard@codex"]))
+        #expect(list.removal.map(\.id) == ["hook::lint@claude", "hook::notify@claude"])
         let write = try #require(HooksRemoval.write(list.removal, registry: list.registry, control: HooksRemoval.selectedControl))
         #expect(await model.writes.perform(write))
         #expect(core.count("loadout.removeMany") == 1)
@@ -397,15 +397,15 @@ struct HooksListModelTests {
         await model.store.start()
         let state = HooksPageState.of(model)
         #expect(HooksPageState.of(model) === state)
-        state.toggle("hook::lint")
-        model.router.select("hook::lint")
+        state.toggle("hook::lint@claude")
+        model.router.select("hook::lint@claude")
         state.pressNode("Stop")
         #expect(state.view.event == "Stop" && state.view.ticked.isEmpty)
         state.pressNode("Stop")
         #expect(state.view.event == nil)
-        state.toggle("hook::lint")
+        state.toggle("hook::lint@claude")
         let list = HooksListModel.from(model.store, view: state.view)
-        state.remove(list.row("hook::lint")!)
+        state.remove(list.row("hook::lint@claude")!)
         for _ in 0..<200 where !state.view.ticked.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
         #expect(state.view.ticked.isEmpty)
         #expect(model.router.route.selection == nil)
@@ -414,18 +414,18 @@ struct HooksListModelTests {
     @Test("the inspector's facts: runs, a missing script, errors in 7 days and in all, the file, a project's scope")
     func inspector() {
         let list = Self.model()
-        let format = list.row("hook::format")!
+        let format = list.row("hook::format@claude")!
         let facts = HooksInspectorFacts.facts(format, cli: list.holder(of: format), now: FrameTestData.now)
         #expect(facts.first { $0.key == "Runs" }?.value == "812")
         #expect(facts.first { $0.key == "Errors" }?.value == "14 in 7 days · 14 of 812 runs in all")
         #expect(facts.first { $0.key == "Average" }?.value == "214 ms")
         #expect(HooksInspectorFacts.headline(format, cli: list.holder(of: format)) == "PostToolUse · Claude") // FrameTestData names a CLI by its capitalized id
-        let lint = list.row("hook::lint")!
+        let lint = list.row("hook::lint@claude")!
         #expect(HooksInspectorFacts.facts(lint, cli: nil, now: FrameTestData.now).contains(InspectorFact(key: "Script", value: "File is missing")))
-        let codex = list.row("hook::cx-guard")!
+        let codex = list.row("hook::cx-guard@codex")!
         #expect(HooksInspectorFacts.facts(codex, cli: list.holder(of: codex), now: FrameTestData.now).first?.value
                 == "Unmeasurable: Codex logs no Hook runs")
-        let project = list.row("hook:/w/payments-web:lint-p")!
+        let project = list.row("hook:/w/payments-web:lint-p@claude")!
         #expect(HooksInspectorFacts.facts(project, cli: nil, now: FrameTestData.now).last?.value == "Project payments-web, read-only here")
     }
 }

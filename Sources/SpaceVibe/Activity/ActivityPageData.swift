@@ -259,7 +259,9 @@ struct ActivityPageData: Sendable {
         }
         let names = Dictionary(input.clis.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
         let name = { (cli: CoreCLI) in names[cli.rawValue] ?? cli.label }
-        let clis = input.clis.filter { input.scope == nil || $0.id == input.scope }
+        // A CLI hidden in Settings › CLIs since it was picked reads as All CLIs, as the menu shows it.
+        let scope = input.clis.contains { $0.id == input.scope } ? input.scope : nil
+        let clis = input.clis.filter { scope == nil || $0.id == scope }
 
         let everyRow = input.sessions.map { session in
             let cliID = input.sessionCLIs[session.id] ?? session.cli.rawValue

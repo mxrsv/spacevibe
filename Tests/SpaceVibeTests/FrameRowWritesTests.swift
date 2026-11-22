@@ -216,9 +216,9 @@ struct FrameStoreEngineFactsTests {
         ])
         let store = FrameStore(core: core)
         await store.start()
-        #expect(store.facts.findings.hookErrorsLastWeek == ["hook::hh": 2, "hook::ok": 0], "a cell with no week is unknown, not 0")
+        #expect(store.facts.findings.hookErrorsLastWeek == ["hook::hh@claude": 2, "hook::ok@claude": 0], "a cell with no week is unknown, not 0")
         let failing = store.world(now: D.now).findings.filter { $0.job == .control }
-        #expect(failing.map(\.id) == ["hook::hh:fail"])
+        #expect(failing.map(\.id) == ["hook::hh@claude:fail"])
         if case .failingHook(_, let errors)? = failing.first?.subject { #expect(errors == 2) } else { Issue.record("no failing Hook") }
         store.stop()
     }
@@ -251,7 +251,7 @@ struct FrameWorldEngineFieldsTests {
         ], hooks: [dead]))
         let world = FrameWorld(snapshot: snapshot, now: D.now)
         #expect(world.findings.map(\.id) == ["skill::old", "skill::unseen"])
-        #expect(world.rows.first { $0.id == "hook::dd" }?.isRecentlyAdded == true, "a dead Hook that ran has no note; firstSeen decides")
+        #expect(world.rows.first { $0.id == "hook::dd@claude" }?.isRecentlyAdded == true, "a dead Hook that ran has no note; firstSeen decides")
         #expect(world.suggested == ["skill::old", "skill::unseen"])
         #expect(FrameRow.rows(from: snapshot.loadout!).first { $0.id == "skill::new" }?.isRecentlyAdded == false, "without a clock only the note decides")
     }

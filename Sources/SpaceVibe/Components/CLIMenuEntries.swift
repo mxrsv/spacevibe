@@ -23,6 +23,8 @@ enum CLIMenuEntries {
     /// "All CLIs" with the CLI count, then every CLI in the fixed order; a CLI without the page's concept is listed, disabled,
     /// as Not supported. `scope` nil is All CLIs.
     static func scope(_ options: [Option], scope: String?) -> [MenuPanelEntry] {
+        // A pick no option names (a CLI hidden in Settings since) reads as All CLIs, as the lists apply it.
+        let scope = options.contains { $0.cli.id == scope } ? scope : nil
         let all = MenuPanelEntry(id: allID, title: "All CLIs", note: NumberWording.count(options.count), isChosen: scope == nil)
         return [all] + options.map { option in
             MenuPanelEntry(id: option.cli.id, title: option.cli.name, lead: .cli(option.cli),

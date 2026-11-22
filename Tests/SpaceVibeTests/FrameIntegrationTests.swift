@@ -260,7 +260,7 @@ struct FrameIntegrationTests {
                                       D.hook("h2", command: "~/.claude/hooks/notify.sh", cells: ["claude": D.runs(1)])])
         let hooksWorld = FrameWorld(snapshot: D.snapshot(hooks), now: D.now)
         let lint = HooksListModel(world: hooksWorld, loading: [], failed: [], failure: nil, view: HooksViewState(), query: FrameSearchQuery("lint"), now: D.now)
-        #expect(lint.visible.map(\.id) == ["hook::h1"] && !lint.isSearchMiss)
+        #expect(lint.visible.map(\.id) == ["hook::h1@claude"] && !lint.isSearchMiss)
         #expect(HooksListModel(world: hooksWorld, loading: [], failed: [], failure: nil, view: HooksViewState(), query: FrameSearchQuery("zzz"), now: D.now).isSearchMiss)
 
         var snapshot = D.snapshot(D.loadout())

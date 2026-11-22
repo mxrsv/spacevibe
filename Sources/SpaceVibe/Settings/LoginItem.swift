@@ -1,6 +1,8 @@
+import AppKit
 import Foundation
 import Observation
 import ServiceManagement
+import SwiftUI
 
 /// What macOS says about SpaceVibe as a login item (`SMAppService.Status`), in the app's terms.
 enum LoginItemStatus: Equatable, Sendable {
@@ -93,7 +95,11 @@ final class LoginItem {
         status = service.status
     }
 
-    func refresh() { status = service.status }
+    /// Reads the status from macOS again; an unchanged one changes nothing on screen.
+    func refresh() {
+        let now = service.status
+        if now != status { status = now }
+    }
 
     /// Registers or unregisters; nil when macOS accepted, else the toast's sentence. The status is read again either way.
     func set(_ isOn: Bool) -> String? {
@@ -108,6 +114,16 @@ final class LoginItem {
     }
 
     func openSystemSettings() { service.openSystemSettings() }
+}
+
+extension View {
+    /// The status of `item` read again on appearance, whenever `now` moves (the Settings window's timeline) and when the app
+    /// becomes active: the user may change it in System Settings while the pane shows.
+    func loginItemStatusFollows(_ item: LoginItem, now: Date) -> some View {
+        onAppear { item.refresh() }
+            .onChange(of: now) { item.refresh() }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in item.refresh() }
+    }
 }
 
 enum LoginItemWording {

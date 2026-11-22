@@ -12,6 +12,8 @@ struct RulesAddDraft: Equatable, Sendable {
     /// The core's refusal (an invalid shape, a rule already in the file), shown under the field.
     var refusal: String?
     var isChecking = false
+    /// `FrameRouter.revision` when it opened: another page or an outside route since closes it, so it never comes back.
+    var routeRevision = 0
 }
 
 /// The Rules page's own state while the frame shows it (AR3): the CLI page, the ticks, the open menus, the capability
@@ -152,7 +154,8 @@ final class RulesPageState {
     /// The inspector's dial and `Change to Ask` on a whole-tool allow: `rules.changeVerdict`, one Undo. While one change of a
     /// rule is pending its dial shows it (`pendingVerdict`) and a second press starts nothing: the control is claimed before
     /// this returns (`FrameWrites.start`). `from` is the verdict the file holds now (the store), never the one the pressed
-    /// view drew. The changed rule stays selected under its new id.
+    /// view drew. The row id carries no verdict (`RulesRuleRow.rowIDs`), so the changed rule stays selected, and so does it
+    /// after its Undo.
     func change(_ rule: CoreRule, to verdict: CoreVerdict, fileName: String) {
         guard let model else { return }
         let file = file
@@ -163,26 +166,19 @@ final class RulesPageState {
         guard let task = model.writes.start(write) else { return }
         changing[write.control] = verdict
         Task { @MainActor in
-            let accepted = await task.value
+            _ = await task.value
             changing[write.control] = nil
-            guard accepted, model.router.route.selection == current.id else { return }
-            model.router.select(Self.id(of: current, as: verdict))
         }
     }
 
     /// The verdict a pending change of `rule` is writing, for its dial's pending step; nil when none is pending.
     func pendingVerdict(_ rule: CoreRule) -> CoreVerdict? { changing[FrameWrite.verdictControl(rule.rule, in: file)] }
 
-    /// The rule as the store holds it now, by its text: the verdict a change starts from.
+    /// The rule as the store holds it now: the verdict a change starts from. The same verdict and text first (the core's
+    /// id), so a hand-edited file that holds one text under two verdicts changes the entry the selected row shows; by text
+    /// only when that one is gone (the file changed under the page).
     static func current(_ rule: CoreRule, in snapshot: CoreRulesSnapshot?) -> CoreRule? {
-        snapshot?.rules.first { $0.rule == rule.rule }
-    }
-
-    /// The rule's id once it says `verdict` (`<scope>:<verdict>:<rule>`).
-    static func id(of rule: CoreRule, as verdict: CoreVerdict) -> String {
-        let parts = rule.id.split(separator: ":", maxSplits: 2, omittingEmptySubsequences: false)
-        guard parts.count == 3 else { return rule.id }
-        return "\(parts[0]):\(verdict.rawValue):\(parts[2])"
+        snapshot?.rules.first { $0.id == rule.id } ?? snapshot?.rules.first { $0.rule == rule.rule }
     }
 
     /// `Remove Rule` on the selected row: `rules.removeMany` with one id, one Undo.
@@ -193,7 +189,8 @@ final class RulesPageState {
     /// `Remove N selected`: the ticked rules shown, all of the one file shown, as one `rules.removeMany` and one Undo.
     func removeSelected(_ rules: [CoreRule], fileName: String) {
         guard let model, !rules.isEmpty else { return }
-        let ids = Set(rules.map(\.id))
+        // The rows of these rules, by their row ids (the ticks and the selection), not the core's rule ids.
+        let ids = Set((list()?.rows ?? []).filter { row in rules.contains(row.rule) }.map(\.id))
         let write = FrameWrite.removeRules(rules, in: file, label: RulesWriteWording.removed(rules, from: fileName))
         Task { @MainActor in
             guard await model.writes.perform(write) else { return }
@@ -213,7 +210,21 @@ final class RulesPageState {
     // MARK: Add Rule
 
     func openAdd() {
-        addDraft = RulesAddDraft(file: file)
+        addDraft = RulesAddDraft(file: file, routeRevision: model?.router.revision ?? 0)
+    }
+
+    /// The sheet as the frame shows it: none once the route moved to another page or came from outside since it opened.
+    var shownAddDraft: RulesAddDraft? {
+        addDraft.flatMap { $0.routeRevision == (model?.router.revision ?? 0) ? $0 : nil }
+    }
+
+    /// The page left the screen: the capability preview, the menus and a sheet the route already hid close, so none comes
+    /// back on the next visit. A sheet whose check or write runs stays until it answers (`closeAdd`).
+    func pageLeft() {
+        closePreview()
+        isCLIMenuOpen = false
+        isProjectMenuOpen = false
+        if shownAddDraft == nil { closeAdd() }
     }
 
     func closeAdd() {

@@ -112,6 +112,17 @@ struct SettingsCLIRow: Identifiable, Equatable, Sendable {
         case .lastShown: "\(name) is the only CLI shown; one stays shown. Nothing changed."
         case .cannotBalance: "\(name) holds no Skills or Subagents, so Balance cannot compare it. Nothing changed."
         case .pinsFull: "Three CLIs are pinned; unpin one to pin \(name). Nothing changed."
+        case .noPartner: "\(name) is the only CLI that holds Skills or Subagents, so Balance has nothing to compare. Nothing changed."
+        }
+    }
+
+    /// The sentence when a Balance switch moved a second one (RD55): nil when it moved only itself or was refused.
+    static func pinNote(_ change: CLIPreferences.PinChange, registry: [CoreRegistryCLI]) -> String? {
+        let name = { (id: String) in registry.first { $0.id == id }?.name ?? id }
+        switch change {
+        case .alsoUnpinned: return "Balance needs two CLIs, so it is off."
+        case .alsoPinned(let partner): return "Pinned \(name(partner)) too: Balance compares two CLIs."
+        case .changed, .refused: return nil
         }
     }
 }

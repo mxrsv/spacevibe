@@ -42,7 +42,7 @@ enum InboxShots {
         Shot(name: "session-2", state: .normal, selection: { _ in "S:claude:s-waiting" }),
         Shot(name: "window-2", state: .normal, selection: { world in world.findings.first { $0.job == .watch && $0.id.hasPrefix("W:") }?.id }),
         Shot(name: "rule-2", state: .normal, selection: { _ in "R::global:allow:Bash" }),
-        Shot(name: "hook-2", state: .normal, selection: { _ in "hook::h4:fail" }),
+        Shot(name: "hook-2", state: .normal, selection: { _ in "hook::h4@claude:fail" }),
         Shot(name: "balance-2", state: .normal, selection: { world in world.findings.first { $0.job == .balance }?.id }),
         Shot(name: "balance-off-2", state: .normal, pinned: false),
         Shot(name: "ticked-2", state: .normal) { state, world, _ in
@@ -56,7 +56,7 @@ enum InboxShots {
         Shot(name: "worst-10", state: .worst, clis: 10),
         Shot(name: "write-2", state: .normal) { _, world, toasts in
             // What `FrameWrites` shows once the core removed the Hook from Claude Code (`removeMany`'s toast, with Undo).
-            let rows = world.rows.filter { $0.id == "hook::h1" }
+            let rows = world.rows.filter { $0.id == "hook::h1@claude" }
             toasts.show(FrameWrite.removedMany(rows, lost: ["claude"], registry: world.snapshot.registry), journalEntries: ["shot"], asyncUndo: {})
         },
         Shot(name: "refused-2", state: .normal) { _, _, toasts in

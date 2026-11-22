@@ -87,17 +87,14 @@ struct CleanActions {
     /// Scan Again (the mock's `rescan`): the same read, and "Measured again" once it answered.
     func scanAgain() {
         Task {
-            await model.store.readClean()
-            if case .ready = model.store.states[.clean] { toasts?.show("Measured again") }
+            // The answer of the scan this press waited for (it joins one in flight), never a later one's state.
+            if await model.store.readClean() { toasts?.show("Measured again") }
         }
     }
 
-    /// Try Again on a failure band: every source, then the scan.
+    /// Try Again on a failure band: every source and one scan (`refresh(force:)` runs the scan with the rest).
     func tryAgain() {
-        Task {
-            await model.store.refresh(force: true)
-            await model.store.readClean()
-        }
+        Task { await model.store.refresh(force: true) }
     }
 
     /// `Remove …`: at once with Undo when no ticked file is shared; otherwise the confirmation names every reader first.

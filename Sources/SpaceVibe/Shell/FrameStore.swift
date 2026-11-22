@@ -66,6 +66,12 @@ final class FrameStore {
     @ObservationIgnored private var subscription: Task<Void, Never>?
     @ObservationIgnored private(set) var isStarted = false
     @ObservationIgnored private var hasKept = false
+    /// The `clean.scan` in flight, which a second `readClean` joins.
+    @ObservationIgnored private var cleanRead: Task<Bool, Never>?
+    /// The one-time move of kept Hook findings to the per-CLI row ids ran (`migrateKeptHookIDs`).
+    @ObservationIgnored private var hasMigratedKept = false
+    /// The controls with a write running, shared by every `FrameWrites` over this store.
+    @ObservationIgnored let writesPending = FrameWritesPending()
 
     init(core: any CoreService, cliPreferences: CLIPreferences? = nil) {
         self.core = core
@@ -109,35 +115,80 @@ final class FrameStore {
             group.addTask { await self.readEverything(refreshProjects: true) }
             group.addTask { await self.readClean() }
         }
+        await migrateKeptHookIDs()
     }
 
-    /// Files may have changed outside the app. Skipped inside `refreshInterval` of the last refresh unless `force` (⌘R).
+    /// Hook rows were keyed by the core key for one CLI's part (Claude Code's, else the first CLI's) and `<key>@<cli>` for the
+    /// others; every part is now `<key>@<cli>`, so a part never takes another CLI's id when a member comes or goes. A Keep
+    /// entry stored under the old id moves once to the new one (`findings.keep` the new, then `findings.unkeep` the old;
+    /// both journaled), so kept Hook findings stay kept. Runs once per launch after the first reading of the Keep list and
+    /// the rows; an id it cannot move stays as it was.
+    func migrateKeptHookIDs() async {
+        guard !hasMigratedKept, hasKept, let loadout = snapshot.loadout else { return }
+        hasMigratedKept = true
+        let moves = FrameRow.keptHookIDMoves(kept: facts.findings.kept, loadout: loadout)
+        guard !moves.isEmpty else { return }
+        for move in moves {
+            do {
+                _ = try await core.findingsKeep(id: move.new)
+                _ = try await core.findingsUnkeep(id: move.old)
+            } catch {
+                break
+            }
+        }
+        await reread([.kept, .journal])
+    }
+
+    /// Files may have changed outside the app. Skipped inside `refreshInterval` of the last refresh unless `force` (⌘R). Activity
+    /// is read first, before that guard (GW23): the window coming forward is a moment the owner looks, so the subscription
+    /// is asked for a report now even when the rest was read a moment ago.
     func refresh(force: Bool = false, now: Date = Date()) async {
         guard isStarted else { return }
+        if subscription != nil { await core.activityRefresh() }
         if !force, let last = lastRefresh, now.timeIntervalSince(last) < Self.refreshInterval { return }
         lastRefresh = now
-        if subscription == nil { subscribe() } else { await core.activityRefresh() }
+        if subscription == nil { subscribe() }
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.readEverything(refreshProjects: force) }
             if force { group.addTask { await self.readClean() } }
         }
     }
 
-    /// `clean.scan` now, through `cleanScanner`: at launch, on opening Clean and on ⌘R, never on the activation refresh. A failure
-    /// keeps the last scan (`failed` with data). Nothing happens without a scanner.
-    func readClean() async {
-        guard let cleanScanner else { return }
+    /// `clean.scan` now, through `cleanScanner`: at launch, on opening Clean and on ⌘R, never on the activation refresh. A call
+    /// while a scan runs joins it instead of starting a second one (the walk reads every log). A failure keeps the last scan
+    /// (`failed` with data). True when the scan this call waited for answered; false without a scanner.
+    @discardableResult
+    func readClean() async -> Bool {
+        if let cleanRead { return await cleanRead.value }
+        guard cleanScanner != nil else { return false }
+        let task = Task { @MainActor in await self.scanClean() }
+        cleanRead = task
+        return await task.value
+    }
+
+    /// A scan that starts after the one in flight, if any: what a write that touched Clean needs, since a scan that began
+    /// before the write cannot see what it moved.
+    func readCleanAfterWrite() async {
+        if let cleanRead { _ = await cleanRead.value }
+        await readClean()
+    }
+
+    private func scanClean() async -> Bool {
+        defer { cleanRead = nil }
+        guard let cleanScanner else { return false }
         let generation = begin(.clean)
         defer { if isLatest(.clean, generation) { reading.remove(.clean) } }
         do {
             let scan = try await cleanScanner()
-            guard isLatest(.clean, generation) else { return }
+            guard isLatest(.clean, generation) else { return false }
             snapshot.clean = scan
             states[.clean] = .ready
+            return true
         } catch is CancellationError {
-            return
+            return false
         } catch {
             if isLatest(.clean, generation) { states[.clean] = .failed(AppEnvironment.message(error)) }
+            return false
         }
     }
 
@@ -217,8 +268,12 @@ final class FrameStore {
                 let value = try await core.limitsRead()
                 if isLatest(source, generation) { snapshot.limits = value }
             case .activity:
-                // The subscription keeps Activity current; a read would race its pushes.
-                guard subscription == nil else { return }
+                // The subscription keeps Activity current; a read would race its pushes. A write that touched Activity (Stop)
+                // asks it for a report now instead of waiting for the next slow poll.
+                guard subscription == nil else {
+                    await core.activityRefresh()
+                    return
+                }
                 let value = try await core.activityRead()
                 if isLatest(source, generation) { snapshot.activity = value }
             case .journal:
@@ -232,8 +287,8 @@ final class FrameStore {
                     hasKept = true
                 }
             case .clean:
-                // Only `readClean` reads it (never polled); a write that touched Clean asks for it here.
-                await readClean()
+                // Only `readClean` reads it (never polled); a write that touched Clean asks for a scan that starts after it.
+                await readCleanAfterWrite()
                 return
             case .rules(let file):
                 let value = try await core.rulesSnapshot(scope: file.scope, dir: file.dir, refreshProjects: refreshProjects && file == .global)

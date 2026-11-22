@@ -59,7 +59,8 @@ struct JournalList: Equatable {
 }
 
 extension FrameWrite {
-    static func journalUndoControl(_ id: String) -> String { "journalUndo:\(id)" }
+    static let journalUndoPrefix = "journalUndo:"
+    static func journalUndoControl(_ id: String) -> String { journalUndoPrefix + id }
 
     /// Undo of one Journal entry from the Journal window (`journal.undo`). Not journaled again, so the toast has no Undo; a
     /// refusal (409: the file changed since, or the path exists again) shows the core's sentence and writes nothing. An

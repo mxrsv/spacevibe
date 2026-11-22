@@ -40,6 +40,70 @@ struct FrameRouteTests {
         #expect(router.route.page == .limits && router.route.selection == "claude:5-hour")
     }
 
+    @Test("an outside route keeps the current scope: a widget click never resets Rules to Global")
+    func outsideRouteKeepsScope() {
+        let router = FrameRouter(FrameRoute(page: .rules, scope: .shared("/p")))
+        router.go(to: .session("claude:s1"))
+        #expect(router.route == FrameRoute(page: .activity, selection: "claude:s1", scope: .shared("/p")))
+        router.go(to: .window("claude:5-hour"))
+        #expect(router.route.scope == .shared("/p"))
+    }
+
+    @Test("dialogs close on a page change or an outside route only: a selection, the first-row rule and a scope never count")
+    func revisionCountsPagesAndOutsideRoutes() {
+        let router = FrameRouter(FrameRoute(page: .inbox))
+        let opened = router.revision
+        router.select("a")
+        router.keepSelection(onPage: .inbox, among: ["b", "c"])
+        router.setScope(.shared("/p"))
+        router.open(.inbox)
+        #expect(router.route.selection == nil && router.revision == opened, "the automatic re-selection keeps a dialog open")
+        router.open(.clean)
+        #expect(router.revision == opened + 1)
+        router.go(to: FrameRoute(page: .clean))
+        #expect(router.revision == opened + 2, "an outside route to the page showing still closes a dialog over it")
+    }
+
+    @Test("another page's first-row rule never judges with the old page's search: the router clears it first")
+    func searchClearedBeforeFirstRow() {
+        let search = FrameSearch()
+        let router = FrameRouter(FrameRoute(page: .skills), search: search)
+        search.text = "lint"
+        router.open(.skills)
+        #expect(search.text == "lint", "the page showing keeps its search")
+        router.open(.hooks)
+        #expect(search.text.isEmpty, "cleared inside open, before the new page's rows are judged")
+        search.text = "x"
+        router.go(to: .session("claude:s1"))
+        #expect(search.text.isEmpty, "an outside route clears a search that could hide its row")
+    }
+
+    @Test("the widget's session is revealed: Sessions tab, a CLI menu that hides it and the search cleared, then it stays selected")
+    func widgetRevealsSession() async {
+        let core = FrameFakeCore()
+        let model = FrameModel(core: core, toasts: ToastCenter(announce: false), route: FrameRoute(page: .activity),
+                               cliPreferences: CLIPreferences(defaults: nil))
+        await model.store.start()
+        core.push(FrameTestData.activity([FrameTestData.session("s1", cli: .claude, state: .running),
+                                          FrameTestData.session("s2", cli: .codex, state: .waiting)]))
+        for _ in 0..<200 where model.store.snapshot.activity?.sessions.count != 2 { try? await Task.sleep(for: .milliseconds(5)) }
+        let state = ActivityPageState.of(model)
+        state.show(.failures, router: model.router)
+        state.setScope("codex")
+        model.search.text = "nothing matches this"
+        model.router.go(to: .session("claude:s1"))
+        #expect(state.tab == .sessions && state.scope == nil && model.search.text.isEmpty)
+        let shown = ActivityPageData(state.input(model: model)).visibleIDs
+        #expect(shown.contains("claude:s1"))
+        model.router.keepSelection(onPage: .activity, among: shown)
+        #expect(model.router.route.selection == "claude:s1", "the first-row rule keeps the revealed session")
+        // A CLI menu on the session's own CLI stays.
+        state.setScope("codex")
+        model.router.go(to: .session("codex:s2"))
+        #expect(state.scope == "codex")
+        model.store.stop()
+    }
+
     @Test("RD44: a page opens on its first row; a selection the filter, scope or search hid moves to the first shown row")
     func firstRowSelection() {
         #expect(FrameFirstRow.selection(current: nil, rows: ["a", "b"]) == "a", "the page just opened")

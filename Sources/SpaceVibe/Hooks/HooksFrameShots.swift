@@ -24,7 +24,7 @@ enum HooksFrameShots {
         var prepare: @MainActor (FrameModel, HooksPageState) async -> Void = { _, _ in }
     }
 
-    static let deadHook = "hook::h1"
+    static let deadHook = "hook::h1@claude"
 
     static let shots: [Shot] = [
         Shot(name: "normal", scenario: .normal),

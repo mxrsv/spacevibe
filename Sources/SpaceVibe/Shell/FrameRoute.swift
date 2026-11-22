@@ -48,21 +48,30 @@ struct FrameRoute: Equatable, Sendable {
 /// Wired: the sidebar (`AppFrame`), the menu bar with ⌘1 to ⌘8 (`FrameCommands`, installed in place of the v5
 /// `ShellCommands` while the switch is on), and the glance widget with its countdown pill (`GlanceController.frame`, set by
 /// `AppFrame`), which call `go(to:)` with `FrameRoute.session` or `FrameRoute.window`.
+///
+/// Two steps run before the route changes, so the new page's first-row rule (RD44) never judges with what the old page
+/// left: another page clears the toolbar's search (`search`), and an outside route (`go(to:)`) first asks the page's
+/// revealer (`setRevealer`) to clear whatever of its own view state would hide the row it names (Activity's tab and CLI
+/// menu).
 @MainActor
 @Observable
 final class FrameRouter {
-    private(set) var route: FrameRoute {
-        didSet { if route != oldValue { revision += 1 } }
-    }
-    /// Counts route changes. A page's dialog records it when it opens and is closed by any change after (the glance widget
-    /// routes from outside the window while the dialog covers it), so it never comes back over another page or selection.
+    private(set) var route: FrameRoute
+    /// Counts page changes and outside routes (`go(to:)`), never a selection or a scope. A page's dialog records it when it
+    /// opens and is closed by any change after (the glance widget routes from outside the window while the dialog covers
+    /// it), so it never comes back over another page; the automatic first-row selection (RD44) never closes it.
     private(set) var revision = 0
 
-    init(_ route: FrameRoute = FrameRoute()) {
+    /// The toolbar's search: cleared when another page opens, before that page's rows are first judged.
+    @ObservationIgnored weak var search: FrameSearch?
+    @ObservationIgnored private var revealers: [FramePage: @MainActor (String) -> Void] = [:]
+
+    init(_ route: FrameRoute = FrameRoute(), search: FrameSearch? = nil) {
         self.route = route
+        self.search = search
     }
 
-    func open(_ page: FramePage) { route = route.opening(page) }
+    func open(_ page: FramePage) { change(to: route.opening(page)) }
 
     /// False for a number outside 1...8.
     @discardableResult
@@ -76,7 +85,31 @@ final class FrameRouter {
 
     func setScope(_ scope: FrameScope) { route = route.scoped(scope) }
 
-    func go(to next: FrameRoute) { route = next }
+    /// An outside route (the glance widget, the countdown pill): that page with that row, revealed. The scope stays the
+    /// current one (a widget click never resets Rules to Global); the search is cleared and the page's revealer clears what
+    /// would hide the row, so the first-row rule keeps it selected. Always counts as a change (`revision`), even to the
+    /// route already showing: a dialog open over it closes.
+    func go(to next: FrameRoute) {
+        search?.clear()
+        if let id = next.selection { revealers[next.page]?(id) }
+        revision += 1
+        route = FrameRoute(page: next.page, selection: next.selection, scope: route.scope)
+    }
+
+    /// `reveal` runs before `go(to:)` routes to a row of `page`: it clears the page's own filters that would hide that row.
+    /// One per page; a later one replaces it.
+    func setRevealer(for page: FramePage, _ reveal: @escaping @MainActor (String) -> Void) {
+        revealers[page] = reveal
+    }
+
+    private func change(to next: FrameRoute) {
+        guard next != route else { return }
+        if next.page != route.page {
+            search?.clear()
+            revision += 1
+        }
+        route = next
+    }
 
     /// RD44: `page` shows `rows`, in order. While it is the page showing and its selection is none of them (the page just
     /// opened, or a filter, the scope or the search hid the selected row), the first row is selected, so the inspector shows

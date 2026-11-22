@@ -25,7 +25,7 @@ enum RulesFrame {
             overlayActions: selected.map { row in
                 AnyView(RulesRowActionButtons(actions: actions(for: row, list: list, state: state), state: state, file: list.file))
             },
-            dialog: state.addDraft.map { draft in
+            dialog: state.shownAddDraft.map { draft in
                 FrameDialog(id: "rules.add", cancel: { state.closeAdd() }) {
                     RulesAddSheet(state: state, draft: draft, fileName: RulesListModel.fileName(draft.file, projects: list.projects))
                 }

@@ -9,8 +9,9 @@ final class FrameModel {
     let store: FrameStore
     let writes: FrameWrites
     let router: FrameRouter
-    /// The search field of the page showing (⌘F): its text filters that page's list, never its hero (AR3).
-    let search = FrameSearch()
+    /// The search field of the page showing (⌘F): its text filters that page's list, never its hero (AR3). The router clears
+    /// it when another page opens or an outside route arrives.
+    let search: FrameSearch
 
     /// Each page's view state (AR3: never in the store), made the first time the page draws and kept as long as this model.
     private var pageStates: [PageStateKey: AnyObject] = [:]
@@ -26,7 +27,15 @@ final class FrameModel {
         // RB-R5: `clean.scan` through the store's on-demand hook (Clean opening, Scan Again, ⌘R, after a write).
         store.cleanScanner = { try await core.cleanScan() }
         writes = FrameWrites(core: core, store: store, toasts: toasts)
-        router = FrameRouter(route)
+        let search = FrameSearch()
+        self.search = search
+        router = FrameRouter(route, search: search)
+        // The glance widget's session (GW6): the Sessions tab, and a CLI menu that hides it cleared, before Activity's
+        // first-row rule judges (`FrameRouter.go(to:)`).
+        router.setRevealer(for: .activity) { [weak self] id in
+            guard let self else { return }
+            ActivityPageState.of(self).reveal(sessionItemID: id, router: self.router)
+        }
     }
 
     /// The one page state of type `State` (for `page` when one type serves two pages, as Skills and Subagents), made by

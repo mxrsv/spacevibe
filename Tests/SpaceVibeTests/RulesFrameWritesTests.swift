@@ -40,10 +40,13 @@ final class RulesFakeCore: UnservedCore, @unchecked Sendable {
     override func activitySubscribe() -> AsyncThrowingStream<CoreActivityReport, Error> { AsyncThrowingStream { $0.yield(D.activity([])) } }
     override func findingsKept() async throws -> CoreKeptFindings { CoreKeptFindings(kept: []) }
 
+    /// The global file's rules; nil is the default set.
+    var globalRules: [CoreRule]?
+
     override func rulesSnapshot(scope: CoreRuleScope, dir: String?, refreshProjects: Bool) async throws -> CoreRulesSnapshot {
         let file = FrameScope(scope: scope, dir: dir)
         let rules = file == .global
-            ? [D.rule("Bash", wide: true), D.rule("Bash(git status:*)"), D.rule("Read(./.env)", verdict: .deny)]
+            ? lock.withLock { globalRules } ?? [D.rule("Bash", wide: true), D.rule("Bash(git status:*)"), D.rule("Read(./.env)", verdict: .deny)]
             : [D.rule("Bash", file: file, wide: true)]
         var snap = D.rules(rules, file: file, projects: [Self.dir])
         snap.grid = [CoreCapabilityCell(capability: .push, label: "Push and deploy", state: .ask, editable: true, rules: [])]
@@ -139,7 +142,7 @@ struct RulesFrameWritesTests {
     func changeToAsk() async throws {
         let (core, model, state, toasts) = await setUp()
         let list = try #require(state.list())
-        let bash = try #require(list.row("global:allow:Bash"))
+        let bash = try #require(list.row("global::Bash"))
         try #require(RulesFrame.actions(for: bash, list: list, state: state).first).perform()
         #expect(await eventually { toasts.current != nil })
         #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash allow ask"])
@@ -153,8 +156,8 @@ struct RulesFrameWritesTests {
         core.verdictDelay = .milliseconds(300)
         let list = try #require(state.list())
         // The row as the inspector drew it before the first write: it still says Allow on every press below.
-        let bash = try #require(list.row("global:allow:Bash")).rule
-        model.router.select(bash.id)
+        let bash = try #require(list.row("global::Bash")).rule
+        model.router.select("global::Bash")
         state.change(bash, to: .ask, fileName: list.fileName)
         // The dial shows the step being written at once, and takes no press until the write is done.
         #expect(state.pendingVerdict(bash) == .ask && !PermissionDial.takesPress(pending: state.pendingVerdict(bash)))
@@ -164,8 +167,66 @@ struct RulesFrameWritesTests {
         #expect(await eventually { toasts.current != nil && state.pendingVerdict(bash) == nil })
         #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash allow ask"])
         #expect(PermissionDial.takesPress(pending: state.pendingVerdict(bash)))
-        // The changed rule stays selected under its new id.
-        #expect(model.router.route.selection == "global:ask:Bash")
+        // The row id carries no verdict, so the changed rule stays selected.
+        #expect(model.router.route.selection == "global::Bash")
+        model.store.stop()
+    }
+
+    @Test("a verdict change and its Undo keep the rule selected: the row id carries the file and the text, not the verdict")
+    func verdictChangeKeepsSelection() async throws {
+        let (_, model, state, toasts) = await setUp()
+        let list = try #require(state.list())
+        let bash = try #require(list.row("global::Bash"))
+        model.router.select(bash.id)
+        state.change(bash.rule, to: .ask, fileName: list.fileName)
+        #expect(await eventually { toasts.current != nil && state.pendingVerdict(bash.rule) == nil })
+        var asked = bash.rule
+        asked.verdict = .ask
+        asked.id = "global:ask:Bash"
+        #expect(RulesRuleRow.rowIDs([asked], in: .global) == RulesRuleRow.rowIDs([bash.rule], in: .global))
+        #expect(model.router.route.selection == bash.id)
+        model.router.keepSelection(onPage: .rules, among: RulesRuleRow.rowIDs([asked], in: .global))
+        #expect(model.router.route.selection == bash.id, "the first-row rule finds it after the change and after its Undo")
+        model.store.stop()
+    }
+
+    @Test("a hand-edited file with one text under two verdicts: two rows, and the dial changes the entry the selected row shows")
+    func sameTextTwoVerdicts() async throws {
+        let core = RulesFakeCore()
+        core.globalRules = [D.rule("Bash", wide: true), D.rule("Bash", verdict: .deny)]
+        let toasts = ToastCenter(announce: false)
+        let model = FrameModel(core: core, toasts: toasts, route: FrameRoute(page: .rules))
+        await model.store.start()
+        core.reset()
+        let state = RulesPageState(model: model)
+        let list = try #require(state.list())
+        #expect(Set(list.rows.map(\.id)).count == 2, "no two rows share an id")
+        let deny = try #require(list.rows.first { $0.rule.verdict == .deny })
+        model.router.select(deny.id)
+        state.change(deny.rule, to: .ask, fileName: list.fileName)
+        #expect(await eventually { toasts.current != nil })
+        #expect(core.sent("rules.changeVerdict") == ["rules.changeVerdict global  Bash deny ask"], "from the deny entry, not the allow one")
+        model.store.stop()
+    }
+
+    @Test("the Add Rule sheet closes on another page or an outside route, never on a re-selection; the preview closes on leaving")
+    func addSheetFollowsRoute() async throws {
+        let (_, model, state, _) = await setUp()
+        state.openAdd()
+        #expect(state.shownAddDraft != nil)
+        model.router.select("global::Read(./.env)")
+        model.router.keepSelection(onPage: .rules, among: ["global::Bash"])
+        #expect(state.shownAddDraft != nil, "the first-row rule never closes the sheet")
+        model.router.go(to: .session("claude:s1"))
+        #expect(state.shownAddDraft == nil)
+        model.router.open(.rules)
+        #expect(state.shownAddDraft == nil, "it never comes back")
+        state.pageLeft()
+        #expect(state.addDraft == nil)
+        let push = try #require(state.list()?.capabilities.first)
+        state.requestPreview(push, to: .deny)
+        state.pageLeft()
+        #expect(state.preview == nil)
         model.store.stop()
     }
 
@@ -173,7 +234,7 @@ struct RulesFrameWritesTests {
     func changeStartsFromStore() async throws {
         let (core, model, state, toasts) = await setUp()
         let list = try #require(state.list())
-        var stale = try #require(list.row("global:allow:Bash")).rule
+        var stale = try #require(list.row("global::Bash")).rule
         stale.verdict = .deny
         state.change(stale, to: .ask, fileName: list.fileName)
         #expect(await eventually { toasts.current != nil })
@@ -184,8 +245,8 @@ struct RulesFrameWritesTests {
     @Test("Remove N selected: one rules.removeMany with every ticked id of the one file, one Undo, ticks cleared")
     func removeSelected() async throws {
         let (core, model, state, toasts) = await setUp()
-        state.toggle("global:allow:Bash")
-        state.toggle("global:deny:Read(./.env)")
+        state.toggle("global::Bash")
+        state.toggle("global::Read(./.env)")
         let list = try #require(state.list())
         #expect(list.primary == .removeSelected(2))
         state.removeSelected(list.removal, fileName: list.fileName)
@@ -199,18 +260,18 @@ struct RulesFrameWritesTests {
     func refusedRemoval() async throws {
         let (core, model, state, toasts) = await setUp()
         core.refusal = "~/.claude/settings.json changed since SpaceVibe read it. Nothing changed."
-        state.toggle("global:allow:Bash")
+        state.toggle("global::Bash")
         let list = try #require(state.list())
         state.removeSelected(list.removal, fileName: list.fileName)
         #expect(await eventually { toasts.current != nil })
-        #expect(toasts.current?.tone == .danger && state.view.ticked == ["global:allow:Bash"] && toasts.undoStack.isEmpty)
+        #expect(toasts.current?.tone == .danger && state.view.ticked == ["global::Bash"] && toasts.undoStack.isEmpty)
         model.store.stop()
     }
 
     @Test("Rules › Project: the route's scope moves to the project's Shared file, then Local; writes go to that file")
     func projectFile() async throws {
         let (core, model, state, toasts) = await setUp()
-        state.toggle("global:allow:Bash")
+        state.toggle("global::Bash")
         let projects = try #require(state.list()).projects
         state.pick(scopeIsProject: true, projects: projects)
         #expect(model.router.route.scope == .shared(RulesFakeCore.dir) && state.view.ticked.isEmpty)

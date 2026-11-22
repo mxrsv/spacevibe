@@ -317,3 +317,47 @@ struct AppFrameTests {
         #expect(BlockRole.settingsToastWindowMargin < BlockRole.toastWindowMargin, "the main window's 160 would leave 340 of 660")
     }
 }
+
+@Suite("Frame round 2: sidebar, scope menus, Undo")
+@MainActor
+struct FrameRoundTwoTests {
+    @Test("RD54: the sidebar's Limits value reads Over limit when the Window that needs you is over, never 0% left")
+    func overLimit() {
+        #expect(FrameSidebarValue(figure: .percentLeft(0, tone: .critical, isOver: true), page: .limits) == FrameSidebarValue(text: "Over limit"))
+        #expect(FrameSidebarValue(figure: .percentLeft(0, tone: .critical), page: .limits) == FrameSidebarValue(text: "0% left"))
+        let limits = CoreLimitsResult(limits: [FrameTestData.limits(used: 112)])
+        let world = FrameWorld(snapshot: FrameSnapshot(registry: FrameTestData.registry, limits: limits), now: FrameTestData.now)
+        let figure = world.figure(for: .limits, loading: [], failed: [])
+        #expect(FrameSidebarValue(figure: figure, page: .limits).text == "Over limit")
+    }
+
+    @Test("a CLI hidden in Settings after it was picked reads as All CLIs in the menu and in the lists")
+    func hiddenScope() {
+        let options = FrameTestData.registry.prefix(1).map { CLIMenuEntries.Option(cli: CLIIdentity(id: $0.id, name: $0.name), isSupported: true) }
+        let entries = CLIMenuEntries.scope(Array(options), scope: "codex")
+        #expect(entries.first?.isChosen == true && entries.filter(\.isChosen).count == 1)
+        let world = FrameWorld(snapshot: FrameSnapshot(registry: FrameTestData.registry), facts: FrameFacts(hidden: ["codex"]), now: FrameTestData.now)
+        #expect(world.shownScope("codex") == nil && world.shownScope("claude") == "claude" && world.shownScope(nil) == nil)
+        let hook = FrameTestData.hook("h", cells: ["claude": FrameTestData.runs(1), "codex": .missing])
+        var snapshot = FrameSnapshot(registry: FrameTestData.registry)
+        snapshot.loadout = FrameTestData.loadout(hooks: [hook])
+        let hooks = HooksListModel(world: FrameWorld(snapshot: snapshot, facts: FrameFacts(hidden: ["codex"]), now: FrameTestData.now),
+                                   loading: [], failed: [], failure: nil, view: HooksViewState(cli: "codex"), now: FrameTestData.now)
+        #expect(hooks.stages.flatMap(\.rows).map(\.id) == ["hook::h@claude"], "Hooks is not left filtered to the hidden CLI")
+        let equip = EquipListModel.make(kind: .skills, world: FrameWorld(snapshot: FrameSnapshot(registry: FrameTestData.registry,
+            loadout: FrameTestData.loadout([FrameTestData.item("s", cells: ["claude": FrameTestData.sessions(1), "codex": FrameTestData.sessions(1)])])),
+            facts: FrameFacts(hidden: ["codex"]), now: FrameTestData.now), loading: [], failed: [], failure: nil,
+            view: EquipViewState(cli: "codex"), now: FrameTestData.now)
+        #expect(equip.visible.map(\.id) == ["skill::s"])
+    }
+
+    @Test("Undo acts on the main window's stack only while a frame window is key and no dialog covers it")
+    func undoCommand() {
+        #expect(FrameUndoCommand.target(editorCanUndo: false, isFrameKey: true, isModal: false, sessionCanUndo: true) == .session)
+        #expect(FrameUndoCommand.target(editorCanUndo: false, isFrameKey: false, isModal: false, sessionCanUndo: true) == .nothing,
+                "from the Settings or Journal window")
+        #expect(FrameUndoCommand.target(editorCanUndo: false, isFrameKey: true, isModal: true, sessionCanUndo: true) == .nothing)
+        #expect(FrameUndoCommand.target(editorCanUndo: true, isFrameKey: false, isModal: true, sessionCanUndo: true) == .editor,
+                "a field being edited keeps its own Undo")
+    }
+}

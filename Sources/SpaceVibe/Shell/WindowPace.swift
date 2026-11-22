@@ -82,13 +82,21 @@ struct WindowPace: Identifiable, Equatable, Sendable {
     /// (`isLow`, `severity`) judges exactly the value the figure shows: "5% left" is never unflagged, "5.1%" never flagged.
     static func oneDecimal(_ value: Double) -> Double { (value * 10).rounded() / 10 }
 
+    /// The widest share a figure shows: an absurd reading (a usage of 1e300 %, infinity) is shown at this bound, and NaN
+    /// as 0, so turning it into an `Int` can never trap.
+    static let shareBound = 1_000_000.0
+
+    static func clamped(_ share: Double) -> Double {
+        share.isNaN ? 0 : min(shareBound, max(-shareBound, share))
+    }
+
     /// A share as every new-frame surface shows it (the Limits hero and rows, the sidebar): one decimal, no trailing ".0"
     /// ("38%", "69.5%", "0%"), the mock's `pct`.
     static func percentText(_ share: Double) -> String { "\(shareText(share))%" }
 
     /// The number alone, for a figure whose unit is drawn apart (the hero's "77" before "% left").
     static func shareText(_ share: Double) -> String {
-        let rounded = oneDecimal(share)
+        let rounded = oneDecimal(clamped(share))
         let whole = rounded.rounded()
         return rounded == whole ? NumberWording.count(Int(whole)) : String(format: "%.1f", rounded)
     }

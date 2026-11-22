@@ -50,7 +50,7 @@ struct FrameRowsTests {
         #expect(FrameRow.rows(from: D.loadout(hooks: [codex]))[0].status == .unknown)
     }
 
-    @Test("RD46: a Hook key two CLIs hold is one row per CLI; Claude Code's keeps the key, the other is <key>@<cli> with its own cell")
+    @Test("RD46: a Hook key two CLIs hold is one row per CLI, each <key>@<cli> with its own cell")
     func hookOneCLIPerRow() {
         let cells: CoreCLICells = ["claude": D.runs(0), "codex": .unmeasurable(reason: "Codex logs no hook runs"), "cli2": .notSupported]
         var codex = D.hook("both", cells: cells)
@@ -58,7 +58,7 @@ struct FrameRowsTests {
         codex.id = "codex:hook:both"
         let loadout = D.loadout(hooks: [codex, D.hook("both", cells: cells), D.hook("solo", cells: ["claude": D.runs(3), "codex": .missing])])
         let rows = FrameRow.rows(from: loadout)
-        #expect(rows.map(\.id) == ["hook::both@codex", "hook::both", "hook::solo"])
+        #expect(rows.map(\.id) == ["hook::both@codex", "hook::both@claude", "hook::solo@claude"])
         #expect(rows[0].hooks.map(\.cli) == [.codex] && rows[1].hooks.map(\.cli) == [.claude])
         #expect(rows[0].cells == ["claude": .missing, "codex": .unmeasurable(reason: "Codex logs no hook runs"), "cli2": .notSupported])
         #expect(rows[1].cells == ["claude": D.runs(0), "codex": .missing, "cli2": .notSupported])
@@ -66,6 +66,43 @@ struct FrameRowsTests {
         #expect(rows[0].presence("claude") == .off && rows[1].presence("codex") == .off)
         // Only Claude Code's row is a candidate SpaceVibe may suggest.
         #expect(rows[1].isSuggested(kept: []) && !rows[0].isSuggested(kept: []))
+    }
+
+    @Test("a Hook part keeps its id when another CLI's member of the key comes or goes (build-review M2)")
+    func hookIDsStable() {
+        let cells: CoreCLICells = ["claude": D.runs(0), "codex": D.runs(0)]
+        var codex = D.hook("both", cells: cells)
+        codex.cli = .codex
+        codex.id = "codex:hook:both"
+        let together = FrameRow.rows(from: D.loadout(hooks: [D.hook("both", cells: cells), codex])).map(\.id)
+        let codexAlone = FrameRow.rows(from: D.loadout(hooks: [codex])).map(\.id)
+        let claudeAlone = FrameRow.rows(from: D.loadout(hooks: [D.hook("both", cells: cells)])).map(\.id)
+        #expect(together == ["hook::both@claude", "hook::both@codex"])
+        #expect(codexAlone == ["hook::both@codex"], "Codex's part never takes the id Claude Code's had")
+        #expect(claudeAlone == ["hook::both@claude"], "Claude Code's part arriving never takes Codex's id")
+    }
+
+    @Test("kept Hook findings under the old ids move to the per-CLI ids: Clean up and failing, the bare key's holder only")
+    func keptHookIDMoves() {
+        let cells: CoreCLICells = ["claude": D.runs(0), "codex": D.runs(0)]
+        var codex = D.hook("both", cells: cells)
+        codex.cli = .codex
+        codex.id = "codex:hook:both"
+        var codexOnly = D.hook("cx", cells: cells)
+        codexOnly.cli = .codex
+        codexOnly.id = "codex:hook:cx"
+        let loadout = D.loadout([D.item("s", cells: cells)], hooks: [D.hook("both", cells: cells), codex, codexOnly])
+        let kept: Set<String> = ["hook::both", "hook::both@codex:fail", "hook::cx:fail", "skill::s", "hook::gone", "W:claude:5h:1"]
+        let moves = FrameRow.keptHookIDMoves(kept: kept, loadout: loadout)
+        #expect(moves == [
+            FrameRow.KeptIDMove(old: "hook::both", new: "hook::both@claude"),
+            FrameRow.KeptIDMove(old: "hook::cx:fail", new: "hook::cx@codex:fail"),
+        ], "the key's holder was Claude Code where it has a member, else the only CLI; other ids and gone Hooks stay")
+        let migrated = kept.subtracting(moves.map(\.old)).union(moves.map(\.new))
+        #expect(FrameRow.keptHookIDMoves(kept: migrated, loadout: loadout).isEmpty, "a second run moves nothing")
+        // The moved ids are the ones the findings now carry.
+        let rows = FrameRow.rows(from: loadout)
+        #expect(rows.map(\.id).contains("hook::both@claude") && rows.map(\.id).contains("hook::cx@codex"))
     }
 
     @Test("a failing Hook's 7-day errors are its own CLI's, by its row id")
@@ -77,14 +114,14 @@ struct FrameRowsTests {
         codex.cli = .codex
         codex.id = "codex:hook:both"
         let errors = FindingFacts.hookErrorsLastWeek(in: D.loadout(hooks: [D.hook("both", cells: cells), codex]))
-        #expect(errors == ["hook::both": 2, "hook::both@codex": 5])
+        #expect(errors == ["hook::both@claude": 2, "hook::both@codex": 5])
     }
 
     @Test("members of one row key become one row, items before Hooks, in the core's order")
     func grouping() {
         let cells: CoreCLICells = ["claude": D.sessions(1), "codex": D.sessions(2)]
         let rows = FrameRow.rows(from: D.loadout([D.item("b", cells: cells), D.item("a", cells: cells), D.item("b", cli: .codex, cells: cells)], hooks: [D.hook("h", cells: [:])]))
-        #expect(rows.map(\.id) == ["skill::b", "skill::a", "hook::h"])
+        #expect(rows.map(\.id) == ["skill::b", "skill::a", "hook::h@claude"])
         #expect(rows[0].items.count == 2)
         #expect(rows[0].total == 3)
     }

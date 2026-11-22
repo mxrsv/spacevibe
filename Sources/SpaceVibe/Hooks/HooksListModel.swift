@@ -246,7 +246,7 @@ struct HooksListModel: Sendable {
         self.phase = phase
 
         let shown = phase == .scanning ? [] : all.filter { row in
-            (view.event.map { row.stage == $0 } ?? true) && (view.cli.map { row.cli == $0 } ?? true)
+            (view.event.map { row.stage == $0 } ?? true) && (world.shownScope(view.cli).map { row.cli == $0 } ?? true)
                 && query.matches(row.row.searchFields + [row.label])
         }
         let stageNames = shown.reduce(into: [String]()) { names, row in if !names.contains(row.stage) { names.append(row.stage) } }
