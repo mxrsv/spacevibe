@@ -16,7 +16,7 @@ export const DOWNLOAD_URL = `${GITHUB_URL}/releases/latest`;
 export const SITE = {
   brand: "SpaceVibe",
   url: "https://spacevibe.dev",
-  title: "SpaceVibe — see what Claude Code and Codex carry",
+  title: "SpaceVibe — see what your coding agents carry",
   description:
     "A local Mac app that shows every skill, subagent and hook Claude Code and Codex carry, how often each ran, what each may do, and what it cost. Nothing leaves the machine.",
   // The first viewport at 1200 x 630 without the header, saved from the built page; retake it when the hero changes.
@@ -62,12 +62,13 @@ export type HeroLayout = "now" | "a" | "b" | "c";
 
 export const HERO_HEADLINES = [
   ["Which of your skills", "actually run?"],
-  ["See what Claude Code", "and Codex carry."],
+  ["See what your", "coding agents carry."],
   ["Clean up what your", "agents never use."],
 ] as const;
 
 export const HERO = {
-  eyebrow: "A local Mac app for Claude Code and Codex CLI",
+  // The app is for agent CLIs in general (RD13); the core reads two today (`core/internal/cliregistry`), so the line says which.
+  eyebrow: "A local Mac app for AI coding agents · Claude Code and Codex today",
   lede: "SpaceVibe is a local Mac app for Claude Code and Codex CLI. It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",
   /** The lede without its first sentence, for the layouts whose eyebrow already says what the app is. */
   ledeShort: "It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",

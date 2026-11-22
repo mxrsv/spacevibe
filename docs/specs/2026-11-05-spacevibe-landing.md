@@ -58,11 +58,13 @@ Three layouts and three headlines are built on the review route `/hero-lab` (`?l
 
 | Layout | First glance, second glance | What changes |
 | --- | --- | --- |
-| A | the heading under a line that names the app; the three jobs | adds the eyebrow "A local Mac app for Claude Code and Codex CLI" and three links (Clean up, Control, Watch) above the window |
+| A | the heading under a line that names the app; the three jobs | adds the eyebrow "A local Mac app for AI coding agents · Claude Code and Codex today" and three links (Clean up, Control, Watch) above the window |
 | B (recommended) | five readings the app produces; the heading | words left, one panel right with a figure per screen, each a link to its band; no window in the hero |
 | C | the Inbox's never-ran rows at reading size with Remove; the heading | words left, a crop of the real rows right |
 
-Headlines: "Which of your skills actually run?" (today), "See what Claude Code and Codex carry." (recommended), "Clean up what your agents never use."
+Headlines: "Which of your skills actually run?" (today), "See what your coding agents carry." (recommended), "Clean up what your agents never use."
+
+Owner, 2026-11-22, on the headlines: "không nên đặt tiêu đề là chỉ claude code, codex ? vì chúng ta support nhiều agent mà". The headline and the page title therefore name the category (coding agents), never a list of CLIs; the line above the headline says which CLIs the core reads today (two, `core/internal/cliregistry`), so the page does not claim more than the download does. The per-CLI ledger in the bands follows the registry when it grows.
 
 On pick: `/` takes the picked layout and headline; the other layouts, the other headlines, `/hero-lab`, `hero-lab.tsx` and the mock's unpicked options are deleted (FE-P1), and L5 is re-read against the pick.
 
