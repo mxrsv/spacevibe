@@ -17,8 +17,6 @@ enum CLIMenuEntries {
     // MARK: All CLIs (Skills, Subagents, Hooks, Inbox)
 
     static let scopeHeading = "Show"
-    /// Pinning lives in Settings › CLIs (two or three CLIs for Balance); the menu only says where.
-    static let scopeFootnote = "Pin CLIs for Balance in Settings › CLIs."
 
     /// "All CLIs" with the CLI count, then every CLI in the fixed order; a CLI without the page's concept is listed, disabled,
     /// as Not supported. `scope` nil is All CLIs.

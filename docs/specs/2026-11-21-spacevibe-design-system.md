@@ -92,7 +92,7 @@ Carried, not re-decided here: RD6 (SF Pro Rounded for figures only, "chỉ sử 
   | Hero | hero figure plus quiet label | normal, zero | adapt `StatFigures` |
   | Meter | 4, 6, 3; fill plus pace tick | ok, attention, critical, Unmeasurable | adapt `Cells` |
   | CLI logo toggle and tile | 28 cell; tile grid | on, Never ran, off, via, last copy, Not supported, Unmeasurable | adapt `LogoToggle`, `Tile` |
-  | Toast | wraps; Undo in reach | done, refused (what did not change first) | adapt `Toast` |
+  | Toast | wraps; Undo in reach | done, refused (what did not change first), partly done (amber glyph, RD65) | adapt `Toast` |
   | Menu, popover, sheet, alert | system surfaces | open; Esc and outside click close | adapt `PopoverSurface`, `ConfirmationDialog`; Stop uses a system alert with a destructive role |
   | Empty, scanning, error | one layout each | as drawn | adapt `EmptyState` |
   | Inspector | trailing 308 / 336; an overlay below 1100 pt that covers the list and repeats the selected row's actions at its top | open, closed, overlay | adapt `DetailPane` |

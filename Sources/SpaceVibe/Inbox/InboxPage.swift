@@ -170,8 +170,6 @@ struct InboxPage: Equatable, Sendable {
     let groups: [InboxGroupModel]
     let kept: [InboxRowModel]
     let showsKept: Bool
-    /// Balance compares pinned CLIs only and needs two (RD-R10): with fewer pins the page says so.
-    let isBalanceOff: Bool
     let primary: InboxPrimary
     /// The ticked removable rows among those shown, in page order: what `Remove N` takes.
     let ticked: [String]
@@ -217,7 +215,6 @@ struct InboxPage: Equatable, Sendable {
         }
         kept = keptRows
         self.showsKept = showsKept && !keptRows.isEmpty
-        isBalanceOff = world.facts.findings.pinned.filter { id in world.clis.contains { $0.id == id } }.count < 2
         let removable = open.filter(\.isRemovable).map(\.id)
         self.ticked = removable.filter(ticked.contains)
 

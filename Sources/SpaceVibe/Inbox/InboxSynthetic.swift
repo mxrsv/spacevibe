@@ -121,7 +121,7 @@ enum InboxSynthetic {
     static let project = "/Users/someone/Development/payments-web"
 
     /// The engine readings of one state at `count` CLIs (2 or 10), with the facts the store would fill. `pinned`: Claude Code
-    /// and Codex are pinned, as the mock's Settings default (`UI.pin`), so Balance compares them; false shows "Balance is off".
+    /// and Codex are pinned, as the mock's Settings default (`UI.pin`), so Balance compares them; false leaves no Balance group.
     static func snapshot(_ state: State, clis count: Int, pinned: Bool = true) -> (snapshot: FrameSnapshot, facts: FrameFacts) {
         let registry = registry(count)
         let unreadable: Set<String> = state == .error ? ["codex"] : []

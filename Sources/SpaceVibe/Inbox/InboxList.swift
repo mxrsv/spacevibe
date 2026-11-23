@@ -98,13 +98,10 @@ struct InboxList: View {
         }
     }
 
-    /// The Balance line and the kept line (the mock's `keptLine`).
+    /// The kept line (the mock's `keptLine`). With fewer than two pins the page has no Balance group and says nothing
+    /// about it (RD61).
     @ViewBuilder
     private var lines: some View {
-        if page.isBalanceOff {
-            InboxNoteLine(icon: .infoFill, text: "Balance is off: pin two or three CLIs in Settings › CLIs.")
-                .padding(.top, SpaceRole.step8)
-        }
         if !page.kept.isEmpty {
             InboxNoteLine(icon: .pushPin, text: "\(NumberWording.count(page.kept.count)) kept, not counted") {
                 Button(state.showsKept ? "Hide" : "Show") { state.showsKept.toggle() }
@@ -134,7 +131,7 @@ struct InboxList: View {
     }
 }
 
-/// A quiet line under the groups (the mock's `.q2` lines): a 14 pt glyph, the sentence, and an optional quiet button.
+/// A quiet line under the groups (the mock's `.q2` lines): a 14 pt glyph, the sentence and a quiet button.
 struct InboxNoteLine<Action: View>: View {
     let icon: FrameIcon
     let text: String
@@ -158,12 +155,6 @@ struct InboxNoteLine<Action: View>: View {
         }
         .padding(.vertical, SpaceRole.step8)
         .padding(.horizontal, SpaceRole.step8)
-    }
-}
-
-extension InboxNoteLine where Action == EmptyView {
-    init(icon: FrameIcon, text: String) {
-        self.init(icon: icon, text: text) { EmptyView() }
     }
 }
 

@@ -66,7 +66,7 @@ struct FrameOverlaySpecimens: View {
         FrameSpecimenGroup(title: "Menus: All CLIs at 10 CLIs (Not supported disabled), the CLI picker, the project picker; their buttons closed and open") {
             VStack(alignment: .leading, spacing: SpaceRole.step12) {
                 MenuPanel(heading: CLIMenuEntries.scopeHeading, entries: CLIMenuEntries.scope(options, scope: nil),
-                          footnote: CLIMenuEntries.scopeFootnote, pick: { _ in }, close: {})
+                          pick: { _ in }, close: {})
                 VStack(alignment: .leading, spacing: SpaceRole.step12) {
                     MenuPanel(entries: CLIMenuEntries.picker(options, chosen: "claude"), pick: { _ in }, close: {})
                     MenuPanel(entries: CLIMenuEntries.projects([

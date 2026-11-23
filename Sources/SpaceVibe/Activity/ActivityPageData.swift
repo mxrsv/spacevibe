@@ -131,11 +131,11 @@ struct ActivitySessionRow: Identifiable, Equatable, Sendable {
         return tool.target.isEmpty ? tool.name : "\(tool.name) \(tool.target)"
     }
 
-    /// The Current tool cell without a tool: empty for an ended row, "Unknown" when the state cannot be read.
+    /// The Current tool cell without a tool: empty for an ended row, "Unmeasurable" when the state cannot be read (RD62).
     var toolPlaceholder: String {
         switch session.state {
         case .ended: ""
-        case .unmeasurable: "Unknown"
+        case .unmeasurable: "Unmeasurable"
         default: "No tool running"
         }
     }
@@ -165,7 +165,7 @@ struct ActivitySessionRow: Identifiable, Equatable, Sendable {
     /// The Current tool section: the call on two lines, or why there is none.
     var toolBlock: String? { session.currentTool.map { "\($0.name)\n\($0.target)" } }
     var noToolNote: String {
-        session.state == .unmeasurable ? "Unknown: this CLI logs nothing while a tool runs." : "None running."
+        session.state == .unmeasurable ? "Unmeasurable: this CLI logs nothing while a tool runs." : "None running."
     }
 
     /// What VoiceOver reads for the row.

@@ -43,14 +43,13 @@ struct InboxPageTests {
         let rest = page.groups.dropFirst().allSatisfy { $0.suggested.isEmpty }
         #expect(rest)
         #expect(page.heroLabel == "need you")
-        #expect(!page.isBalanceOff)
         let balance = page.groups[1].rows.first
         #expect(balance?.title == "test-runner" && balance?.evidence == "Missing in Codex")
         #expect(balance?.actions == [.keep, .addTo(cli: "codex", title: "Add to Codex")])
-        // Fewer than two pins: no Balance group, the "Balance is off" line instead (the `balance-off-2` shot).
+        // Fewer than two pins: no Balance group and no line about it (RD61; the `balance-off-2` shot).
         let world = S.world(.normal, clis: 2, pinned: false)
         let off = InboxPage(world: world, figure: world.figure(for: .inbox, loading: [], failed: []), now: S.now)
-        #expect(off.isBalanceOff && !off.groups.contains { $0.job == .balance })
+        #expect(!off.groups.contains { $0.job == .balance })
     }
 
     @Test("nothing is ticked at first; Remove N selected counts ticked rows shown, ignores ticks on other rows")
@@ -238,7 +237,6 @@ struct InboxPageTests {
         #expect(balance?.severity == GroupSeverity.none && balance?.suggested.isEmpty == true)
         #expect(balance?.rows.first?.actions == [.keep, .addTo(cli: "codex", title: "Add to Codex")])
         #expect(balance?.rows.first?.evidence == "Missing in Codex" && balance?.rows.first?.sub == "Skill · ran in 9 sessions")
-        #expect(!page.isBalanceOff)
     }
 
     @Test("wording helpers")

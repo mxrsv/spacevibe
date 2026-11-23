@@ -164,7 +164,7 @@ struct ActivityPageTests {
         #expect(ended.ageCell == "8 min ago" && ended.inspectorAge == "ended 8 min ago" && ended.toolPlaceholder.isEmpty)
         #expect(ended.facts.first { $0.key == "Process" }?.value == "Exited")
         let unknown = ActivitySessionRow(session("u", state: .unmeasurable), cliName: "Codex", elapsedMs: 0)
-        #expect(unknown.toolPlaceholder == "Unknown" && unknown.noToolNote.hasPrefix("Unknown:"))
+        #expect(unknown.toolPlaceholder == "Unmeasurable" && unknown.noToolNote.hasPrefix("Unmeasurable:"), "RD62: one word")
     }
 
     // MARK: Ticks and Stop

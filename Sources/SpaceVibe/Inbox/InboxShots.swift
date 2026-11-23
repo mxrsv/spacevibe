@@ -10,7 +10,7 @@ import SwiftUI
 /// - `selected-2`, `selected-10` (a Never ran Skill selected: its row actions and the CLI tiles), `session-2` (the waiting
 ///   session: Show Terminal), `window-2` (the Window behind pace: Keep only), `rule-2` (the dial and the Capability), `hook-2`
 ///   (a failing Hook), `balance-2` (Claude Code and Codex pinned, the Balance finding selected: Add to Codex),
-///   `balance-off-2` (fewer than two pins: "Balance is off"), `ticked-2` (`Select N Suggested` pressed: `Remove 6`),
+///   `balance-off-2` (fewer than two pins: no Balance group), `ticked-2` (`Select N Suggested` pressed: `Remove 6`),
 ///   `kept-2` (Show Kept open);
 /// - `empty-2` (Clear, one kept finding), `scanning-2`, `error-2` (Codex folder unreadable), `worst-2`, `worst-10` (break-ui
 ///   data: long and right-to-left names, huge counts, a Window over the limit, no host app);

@@ -103,7 +103,6 @@ struct HooksCLIMenu: View {
             .help("Choose the CLIs these lists cover")
             .popover(isPresented: $state.isCLIMenuOpen, arrowEdge: .bottom) {
                 MenuPanel(heading: CLIMenuEntries.scopeHeading, entries: CLIMenuEntries.scope(list.cliOptions, scope: state.view.cli),
-                          footnote: CLIMenuEntries.scopeFootnote,
                           pick: { id in state.filter(cli: id == CLIMenuEntries.allID ? nil : id) },
                           close: { state.isCLIMenuOpen = false })
             }

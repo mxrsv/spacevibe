@@ -40,13 +40,12 @@ enum MenuPanelKeys {
 }
 
 /// A menu's surface and lines (DS-R10 "Menu"; RD-R10; the mock's `.cpop`), beside v5's `MenuSurface`: 252 wide, an optional
-/// heading, the lines 28 high, an optional footnote. The pointer and ↑↓ move one highlight; Return or a click picks;
+/// heading, the lines 28 high. The pointer and ↑↓ move one highlight; Return or a click picks;
 /// Esc closes (`close`), and the caller closes it on an outside click (`anchoredOverlay(… onOutsideTap:)`) and gives the
 /// focus back to its button.
 struct MenuPanel: View {
     var heading: String?
     let entries: [MenuPanelEntry]
-    var footnote: String?
     var width: CGFloat = BlockRole.menuWidth
     let pick: (String) -> Void
     let close: () -> Void
@@ -68,17 +67,6 @@ struct MenuPanel: View {
                 MenuPanelLine(entry: entry, isHighlighted: highlighted == entry.id, hover: { if $0, entry.isEnabled { highlighted = entry.id } }) {
                     if entry.isEnabled { pick(entry.id) }
                 }
-            }
-            if let footnote {
-                HStack(alignment: .top, spacing: SpaceRole.step6) {
-                    FrameGlyph(.infoFill, side: SizeRole.icon12, ink: ColorRole.ink3)
-                    Text(footnote).fixedSize(horizontal: false, vertical: true)
-                }
-                .typeRole(.axisCaption)
-                .foregroundStyle(ColorRole.ink3)
-                .padding(.horizontal, SpaceRole.step8)
-                .padding(.top, SpaceRole.step8)
-                .padding(.bottom, SpaceRole.step4)
             }
         }
         .padding(SpaceRole.step6)
