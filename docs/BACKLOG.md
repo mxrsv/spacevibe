@@ -356,7 +356,7 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
 
 Checked a second time on 2026-11-23, every item against the code, the captures and the page built from `153fafa` in Chromium (320 to 1440 px). BL-LAND-2, 6, 10, 11, 17, 35, 42, 50, 52, 54, 55 and 58 carry what that check changed; the other items held as written. Not checked again: that the redesigned Limits and Activity pages do not render in a headless capture (BL-LAND-14, BL-LAND-15), and `REL1` (BL-LAND-41).
 
-Built on 2026-11-23: the owner approved the before/after review of this section (landing spec, L17 to L20), and the 36 items it showed, with BL-LAND-22, are in `site/`, one commit each. BL-LAND-37 shipped in part and stays open. BL-LAND-20, 55, 57, 58 and 59 were re-read against the page after that build and say what is true now.
+Built on 2026-11-23: the owner approved the before/after review of this section (landing spec, L17 to L20), and the 36 items it showed, with BL-LAND-22, are in `site/`, one commit each. BL-LAND-37 shipped in part and stays open. BL-LAND-20, 55, 57, 58 and 59 were re-read against the page after that build and say what is true now. A code review of that build found four faults, fixed the same day in commits of their own (two band icons clipped by their view box, a Clean sentence that put the cache under the age filter, two `figcaption` in one `figure`, the 404 page under the home page's title); what it found unused is in BL-LAND-57 and BL-LAND-58.
 
 ### Layout and responsive
 
@@ -494,9 +494,9 @@ Built on 2026-11-23: the owner approved the before/after review of this section 
 ### Dead code
 
 - [ ] **BL-LAND-57** Remove the unused `AppWindow` props · `P4` `refactor` · from housekeeping
-  - No caller passes `style` to `AppWindow` in [app-window.tsx](../site/components/landing/app-window.tsx). Since BL-LAND-22 took the windows out of the hero, none passes `lights`, `priority`, `bleed` or `className` either: [cli-bands.tsx](../site/components/landing/cli-bands.tsx) passes `shot` and `caption` only. → Remove the five props, the `LIGHTS` list they drew and the three `--color-light-*` tokens only it reads.
+  - No caller passes `style` to `AppWindow` in [app-window.tsx](../site/components/landing/app-window.tsx). Since BL-LAND-22 took the windows out of the hero, none passes `lights`, `priority`, `bleed` or `className` either: [cli-bands.tsx](../site/components/landing/cli-bands.tsx) passes `shot` and `caption` only. → Remove the five props, the `LIGHTS` list they drew and the three `--color-light-*` tokens only it reads. `phoneShift` in [shots.ts](../site/components/landing/shots.ts) is `0` for every capture that has it since BL-LAND-22, so it only flags a capture that pans: make it a flag and drop the `--phone-offset` shift.
 - [ ] **BL-LAND-58** Remove unused tokens · `P4` `refactor` · from housekeeping
-  - `--shadow-lift`, `--font-mono` and `--color-accent-text` in [globals.css](../site/app/globals.css) are unused. → Remove them.
+  - `--shadow-lift`, `--font-mono`, `--color-accent-text` and `--color-danger` in [globals.css](../site/app/globals.css) are unused. So are `--color-claude` and `--color-codex` since BL-LAND-31 replaced the CLI dots with the marks, and `--text-h1` with its two values since BL-LAND-22 removed the full-width hero. → Remove them, and the "two CLI identities" sentence of the token comment with the two colours.
 - [ ] **BL-LAND-59** Tidy the header markup · `P4` `refactor` · from housekeeping
   - [site-header.tsx](../site/components/landing/site-header.tsx) has a redundant `aria-label` / `aria-hidden` pair on the brand link. → Remove it. The `sm:contents` wrapper went with BL-LAND-1.
 - [ ] **BL-LAND-60** Remove the `start` script · `P4` `refactor` · from housekeeping

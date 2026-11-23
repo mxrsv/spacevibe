@@ -3,7 +3,7 @@
    home-hero.css, 2026-08). Four layers, bottom up:
 
      1.   raster deep space (`/landing/scene-deep-space*`): atmosphere haze and dust
-     1.5. three star tiles on parallax (`starfield.tsx`): the real stars live here
+     1.5. three star tiles, at rest (`starfield.tsx`): the real stars live here
      2.   SVG planet limb: wide ambient glow → narrow blue halo → sharp white-blue core
      3.   CSS atmosphere: the planet's dark body, vignette, a veil that keeps the text
           column readable
