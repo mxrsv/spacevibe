@@ -25,7 +25,7 @@ export function CliBands() {
     <div>
       {BANDS.map((band) => (
         <section key={band.id} id={band.id} className="band border-t border-edge">
-          <div className={`shell grid gap-10 ${band.narrow ? "md:grid-cols-[minmax(0,1fr)_minmax(0,420px)] md:items-start" : ""}`}>
+          <div className={`shell grid gap-10 ${band.narrow ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-start" : ""}`}>
             <div className="grid content-start gap-10">
               <BandHeader band={band} />
               {band.narrow ? <Ledger band={band} /> : null}

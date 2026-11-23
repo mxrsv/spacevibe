@@ -360,7 +360,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 
 - [x] **BL-LAND-1** Page does not scroll sideways at 768 px · `P1` `bug` · from M1
   - [site-header.tsx](../site/components/landing/site-header.tsx) overflows its frame from 768 to about 860 px; at 768 the page is 813 px wide (`LP-A3` covers only 1440 and 390). → Show the desktop nav from `lg:`.
-- [ ] **BL-LAND-2** Narrow bands keep the reason column · `P1` `bug` · from M1
+- [x] **BL-LAND-2** Narrow bands keep the reason column · `P1` `bug` · from M1
   - In the Limits and Activity bands of [cli-bands.tsx](../site/components/landing/cli-bands.tsx) the third `Ledger` column is 0 px wide at 768 to 820 px (Limits) and 768 to 900 px (Activity), so the reason is drawn one word per line and spills out of the panel over the capture (Limits at 768: 440 px tall, 89 px past its column). Limits is 9 px at 860 and 49 px at 900; at 960 the two are 109 and 44 px. → Split those bands in two columns from `lg:`. At 1024 the reason column is then 173 px (Limits) and 108 px (Activity): check it reads before closing.
 - [ ] **BL-LAND-3** Header button stays inside the gutter at 320 px · `P2` `ui` · from M1
   - The download button runs 16 px past the frame at 320 px; the page does not scroll. → Shorten the label or the padding on phones.
