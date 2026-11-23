@@ -31,8 +31,8 @@ struct CLIToggleState: Hashable, Sendable {
         case none
         /// The CLI reads the item only through these CLIs' folders (RD31): a link badge; `Remove…` removes it.
         case via([String])
-        /// Turning it off would delete the item's last copy (D53, counted by files): a bar under the logo; `Remove…` is the
-        /// explicit action.
+        /// Turning it off would delete the item's last copy (D53, counted by files): the plain lit logo, no mark;
+        /// `Remove…` is the explicit action.
         case lastCopy
         /// A plugin or a project owns the item (`owner`: "plugin", "project payments-web"): read-only, a lock on a lit logo.
         case readOnly(owner: String)
@@ -82,9 +82,6 @@ struct CLIToggleState: Hashable, Sendable {
         case .none, .lastCopy, .noCopyTarget: return nil
         }
     }
-
-    /// The bar under a last-copy logo.
-    var showsLastCopyBar: Bool { isOn && hold == .lastCopy }
 
     /// The success check on a tile (RD-R12): on, and not held by a plugin or another CLI's folder (the mock's `data-ok`).
     var showsCheck: Bool {

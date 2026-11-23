@@ -15,8 +15,8 @@ enum BlockRole {
     static let tileLogoDisc: CGFloat = 24
     /// The amber Never ran dot (`.nvd`) on a logo toggle and on a tile.
     static let neverRanDot: CGFloat = 5
-    /// The bar under a last-copy logo or tile (`.tgl.last::after`): 2 high, inset 8 from the cell's sides.
-    static let lastCopyBar: CGFloat = 2
+    /// The height of the Not supported dash in a logo toggle's cell (`.tgl .dash`).
+    static let notSupportedDash: CGFloat = 2
     /// The `?` disc of an unreadable CLI's logo (`.tgl .qm`).
     static let unknownDisc: CGFloat = 12
     /// The lock, link or `?` glyph at a logo toggle's corner. The mock draws it 9 × 9 (`.tgl .lk .ic`); 12 is DS-R6's smallest

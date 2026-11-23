@@ -3,8 +3,8 @@ import SwiftUI
 /// One CLI's logo in a Skill or Subagent row (DS-R10 "CLI logo toggle"; RD-R11; the mock's `.tgl`), beside v5's `LogoToggle`:
 /// the 20 pt logo in a 28 pt cell, every state of `CLIToggleState` drawn. A lit logo is the full logo (RD22: no badge on
 /// it); Never ran adds the amber dot on the owning CLI only; off is dim; pending shows the pending ring in the logo's place; Not supported is a dash with no button; a plugin's
-/// item carries a lock, a "via" logo a link, an unreadable CLI a `?`; the last copy has a bar under it and is not a toggle
-/// (D53). Only a toggle takes hover, press, the pointing hand and the keyboard; the rest are images with their state read out.
+/// item carries a lock, a "via" logo a link, an unreadable CLI a `?`; the last copy is the plain lit logo and is not a toggle
+/// (D53 decides only that; no mark under it). Only a toggle takes hover, press, the pointing hand and the keyboard; the rest are images with their state read out.
 /// While its write runs (`isPending`) the logo dims under the pending mark and a second press does nothing (FE-P: pending at
 /// the control that started it). A focused toggle also takes A (RD39, D69).
 struct CLILogoToggle: View {
@@ -104,7 +104,7 @@ private struct CLIToggleFace: View {
                 // column stays aligned.
                 Capsule()
                     .fill(ColorRole.faint)
-                    .frame(width: SpaceRole.step8, height: BlockRole.lastCopyBar)
+                    .frame(width: SpaceRole.step8, height: BlockRole.notSupportedDash)
                     .opacity(OpacityRole.ghost)
             }
         }
@@ -117,13 +117,6 @@ private struct CLIToggleFace: View {
             }
         }
         .overlay(alignment: .bottomTrailing) { badge }
-        .overlay(alignment: .bottom) {
-            if state.showsLastCopyBar {
-                Capsule().fill(ColorRole.ink3)
-                    .frame(height: BlockRole.lastCopyBar)
-                    .padding(.horizontal, SpaceRole.step8)
-            }
-        }
     }
 
     @ViewBuilder

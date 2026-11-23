@@ -153,7 +153,7 @@ struct FrameBlockLogicTests {
             == "Claude Code: On, 4 sessions, read-only (design-kit plugin)")
     }
 
-    @Test("marks: the Never ran dot only on the owning CLI, lock, link, ?, the last-copy bar, the tile check")
+    @Test("marks: the Never ran dot only on the owning CLI, lock, link, ?, no mark on the last copy, the tile check")
     func toggleMarks() {
         #expect(CLIToggleState(cli: .codex, presence: .on(.neverRan)).showsNeverRanDot)
         #expect(!CLIToggleState(cli: .codex, presence: .on(.neverRan), ownsFile: false).showsNeverRanDot, "RD16")
@@ -165,7 +165,8 @@ struct FrameBlockLogicTests {
         #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2)), hold: .via(["Claude Code"])).badge == .link)
         #expect(CLIToggleState(cli: .codex, presence: .unreadable).badge == .unknown)
         #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2))).badge == nil, "a lit logo is the full logo (RD22)")
-        #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2)), hold: .lastCopy).showsLastCopyBar)
+        #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2)), hold: .lastCopy).badge == nil,
+                "D53 only makes the last copy not a toggle: it draws the plain lit logo")
         #expect(CLIToggleState(cli: .codex, presence: .on(.sessions(2))).showsCheck)
         #expect(CLIToggleState(cli: .codex, presence: .on(.neverRan)).showsCheck, "Never ran is on: dot and check")
         #expect(!CLIToggleState(cli: .codex, presence: .on(.sessions(2)), hold: .readOnly(owner: "plugin")).showsCheck)

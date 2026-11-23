@@ -181,14 +181,6 @@ private struct CLITileFace: View {
             }
         }
         .overlay(alignment: .topTrailing) { corner }
-        .overlay(alignment: .bottom) {
-            if state.showsLastCopyBar {
-                Capsule().fill(ColorRole.ink3)
-                    .frame(height: BlockRole.lastCopyBar)
-                    .padding(.horizontal, SpaceRole.step24)
-                    .padding(.bottom, SpaceRole.step4)
-            }
-        }
     }
 
     @ViewBuilder
