@@ -1,9 +1,9 @@
 import { Check, EyeOff, Lock, type LucideIcon } from "lucide-react";
+import Image from "next/image";
 
 import { AppWindow } from "./app-window";
 import { BandIcon } from "./band-icon";
-import { CliDot } from "./cli-dot";
-import { BANDS, CLI_LABEL, DIFFS, type Band, type CLI, type Reach } from "./content";
+import { BANDS, CLI_LABEL, CLI_MARK, DIFFS, type Band, type CLI, type Reach } from "./content";
 
 const CLIS: readonly CLI[] = ["claude", "codex"];
 
@@ -66,14 +66,14 @@ function BandHeader({ band }: { readonly band: Band }) {
 /** One panel, one row per CLI: the name, the verdict with its state icon, then the reason. */
 function Ledger({ band }: { readonly band: Band }) {
   return (
-    <dl className="grid gap-x-8 gap-y-5 rounded-card bg-s2 p-5 md:grid-cols-[auto_auto_minmax(0,1fr)] md:items-baseline" data-reveal>
+    <dl className="grid gap-x-8 divide-y divide-edge rounded-card bg-s2 px-5 md:grid-cols-[auto_auto_minmax(0,1fr)] md:items-baseline" data-reveal>
       {CLIS.map((cli) => {
         const line = DIFFS[band.id][cli];
         const { icon: Icon, tone } = REACH[line.reach];
         return (
-          <div key={cli} className="grid gap-y-1 md:col-span-3 md:grid-cols-subgrid md:gap-y-0">
+          <div key={cli} className="grid gap-y-1 py-4 md:col-span-3 md:grid-cols-subgrid md:gap-y-0">
             <dt translate="no" className="inline-flex items-center gap-2 text-sec font-medium text-ink-0">
-              <CliDot cli={cli} />
+              <Image src={CLI_MARK[cli]} alt="" width={14} height={14} className="size-3.5 shrink-0" />
               {CLI_LABEL[cli]}
             </dt>
             <dd className="inline-flex items-center gap-1.5 text-sec font-medium text-ink-0">

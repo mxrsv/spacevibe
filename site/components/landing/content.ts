@@ -35,6 +35,12 @@ export const CLI_LABEL: Record<CLI, string> = {
   codex: "Codex",
 };
 
+/** The marks the app itself ships in `Resources/Brand`, for the ledger rows. */
+export const CLI_MARK: Record<CLI, string> = {
+  claude: "/landing/brand/claude-spark-clay.svg",
+  codex: "/landing/brand/codex-blossom-white.svg",
+};
+
 export interface NavLink {
   readonly href: string;
   readonly label: string;
