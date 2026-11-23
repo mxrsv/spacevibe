@@ -10,7 +10,7 @@ import { SpaceVibeMark } from "./spacevibe-mark";
  */
 export function SiteHeader({ nav = NAV }: { readonly nav?: readonly NavLink[] }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-edge bg-[rgb(13_15_18/78%)] backdrop-blur-[16px]">
+    <header className="sticky top-0 z-20 border-b border-edge bg-glass-header backdrop-blur-[16px]">
       <div className="shell grid h-[60px] grid-cols-[auto_auto] items-center justify-between gap-3 lg:gap-8 lg:grid-cols-[auto_1fr_auto]">
         <a href="#top" className="inline-flex min-h-6 items-center gap-2.5 text-sec font-medium tracking-[-0.01em] text-ink-0 no-underline" aria-label={SITE.brand}>
           <SpaceVibeMark className="size-[22px] shrink-0" />

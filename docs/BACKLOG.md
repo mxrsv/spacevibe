@@ -381,7 +381,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - `:focus-visible` in [globals.css](../site/app/globals.css) is the accent at 75%, 2.57 to 2.73:1 on the page's surfaces (WCAG 1.4.11), and sets a radius on every element that has none. → A 3:1 outline that keeps each element's own corner.
 - [x] **BL-LAND-10** Accent is the app's primary · `P2` `ui` · from M1
   - The page uses the v5 blue `#4164ed`; the redesigned app in the captures uses `primaryAction` `#0B6FE4`. → Adopt the redesign value. Four places copy the blue as a raw `rgb(65 100 237)` and a token change misses them: `::selection` and `:focus-visible` in [globals.css](../site/app/globals.css), `--scene-core-shadow` and `--scene-orbit-wash` in [scene.css](../site/app/scene.css).
-- [ ] **BL-LAND-11** Surfaces are Graphite, no hue cast (`RD9`) · `P2` `ui` · from M1
+- [x] **BL-LAND-11** Surfaces are Graphite, no hue cast (`RD9`) · `P2` `ui` · from M1
   - The page's surfaces are cool-tinted (`#0d0f12`, `#111318`, `#15181d`); the app's are `canvasSurface` `#111214`, `groupSurface` `#191A1D`, `sidebarSurface` `#141518`. → Take the values from `DS-R1`. The old bundle proposed four hex values; only `#111214` is an app token. `--color-glass` in [globals.css](../site/app/globals.css) and the header background in [site-header.tsx](../site/components/landing/site-header.tsx) copy `--color-s1` as a raw `rgb(13 15 18)`, and `themeColor` in [layout.tsx](../site/app/layout.tsx) copies `--color-bg`: change them with the tokens.
 
 ### Captures and Open Graph

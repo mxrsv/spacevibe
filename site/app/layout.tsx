@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 /** The browser chrome on a phone takes the page's own ground, `--color-bg` in globals.css. */
-export const viewport: Viewport = { themeColor: "#08090b" };
+export const viewport: Viewport = { themeColor: "#0c0c0d" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

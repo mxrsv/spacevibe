@@ -32,3 +32,14 @@ test("every band shows a screen that exists, and has a line per CLI", () => {
     }
   }
 });
+
+test("the colours the page copies as literals follow the tokens", () => {
+  const css = readFileSync(path("../app/globals.css"), "utf8");
+  const layout = readFileSync(path("../app/layout.tsx"), "utf8");
+  const bg = css.match(/--color-bg: (#[0-9a-f]{6});/)?.[1];
+  assert.ok(bg, "--color-bg was not found in globals.css");
+  assert.match(layout, new RegExp(`themeColor: "${bg}"`), "themeColor in layout.tsx must equal --color-bg");
+  for (const file of ["../app/globals.css", "../app/scene.css", "../components/landing/site-header.tsx"]) {
+    assert.doesNotMatch(readFileSync(path(file), "utf8"), /rgb\(65 100 237|rgb\(13 15 18|rgb\(13_15_18/, `${file} copies an old token as a raw colour`);
+  }
+});
