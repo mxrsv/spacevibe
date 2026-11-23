@@ -1,6 +1,6 @@
 # Backlog
 
-Candidate UI/UX improvements, bug fixes, refactors and feature upgrades for SpaceVibe, grounded in the current SwiftUI shell (`Sources/SpaceVibe`, redesign frame behind `SPACEVIBE_REDESIGN=1`), the Go core (`core/`) and the public page (`site/`). Items here are **uncommitted proposals**, not promises or release dates. Move an approved item into a spec under `docs/specs/` (or a task in the owning plan under `docs/plans/`) before building, and check it off (or remove it) in the PR that ships it.
+Candidate UI/UX improvements, bug fixes, refactors and feature upgrades for SpaceVibe, grounded in the current SwiftUI shell (`Sources/SpaceVibe`, redesign frame behind `SPACEVIBE_REDESIGN=1`), the Go core (`core/`) and the public page (`site/`). Items here are **uncommitted proposals**, not promises or release dates. Move an approved item into a spec under `docs/specs/` (or a task in the owning plan under `docs/plans/`) before building. The commit that ships an item ticks it here and names it in a `Backlog:` line of its message ([AGENTS.md](../AGENTS.md), B10); a ticked item stays in the file, so its number is not taken again.
 
 ## How this file is organised
 

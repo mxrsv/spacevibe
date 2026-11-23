@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Keeps docs/BACKLOG.md true at the moment work is committed (AGENTS.md, B10), so nobody has to
+# remind whoever commits.
+#
+#   1. Refuses a commit whose message has a `Backlog: BL-<DOMAIN>-<n>` line while the backlog in
+#      that same commit still has the item unticked, or has no such item.
+#   2. Prints, without refusing, the open items that link a file the commit changes: the question
+#      "did this ship one of them?" is asked here instead of by the owner.
+#
+# It fails open: anything unexpected lets the commit through, because this checkout is shared and
+# a broken hook would stop every session. Turned on per clone with
+# `git config core.hooksPath scripts/git-hooks`.
+set -u
+
+BACKLOG="docs/BACKLOG.md"
+
+msg_file="${1:-}"
+[[ -f "${msg_file}" ]] || exit 0
+git_dir="$(git rev-parse --git-dir 2>/dev/null)" || exit 0
+# A merge carries files of commits that were asked already.
+[[ -f "${git_dir}/MERGE_HEAD" ]] && exit 0
+
+# The backlog as this commit records it. `git commit -- <paths>` builds a temporary index, and
+# `:path` and `--cached` both read that one.
+staged="$(git show ":${BACKLOG}" 2>/dev/null)" || exit 0
+[[ -n "${staged}" ]] || exit 0
+
+declared="$(grep -v '^#' "${msg_file}" | grep -iE '^Backlog:' | grep -oE 'BL-[A-Z]+-[0-9]+' | sort -u)"
+
+refused=0
+for id in ${declared}; do
+  line="$(grep -F -- "**${id}**" <<<"${staged}" | head -1)"
+  if [[ -z "${line}" ]]; then
+    echo "backlog: the message names ${id}, which is not an item in ${BACKLOG}." >&2
+    refused=1
+  elif [[ "${line}" != "- [x]"* ]]; then
+    echo "backlog: the message says this commit ships ${id}, but ${BACKLOG} in this commit still has it unticked." >&2
+    echo "         Tick it (- [x]) and commit ${BACKLOG} together with the change." >&2
+    refused=1
+  fi
+done
+[[ "${refused}" -eq 0 ]] || exit 1
+
+changed="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)"
+[[ -n "${changed}" ]] || exit 0
+
+# One line per link of an open item: <path from the repo root> <tab> <id> <tab> <title>.
+links="$(awk '
+  /^- \[/ || /^#/ { open = 0 }
+  /^- \[ \] \*\*BL-/ {
+    open = 1
+    id = $0; sub(/^- \[ \] \*\*/, "", id); sub(/\*\*.*$/, "", id)
+    title = $0; sub(/^- \[ \] \*\*[^*]+\*\* /, "", title); sub(/ · .*$/, "", title)
+  }
+  open {
+    rest = $0
+    while (match(rest, /\]\(\.\.\/[^)#]+/)) {
+      print substr(rest, RSTART + 5, RLENGTH - 5) "\t" id "\t" title
+      rest = substr(rest, RSTART + RLENGTH)
+    }
+  }
+' <<<"${staged}")"
+
+candidates=""
+while IFS=$'\t' read -r path id title; do
+  # Root files (PRODUCT.md, GLOSSARY.md, AGENTS.md) are cited as sources, not as what an item changes.
+  [[ "${path}" == */* ]] || continue
+  grep -qxF -- "${path}" <<<"${changed}" || continue
+  grep -qxF -- "${id}" <<<"${declared}" && continue
+  candidates+="  ${id}  ${title}"$'\n'
+done <<<"${links}"
+
+candidates="$(sed '/^$/d' <<<"${candidates}" | sort -u -t- -k2,2 -k3,3n)"
+if [[ -n "${candidates}" ]]; then
+  {
+    echo "backlog: open items in ${BACKLOG} link files in this commit. If it ships one, tick the item"
+    echo "         and add a \"Backlog: <id>\" line to the message (amend this commit). Otherwise ignore."
+    echo "${candidates}"
+  } >&2
+fi
+exit 0

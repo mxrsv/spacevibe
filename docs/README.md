@@ -75,7 +75,7 @@ Spec: <link> (<IDs>). This plan does not repeat the requirements.
 Checkout: `spacevibe-reins` on `main`, shared with other sessions; commit with `git commit -- <paths>` only.
 
 ## Approach
-## Tasks          each task names the requirement IDs it serves; the owner's eye approval is one final task
+## Tasks          each task names the requirement IDs it serves and the backlog ids (`BL-…`) it closes (AGENTS.md, B10); the owner's eye approval is one final task
 ## Verification
 ## Handoff        dated entries: progress, commits, observed verification, what is left
 
