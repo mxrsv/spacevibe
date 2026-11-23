@@ -62,8 +62,12 @@ export function AppWindow({ shot, lights = false, caption, priority = false, ble
           <span aria-hidden="true" className="pointer-events-none absolute inset-y-px right-px w-10 rounded-r-panel bg-linear-to-l from-s2 to-transparent md:hidden" />
         ) : null}
       </div>
-      {caption ? <figcaption className={`text-tiny text-ink-2 ${cut ? "max-md:hidden" : ""}`}>{caption}</figcaption> : null}
-      {cut ? <figcaption className="text-tiny text-ink-2 md:hidden">{SWIPE_CAPTION}</figcaption> : null}
+      {caption || cut ? (
+        <figcaption className="text-tiny text-ink-2">
+          {caption ? <span className={cut ? "max-md:hidden" : undefined}>{caption}</span> : null}
+          {cut ? <span className="md:hidden">{SWIPE_CAPTION}</span> : null}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }
