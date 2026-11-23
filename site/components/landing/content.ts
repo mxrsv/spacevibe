@@ -82,7 +82,7 @@ export const HERO = {
   },
   lede: "SpaceVibe is a local Mac app for Claude Code and Codex CLI. It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",
   /** The lede without its first sentence, for the layouts whose eyebrow already says what the app is. */
-  ledeShort: "It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",
+  ledeShort: "SpaceVibe counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",
   cta: { note: "macOS 15 or later · Apple silicon", label: "Download for macOS", href: DOWNLOAD_URL },
   shot: "inbox",
   rowsShot: "inboxRows",
