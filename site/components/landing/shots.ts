@@ -64,7 +64,7 @@ export const SHOTS = {
     src: "/landing/app/activity.webp",
     width: 672,
     height: 680,
-    alt: "A Claude Code session waiting for an answer: project, process id, age, estimated cost and the question it asked, with Show Terminal and Copy Session Id.",
+    alt: "A Claude Code session waiting for an answer: project, process id, age, estimated cost and the question it asked, with a note to answer in the terminal.",
   },
 } as const satisfies Record<string, Shot>;
 
