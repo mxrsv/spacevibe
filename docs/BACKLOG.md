@@ -354,20 +354,22 @@ The public page for `spacevibe.dev`, grounded in the [landing spec](specs/2026-1
 
 Checked on 2026-11-23 against the code and the built page (`site/out`, measured from 320 to 1440 px). Four claims of the old bundles did not hold and are not items: the footer nav does not overflow at 320 px; `--color-ink-2` sits only on `bg` and `void`, where it reaches at least 4.68:1; the FAQ line about Gemini CLI is true, since Limits reports it as not measurable ([limits.go](../core/internal/limits/limits.go)); and "coding agents" in the headline was decided by the owner on 2026-11-22 (landing spec, "Hero round"). Items tagged `unmeasured` name an effect nobody has measured yet.
 
+Checked a second time on 2026-11-23, every item against the code, the captures and the page built from `153fafa` in Chromium (320 to 1440 px). BL-LAND-2, 6, 10, 11, 17, 35, 42, 50, 52, 54, 55 and 58 carry what that check changed; the other items held as written. Not checked again: that the redesigned Limits and Activity pages do not render in a headless capture (BL-LAND-14, BL-LAND-15), and `REL1` (BL-LAND-41).
+
 ### Layout and responsive
 
 - [ ] **BL-LAND-1** Page does not scroll sideways at 768 px · `P1` `bug` · from M1
   - [site-header.tsx](../site/components/landing/site-header.tsx) overflows its frame from 768 to about 860 px; at 768 the page is 813 px wide (`LP-A3` covers only 1440 and 390). → Show the desktop nav from `lg:`.
 - [ ] **BL-LAND-2** Narrow bands keep the reason column · `P1` `bug` · from M1
-  - In the Limits and Activity bands of [cli-bands.tsx](../site/components/landing/cli-bands.tsx) the third `Ledger` column is 0 px wide at 768 to 820 px (Limits) and 768 to 900 px (Activity), so the reason is not shown; it is still 44 to 109 px at 960. → Split those bands in two columns from `lg:`.
+  - In the Limits and Activity bands of [cli-bands.tsx](../site/components/landing/cli-bands.tsx) the third `Ledger` column is 0 px wide at 768 to 820 px (Limits) and 768 to 900 px (Activity), so the reason is drawn one word per line and spills out of the panel over the capture (Limits at 768: 440 px tall, 89 px past its column). Limits is 9 px at 860 and 49 px at 900; at 960 the two are 109 and 44 px. → Split those bands in two columns from `lg:`. At 1024 the reason column is then 173 px (Limits) and 108 px (Activity): check it reads before closing.
 - [ ] **BL-LAND-3** Header button stays inside the gutter at 320 px · `P2` `ui` · from M1
   - The download button runs 16 px past the frame at 320 px; the page does not scroll. → Shorten the label or the padding on phones.
 - [ ] **BL-LAND-4** Hero reading labels have room at 320 px · `P2` `ui` · from M1
   - The label column of layout B in [hero.tsx](../site/components/landing/hero.tsx) is 62 px wide at 320 px. → Give the row a phone layout.
 - [ ] **BL-LAND-5** One breakpoint · `P2` `refactor` · from M1
   - Media queries use `720 px` ([scene.tsx](../site/components/landing/scene.tsx)), `760 px` ([globals.css](../site/app/globals.css), [scene.css](../site/app/scene.css)) and `768 px` (Tailwind `md:`). → Align on `768 px`, with a tablet `--gutter: 28px`.
-- [ ] **BL-LAND-6** FAQ question has vertical padding · `P2` `ui` `unmeasured` · from M1
-  - `<summary>` in [faq-section.tsx](../site/components/landing/faq-section.tsx) has a minimum height and no vertical padding, so a question that wraps to three lines would touch the edges. → Add `py-3.5`.
+- [ ] **BL-LAND-6** FAQ question has vertical padding · `P2` `ui` · from M1
+  - `<summary>` in [faq-section.tsx](../site/components/landing/faq-section.tsx) has a minimum height and no vertical padding. At 320 px two questions wrap to two lines and sit 6 px from the row's edges, where a one-line question has 18 px; no question wraps to three lines today. → Add `py-3.5`.
 - [ ] **BL-LAND-7** Phone shows the part of a screen that matters · `P2` `ui` `decision` (landing spec, "Inferred, not decided") · from M4
   - [app-window.tsx](../site/components/landing/app-window.tsx) shows a capture at `190%` width on phones and cuts its right 47%: byte totals, session bars, the `Allow / Ask / Deny` pickers and the action buttons of `clean.webp`, `skills.webp` and `rules.webp`. → Owner call: horizontal pan (`max-md:overflow-x-auto`, a right-edge fade, "Swipe to inspect · demo data"), or dedicated `srcMobile` crops.
 
@@ -378,9 +380,9 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
 - [ ] **BL-LAND-9** Focus outline reaches 3:1 · `P1` `a11y` · from M1
   - `:focus-visible` in [globals.css](../site/app/globals.css) is the accent at 75%, 2.57 to 2.73:1 on the page's surfaces (WCAG 1.4.11), and sets a radius on every element that has none. → A 3:1 outline that keeps each element's own corner.
 - [ ] **BL-LAND-10** Accent is the app's primary · `P2` `ui` · from M1
-  - The page uses the v5 blue `#4164ed`; the redesigned app in the captures uses `primaryAction` `#0B6FE4`. → Adopt the redesign value.
+  - The page uses the v5 blue `#4164ed`; the redesigned app in the captures uses `primaryAction` `#0B6FE4`. → Adopt the redesign value. Four places copy the blue as a raw `rgb(65 100 237)` and a token change misses them: `::selection` and `:focus-visible` in [globals.css](../site/app/globals.css), `--scene-core-shadow` and `--scene-orbit-wash` in [scene.css](../site/app/scene.css).
 - [ ] **BL-LAND-11** Surfaces are Graphite, no hue cast (`RD9`) · `P2` `ui` · from M1
-  - The page's surfaces are cool-tinted (`#0d0f12`, `#111318`, `#15181d`); the app's are `canvasSurface` `#111214`, `groupSurface` `#191A1D`, `sidebarSurface` `#141518`. → Take the values from `DS-R1`. The old bundle proposed four hex values; only `#111214` is an app token.
+  - The page's surfaces are cool-tinted (`#0d0f12`, `#111318`, `#15181d`); the app's are `canvasSurface` `#111214`, `groupSurface` `#191A1D`, `sidebarSurface` `#141518`. → Take the values from `DS-R1`. The old bundle proposed four hex values; only `#111214` is an app token. `--color-glass` in [globals.css](../site/app/globals.css) and the header background in [site-header.tsx](../site/components/landing/site-header.tsx) copy `--color-s1` as a raw `rgb(13 15 18)`, and `themeColor` in [layout.tsx](../site/app/layout.tsx) copies `--color-bg`: change them with the tokens.
 
 ### Captures and Open Graph
 
@@ -395,7 +397,7 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
 - [ ] **BL-LAND-16** Activity `alt` describes what the image shows · `P1` `a11y` · from M2
   - The `alt` in [shots.ts](../site/components/landing/shots.ts) names `Show Terminal` and `Copy Session Id`, which the image does not show. → Describe the image as it is, until BL-LAND-15.
 - [ ] **BL-LAND-17** Hero `77%` has the app's colour · `P1` `bug` · from M2
-  - Layout B shows "77% left in the Codex 5-hour window" in green (`tone: "ok"` in [content.ts](../site/components/landing/content.ts)); `limits.webp` shows that window's bar in amber. → Match the app.
+  - Layout B shows "77% left in the Codex 5-hour window" in green (`tone: "ok"` in [content.ts](../site/components/landing/content.ts)); `limits.webp` shows that window's bar in amber. → Match the app. The meter fill in [hero.tsx](../site/components/landing/hero.tsx) is `bg-ok` whatever the tone, so the tone alone does not recolour the bar.
 - [ ] **BL-LAND-18** Hero icons carry no state colour · `P2` `ui` · from M2
   - The readings in [hero.tsx](../site/components/landing/hero.tsx) put the state colour on the page icon ([PRODUCT.md](../PRODUCT.md), Colour). → Put the state on the figure or a state mark, and keep the page icon neutral.
 - [ ] **BL-LAND-19** `og.jpg` `alt` matches the image · `P1` `a11y` · from M2
@@ -440,7 +442,7 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
 - [ ] **BL-LAND-34** One wording for what cannot be measured · `P1` `copy` · from M6
   - The cost FAQ says "not measured"; the rest of the page says "not measurable"; the glossary term is `Unmeasurable`. → Use one wording.
 - [ ] **BL-LAND-35** "Codex", not "Codex CLI" · `P2` `copy` · from M6
-  - The lede and the FAQ say "Codex CLI"; the glossary names the CLI "Codex". → Use the glossary name.
+  - The lede and the FAQ say "Codex CLI"; the glossary names the CLI "Codex". On `/` only the FAQ shows it: the long lede is drawn by layout `now` alone, on `/hero-lab`. → Use the glossary name.
 - [ ] **BL-LAND-36** No "dead" in an `alt` · `P2` `copy` · from M6
   - The Clean `alt` in [shots.ts](../site/components/landing/shots.ts) says "never-ran or dead skills"; the glossary avoids "dead". → Reword it.
 - [ ] **BL-LAND-37** Clean ledger says what differs per CLI · `P2` `copy` · from M6
@@ -454,7 +456,7 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
 - [ ] **BL-LAND-41** FAQ covers install and signing · `P2` `copy` `blocked` (`REL1`) · from M6
   - No answer covers installing a notarized build. → Add it once `REL1` has shipped.
 - [ ] **BL-LAND-42** FAQ covers what Clean keeps and Undo · `P2` `copy` · from M6
-  - No answer says that Clean keeps usage totals and that a clean can be undone. → Add it.
+  - No answer says that Clean keeps usage totals. Undo is already in the Clean band ("Undo brings it back", "Moved, with Undo") and in the privacy panel, and the FAQ holds only what those do not answer. → Add the answer about usage totals.
 - [ ] **BL-LAND-43** Update check is said once · `P2` `copy` · from M6
   - The privacy panel, the FAQ and `DOWNLOAD.body` each state the daily update check. → Drop it from `DOWNLOAD.body`.
 
@@ -472,18 +474,18 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
   - The page has no structured data. → Add `SoftwareApplication` and `FAQPage`.
 - [ ] **BL-LAND-49** Dark 404 page · `P2` `ui` · from M7
   - There is no `not-found.tsx`. → Add a dark-only one.
-- [ ] **BL-LAND-50** Heading paints at once · `P2` `perf` `unmeasured` · from M7
-  - The hero `<h1>` starts at `opacity: 0` for 80 ms before its entrance, which may delay LCP. → Remove the delay on the heading.
+- [ ] **BL-LAND-50** Heading paints at once · `P4` `perf` · from M7
+  - The hero `<h1>` starts at `opacity: 0` for 80 ms before its entrance. Measured, it does not delay LCP: at 1440 and at 390 the LCP element is the scene raster of [scene.tsx](../site/components/landing/scene.tsx), 7 to 11 times the heading's area. What is left is a heading that appears 80 ms late. → Remove the delay on the heading.
 - [ ] **BL-LAND-51** Hero CLI marks load eagerly · `P2` `perf` · from M7
   - The two brand SVGs under the heading render with `loading="lazy"`. → Load them eagerly.
-- [ ] **BL-LAND-52** No flash on an anchor or mid-page load · `P2` `perf` `unmeasured` · from M7
-  - [scroll-reveal.tsx](../site/components/landing/scroll-reveal.tsx) hides in-view `[data-reveal]` nodes until the observer fires. → Mark the nodes already in view `.in` before setting `data-motion-ready`.
+- [ ] **BL-LAND-52** Content already in view is visible at once on a mid-page load · `P4` `perf` · from M7
+  - [scroll-reveal.tsx](../site/components/landing/scroll-reveal.tsx) hides in-view `[data-reveal]` nodes until the observer fires. Measured, nothing flashes: after a reload at the FAQ a node in view starts at `opacity: 0` and takes about 0.5 s to fade in; with the script 700 ms late it never leaves `opacity: 1`; on `/#faq` the smooth scroll starts at the top, so the node is hidden only while off screen. → Mark the nodes already in view `.in` before setting `data-motion-ready`.
 - [ ] **BL-LAND-53** Plain `<img>` for unoptimized images · `P4` `refactor` · from M7
   - `next/image` runs with `unoptimized: true`. → Replace the wrappers with `<img>`.
-- [ ] **BL-LAND-54** "opens in a new tab" reads as separate words · `P2` `a11y` `unmeasured` · from M7
-  - The screen-reader span in [button-link.tsx](../site/components/landing/button-link.tsx) and [site-footer.tsx](../site/components/landing/site-footer.tsx) has no leading space. → Add one.
+- [ ] **BL-LAND-54** "opens in a new tab" reads as separate words · `P4` `a11y` `unmeasured` · from M7
+  - The screen-reader span in [button-link.tsx](../site/components/landing/button-link.tsx) and [site-footer.tsx](../site/components/landing/site-footer.tsx) has no leading space. Chromium's accessibility tree already names the links with the space ("Download for macOS (opens in a new tab)", "GitHub (opens in a new tab)"); Safari with VoiceOver is not measured. → Add one.
 - [ ] **BL-LAND-55** Tests assert `LP-A1`, `LP-A4` and `LP-A5` · `P2` `test` · from M7
-  - [landing-facts.test.mjs](../site/tests/landing-facts.test.mjs) checks none of the three. → Add them.
+  - [landing-facts.test.mjs](../site/tests/landing-facts.test.mjs) checks none of the three. `LP-A4` and `LP-A5` hold today; an `LP-A1` assertion fails until BL-LAND-22 has removed `/hero-lab`. → Add them.
 - [ ] **BL-LAND-56** Tests cover the remaining files and redirects · `P2` `test` · from M7
   - Screens are checked for existence, the brand marks and `og.jpg` are not; [redirects.test.mjs](../site/tests/redirects.test.mjs) checks `/vi/live` and `/vi/deck`, not `/vi/free-tier`, `/vi/vote` and `/vi/vote/privacy`. → Add the missing cases.
 
@@ -491,8 +493,8 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
 
 - [ ] **BL-LAND-57** Remove the unused `style` prop · `P4` `refactor` · from housekeeping
   - No caller passes `style` to `AppWindow` in [app-window.tsx](../site/components/landing/app-window.tsx). → Remove it.
-- [ ] **BL-LAND-58** Remove unused tokens and dead rules · `P4` `refactor` · from housekeeping
-  - `--shadow-lift` and `--font-mono` in [globals.css](../site/app/globals.css) are unused, and [scene.css](../site/app/scene.css) holds dead `opacity` rules. → Remove them.
+- [ ] **BL-LAND-58** Remove unused tokens · `P4` `refactor` · from housekeeping
+  - `--shadow-lift` and `--font-mono` in [globals.css](../site/app/globals.css) are unused. → Remove them. The `opacity` rules of `.scene__surface`, `.scene__spill` and the download variant in [scene.css](../site/app/scene.css) are not dead: `scene-breathe` overrides them only while it runs, and under `prefers-reduced-motion` they are the values in use (0.7, 0.62, 0.55). Keep them.
 - [ ] **BL-LAND-59** Tidy the header markup · `P4` `refactor` · from housekeeping
   - [site-header.tsx](../site/components/landing/site-header.tsx) has a redundant `aria-label` / `aria-hidden` pair and a `sm:contents` wrapper. → Remove them.
 - [ ] **BL-LAND-60** Remove the `start` script · `P4` `refactor` · from housekeeping
