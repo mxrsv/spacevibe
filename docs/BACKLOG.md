@@ -396,7 +396,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - `activity.webp` is a 672 px inspector crop and shows none of `Stop`, `Show Terminal`, `Copy Session Id`. → Capture the page at 2112 px and drop `narrow` on the band.
 - [x] **BL-LAND-16** Activity `alt` describes what the image shows · `P1` `a11y` · from M2
   - The `alt` in [shots.ts](../site/components/landing/shots.ts) names `Show Terminal` and `Copy Session Id`, which the image does not show. → Describe the image as it is, until BL-LAND-15.
-- [ ] **BL-LAND-17** Hero `77%` has the app's colour · `P1` `bug` · from M2
+- [x] **BL-LAND-17** Hero `77%` has the app's colour · `P1` `bug` · from M2
   - Layout B shows "77% left in the Codex 5-hour window" in green (`tone: "ok"` in [content.ts](../site/components/landing/content.ts)); `limits.webp` shows that window's bar in amber. → Match the app. The meter fill in [hero.tsx](../site/components/landing/hero.tsx) is `bg-ok` whatever the tone, so the tone alone does not recolour the bar.
 - [ ] **BL-LAND-18** Hero icons carry no state colour · `P2` `ui` · from M2
   - The readings in [hero.tsx](../site/components/landing/hero.tsx) put the state colour on the page icon ([PRODUCT.md](../PRODUCT.md), Colour). → Put the state on the figure or a state mark, and keep the page icon neutral.

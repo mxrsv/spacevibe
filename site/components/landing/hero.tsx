@@ -109,7 +109,11 @@ function Jobs() {
   );
 }
 
-const TONE = { ok: "text-ok", warn: "text-warn" } as const;
+/** The state colour of a reading: its text colour and the fill of its meter. */
+const TONE = {
+  ok: { figure: "text-ok", fill: "bg-ok" },
+  warn: { figure: "text-warn", fill: "bg-warn" },
+} as const;
 
 /** Layout B: one panel, one reading per screen. The figure leads; the icon carries the state colour. */
 function Readings() {
@@ -118,13 +122,14 @@ function Readings() {
       <ul className="glass grid overflow-hidden rounded-panel p-2">
         {HERO.readings.map((reading) => {
           const Icon = BAND_ICON[reading.band];
+          const tone = TONE[reading.tone];
           return (
             <li key={reading.band}>
               <a
                 href={`#${reading.band}`}
                 className="group grid grid-cols-[auto_5.5rem_minmax(0,1fr)_auto] items-center gap-x-4 rounded-card px-4 py-3.5 no-underline transition-colors duration-150 hover:bg-s3"
               >
-                <Icon size={18} strokeWidth={1.8} aria-hidden="true" className={TONE[reading.tone]} />
+                <Icon size={18} strokeWidth={1.8} aria-hidden="true" className={tone.figure} />
                 <span className="tnum text-stat font-semibold text-ink-0">
                   {reading.figure}
                   {reading.unit ? <span className="ml-0.5 text-sec font-medium text-ink-1">{reading.unit}</span> : null}
@@ -133,7 +138,7 @@ function Readings() {
                   {reading.label}
                   {"meter" in reading ? (
                     <span aria-hidden="true" className="h-1 w-full max-w-[180px] overflow-hidden rounded-full bg-s3">
-                      <span className="block h-full rounded-full bg-ok" style={{ width: `${reading.meter * 100}%` }} />
+                      <span className={`block h-full rounded-full ${tone.fill}`} style={{ width: `${reading.meter * 100}%` }} />
                     </span>
                   ) : null}
                 </span>

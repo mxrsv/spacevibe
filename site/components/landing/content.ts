@@ -98,7 +98,7 @@ export const HERO = {
     { band: "clean", figure: "780", unit: "MB", label: "can be cleaned", tone: "warn" },
     { band: "skills", figure: "5", unit: "", label: "skills never ran", tone: "warn" },
     { band: "rules", figure: "2", unit: "", label: "rules allow a whole tool", tone: "warn" },
-    { band: "limits", figure: "77", unit: "%", label: "left in the Codex 5-hour window", tone: "ok", meter: 0.77 },
+    { band: "limits", figure: "77", unit: "%", label: "left in the Codex 5-hour window", tone: "warn", meter: 0.77 },
     { band: "activity", figure: "1", unit: "", label: "session waiting for you", tone: "warn" },
   ],
 } as const satisfies {
