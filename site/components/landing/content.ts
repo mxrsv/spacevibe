@@ -232,13 +232,13 @@ export const DIFFS: Record<BandId, Record<CLI, CliLine>> = {
   limits: {
     claude: {
       reach: "full",
-      verdict: "Read locally",
-      detail: "Reads the share left in each window from Claude Code’s own usage cache, or from its status-line capture when that is installed.",
+      verdict: "Usage cache",
+      detail: "The share left in each window, from Claude Code’s own usage cache or, once installed, its status-line capture.",
     },
     codex: {
       reach: "full",
-      verdict: "Read locally",
-      detail: "Reads it from the last Codex turn, and shows how old that reading is.",
+      verdict: "Last turn",
+      detail: "The share left, read from the last Codex turn, with how old that reading is.",
     },
   },
   activity: {
