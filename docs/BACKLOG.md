@@ -446,7 +446,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 - [x] **BL-LAND-36** No "dead" in an `alt` · `P2` `copy` · from M6
   - The Clean `alt` in [shots.ts](../site/components/landing/shots.ts) says "never-ran or dead skills"; the glossary avoids "dead". → Reword it.
 - [ ] **BL-LAND-37** Clean ledger says what differs per CLI · `P2` `copy` · from M6
-  - Both rows read "Moved, with Undo". → Differentiate them: usage totals are kept, logs of a running session are locked, `.jsonl.zst`.
+  - The Codex row now reads "Moved, .jsonl.zst too", the one difference [clean.md](internals/clean.md) backs: only Codex keeps compressed logs. Keeping the usage totals and locking the logs of a running session hold for both CLIs, so neither tells the rows apart. → Find a second true per-CLI difference for the Claude Code row, which still reads "Moved, with Undo", or close the item as it stands.
 - [ ] **BL-LAND-38** Limits ledger says what differs per CLI · `P2` `copy` · from M6
   - Both rows read "Read locally". → For example "Usage cache / status line" against "Last turn, with age".
 - [ ] **BL-LAND-39** Skills band shows Balance and Hooks · `P2` `copy` · from M6

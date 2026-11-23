@@ -201,8 +201,8 @@ export const DIFFS: Record<BandId, Record<CLI, CliLine>> = {
     },
     codex: {
       reach: "full",
-      verdict: "Moved, with Undo",
-      detail: "Old session logs and the cache go the same way, by the age you pick: 30, 90 or 180 days.",
+      verdict: "Moved, .jsonl.zst too",
+      detail: "Old session logs, plain or compressed, and the cache go the same way, by the age you pick: 30, 90 or 180 days. Logs a running session holds stay locked.",
     },
   },
   skills: {
