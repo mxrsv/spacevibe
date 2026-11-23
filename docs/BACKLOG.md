@@ -413,7 +413,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - [hero-lab/page.tsx](../site/app/hero-lab/page.tsx), [hero-lab.tsx](../site/components/landing/hero-lab.tsx), the unpicked layouts and headlines, and the captures only they use still export into `site/out/`, as the spec allows until the pick. → Delete them so `npm run build` lists `/` and `/_not-found` only.
 - [x] **BL-LAND-23** Lede names SpaceVibe · `P2` `copy` · from M3
   - On layout B the lede opens with "It counts…". → Name the app in it.
-- [ ] **BL-LAND-24** Lede does not promise an Inbox the page never shows · `P2` `copy` · from M3
+- [x] **BL-LAND-24** Lede does not promise an Inbox the page never shows · `P2` `copy` · from M3
   - The lede says "one inbox"; `/` has no Inbox band and, on layout B, no Inbox screen. → Show the Inbox or change the sentence.
 - [ ] **BL-LAND-25** "Free" sits beside the first download button · `P2` `copy` · from M3
   - The hero note says "macOS 15 or later · Apple silicon"; "Free" first appears in the FAQ. → Add it to the note, in the wording of `LP-R6`.
