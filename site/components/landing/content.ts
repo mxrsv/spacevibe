@@ -79,7 +79,7 @@ export const HERO = {
       { name: "Codex", mark: "/landing/brand/codex-blossom-white.svg" },
     ],
   },
-  /** The lede without its first sentence, for the layouts whose eyebrow already says what the app is. */
+  /** The lede. It does not say what the app is: the eyebrow above the heading already does. */
   ledeShort: "SpaceVibe counts, from your own session logs, how often every skill, subagent and hook ran, lists what never ran, and says plainly when a CLI logs nothing to count.",
   cta: { note: "Free · macOS 15 or later · Apple silicon", label: "Download for macOS", href: DOWNLOAD_URL },
   /** Layout B: one reading per screen, the figures of the captures below (the app's illustration data). */
@@ -190,7 +190,7 @@ export const DIFFS: Record<BandId, Record<CLI, CliLine>> = {
     codex: {
       reach: "full",
       verdict: "Moved, .jsonl.zst too",
-      detail: "Old session logs, plain or compressed, and the cache go the same way, by the age you pick: 30, 90 or 180 days. Logs a running session holds stay locked.",
+      detail: "Old session logs, plain or compressed, by the age you pick (30, 90 or 180 days), and the cache go the same way. Logs a running session holds stay locked.",
     },
   },
   skills: {
