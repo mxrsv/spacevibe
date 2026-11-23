@@ -400,7 +400,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - Layout B shows "77% left in the Codex 5-hour window" in green (`tone: "ok"` in [content.ts](../site/components/landing/content.ts)); `limits.webp` shows that window's bar in amber. → Match the app. The meter fill in [hero.tsx](../site/components/landing/hero.tsx) is `bg-ok` whatever the tone, so the tone alone does not recolour the bar.
 - [ ] **BL-LAND-18** Hero icons carry no state colour · `P2` `ui` · from M2
   - The readings in [hero.tsx](../site/components/landing/hero.tsx) put the state colour on the page icon ([PRODUCT.md](../PRODUCT.md), Colour). → Put the state on the figure or a state mark, and keep the page icon neutral.
-- [ ] **BL-LAND-19** `og.jpg` `alt` matches the image · `P1` `a11y` · from M2
+- [x] **BL-LAND-19** `og.jpg` `alt` matches the image · `P1` `a11y` · from M2
   - `SITE.ogImage.alt` describes the retired hero ("Which of your skills actually run?" above the Inbox); the image shows layout B. → Rewrite it.
 - [ ] **BL-LAND-20** `og.jpg` names SpaceVibe · `P2` `ui` · from M2
   - The image carries no name and no mark. The hero is picked (BL-LAND-21), so nothing blocks it. → Retake it from layout B with the brand visible and a clean bottom edge, and rewrite its `alt` with it.

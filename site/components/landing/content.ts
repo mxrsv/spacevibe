@@ -24,7 +24,7 @@ export const SITE = {
     src: "/og.jpg",
     width: 1200,
     height: 630,
-    alt: "SpaceVibe: Which of your skills actually run? Above the app's Inbox with 12 rows that need you.",
+    alt: "SpaceVibe: See what your coding agents carry. Beside the headline, five readings: 780 MB can be cleaned, 5 skills never ran, 2 rules allow a whole tool, 77% left in the Codex 5-hour window, 1 session waiting for you.",
   },
 } as const;
 
