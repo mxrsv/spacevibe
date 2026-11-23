@@ -18,7 +18,8 @@
   --scene-planet-limb: #050609;
 
   --scene-rim-core: #d5e2ff;
-  --scene-rim-bright: var(--color-accent-hover);
+  /* The rim's lit step. It read `--color-accent-hover`, which is now the dark hover step, so it keeps its own value. */
+  --scene-rim-bright: #5274f1;
   --scene-rim-accent: var(--color-accent);
   --scene-rim-haze: #7f8cc8;
   --scene-core-shadow: rgb(65 100 237 / 55%);

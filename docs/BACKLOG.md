@@ -375,7 +375,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 
 ### Colour and focus
 
-- [ ] **BL-LAND-8** Button hover keeps 4.5:1 · `P1` `a11y` · from M1
+- [x] **BL-LAND-8** Button hover keeps 4.5:1 · `P1` `a11y` · from M1
   - `--color-accent-hover` `#5274f1` gives white text 4.10:1. → Use a darker hover step, as the app does (`DS2`: `#0A66D2`, 5.46:1).
 - [ ] **BL-LAND-9** Focus outline reaches 3:1 · `P1` `a11y` · from M1
   - `:focus-visible` in [globals.css](../site/app/globals.css) is the accent at 75%, 2.57 to 2.73:1 on the page's surfaces (WCAG 1.4.11), and sets a radius on every element that has none. → A 3:1 outline that keeps each element's own corner.

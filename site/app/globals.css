@@ -18,7 +18,10 @@
 
   /* The app's own blue (`Palette.accentSolid` and `Palette.accent`, dark), so the CTA and the app agree. */
   --color-accent: #4164ed;
-  --color-accent-hover: #5274f1;
+  /* The app's primary-action steps (`primaryActionHover` is the primary with 8% black, `primaryActionPressed` with
+     16% black; DS2, `ColorRole.swift`): darker, not lighter, so white text keeps 4.5:1. */
+  --color-accent-hover: #0a66d2;
+  --color-accent-pressed: #095dc0;
   --color-accent-text: #82a5ff;
 
   --color-ink-0: #f4f5f7;

@@ -18,7 +18,7 @@ const BASE =
   "group inline-flex items-center gap-2 rounded-ctl whitespace-nowrap font-medium leading-none tracking-[-0.005em] no-underline transition-[background-color,border-color,color] duration-150 ease-out";
 
 const VARIANT: Record<Variant, string> = {
-  solid: "bg-accent text-white border border-transparent hover:bg-accent-hover active:bg-accent",
+  solid: "bg-accent text-white border border-transparent hover:bg-accent-hover active:bg-accent-pressed",
   ghost: "bg-transparent text-ink-1 border border-edge-strong hover:border-edge-hover hover:text-ink-0 active:bg-s2",
 };
 
