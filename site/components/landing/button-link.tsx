@@ -8,6 +8,8 @@ interface ButtonLinkProps {
   readonly variant?: Variant;
   readonly external?: boolean;
   readonly size?: "sm" | "md";
+  /** Below `sm:` a tighter padding and no arrow, for a row that must hold several buttons in a 280 px frame. */
+  readonly phoneCompact?: boolean;
   readonly className?: string;
   readonly children: ReactNode;
 }
@@ -26,12 +28,12 @@ const SIZE = {
 } as const;
 
 /** One link styled as a button. The arrow slides 2px on hover; nothing else moves. */
-export function ButtonLink({ href, variant = "solid", external = false, size = "sm", className = "", children }: ButtonLinkProps) {
+export function ButtonLink({ href, variant = "solid", external = false, size = "sm", phoneCompact = false, className = "", children }: ButtonLinkProps) {
   const Arrow = external ? ArrowUpRight : ArrowRight;
   return (
     <a
       href={href}
-      className={`${BASE} ${VARIANT[variant]} ${SIZE[size]} ${className}`}
+      className={`${BASE} ${VARIANT[variant]} ${SIZE[size]} ${phoneCompact ? "max-sm:px-3" : ""} ${className}`}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
       <span>{children}</span>
@@ -39,7 +41,7 @@ export function ButtonLink({ href, variant = "solid", external = false, size = "
       <Arrow
         size={14}
         aria-hidden="true"
-        className="transition-transform duration-150 ease-out group-hover:translate-x-0.5"
+        className={`transition-transform duration-150 ease-out group-hover:translate-x-0.5 ${phoneCompact ? "max-sm:hidden" : ""}`}
       />
     </a>
   );

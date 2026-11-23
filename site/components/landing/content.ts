@@ -48,9 +48,10 @@ export const NAV = [
   { href: "#activity", label: "Activity" },
 ] as const;
 
+/** The header button reads `label` on a phone and `label` + `rest` from `sm:` up; `rest` stays in the accessible name. */
 export const HEADER = {
   github: { href: GITHUB_URL, label: "GitHub" },
-  cta: { href: DOWNLOAD_URL, label: "Download for macOS" },
+  cta: { href: DOWNLOAD_URL, label: "Download", rest: " for macOS" },
 } as const;
 
 /**
