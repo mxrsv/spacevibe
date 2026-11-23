@@ -55,6 +55,120 @@ struct FramePageSwitchTests {
         }
     }
 
+    @Test("the toolbar's trailing group (search, inspector button, 196 slot) has one frame on all 8 pages, at the window's right edge (RD57)")
+    func trailingGroupHoldsStill() {
+        for look in [MaterialLook.glass, .solid] {
+            for width in Self.widths {
+                for hidden in [false, true] {
+                    let groups = FramePage.allCases.map { page in
+                        let frame = Self.settled(page, look: look, width: width, sidebarHidden: hidden).toolbarTrailingGroup
+                        return [frame.minX, frame.minY, frame.width, frame.height]
+                    }
+                    #expect(Set(groups).count == 1, "\(look) \(width) sidebar hidden \(hidden): \(groups)")
+                    let frame = Self.settled(.clean, look: look, width: width, sidebarHidden: hidden).toolbarTrailingGroup
+                    #expect(frame.maxX == width - SpaceRole.step12, "pinned to the window's right edge, \(look) \(width)")
+                }
+            }
+        }
+        // Opening the overlay below 1100 pt or hiding the docked inspector moves nothing either.
+        for (width, look) in [(CGFloat(1000), MaterialLook.solid), (1280, .glass)] {
+            let chrome = FrameChrome(page: .skills)
+            chrome.setWindowWidth(width)
+            chrome.pageHasInspector = true
+            let before = chrome.layout(on: .skills, hasInspector: true, look: look).toolbarTrailingGroup
+            chrome.toggleInspector()
+            let after = chrome.layout(on: .skills, hasInspector: true, look: look)
+            #expect(after.presentation != Self.settled(.skills, look: look, width: width, sidebarHidden: false).presentation)
+            #expect(after.toolbarTrailingGroup == before, "\(width)")
+        }
+    }
+
+    @Test("the toolbar runs from the sidebar to the window's right edge on every page, and the search folds by window, not by page (RD57)")
+    func toolbarSpansTheWindow() {
+        for look in [MaterialLook.glass, .solid] {
+            for width in Self.widths {
+                for page in FramePage.allCases {
+                    let layout = Self.settled(page, look: look, width: width, sidebarHidden: false)
+                    #expect(layout.toolbarWidth == width - layout.sidebarWidth, "\(page) \(look) \(width)")
+                    #expect(layout.searchFolds == (width < 1100), "\(page) \(look) \(width)")
+                }
+            }
+        }
+    }
+
+    @Test("the trailing group as drawn is as wide as the layout says, with or without search, inspector and button")
+    func trailingGroupDrawnWidth() throws {
+        let search = FrameSearch()
+        for folds in [false, true] {
+            let expected = FrameRole.toolbarTrailingGroupWidth(searchFolds: folds)
+            for hasSearch in [false, true] {
+                for hasInspector in [false, true] {
+                    for primary in [nil, AnyView(Button("Remove 104") {}.buttonStyle(PushButtonStyle(.destructive)))] {
+                        let group = FrameToolbarTrailingGroup(searchItems: hasSearch ? "skills" : nil, search: search, searchFolds: folds,
+                                                              hasInspector: hasInspector, isInspectorShown: hasInspector,
+                                                              pageTitle: "Clean", primary: primary) {}
+                        let size = try Self.drawnSize(group.fixedSize())
+                        #expect(size.width == expected, "folds \(folds) search \(hasSearch) inspector \(hasInspector) primary \(primary != nil)")
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: The hero (RD58)
+
+    @Test("Clean's hero stays at the header's top at 1000 pt, where the note beside it wraps, as at 1280 and 1600 (RD58)")
+    func cleanHeroHoldsAtNarrowWidth() throws {
+        let page = CleanPage(CleanSynthetic.inputs(.normal, clis: 2))
+        #expect(page.showsBand && page.moveBand == nil)
+        let hero = try Self.drawnSize(PageHero(page.hero, label: page.heroLabel).fixedSize())
+        var bandHeights: [CGFloat: CGFloat] = [:]
+        for width in Self.widths {
+            let layout = Self.settled(.clean, look: .solid, width: width, sidebarHidden: false)
+            // The list's width less the content insets and the header's own 8 pt each side (`CleanList`).
+            let header = layout.mainColumnWidth - layout.contentInsets.leading - layout.contentInsets.trailing - 2 * SpaceRole.step8
+            let bandWidth = try #require(PageHeaderLayout.bandWidth(header: header, heroWidth: hero.width, spacing: SpaceRole.step24))
+            let band = try Self.drawnSize(CleanBand(share: page.barShare, text: page.barText)
+                .frame(width: bandWidth).fixedSize(horizontal: false, vertical: true))
+            bandHeights[width] = band.height
+            let placed = PageHeaderLayout.place(hero: hero, band: band, spacing: SpaceRole.step24, width: header)
+            #expect(placed.hero.origin == .zero, "\(width): the hero at the header's top-left")
+            #expect(placed.size.height == max(hero.height, band.height))
+            if band.height <= hero.height {
+                #expect(placed.band?.maxY == hero.height, "\(width): a band no taller than the hero sits on its bottom line")
+            } else {
+                #expect(placed.band?.minY == 0, "\(width): a taller band grows down from the hero's top")
+            }
+        }
+        // The case itself: at 1000 the note wraps, so a bottom-aligned header would have pushed the hero down.
+        let narrow = try #require(bandHeights[1000]), wide = try #require(bandHeights[1280])
+        #expect(narrow > wide && narrow > hero.height, "the note wraps at 1000: \(narrow) against \(wide), hero \(hero.height)")
+    }
+
+    /// A view's size as `ImageRenderer` lays it out, at scale 1.
+    private static func drawnSize<V: View>(_ view: V) throws -> CGSize {
+        let renderer = ImageRenderer(content: view.environment(\.isShotRendering, true))
+        renderer.scale = 1
+        let image = try #require(renderer.cgImage)
+        return CGSize(width: image.width, height: image.height)
+    }
+
+    @Test("the inspector starts under the toolbar, docked from 1100 pt and as the overlay below (RD57)")
+    func inspectorUnderToolbar() {
+        for look in [MaterialLook.glass, .solid] {
+            for page in FramePage.allCases where page.hasInspector {
+                let docked = Self.settled(page, look: look, width: 1280, sidebarHidden: false)
+                #expect(docked.presentation == .docked && docked.inspectorTop == FrameRole.toolbarHeight(look), "\(page) \(look)")
+                let chrome = FrameChrome(page: page)
+                chrome.setWindowWidth(1000)
+                chrome.pageHasInspector = true
+                chrome.openInspector()
+                let overlay = chrome.layout(on: page, hasInspector: true, look: look)
+                #expect(overlay.presentation == .overlay && overlay.inspectorTop == FrameRole.toolbarHeight(look), "\(page) \(look)")
+            }
+        }
+    }
+
     @Test("the first render of a page already has that page's inspector, not the page before's")
     func firstRenderAfterPageChange() {
         // Clean was shown, so the chrome still says the page has no inspector when Skills renders for the first time.

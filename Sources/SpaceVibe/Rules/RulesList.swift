@@ -149,9 +149,10 @@ struct RulesHeader: View {
     let openMore: () -> Void
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: SpaceRole.step24) {
+        // RD58: the hero at the header's top, the other CLIs' lines on its bottom line.
+        PageHeader {
             PageHero(list.hero, label: list.heroLabel)
-                .fixedSize()
+        } band: {
             if !list.shownSummaries.isEmpty {
                 VStack(alignment: .leading, spacing: SpaceRole.step6) {
                     ForEach(list.shownSummaries) { other in

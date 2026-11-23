@@ -50,19 +50,21 @@ struct FrameInspectorState: Equatable, Sendable {
     }
 }
 
-/// Where the frame's regions go for one page (RB-F4: page switching holds still). Pure: every value is a function of the
-/// look, the window width, Hide Sidebar and the inspector's presentation, so the test can ask it for every page and see that
-/// only the inspector's own column changes, as DS2 sets its width per page.
+/// Where the frame's regions go for one page (RB-F4: page switching holds still; RD57: the toolbar spans the window). Pure:
+/// every value is a function of the look, the window width, Hide Sidebar and the inspector's presentation, so the test can
+/// ask it for every page and see that only the inspector's own column changes, as DS2 sets its width per page.
 ///
 /// - The sidebar, the toolbar's leading group (Hide Sidebar, the title) and the content's top-left corner (where the hero
 ///   and the first group head start) are the same on every page.
+/// - The toolbar runs from the sidebar to the window's right edge on every page, over the list and the inspector, as a
+///   native macOS toolbar does (RD57). Its trailing group (the search field or its place, the inspector button, the 196
+///   slot) is pinned to the window's right edge and has the same frame on every page, inspector or not.
 /// - A docked inspector is 336 on Skills, Subagents and Inbox and 308 elsewhere (DS2), and Clean and Limits have none
-///   (the mock's `hasIns`): the main column's trailing edge, with the toolbar's trailing group in it, follows that column,
-///   as in the mock, where the toolbar is the main column's (`.mn .tb`).
+///   (the mock's `hasIns`). Docked or as the overlay below 1100 pt, it starts under the toolbar (RD57).
 struct FrameRegionLayout: Equatable, Sendable {
     /// The sidebar column, the floating sidebar's inset included; 0 while it is hidden.
     let sidebarWidth: CGFloat
-    /// The toolbar's leading padding inside the main column: after the traffic lights while the sidebar is hidden.
+    /// The toolbar's leading padding: after the traffic lights while the sidebar is hidden.
     let toolbarLeading: CGFloat
     /// The page's content inside the main column: under the toolbar (DS-R3 clearance) and off the column's edges.
     let contentInsets: EdgeInsets
@@ -71,12 +73,25 @@ struct FrameRegionLayout: Equatable, Sendable {
     let inspectorWidth: CGFloat
     /// The main column: the window less the sidebar and a docked inspector (the mock's `mw`).
     let mainColumnWidth: CGFloat
+    /// The toolbar: the window less the sidebar, on every page (RD57).
+    let toolbarWidth: CGFloat
+    /// Whether the search field folds to its icon button: the toolbar is narrower than
+    /// `BlockRole.searchFoldsBelowToolbarWidth`, whatever the page.
+    let searchFolds: Bool
+    /// The toolbar's trailing group in the window, top-left origin (`FrameToolbarTrailingGroup` draws it at this size).
+    let toolbarTrailingGroup: CGRect
+    /// Where the inspector starts, docked or overlay: the toolbar's bottom edge (RD57).
+    let inspectorTop: CGFloat
 
     static func make(page: FramePage, presentation: InspectorPresentation, look: MaterialLook, windowWidth: CGFloat,
                      isSidebarHidden: Bool) -> FrameRegionLayout {
         let sidebar = isSidebarHidden ? 0 : FrameRole.sidebarWidth(look)
         let inspector = presentation == .hidden ? 0 : page.inspectorWidth.points
         let docked = presentation == .docked ? inspector : 0
+        let toolbar = max(0, windowWidth - sidebar)
+        let folds = toolbar < BlockRole.searchFoldsBelowToolbarWidth
+        let group = CGSize(width: FrameRole.toolbarTrailingGroupWidth(searchFolds: folds), height: SizeRole.controlRegular)
+        let groupTop = FrameRole.toolbarTopInset(look) + (FrameRole.toolbarRowHeight(look) - group.height) / 2
         return FrameRegionLayout(
             sidebarWidth: sidebar,
             toolbarLeading: isSidebarHidden ? FrameRole.trafficLightsWidth(look) : SpaceRole.step12,
@@ -84,7 +99,12 @@ struct FrameRegionLayout: Equatable, Sendable {
                                       bottom: SpaceRole.step24, trailing: SpaceRole.step20),
             presentation: presentation,
             inspectorWidth: inspector,
-            mainColumnWidth: max(0, windowWidth - sidebar - docked))
+            mainColumnWidth: max(0, windowWidth - sidebar - docked),
+            toolbarWidth: toolbar,
+            searchFolds: folds,
+            toolbarTrailingGroup: CGRect(origin: CGPoint(x: windowWidth - FrameRole.toolbarTrailingInset - group.width, y: groupTop),
+                                         size: group),
+            inspectorTop: FrameRole.toolbarHeight(look))
     }
 }
 

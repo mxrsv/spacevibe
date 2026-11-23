@@ -149,9 +149,10 @@ private struct HooksListHeader: View {
     let pick: (String) -> Void
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: SpaceRole.step24) {
+        // RD58: the hero at the header's top, the strip on its bottom line.
+        PageHeader {
             PageHero(list.hero, label: HooksListModel.heroLabel)
-                .fixedSize()
+        } band: {
             if !list.nodes.isEmpty {
                 LifecycleStrip(nodes: list.nodes, chosen: list.view.event, pick: pick)
                     .padding(.bottom, SpaceRole.step4)
