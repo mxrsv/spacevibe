@@ -435,7 +435,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 
 ### Copy and FAQ
 
-- [ ] **BL-LAND-32** "subagent", not "agent" · `P1` `copy` · from M6
+- [x] **BL-LAND-32** "subagent", not "agent" · `P1` `copy` · from M6
   - The privacy panel in [content.ts](../site/components/landing/content.ts) says "the skill, agent, hook and permission locations". → Say "subagent" ([GLOSSARY.md](../GLOSSARY.md)).
 - [ ] **BL-LAND-33** Skills verdict does not say "run" · `P1` `copy` · from M6
   - The Claude Code verdict of the Skills band is "Every run counted"; `Runs` is for hooks only, skills and subagents count `Sessions`. → Reword the verdict.

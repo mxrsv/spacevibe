@@ -277,7 +277,7 @@ export const PRIVATE = {
     },
     {
       lead: "Every write has a way back.",
-      body: "Writes go only to the skill, agent, hook and permission locations of each CLI, and each one keeps a restorable copy. Undo is one click.",
+      body: "Writes go only to the skill, subagent, hook and permission locations of each CLI, and each one keeps a restorable copy. Undo is one click.",
     },
     {
       lead: "Secrets stay unread.",
