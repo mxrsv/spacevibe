@@ -18,11 +18,12 @@
   --scene-planet-limb: #050609;
 
   --scene-rim-core: #d5e2ff;
-  /* The rim's lit step. It read `--color-accent-hover`, which is now the dark hover step, so it keeps its own value. */
-  --scene-rim-bright: #5274f1;
+  /* The lit step of the accent: the primary with 14% white, the app's own hover step before DS2 made hover darker.
+     The rim read `--color-accent-hover` for this; hover is now darker, so the rim keeps its own light step. */
+  --scene-rim-bright: color-mix(in srgb, var(--color-accent), white 14%);
   --scene-rim-accent: var(--color-accent);
   --scene-rim-haze: #7f8cc8;
-  --scene-core-shadow: rgb(65 100 237 / 55%);
+  --scene-core-shadow: color-mix(in srgb, var(--color-accent) 55%, transparent);
 
   /* Luminance ramp for the `arc-fade` mask: the glow dies at both ends of the arc
      and peaks mid-axis. Mask data, not paint. */
@@ -41,7 +42,7 @@
 
   --scene-orbit-ring: rgb(255 255 255 / 9%);
   --scene-orbit-body: rgb(214 224 255 / 72%);
-  --scene-orbit-wash: radial-gradient(closest-side, rgb(65 100 237 / 16%), transparent 100%);
+  --scene-orbit-wash: radial-gradient(closest-side, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 100%);
 
   --scene-atmosphere: radial-gradient(
     120% 92% at 52% 48%,
