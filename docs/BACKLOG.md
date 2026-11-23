@@ -415,7 +415,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - On layout B the lede opens with "It counts…". → Name the app in it.
 - [x] **BL-LAND-24** Lede does not promise an Inbox the page never shows · `P2` `copy` · from M3
   - The lede says "one inbox"; `/` has no Inbox band and, on layout B, no Inbox screen. → Show the Inbox or change the sentence.
-- [ ] **BL-LAND-25** "Free" sits beside the first download button · `P2` `copy` · from M3
+- [x] **BL-LAND-25** "Free" sits beside the first download button · `P2` `copy` · from M3
   - The hero note says "macOS 15 or later · Apple silicon"; "Free" first appears in the FAQ. → Add it to the note, in the wording of `LP-R6`.
 - [ ] **BL-LAND-26** GitHub link on phones · `P2` `ui` · from M3
   - The header hides the GitHub link below `sm:`. → Keep a GitHub link visible in the first viewport on a phone.
