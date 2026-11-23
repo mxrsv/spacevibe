@@ -309,7 +309,7 @@ export const FAQ = {
     },
     {
       q: "How exact is the cost?",
-      a: "It is an estimate at API-equivalent rates and says so. A model with no known price reads as not measured, never as 0.",
+      a: "It is an estimate at API-equivalent rates and says so. A model with no known price reads as not measurable, never as 0.",
     },
     {
       q: "How do updates work?",
