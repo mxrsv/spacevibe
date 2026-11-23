@@ -472,7 +472,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - Neither exists. → Add both.
 - [ ] **BL-LAND-48** JSON-LD · `P2` `seo` · from M7
   - The page has no structured data. → Add `SoftwareApplication` and `FAQPage`.
-- [ ] **BL-LAND-49** Dark 404 page · `P2` `ui` · from M7
+- [x] **BL-LAND-49** Dark 404 page · `P2` `ui` · from M7
   - There is no `not-found.tsx`. → Add a dark-only one.
 - [ ] **BL-LAND-50** Heading paints at once · `P4` `perf` · from M7
   - The hero `<h1>` starts at `opacity: 0` for 80 ms before its entrance. Measured, it does not delay LCP: at 1440 and at 390 the LCP element is the scene raster of [scene.tsx](../site/components/landing/scene.tsx), 7 to 11 times the heading's area. What is left is a heading that appears 80 ms late. → Remove the delay on the heading.
