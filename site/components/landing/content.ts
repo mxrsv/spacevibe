@@ -325,7 +325,7 @@ export const FAQ = {
 export const DOWNLOAD = {
   id: "download",
   heading: "Download SpaceVibe for macOS",
-  body: "Free. macOS\u00A015 or later on Apple\u00A0silicon. SpaceVibe checks for updates once a day; installing one takes a click.",
+  body: "Free. macOS\u00A015 or later on Apple\u00A0silicon.",
   cta: { href: DOWNLOAD_URL, label: "Download for macOS" },
   secondary: { href: GITHUB_URL, label: "GitHub" },
 } as const;
