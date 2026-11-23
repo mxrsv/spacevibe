@@ -377,7 +377,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 
 - [x] **BL-LAND-8** Button hover keeps 4.5:1 · `P1` `a11y` · from M1
   - `--color-accent-hover` `#5274f1` gives white text 4.10:1. → Use a darker hover step, as the app does (`DS2`: `#0A66D2`, 5.46:1).
-- [ ] **BL-LAND-9** Focus outline reaches 3:1 · `P1` `a11y` · from M1
+- [x] **BL-LAND-9** Focus outline reaches 3:1 · `P1` `a11y` · from M1
   - `:focus-visible` in [globals.css](../site/app/globals.css) is the accent at 75%, 2.57 to 2.73:1 on the page's surfaces (WCAG 1.4.11), and sets a radius on every element that has none. → A 3:1 outline that keeps each element's own corner.
 - [ ] **BL-LAND-10** Accent is the app's primary · `P2` `ui` · from M1
   - The page uses the v5 blue `#4164ed`; the redesigned app in the captures uses `primaryAction` `#0B6FE4`. → Adopt the redesign value. Four places copy the blue as a raw `rgb(65 100 237)` and a token change misses them: `::selection` and `:focus-visible` in [globals.css](../site/app/globals.css), `--scene-core-shadow` and `--scene-orbit-wash` in [scene.css](../site/app/scene.css).
