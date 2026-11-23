@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
+
 import { ButtonLink } from "@/components/landing/button-link";
 import { SITE } from "@/components/landing/content";
 import { SpaceVibeMark } from "@/components/landing/spacevibe-mark";
+
+export const metadata: Metadata = { title: "Page not found · SpaceVibe" };
 
 /**
  * The page for an address that does not exist (`404.html` in the static export). Dark only, like the rest of the
