@@ -4,7 +4,8 @@ import type { BandId } from "./content";
  * SpaceVibe's own page icons, style Bold (RD23), one per screen, shared by the band headers and the hero.
  * The shapes are the five entries of `Resources/PageIcons.json` of the app, same key as the band id: drawn on a
  * 256 grid, each line stroked at 24 with round caps and joins, each dot `[cx, cy, r]` filled. The view box is the
- * live area (40 to 216) plus half a stroke, so the glyph fills the box it is sized to.
+ * live area (40 to 216) plus half a stroke, so the glyph fills the box it is sized to. Rules (the shield's two
+ * points) and Activity (the outer arcs) reach about 8 units past it, so the svg must not clip: `overflow-visible`.
  */
 interface PageIconShape {
   readonly lines: readonly string[];
@@ -49,7 +50,7 @@ interface BandIconProps {
 export function BandIcon({ band, size, className }: BandIconProps) {
   const { lines, dots } = PAGE_ICON[band];
   return (
-    <svg width={size} height={size} viewBox={VIEW_BOX} fill="none" aria-hidden="true" className={className}>
+    <svg width={size} height={size} viewBox={VIEW_BOX} fill="none" aria-hidden="true" className={`overflow-visible ${className ?? ""}`}>
       <g stroke="currentColor" strokeWidth={STROKE} strokeLinecap="round" strokeLinejoin="round">
         {lines.map((d) => (
           <path key={d} d={d} />
