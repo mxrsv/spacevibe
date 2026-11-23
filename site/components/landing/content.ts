@@ -312,6 +312,10 @@ export const FAQ = {
       a: "It is an estimate at API-equivalent rates and says so. A model with no known price reads as not measurable, never as 0.",
     },
     {
+      q: "Does Clean change my usage counts?",
+      a: "No. A moved log keeps only its usage totals, which the counts on Skills, Subagents and Hooks still include.",
+    },
+    {
       q: "How do updates work?",
       a: "SpaceVibe checks once a day and installing takes a click. The check can be turned off in Settings.",
     },

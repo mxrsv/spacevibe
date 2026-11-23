@@ -455,7 +455,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - The band mentions estimated cost without saying it is per session, while Tokens history is "In development". → Say which is which.
 - [ ] **BL-LAND-41** FAQ covers install and signing · `P2` `copy` `blocked` (`REL1`) · from M6
   - No answer covers installing a notarized build. → Add it once `REL1` has shipped.
-- [ ] **BL-LAND-42** FAQ covers what Clean keeps and Undo · `P2` `copy` · from M6
+- [x] **BL-LAND-42** FAQ covers what Clean keeps and Undo · `P2` `copy` · from M6
   - No answer says that Clean keeps usage totals. Undo is already in the Clean band ("Undo brings it back", "Moved, with Undo") and in the privacy panel, and the FAQ holds only what those do not answer. → Add the answer about usage totals.
 - [ ] **BL-LAND-43** Update check is said once · `P2` `copy` · from M6
   - The privacy panel, the FAQ and `DOWNLOAD.body` each state the daily update check. → Drop it from `DOWNLOAD.body`.
