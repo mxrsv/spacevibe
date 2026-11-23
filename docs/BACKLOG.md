@@ -451,7 +451,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - Both rows read "Read locally". → For example "Usage cache / status line" against "Last turn, with age".
 - [x] **BL-LAND-39** Skills band shows Balance and Hooks · `P2` `copy` · from M6
   - Balance (job 2 in [PRODUCT.md](../PRODUCT.md)) and Hooks get one clause each. → Surface both in the band.
-- [ ] **BL-LAND-40** Activity band separates session cost from Tokens · `P2` `copy` · from M6
+- [x] **BL-LAND-40** Activity band separates session cost from Tokens · `P2` `copy` · from M6
   - The band mentions estimated cost without saying it is per session, while Tokens history is "In development". → Say which is which.
 - [ ] **BL-LAND-41** FAQ covers install and signing · `P2` `copy` `blocked` (`REL1`) · from M6
   - No answer covers installing a notarized build. → Add it once `REL1` has shipped.

@@ -170,7 +170,7 @@ export const BANDS: readonly Band[] = [
     label: "Activity",
     question: "What is running, and what is waiting for me?",
     answer:
-      "Running, waiting and idle sessions with their current tool and estimated cost, and failed commands grouped with a count. Stop a session from here. Where a CLI cannot be read, SpaceVibe says so instead of guessing.",
+      "Running, waiting and idle sessions with their current tool and their own estimated cost, and failed commands grouped with a count. Cost per day and model is Tokens, in development. Stop a session from here. Where a CLI cannot be read, SpaceVibe says so instead of guessing.",
     shot: "activity",
     narrow: true,
     caption: `A session · ${DEMO}`,
