@@ -142,7 +142,7 @@ export const BANDS: readonly Band[] = [
     label: "Skills",
     question: "What is installed, and how often did it run?",
     answer:
-      "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other. Subagents and hooks have the same page of their own.",
+      "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other, with an action to add it there. Subagents have a page like it; Hooks lists which commands fire on each event.",
     shot: "skills",
     caption: `Skills · ${DEMO}`,
   },
