@@ -297,7 +297,7 @@ export const FAQ = {
     },
     {
       q: "Which CLIs does it read?",
-      a: "Claude Code and Codex CLI. Gemini CLI keeps no usage file, so its limit reads as not measurable instead of a guess.",
+      a: "Claude Code and Codex. Gemini CLI keeps no usage file, so its limit reads as not measurable instead of a guess.",
     },
     {
       q: "Do I have to sign in to Claude or OpenAI?",
