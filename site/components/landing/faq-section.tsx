@@ -17,7 +17,7 @@ export function FaqSection() {
         <div className="grid gap-2" data-reveal>
           {FAQ.items.map((item) => (
             <details key={item.q} className="group rounded-card bg-s1 transition-colors duration-150 open:bg-s2 hover:bg-s2">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 px-5 text-h3 font-medium text-ink-0 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 px-5 py-3.5 text-h3 font-medium text-ink-0 [&::-webkit-details-marker]:hidden">
                 {item.q}
                 <Plus
                   size={16}
