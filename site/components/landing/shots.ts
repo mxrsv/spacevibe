@@ -38,7 +38,7 @@ export const SHOTS = {
     width: 2112,
     height: 1400,
     phoneShift: 0,
-    alt: "Clean: 780 MB can be cleaned. Seven never-ran or dead skills, subagents and hooks are ticked with their size, Codex session logs older than 90 days are ticked, and Claude Code session logs are locked because one session uses them.",
+    alt: "Clean: 780 MB can be cleaned. Seven skills, subagents and hooks that never ran or whose script is gone are ticked, Codex session logs older than 90 days are ticked, and Claude Code session logs are locked because one session uses them.",
   },
   skills: {
     src: "/landing/app/skills.webp",

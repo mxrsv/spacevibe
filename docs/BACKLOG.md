@@ -443,7 +443,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - The cost FAQ says "not measured"; the rest of the page says "not measurable"; the glossary term is `Unmeasurable`. → Use one wording.
 - [x] **BL-LAND-35** "Codex", not "Codex CLI" · `P2` `copy` · from M6
   - The lede and the FAQ say "Codex CLI"; the glossary names the CLI "Codex". On `/` only the FAQ shows it: the long lede is drawn by layout `now` alone, on `/hero-lab`. → Use the glossary name.
-- [ ] **BL-LAND-36** No "dead" in an `alt` · `P2` `copy` · from M6
+- [x] **BL-LAND-36** No "dead" in an `alt` · `P2` `copy` · from M6
   - The Clean `alt` in [shots.ts](../site/components/landing/shots.ts) says "never-ran or dead skills"; the glossary avoids "dead". → Reword it.
 - [ ] **BL-LAND-37** Clean ledger says what differs per CLI · `P2` `copy` · from M6
   - Both rows read "Moved, with Undo". → Differentiate them: usage totals are kept, logs of a running session are locked, `.jsonl.zst`.
