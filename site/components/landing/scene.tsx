@@ -26,8 +26,8 @@ export function Scene({ variant }: { readonly variant: SceneVariant }) {
   return (
     <div className="scene" data-variant={variant} aria-hidden="true">
       <picture className="scene__sky">
-        <source media="(max-width: 720px)" type="image/avif" srcSet="/landing/scene-deep-space-mobile.avif" />
-        <source media="(max-width: 720px)" type="image/webp" srcSet="/landing/scene-deep-space-mobile.webp" />
+        <source media="(width < 768px)" type="image/avif" srcSet="/landing/scene-deep-space-mobile.avif" />
+        <source media="(width < 768px)" type="image/webp" srcSet="/landing/scene-deep-space-mobile.webp" />
         <source type="image/avif" srcSet="/landing/scene-deep-space.avif" />
         <img
           src="/landing/scene-deep-space.webp"

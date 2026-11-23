@@ -366,7 +366,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - The download button runs 16 px past the frame at 320 px; the page does not scroll. → Shorten the label or the padding on phones.
 - [x] **BL-LAND-4** Hero reading labels have room at 320 px · `P2` `ui` · from M1
   - The label column of layout B in [hero.tsx](../site/components/landing/hero.tsx) is 62 px wide at 320 px. → Give the row a phone layout.
-- [ ] **BL-LAND-5** One breakpoint · `P2` `refactor` · from M1
+- [x] **BL-LAND-5** One breakpoint · `P2` `refactor` · from M1
   - Media queries use `720 px` ([scene.tsx](../site/components/landing/scene.tsx)), `760 px` ([globals.css](../site/app/globals.css), [scene.css](../site/app/scene.css)) and `768 px` (Tailwind `md:`). → Align on `768 px`, with a tablet `--gutter: 28px`.
 - [ ] **BL-LAND-6** FAQ question has vertical padding · `P2` `ui` · from M1
   - `<summary>` in [faq-section.tsx](../site/components/landing/faq-section.tsx) has a minimum height and no vertical padding. At 320 px two questions wrap to two lines and sit 6 px from the row's edges, where a one-line question has 18 px; no question wraps to three lines today. → Add `py-3.5`.

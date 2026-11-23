@@ -121,7 +121,7 @@
   }
 }
 
-/* Page frame: 1280px cap, 48px gutters on desktop, 20px on phones. */
+/* Page frame: 1280px cap, 48px gutters on desktop, 28px on tablets (768 to 1023px), 20px on phones. */
 @utility shell {
   width: min(100% - 2 * var(--gutter, 48px), 1280px);
   margin-inline: auto;
@@ -141,7 +141,13 @@
     --gutter: 48px;
   }
 
-  @media (width <= 760px) {
+  @media (width < 1024px) {
+    :root {
+      --gutter: 28px;
+    }
+  }
+
+  @media (width < 768px) {
     :root {
       --gutter: 20px;
     }

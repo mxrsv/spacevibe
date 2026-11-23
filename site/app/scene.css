@@ -309,7 +309,7 @@
 
 /* ------------------------------------------------------------- phones */
 
-@media (width <= 760px) {
+@media (width < 768px) {
   /* The circle's centre sits off-screen right; at phone width the default frame
      pushes the whole arc out. Scale and anchor so the arc runs below the text. */
   .scene[data-variant="hero"] .scene__rim {
