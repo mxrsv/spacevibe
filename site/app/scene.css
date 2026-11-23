@@ -67,6 +67,14 @@
     rgb(5 6 8 / 0%) 88%
   );
 
+  /* Download band: a veil centred behind the centred copy, pitch black at the middle, gone at the panel edge. */
+  --scene-veil-centre: radial-gradient(
+    ellipse 62% 80% at 50% 50%,
+    rgb(5 6 8 / 80%) 0%,
+    rgb(5 6 8 / 54%) 46%,
+    rgb(5 6 8 / 0%) 100%
+  );
+
   /* The hero's bottom edge dissolves into the page ground over this height. */
   --scene-bottom-fade: 140px;
 
@@ -295,6 +303,10 @@
 .scene[data-variant="download"] .scene__spill,
 .scene[data-variant="download"] .scene__surface {
   opacity: 0.55;
+}
+
+.scene[data-variant="download"] .scene__veil {
+  background: var(--scene-veil-centre);
 }
 
 /* ------------------------------------------------------------- hero bottom edge */
