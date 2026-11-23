@@ -208,7 +208,7 @@ export const DIFFS: Record<BandId, Record<CLI, CliLine>> = {
   skills: {
     claude: {
       reach: "full",
-      verdict: "Every run counted",
+      verdict: "All three counted",
       detail: "Counts how often each skill, subagent and hook ran, and which hook commands fire on each event.",
     },
     codex: {
