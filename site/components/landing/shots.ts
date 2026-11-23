@@ -1,8 +1,8 @@
 /**
  * The app screens the page shows. The real ones are crops of dark captures of the SwiftUI app
  * (`SPACEVIBE_REDESIGN=1 SPACEVIBE_SHOT_SCREEN=<page> scripts/dev-fixture.sh --shots <dir>`, 2x, the
- * `solid-dark` variants, captured 2026-11-22): the whole Inbox window for the hero, the page without its
- * sidebar for Clean, Skills and Rules, and the inspector alone for a limit window and a session. Their
+ * `solid-dark` variants, captured 2026-11-22): the page without its sidebar for Clean, Skills and Rules, and
+ * the inspector alone for a limit window and a session. Their
  * rows are the app's synthetic illustration data, never a real home. A page that is still in development
  * has no capture here: it gets one when a render in the app's current look exists.
  */
@@ -21,19 +21,6 @@ export interface Shot {
 }
 
 export const SHOTS = {
-  inbox: {
-    src: "/landing/app/inbox.webp",
-    width: 2560,
-    height: 1800,
-    phoneShift: 0.175,
-    alt: "SpaceVibe Inbox: 12 need you. Seven rows to clean up, among them skills and a subagent that never ran and hooks whose script is gone, three rows to control and two to watch. The selected skill shows Keep and Remove from Claude Code and Codex, and its files in the inspector.",
-  },
-  inboxRows: {
-    src: "/landing/app/inbox-rows.webp",
-    width: 1440,
-    height: 760,
-    alt: "The Inbox's Clean up group: seven rows, among them hooks whose script is gone and skills that never ran. The selected skill, pdf-extract, added 41 days ago, offers Keep and Remove from Claude Code and Codex.",
-  },
   clean: {
     src: "/landing/app/clean.webp",
     width: 2112,

@@ -18,7 +18,7 @@ export default function LandingPage() {
     <div id={LANDING_ROOT_ID} className="min-h-dvh bg-bg">
       <SiteHeader />
       <main id="main">
-        <Hero layout="b" headline={1} />
+        <Hero />
         <CliBands />
         <Upcoming />
         <PrivateSection />

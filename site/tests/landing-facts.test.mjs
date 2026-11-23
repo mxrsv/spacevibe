@@ -15,7 +15,7 @@ test("Limits copy does not make the status line the source", () => {
 
 test("every screen the page names is a file in public/", () => {
   const sources = [...shots.matchAll(/src: "([^"]+)"/g)].map((m) => m[1]);
-  assert.ok(sources.length >= 6, "the shot list was not found in shots.ts");
+  assert.ok(sources.length >= 5, "the shot list was not found in shots.ts");
   for (const src of sources) assert.ok(existsSync(path(`../public${src}`)), `${src} is missing from public/`);
 });
 

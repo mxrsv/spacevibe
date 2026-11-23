@@ -61,19 +61,11 @@ export const HEADER = {
 } as const;
 
 /**
- * The hero is under review (owner, 2026-11-22: a visitor cannot tell at a glance what the app is for).
- * The owner picked the logo row on 2026-11-22. `/` shows layout `b` with the second headline, the
- * recommendation, until the owner confirms layout and headline on `/hero-lab`; the unpicked ones are then deleted.
+ * The hero (owner, 2026-11-22: a visitor cannot tell at a glance what the app is for). Picked on 2026-11-23: the
+ * logo row under the heading and one reading per screen beside it.
  */
-export type HeroLayout = "now" | "a" | "b" | "c";
-
-export const HERO_HEADLINES = [
-  ["Which of your skills", "actually run?"],
-  ["See what your", "coding agents carry."],
-  ["Clean up what your", "agents never use."],
-] as const;
-
 export const HERO = {
+  headline: ["See what your", "coding agents carry."],
   // The app is for agent CLIs in general (RD13), so this line names the category; the row under the heading says which CLIs.
   eyebrow: "A local Mac app for AI coding agents",
   /**
@@ -87,18 +79,9 @@ export const HERO = {
       { name: "Codex", mark: "/landing/brand/codex-blossom-white.svg" },
     ],
   },
-  lede: "SpaceVibe is a local Mac app for Claude Code and Codex CLI. It counts, from your own session logs, how often every skill, subagent and hook ran, puts what never ran in one inbox, and says plainly when a CLI logs nothing to count.",
   /** The lede without its first sentence, for the layouts whose eyebrow already says what the app is. */
   ledeShort: "SpaceVibe counts, from your own session logs, how often every skill, subagent and hook ran, lists what never ran, and says plainly when a CLI logs nothing to count.",
   cta: { note: "Free · macOS 15 or later · Apple silicon", label: "Download for macOS", href: DOWNLOAD_URL },
-  shot: "inbox",
-  rowsShot: "inboxRows",
-  /** Layout A: the three jobs from PRODUCT.md, each a link to its band. */
-  jobs: [
-    { href: "#clean", verb: "Clean up", rest: "what never ran" },
-    { href: "#rules", verb: "Control", rest: "what each CLI may do" },
-    { href: "#limits", verb: "Watch", rest: "limits and sessions" },
-  ],
   /** Layout B: one reading per screen, the figures of the captures below (the app's illustration data). */
   readingsCaption: "What SpaceVibe shows · demo data",
   readings: [
@@ -109,8 +92,6 @@ export const HERO = {
     { band: "activity", figure: "1", unit: "", label: "session waiting for you", tone: "warn" },
   ],
 } as const satisfies {
-  readonly shot: ShotKey;
-  readonly rowsShot: ShotKey;
   readonly readings: readonly { readonly band: BandId; readonly tone: "ok" | "warn"; readonly meter?: number; readonly [key: string]: unknown }[];
   readonly [key: string]: unknown;
 };

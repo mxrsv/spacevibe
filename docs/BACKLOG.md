@@ -409,7 +409,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 
 - [x] **BL-LAND-21** Pick the hero layout and headline · `P1` `decision` (landing spec, "Hero round") · from M3
   - `/` shows layout B with the second headline, the spec's recommendation; it shows no pixel of the real app above the fold. The audit behind the old bundle proposed layout C instead: a sharp Inbox crop with `Clean up`, `Control`, `Watch` and `Remove` in light window chrome, legible at 1440 and 390, under an action-led headline. → Owner picks on `/hero-lab`. Picked 2026-11-23: layout B with the second headline (landing spec, L17).
-- [ ] **BL-LAND-22** Delete the review route and the unpicked options (`LP-A1`) · `P1` `refactor` `blocked` (BL-LAND-21) · from M3
+- [x] **BL-LAND-22** Delete the review route and the unpicked options (`LP-A1`) · `P1` `refactor` `blocked` (BL-LAND-21) · from M3
   - [hero-lab/page.tsx](../site/app/hero-lab/page.tsx), [hero-lab.tsx](../site/components/landing/hero-lab.tsx), the unpicked layouts and headlines, and the captures only they use still export into `site/out/`, as the spec allows until the pick. → Delete them so `npm run build` lists `/` and `/_not-found` only.
 - [x] **BL-LAND-23** Lede names SpaceVibe · `P2` `copy` · from M3
   - On layout B the lede opens with "It counts…". → Name the app in it.
