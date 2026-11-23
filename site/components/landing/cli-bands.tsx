@@ -1,7 +1,7 @@
 import { Check, EyeOff, Lock, type LucideIcon } from "lucide-react";
 
 import { AppWindow } from "./app-window";
-import { BAND_ICON } from "./band-icon";
+import { BandIcon } from "./band-icon";
 import { CliDot } from "./cli-dot";
 import { BANDS, CLI_LABEL, DIFFS, type Band, type CLI, type Reach } from "./content";
 
@@ -51,11 +51,10 @@ export function CliBands() {
 }
 
 function BandHeader({ band }: { readonly band: Band }) {
-  const Icon = BAND_ICON[band.id];
   return (
     <header className="grid max-w-[680px] gap-4" data-reveal>
       <p className="inline-flex items-center gap-2 text-sec text-ink-1">
-        <Icon size={14} strokeWidth={1.8} aria-hidden="true" />
+        <BandIcon band={band.id} size={14} />
         {band.label}
       </p>
       <h2 className="text-h2 font-medium">{band.question}</h2>

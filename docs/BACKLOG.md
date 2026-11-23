@@ -428,7 +428,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - The hero's planet arc is cut hard at the bottom edge of `#top`. → Add a 140 px bottom fade from `.scene[data-variant="hero"]` into `--color-bg`.
 - [x] **BL-LAND-29** Download band has a centred backdrop · `P2` `ui` · from M5
   - [download-band.tsx](../site/components/landing/download-band.tsx) draws a dot grid and a veil biased to the left behind centred copy. → Remove the dot grid and use a centred radial veil.
-- [ ] **BL-LAND-30** Band icons are SpaceVibe's own page icons (`RD23`) · `P2` `ui` · from M5
+- [x] **BL-LAND-30** Band icons are SpaceVibe's own page icons (`RD23`) · `P2` `ui` · from M5
   - [band-icon.ts](../site/components/landing/band-icon.ts) uses Lucide icons. → Inline the 5 Bold page icons from [PageIcons.json](../Resources/PageIcons.json).
 - [ ] **BL-LAND-31** Ledger rows carry the CLI marks · `P2` `ui` · from M5
   - `Ledger` names each CLI with an 8 px dot and has no row dividers. → Use the 14 px brand marks and `divide-y divide-edge`.

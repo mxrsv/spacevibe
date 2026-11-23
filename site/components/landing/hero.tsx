@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import { AppWindow } from "./app-window";
-import { BAND_ICON } from "./band-icon";
+import { BandIcon } from "./band-icon";
 import { ButtonLink } from "./button-link";
 import { HERO, HERO_HEADLINES, type HeroLayout } from "./content";
 import { Scene } from "./scene";
@@ -121,7 +121,6 @@ function Readings() {
     <figure className="grid gap-3">
       <ul className="glass grid overflow-hidden rounded-panel p-2">
         {HERO.readings.map((reading) => {
-          const Icon = BAND_ICON[reading.band];
           const tone = TONE[reading.tone];
           return (
             <li key={reading.band}>
@@ -129,7 +128,7 @@ function Readings() {
                 href={`#${reading.band}`}
                 className="group grid grid-cols-[auto_5.5rem_minmax(0,1fr)_auto] items-center gap-x-4 rounded-card px-4 py-3.5 no-underline transition-colors duration-150 hover:bg-s3 max-sm:grid-cols-[auto_minmax(0,1fr)_auto] max-sm:gap-y-1.5"
               >
-                <Icon size={18} strokeWidth={1.8} aria-hidden="true" className="text-ink-1 max-sm:row-start-1" />
+                <BandIcon band={reading.band} size={18} className="text-ink-1 max-sm:row-start-1" />
                 <span className={`tnum text-stat font-semibold ${tone.figure} max-sm:col-start-2 max-sm:row-start-1`}>
                   {reading.figure}
                   {reading.unit ? <span className="ml-0.5 text-sec font-medium text-ink-1">{reading.unit}</span> : null}
