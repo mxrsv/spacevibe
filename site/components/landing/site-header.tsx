@@ -5,8 +5,8 @@ import { SpaceVibeMark } from "./spacevibe-mark";
 /**
  * A thin 60px band across the full width, split from the page by a hairline.
  * Sticky, does not grow or recolour on scroll. The anchors are the page's bands.
- * The section links show from `lg:`. On a phone the buttons are tightened (no arrows, "Download")
- * so the row fits a 280 px frame.
+ * The section links show from `lg:`: below it the row holds the brand, GitHub and the download button,
+ * which on a phone are tightened (no arrows, "Download") so the three fit a 280 px frame.
  */
 export function SiteHeader({ nav = NAV }: { readonly nav?: readonly NavLink[] }) {
   return (
@@ -28,11 +28,9 @@ export function SiteHeader({ nav = NAV }: { readonly nav?: readonly NavLink[] })
         </nav>
 
         <div className="flex items-center gap-2">
-          <span className="hidden sm:contents">
-            <ButtonLink href={HEADER.github.href} variant="ghost" external>
-              {HEADER.github.label}
-            </ButtonLink>
-          </span>
+          <ButtonLink href={HEADER.github.href} variant="ghost" external phoneCompact>
+            {HEADER.github.label}
+          </ButtonLink>
           <ButtonLink href={HEADER.cta.href} external phoneCompact>
             {HEADER.cta.label}
             <span className="max-sm:sr-only">{HEADER.cta.rest}</span>
