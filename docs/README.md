@@ -19,6 +19,7 @@ One current document per topic. When two documents disagree, the one named here 
 | The Go core, one page per subsystem, and the shell-to-core protocol | [internals index](internals/README.md) |
 | Releasing and the update key | [release runbook](operations/release.md) |
 | The public site | [site/README.md](../site/README.md); requirements and deploy gates in the [landing spec](specs/2026-11-05-spacevibe-landing.md) |
+| Backlog of proposals, one section per domain ("backlog landing" means its Landing section) | [BACKLOG.md](BACKLOG.md) |
 
 [DESIGN-LANGUAGE.md](DESIGN-LANGUAGE.md) is this repo's `DESIGN.md` under the owner's global FE-rules (`~/.claude/rules/frontend.md`, skill `kyant-ui-rules`). Where it or [PRODUCT.md](../PRODUCT.md) differs from them, this repo wins; the two icon sets are one such case (D72).
 
@@ -96,6 +97,7 @@ Short ids repeat across documents. Cite an id together with its document unless 
 | `V5-R<n>`, `V5-A<n>`, and inside it `S<n>` (mock substitutions), `C<n>` (conflicts), `G<n>` (data gaps) | [v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md) |
 | `ST<n>`, `AG<n>`, `CL-…`, `GW…`, `LC…`, `DL<n>` | the Settings, Agents, Clean, glance widget, countdown and frozen design-language specs |
 | `RD<n>`, `RD-R<n>`, `RD-A<n>` | [redesign spec](specs/2026-11-20-spacevibe-redesign.md) |
+| `BL-<DOMAIN>-<n>` (before 2026-11-23: `BL<n>`, `M<n>`) | [backlog](BACKLOG.md) |
 | `L<n>` | three owners: the landing spec's ledger, the launch plan's tasks, the Limits plan's tasks |
 | `C1` to `C3` | three owners: v5 conflicts, go-core conflicts, the review-fixes plan's owner calls |
 | `X1` | three owners: the UI v5 cut-over, the go-core cross-platform task, the workspace rule "one session, one repo" |
