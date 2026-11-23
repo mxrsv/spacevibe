@@ -6,7 +6,8 @@ import SwiftUI
 ///
 /// A shot with no selection of its own selects the first row shown, as the page does on opening (RD44).
 ///
-/// - `normal-2`, `normal-10`, `normal-1000` (window width: no evidence column, overlay inspector), `normal-1600`;
+/// - `normal-2`, `normal-10`, `normal-1000` (window width: no evidence column, overlay inspector), `normal-1600`,
+///   `overlay-1000` (that overlay open on the selected Skill, under the toolbar, RD57);
 /// - `selected-2`, `selected-10` (a Never ran Skill selected: its row actions and the CLI tiles), `session-2` (the waiting
 ///   session: Show Terminal), `window-2` (the Window behind pace: Keep only), `rule-2` (the dial and the Capability), `hook-2`
 ///   (a failing Hook), `balance-2` (Claude Code and Codex pinned, the Balance finding selected: Add to Codex),
@@ -26,6 +27,8 @@ enum InboxShots {
         var width: CGFloat = 1280
         /// Claude Code and Codex pinned (Balance on).
         var pinned = true
+        /// Below 1100 pt: the overlay inspector open (RD57).
+        var inspectorOpen = false
         var selection: (FrameWorld) -> String? = { _ in nil }
         var prepare: @MainActor (InboxPageState, FrameWorld, ToastCenter, FrameRouter) -> Void = { _, _, _, _ in }
     }
@@ -37,6 +40,7 @@ enum InboxShots {
         Shot(name: "normal-10", state: .normal, clis: 10),
         Shot(name: "normal-1000", state: .normal, width: 1000, selection: { _ in skill }),
         Shot(name: "normal-1600", state: .normal, width: 1600),
+        Shot(name: "overlay-1000", state: .normal, width: 1000, inspectorOpen: true, selection: { _ in skill }),
         Shot(name: "selected-2", state: .normal, selection: { _ in skill }),
         Shot(name: "selected-10", state: .normal, clis: 10, selection: { _ in skill }),
         Shot(name: "session-2", state: .normal, selection: { _ in "S:claude:s-waiting" }),
@@ -104,7 +108,8 @@ enum InboxShots {
         let shown = InboxPage(world: world, figure: figure(world), ticked: state.ticked, showsKept: state.showsKept, now: InboxSynthetic.now)
         let selection = FrameFirstRow.selection(current: shot.selection(world), rows: shown.order)
         let inputs = InboxInputs(world: world, figure: figure(world), now: InboxSynthetic.now, selection: selection)
-        let view = AppFrame(model: model, look: look, sidebarValues: sidebar(world, state: shot.state)) { page, model in
+        let view = AppFrame(model: model, look: look, sidebarValues: sidebar(world, state: shot.state),
+                            inspectorOpen: shot.inspectorOpen) { page, model in
             page == .inbox ? .inbox(model: model, fixed: inputs, host: host(shot.state), state: state) : .notBuilt(page)
         }
         .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)), toasts: toasts, env: env)

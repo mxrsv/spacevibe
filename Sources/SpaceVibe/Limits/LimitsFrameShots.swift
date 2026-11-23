@@ -15,6 +15,7 @@ import SwiftUI
 ///   length; Codex at 4% left and over its weekly limit; a long plan name.
 /// - `many`: ten CLIs, eight of them without limit data on one Unmeasurable line (RD-R10).
 /// - `weekly`: a weekly Window counting at the 24 h lead (H:MM:SS), beside rows that do not count.
+/// - `normal-1000`, `normal-1280`, `normal-1600`: `normal` at those window widths (`ShotRenderer.frameWidths`).
 @MainActor
 enum LimitsFrameShots {
     static func run(into directory: URL) throws {
@@ -24,11 +25,17 @@ enum LimitsFrameShots {
                     try ShotRenderer.write(view(scenario, look: look, choice: choice), name: "frame-limits-\(scenario.rawValue)-\(look)",
                                            choice: choice, to: directory)
                 }
+                // The normal page at the three window widths the frame is checked at (RD57, RD58).
+                for width in ShotRenderer.frameWidths {
+                    try ShotRenderer.write(view(.normal, look: look, choice: choice, width: width),
+                                           name: "frame-limits-normal-\(Int(width))-\(look)", choice: choice, to: directory)
+                }
             }
         }
     }
 
-    private static func view(_ scenario: LimitsFrameShotData.Scenario, look: MaterialLook, choice: AppearanceChoice) -> some View {
+    private static func view(_ scenario: LimitsFrameShotData.Scenario, look: MaterialLook, choice: AppearanceChoice,
+                             width: CGFloat = ShotRenderer.size.width) -> some View {
         let cards = scenario.cards
         let sidebar = FrameSidebarValues(values: [.limits: scenario.sidebarValue])
         let selected = scenario == .selected ? cards.rowIDs.first { $0.hasPrefix("codex:") } : nil
@@ -39,7 +46,7 @@ enum LimitsFrameShots {
         }
         .spaceVibeRoot(shell: ShellModel(tabs: DemoTabs.make(), appearance: AppearanceStore(forced: choice)),
                        toasts: ToastCenter(announce: false), env: AppEnvironment.shared)
-        .frame(width: ShotRenderer.size.width, height: ShotRenderer.size.height)
+        .frame(width: width, height: ShotRenderer.size.height)
     }
 }
 

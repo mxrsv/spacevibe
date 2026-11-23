@@ -130,7 +130,8 @@ enum ShotRenderer {
     }
 
     /// Activity's states (RD-R13) from synthetic data (`ActivityShotState`): `SPACEVIBE_SHOT_STATE=<state>` or `all`, drawn as
-    /// `frame-activity-<state>-<look>-<appearance>.png`.
+    /// `frame-activity-<state>-<look>-<appearance>.png`, and the normal state at each of `frameWidths` as
+    /// `frame-activity-normal-<width>-<look>-<appearance>.png`.
     private static func writeActivityStates(_ key: String, into directory: URL) throws {
         guard key == "all" || ActivityShotState(rawValue: key) != nil else {
             throw ShotHarness.Failure("unknown SPACEVIBE_SHOT_STATE \(key) (all, \(ActivityShotState.allCases.map(\.rawValue).joined(separator: ", ")))")
@@ -148,9 +149,22 @@ enum ShotRenderer {
                         sidebarValues: state.sidebarValues(), toasts: toasts)
                     try write(view, name: "frame-activity-\(state.rawValue)-\(look)", choice: choice, to: directory)
                 }
+                // The normal page at the three window widths the frame is checked at (RD57, RD58), as the other pages' shots.
+                guard states.contains(.normal) else { continue }
+                for width in frameWidths {
+                    let preview = ActivityShotState.normal.preview()
+                    let view = ShotHarness.frame(
+                        on: .activity, look: look, choice: choice, env: AppEnvironment.shared,
+                        content: { page, model in page == .activity ? ActivityPage.content(model, preview: preview) : .region(page, model: model) },
+                        sidebarValues: ActivityShotState.normal.sidebarValues(), width: width)
+                    try write(view, name: "frame-activity-normal-\(Int(width))-\(look)", choice: choice, to: directory)
+                }
             }
         }
     }
+
+    /// The window widths a page's normal state is also drawn at: the overlay inspector, the docked one, a wide window.
+    nonisolated static let frameWidths: [CGFloat] = [1000, 1280, 1600]
 
     /// With the switch on, `gallery` draws only the redesign's specimens (`frameGalleryParts`); `shell` draws them after the
     /// pages.

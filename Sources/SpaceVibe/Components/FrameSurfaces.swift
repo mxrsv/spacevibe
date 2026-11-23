@@ -9,14 +9,15 @@ import SwiftUI
 /// Draws the system's Liquid Glass on a view. Only the frame root makes one, inside its single `if #available(macOS 26, *)`
 /// (`Shell/FrameLook.swift`), so no other view calls `#available` for the look.
 protocol FrameGlassPainter: Sendable {
-    @MainActor func paint(_ content: AnyView, in corner: CornerRole, interactive: Bool) -> AnyView
+    @MainActor func paint(_ content: AnyView, in corner: CornerRole, interactive: Bool, tint: Color?) -> AnyView
 }
 
 /// The macOS 26 material: `glassEffect` in the corner's shape (DS-R8).
 @available(macOS 26, *)
 struct SystemGlassPainter: FrameGlassPainter {
-    @MainActor func paint(_ content: AnyView, in corner: CornerRole, interactive: Bool) -> AnyView {
-        AnyView(content.glassEffect(interactive ? .regular.interactive() : .regular, in: CornerRoleShape(corner)))
+    @MainActor func paint(_ content: AnyView, in corner: CornerRole, interactive: Bool, tint: Color?) -> AnyView {
+        let base: Glass = interactive ? .regular.interactive() : .regular
+        return AnyView(content.glassEffect(tint.map { base.tint($0) } ?? base, in: CornerRoleShape(corner)))
     }
 }
 
@@ -77,8 +78,8 @@ extension View {
     /// The look's surface in `corner`: the system glass in Glass (interactive for a control), `solid` filled in Solid.
     /// `when: false` leaves the view as it is in either look (a block whose variant is never glass), so the view's identity does
     /// not change with the variant.
-    func frameGlass(in corner: CornerRole, interactive: Bool = false, solid: Color, when isGlass: Bool = true) -> some View {
-        modifier(FrameGlassSurface(corner: corner, interactive: interactive, solid: solid, isGlass: isGlass))
+    func frameGlass(in corner: CornerRole, interactive: Bool = false, solid: Color, tint: Color? = nil, when isGlass: Bool = true) -> some View {
+        modifier(FrameGlassSurface(corner: corner, interactive: interactive, solid: solid, tint: tint, isGlass: isGlass))
     }
 }
 
@@ -86,12 +87,13 @@ private struct FrameGlassSurface: ViewModifier {
     let corner: CornerRole
     let interactive: Bool
     let solid: Color
+    let tint: Color?
     let isGlass: Bool
     @Environment(\.frameMaterial) private var material
 
     func body(content: Content) -> some View {
         switch material {
-        case .glass(let painter) where isGlass: painter.paint(AnyView(content), in: corner, interactive: interactive)
+        case .glass(let painter) where isGlass: painter.paint(AnyView(content), in: corner, interactive: interactive, tint: tint)
         case .glass: content
         case .solid: content.background(solid, in: CornerRoleShape(corner))
         }
@@ -177,7 +179,7 @@ private struct FrameSidebarSurface: ViewModifier {
         switch look {
         case .glass:
             content
-                .frameGlass(in: RadiusRole.sidebarCorner(look), solid: ColorRole.sidebarSurface)
+                .frameGlass(in: RadiusRole.sidebarCorner(look), solid: ColorRole.sidebarSurface, tint: ColorRole.sidebarGlassTint)
                 .padding(SpaceRole.sidebarInset(look))
         case .solid:
             content

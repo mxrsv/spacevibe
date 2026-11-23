@@ -2,7 +2,7 @@ import SwiftUI
 
 /// What a region hands the frame for its page: the list, the inspector, the toolbar's parts and the `?` text. The frame
 /// owns where each goes (RD-R1, RD-R17 Layout); a region owns what is in it. A page without an inspector leaves it nil, and
-/// the toolbar then has no inspector button.
+/// the toolbar's inspector button is then disabled in its place (RD57).
 struct FramePageContent {
     /// The quiet line beside the title.
     var subtitle: String?

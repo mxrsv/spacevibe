@@ -302,10 +302,11 @@ struct AppFrameTests {
         #expect(FrameShortcut.reserved.contains(FrameCommandMap.sidebar), "no row action may take ⌃⌘S")
     }
 
-    @Test("the toolbar keeps its 196 pt slot on every page that has a primary, empty or not; Limits has none")
+    @Test("the toolbar keeps its 196 pt slot on every page, empty or not, Limits included (RD57), after the search and the inspector button")
     func toolbarSlot() {
-        #expect(FramePage.allCases.filter { !$0.hasToolbarSlot } == [.limits])
         #expect(FrameRole.toolbarSlotWidth == 196)
+        #expect(FrameRole.toolbarTrailingGroupWidth(searchFolds: false) == CGFloat(420), "176 + 8 + 32 + 8 + 196")
+        #expect(FrameRole.toolbarTrailingGroupWidth(searchFolds: true) == CGFloat(276), "32 + 8 + 32 + 8 + 196")
     }
 
     @Test("a refused write's toast offers Reload with its arrow, as the mock's writefail; the Settings toast keeps 90 % of 660")

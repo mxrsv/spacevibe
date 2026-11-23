@@ -24,12 +24,16 @@ struct AppFrame: View {
     /// - `look`: pins Glass or Solid (a screenshot); nil decides from the OS and Reduce Transparency.
     /// - `sidebarValues`: fixed values (a screenshot); nil reads them from the store.
     /// - `sidebarHidden`: a screenshot of Hide Sidebar (RD47); the app reads the window's stored state instead.
+    /// - `inspectorOpen`: a screenshot below 1100 pt with the overlay inspector open (RD57); the app opens it by a row click,
+    ///   Return, ⌘I or the toolbar button.
     @MainActor
     init(model: FrameModel, look: MaterialLook? = nil, sidebarValues: FrameSidebarValues? = nil, sidebarHidden: Bool = false,
+         inspectorOpen: Bool = false,
          content: @escaping PageContent = { page, model in .region(page, model: model) }) {
         _model = State(initialValue: model)
         let chrome = FrameChrome(page: model.router.route.page)
         chrome.isSidebarHidden = sidebarHidden
+        if inspectorOpen { chrome.openInspector() }
         _chrome = State(initialValue: chrome)
         forcedLook = look
         self.sidebarValues = sidebarValues
@@ -105,36 +109,40 @@ private struct FrameWindow: View {
                         .frame(width: FrameRole.sidebarWidth(look))
                         .transition(.move(edge: .leading))
                 }
+                // RD57: the toolbar spans the list and the inspector; the docked inspector starts under it. The toolbar comes
+                // first for VoiceOver and the keyboard, and is drawn over the list, which scrolls under it.
                 ZStack(alignment: .top) {
-                    parts.body
-                        .safeAreaPadding(layout.contentInsets)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        .focusable(!modal)
-                        .focused($focus, equals: .content)
-                        .focusEffectDisabled()
-                        // Return opens the inspector on the selected row (RD-R16); a region's list keys do the same.
-                        .onKeyPress(.return) {
-                            guard model.router.route.selection != nil, parts.inspector != nil else { return .ignored }
-                            chrome.openInspector()
-                            return .handled
+                    FrameToolbar(page: page, content: parts, chrome: chrome, leading: layout.toolbarLeading,
+                                 isInspectorShown: presentation != .hidden, search: model.search, searchFolds: layout.searchFolds)
+                        .zIndex(1)
+                    HStack(spacing: 0) {
+                        parts.body
+                            .safeAreaPadding(layout.contentInsets)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .focusable(!modal)
+                            .focused($focus, equals: .content)
+                            .focusEffectDisabled()
+                            // Return opens the inspector on the selected row (RD-R16); a region's list keys do the same.
+                            .onKeyPress(.return) {
+                                guard model.router.route.selection != nil, parts.inspector != nil else { return .ignored }
+                                chrome.openInspector()
+                                return .handled
+                            }
+                            // A row action's plain letter (S for Stop, RD39) acts only while the list has the focus, so typing
+                            // in the search field never fires it; the Item menu shows those actions without the key.
+                            .onKeyPress(characters: .letters) { press in
+                                guard FramePlainKeys.rowLetterMayAct(isModal: modal, firstResponder: NSApp.keyWindow?.firstResponder),
+                                      let action = FrameRowAction.plainKey(press.characters, modifiers: press.modifiers,
+                                                                                   in: rowActions?.actions ?? []) else { return .ignored }
+                                action.perform()
+                                return .handled
+                            }
+                        if presentation == .docked, let inspector = parts.inspector {
+                            FrameInspector(content: inspector, overlayActions: nil, isOverlay: false) { chrome.closeOverlays() }
+                                .frame(width: layout.inspectorWidth)
+                                .padding(.top, layout.inspectorTop)
                         }
-                        // A row action's plain letter (S for Stop, RD39) acts only while the list has the focus, so typing
-                        // in the search field never fires it; the Item menu shows those actions without the key.
-                        .onKeyPress(characters: .letters) { press in
-                            guard FramePlainKeys.rowLetterMayAct(isModal: modal, firstResponder: NSApp.keyWindow?.firstResponder),
-                                  let action = FrameRowAction.plainKey(press.characters, modifiers: press.modifiers,
-                                                                               in: rowActions?.actions ?? []) else { return .ignored }
-                            action.perform()
-                            return .handled
-                        }
-                    FrameToolbar(page: page, content: parts, hidesTitle: presentation == .overlay, chrome: chrome,
-                                 leading: layout.toolbarLeading, isInspectorShown: presentation != .hidden,
-                                 search: model.search, searchFolds: layout.mainColumnWidth < BlockRole.searchFoldsBelowListWidth)
-                        .padding(.trailing, presentation == .overlay ? layout.inspectorWidth : 0)
-                }
-                if presentation == .docked, let inspector = parts.inspector {
-                    FrameInspector(content: inspector, overlayActions: nil, isOverlay: false) { chrome.closeOverlays() }
-                        .frame(width: layout.inspectorWidth)
+                    }
                 }
             }
             .animation(reduceMotion ? nil : .easeOut(duration: MotionRole.sidebarDuration), value: chrome.isSidebarHidden)
@@ -142,7 +150,7 @@ private struct FrameWindow: View {
             if presentation == .overlay, let inspector = parts.inspector {
                 FrameInspector(content: inspector, overlayActions: parts.overlayActions, isOverlay: true) { chrome.closeOverlays() }
                     .frame(width: layout.inspectorWidth)
-                    .padding(.top, FrameRole.toolbarHeight(look))
+                    .padding(.top, layout.inspectorTop)
                     .focusable(!modal)
                     .focused($focus, equals: .inspector)
                     .focusEffectDisabled()
