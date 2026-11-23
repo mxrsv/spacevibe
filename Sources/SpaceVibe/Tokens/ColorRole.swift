@@ -302,6 +302,10 @@ enum ColorRoleValues {
     static let destructiveTintPressedShare = 0.34
     static let destructiveTintEdgeShare = 0.38
 
+    /// The share of `sidebarSurface` laid over the sidebar's Glass, so labels stay readable on a bright or coloured desktop
+    /// (the owner picked 0.6 by eye over 0, 0.35, 0.6 and 0.85 on 2026-11-23).
+    static let sidebarGlassTintShare = 0.6
+
     /// Every role: its name here, the spec's name, its value. In the spec's order; the specimen draws them, the tests walk them.
     static let all: [(name: String, specName: String, value: ColorRoleValue)] = [
         ("canvasSurface", "canvas", canvasSurface), ("groupSurface", "group", groupSurface),
@@ -400,6 +404,7 @@ enum ColorRole {
     static let switchKnobOff = ColorRoleValues.switchKnobOff.color
     static let switchKnobOffShadow = ColorRoleValues.switchKnobOffShadow.color
     /// The destructive button's ground and edge: `stateCritical` at its share, over whatever surface the button sits on.
+    static let sidebarGlassTint = sidebarSurface.opacity(ColorRoleValues.sidebarGlassTintShare)
     static let destructiveTint = stateCritical.opacity(ColorRoleValues.destructiveTintShare)
     static let destructiveTintHover = stateCritical.opacity(ColorRoleValues.destructiveTintHoverShare)
     static let destructiveTintPressed = stateCritical.opacity(ColorRoleValues.destructiveTintPressedShare)
