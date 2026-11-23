@@ -34,6 +34,7 @@ A spec owns requirements and acceptance; a plan owns tasks, progress, verificati
 | Session glance widget | [spec](specs/2026-11-19-session-glance-widget.md) | [plan](plans/2026-11-19-session-glance-widget.md) | active |
 | Limit reset countdown | [spec](specs/2026-11-19-limit-reset-countdown.md) | the widget plan (its task GL-T13) | active |
 | App-wide redesign (macOS frame, v2) | [spec](specs/2026-11-20-spacevibe-redesign.md) | [build plan](plans/2026-11-21-spacevibe-redesign-build.md) | spec decided and plan approved 2026-11-21; nothing built, next RB-T0 |
+| Support for ten CLIs | [spec](specs/2026-11-19-multi-cli.md) | [plan](plans/2026-11-19-multi-cli.md) | decided 2026-11-19; the first build (PR #5) was closed unmerged, being ported onto `cliregistry`, next MC-P0 |
 | Design system of the redesign | [spec](specs/2026-11-21-spacevibe-design-system.md) | the redesign build plan (RB-S1, RB-S4) | decided 2026-11-21; nothing built |
 | Clean | [spec](specs/2026-11-18-clean.md), absorbed by the redesign spec | none | draft |
 | Tokens page | [product spec, "Tab: Tokens"](specs/2026-11-02-spacevibe.md#tab-tokens) | [plan](plans/2026-11-03-spacevibe-tokens.md) | active: not built |
@@ -96,6 +97,7 @@ Short ids repeat across documents. Cite an id together with its document unless 
 | `V5-R<n>`, `V5-A<n>`, and inside it `S<n>` (mock substitutions), `C<n>` (conflicts), `G<n>` (data gaps) | [v5 spec](specs/2026-11-06-spacevibe-design-language-v5.md) |
 | `ST<n>`, `AG<n>`, `CL-…`, `GW…`, `LC…`, `DL<n>` | the Settings, Agents, Clean, glance widget, countdown and frozen design-language specs |
 | `RD<n>`, `RD-R<n>`, `RD-A<n>` | [redesign spec](specs/2026-11-20-spacevibe-redesign.md) |
+| `MC<n>`, `MC-R<n>`, `MC-T<n>`, `MC-P<n>`, `W-T<n>` | the [multi-CLI spec](specs/2026-11-19-multi-cli.md) and its plan |
 | `L<n>` | three owners: the landing spec's ledger, the launch plan's tasks, the Limits plan's tasks |
 | `C1` to `C3` | three owners: v5 conflicts, go-core conflicts, the review-fixes plan's owner calls |
 | `X1` | three owners: the UI v5 cut-over, the go-core cross-platform task, the workspace rule "one session, one repo" |
