@@ -3,6 +3,9 @@ import type { CSSProperties } from "react";
 
 import { SHOTS, type Shot, type ShotKey } from "./shots";
 
+/** Under a capture that scrolls sideways on a phone, instead of its caption. */
+const SWIPE_CAPTION = "Swipe to inspect · demo data";
+
 /** macOS window buttons at the app's own place, as fractions of the window width (a 1440 pt window). */
 const LIGHTS = [
   "left-[1.67cqw] bg-light-close",
@@ -30,28 +33,37 @@ interface AppWindowProps {
 export function AppWindow({ shot, lights = false, caption, priority = false, bleed = false, className = "", style }: AppWindowProps) {
   const { src, width, height, alt } = SHOTS[shot];
   const phoneShift: number | undefined = (SHOTS[shot] as Shot).phoneShift;
+  const cut = phoneShift !== undefined;
   return (
     <figure className={`grid gap-3 ${className}`} style={style}>
-      <div
-        className={`@container relative overflow-hidden rounded-panel border border-edge-strong bg-s2 shadow-panel ${bleed ? "rounded-b-none border-b-0" : ""}`}
-      >
-        <Image
-          src={src}
-          alt={alt}
-          width={width}
-          height={height}
-          priority={priority}
-          sizes="(min-width: 1280px) 1120px, 100vw"
-          className={`block h-auto w-full ${phoneShift === undefined ? "" : "max-md:w-[190%] max-md:max-w-none max-md:-translate-x-(--phone-shift)"}`}
-          style={phoneShift === undefined ? undefined : ({ "--phone-shift": `${phoneShift * 100}%` } as CSSProperties)}
-        />
-        {lights
-          ? LIGHTS.map((place) => (
-              <span key={place} aria-hidden="true" className={`absolute top-[1.04cqw] size-[0.84cqw] rounded-full ${place} ${phoneShift === undefined ? "" : "max-md:hidden"}`} />
-            ))
-          : null}
+      <div className="relative">
+        {/* A cut capture scrolls sideways on a phone; the group is focusable so the keyboard can pan it. */}
+        <div
+          className={`@container relative overflow-hidden rounded-panel border border-edge-strong bg-s2 shadow-panel ${cut ? "max-md:overflow-x-auto" : ""} ${bleed ? "rounded-b-none border-b-0" : ""}`}
+          {...(cut ? { tabIndex: 0, role: "group", "aria-label": `${caption ?? "App screen"}, scrolls sideways` } : {})}
+        >
+          <Image
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+            priority={priority}
+            sizes="(min-width: 1280px) 1120px, 100vw"
+            className={`block h-auto w-full ${cut ? "max-md:w-[190%] max-md:max-w-none max-md:-ml-(--phone-offset)" : ""}`}
+            style={cut ? ({ "--phone-offset": `${phoneShift * 190}%` } as CSSProperties) : undefined}
+          />
+          {lights
+            ? LIGHTS.map((place) => (
+                <span key={place} aria-hidden="true" className={`absolute top-[1.04cqw] size-[0.84cqw] rounded-full ${place} ${cut ? "max-md:hidden" : ""}`} />
+              ))
+            : null}
+        </div>
+        {cut ? (
+          <span aria-hidden="true" className="pointer-events-none absolute inset-y-px right-px w-10 rounded-r-panel bg-linear-to-l from-s2 to-transparent md:hidden" />
+        ) : null}
       </div>
-      {caption ? <figcaption className="text-tiny text-ink-2">{caption}</figcaption> : null}
+      {caption ? <figcaption className={`text-tiny text-ink-2 ${cut ? "max-md:hidden" : ""}`}>{caption}</figcaption> : null}
+      {cut ? <figcaption className="text-tiny text-ink-2 md:hidden">{SWIPE_CAPTION}</figcaption> : null}
     </figure>
   );
 }

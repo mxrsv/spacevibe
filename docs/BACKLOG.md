@@ -370,7 +370,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
   - Media queries use `720 px` ([scene.tsx](../site/components/landing/scene.tsx)), `760 px` ([globals.css](../site/app/globals.css), [scene.css](../site/app/scene.css)) and `768 px` (Tailwind `md:`). → Align on `768 px`, with a tablet `--gutter: 28px`.
 - [x] **BL-LAND-6** FAQ question has vertical padding · `P2` `ui` · from M1
   - `<summary>` in [faq-section.tsx](../site/components/landing/faq-section.tsx) has a minimum height and no vertical padding. At 320 px two questions wrap to two lines and sit 6 px from the row's edges, where a one-line question has 18 px; no question wraps to three lines today. → Add `py-3.5`.
-- [ ] **BL-LAND-7** Phone shows the part of a screen that matters · `P2` `ui` `decision` (landing spec, "Inferred, not decided") · from M4
+- [x] **BL-LAND-7** Phone shows the part of a screen that matters · `P2` `ui` `decision` (landing spec, "Inferred, not decided") · from M4
   - [app-window.tsx](../site/components/landing/app-window.tsx) shows a capture at `190%` width on phones and cuts its right 47%: byte totals, session bars, the `Allow / Ask / Deny` pickers and the action buttons of `clean.webp`, `skills.webp` and `rules.webp`. → Owner call: horizontal pan (`max-md:overflow-x-auto`, a right-edge fade, "Swipe to inspect · demo data"), or dedicated `srcMobile` crops.
 
 ### Colour and focus

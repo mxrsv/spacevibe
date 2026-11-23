@@ -13,8 +13,9 @@ export interface Shot {
   readonly alt: string;
   /**
    * On a phone a whole capture shrinks until its text cannot be read, so it is shown at about twice the
-   * frame's width and cut on the right. This is how far it also moves left, as a share of its own width,
-   * to skip what matters less (the sidebar). Leave it out for a capture that is already narrow.
+   * frame's width, and the frame scrolls sideways to the rest. This is how far it also starts to the left,
+   * as a share of its own width, to skip what matters less (the sidebar). Leave it out for a capture that is
+   * already narrow.
    */
   readonly phoneShift?: number;
 }
