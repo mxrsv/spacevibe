@@ -127,14 +127,14 @@ function Readings() {
             <li key={reading.band}>
               <a
                 href={`#${reading.band}`}
-                className="group grid grid-cols-[auto_5.5rem_minmax(0,1fr)_auto] items-center gap-x-4 rounded-card px-4 py-3.5 no-underline transition-colors duration-150 hover:bg-s3"
+                className="group grid grid-cols-[auto_5.5rem_minmax(0,1fr)_auto] items-center gap-x-4 rounded-card px-4 py-3.5 no-underline transition-colors duration-150 hover:bg-s3 max-sm:grid-cols-[auto_minmax(0,1fr)_auto] max-sm:gap-y-1.5"
               >
-                <Icon size={18} strokeWidth={1.8} aria-hidden="true" className="text-ink-1" />
-                <span className={`tnum text-stat font-semibold ${tone.figure}`}>
+                <Icon size={18} strokeWidth={1.8} aria-hidden="true" className="text-ink-1 max-sm:row-start-1" />
+                <span className={`tnum text-stat font-semibold ${tone.figure} max-sm:col-start-2 max-sm:row-start-1`}>
                   {reading.figure}
                   {reading.unit ? <span className="ml-0.5 text-sec font-medium text-ink-1">{reading.unit}</span> : null}
                 </span>
-                <span className="grid gap-1.5 text-sec text-ink-1">
+                <span className="grid gap-1.5 text-sec text-ink-1 max-sm:col-start-2 max-sm:row-start-2">
                   {reading.label}
                   {"meter" in reading ? (
                     <span aria-hidden="true" className="h-1 w-full max-w-[180px] overflow-hidden rounded-full bg-s3">
@@ -142,7 +142,7 @@ function Readings() {
                     </span>
                   ) : null}
                 </span>
-                <ArrowRight size={14} aria-hidden="true" className="text-ink-2 transition-transform duration-150 ease-out group-hover:translate-x-0.5" />
+                <ArrowRight size={14} aria-hidden="true" className="text-ink-2 transition-transform duration-150 ease-out group-hover:translate-x-0.5 max-sm:col-start-3 max-sm:row-span-2 max-sm:row-start-1" />
               </a>
             </li>
           );
