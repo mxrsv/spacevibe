@@ -424,7 +424,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 
 - [x] **BL-LAND-27** Idle loops in the scene · `P2` `ui` `decision` (`FE-M1` against `L2`; landing spec, "Inferred, not decided") · from M5
   - [scene.css](../site/app/scene.css) runs 5 infinite animations while the page is idle (`scene-drift`, `star-drift`, `star-twinkle`, `orbit-run`, `scene-breathe` over blurred circles). → Owner call: static, or subtle motion; the audit proposed dropping `scene-breathe` and `scene-drift`.
-- [ ] **BL-LAND-28** Planet fades into the first band · `P2` `ui` · from M5
+- [x] **BL-LAND-28** Planet fades into the first band · `P2` `ui` · from M5
   - The hero's planet arc is cut hard at the bottom edge of `#top`. → Add a 140 px bottom fade from `.scene[data-variant="hero"]` into `--color-bg`.
 - [ ] **BL-LAND-29** Download band has a centred backdrop · `P2` `ui` · from M5
   - [download-band.tsx](../site/components/landing/download-band.tsx) draws a dot grid and a veil biased to the left behind centred copy. → Remove the dot grid and use a centred radial veil.

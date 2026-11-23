@@ -67,6 +67,9 @@
     rgb(5 6 8 / 0%) 88%
   );
 
+  /* The hero's bottom edge dissolves into the page ground over this height. */
+  --scene-bottom-fade: 140px;
+
   /* The four glow layers of the limb rest at one opacity: the middle of 0.45 to 0.62, where they breathed before the
      scene stopped moving. */
   --scene-rim-rest: 0.54;
@@ -292,6 +295,17 @@
 .scene[data-variant="download"] .scene__spill,
 .scene[data-variant="download"] .scene__surface {
   opacity: 0.55;
+}
+
+/* ------------------------------------------------------------- hero bottom edge */
+
+/* The planet arc ran into the hard bottom edge of `#top`; the last 140px fade into the ground of the next band. */
+.scene[data-variant="hero"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--scene-bottom-fade);
+  background: linear-gradient(to bottom, transparent, var(--color-bg));
 }
 
 /* ------------------------------------------------------------- phones */
