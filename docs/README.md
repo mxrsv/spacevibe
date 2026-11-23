@@ -39,7 +39,7 @@ A spec owns requirements and acceptance; a plan owns tasks, progress, verificati
 | Design system of the redesign | [spec](specs/2026-11-21-spacevibe-design-system.md) | the redesign build plan (RB-S1, RB-S4) | decided 2026-11-21; nothing built |
 | Clean | [spec](specs/2026-11-18-clean.md), absorbed by the redesign spec | none | draft |
 | Tokens page | [product spec, "Tab: Tokens"](specs/2026-11-02-spacevibe.md#tab-tokens) | [plan](plans/2026-11-03-spacevibe-tokens.md) | active: not built |
-| Landing page | [spec](specs/2026-11-05-spacevibe-landing.md) | none | built 2026-11-22, eye approval and deploy gates open |
+| Landing page | [spec](specs/2026-11-05-spacevibe-landing.md) | none | built 2026-11-22, backlog round built 2026-11-23; eye approval and deploy gates open |
 | Internals pages | none | [plan](plans/2026-11-07-spacevibe-internals-docs.md) | active: the owner's check open |
 | Agents settings panels | [spec](specs/2026-11-05-spacevibe-agents.md) | [plan](plans/2026-11-05-spacevibe-agents.md) | on hold, partly superseded, not built |
 

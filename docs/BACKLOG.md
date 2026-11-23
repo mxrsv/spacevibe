@@ -356,6 +356,8 @@ Checked on 2026-11-23 against the code and the built page (`site/out`, measured 
 
 Checked a second time on 2026-11-23, every item against the code, the captures and the page built from `153fafa` in Chromium (320 to 1440 px). BL-LAND-2, 6, 10, 11, 17, 35, 42, 50, 52, 54, 55 and 58 carry what that check changed; the other items held as written. Not checked again: that the redesigned Limits and Activity pages do not render in a headless capture (BL-LAND-14, BL-LAND-15), and `REL1` (BL-LAND-41).
 
+Built on 2026-11-23: the owner approved the before/after review of this section (landing spec, L17 to L20), and the 36 items it showed, with BL-LAND-22, are in `site/`, one commit each. BL-LAND-37 shipped in part and stays open. BL-LAND-20, 55, 57, 58 and 59 were re-read against the page after that build and say what is true now.
+
 ### Layout and responsive
 
 - [x] **BL-LAND-1** Page does not scroll sideways at 768 px · `P1` `bug` · from M1
@@ -410,7 +412,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 - [x] **BL-LAND-21** Pick the hero layout and headline · `P1` `decision` (landing spec, "Hero round") · from M3
   - `/` shows layout B with the second headline, the spec's recommendation; it shows no pixel of the real app above the fold. The audit behind the old bundle proposed layout C instead: a sharp Inbox crop with `Clean up`, `Control`, `Watch` and `Remove` in light window chrome, legible at 1440 and 390, under an action-led headline. → Owner picks on `/hero-lab`. Picked 2026-11-23: layout B with the second headline (landing spec, L17).
 - [x] **BL-LAND-22** Delete the review route and the unpicked options (`LP-A1`) · `P1` `refactor` `blocked` (BL-LAND-21) · from M3
-  - [hero-lab/page.tsx](../site/app/hero-lab/page.tsx), [hero-lab.tsx](../site/components/landing/hero-lab.tsx), the unpicked layouts and headlines, and the captures only they use still export into `site/out/`, as the spec allows until the pick. → Delete them so `npm run build` lists `/` and `/_not-found` only.
+  - `site/app/hero-lab/page.tsx`, `site/components/landing/hero-lab.tsx`, the unpicked layouts and headlines, and the captures only they use still export into `site/out/`, as the spec allows until the pick. → Delete them so `npm run build` lists `/` and `/_not-found` only.
 - [x] **BL-LAND-23** Lede names SpaceVibe · `P2` `copy` · from M3
   - On layout B the lede opens with "It counts…". → Name the app in it.
 - [x] **BL-LAND-24** Lede does not promise an Inbox the page never shows · `P2` `copy` · from M3
@@ -429,7 +431,7 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 - [x] **BL-LAND-29** Download band has a centred backdrop · `P2` `ui` · from M5
   - [download-band.tsx](../site/components/landing/download-band.tsx) draws a dot grid and a veil biased to the left behind centred copy. → Remove the dot grid and use a centred radial veil.
 - [x] **BL-LAND-30** Band icons are SpaceVibe's own page icons (`RD23`) · `P2` `ui` · from M5
-  - [band-icon.ts](../site/components/landing/band-icon.ts) uses Lucide icons. → Inline the 5 Bold page icons from [PageIcons.json](../Resources/PageIcons.json).
+  - `band-icon.ts` used Lucide icons; it is now [band-icon.tsx](../site/components/landing/band-icon.tsx). → Inline the 5 Bold page icons from [PageIcons.json](../Resources/PageIcons.json).
 - [x] **BL-LAND-31** Ledger rows carry the CLI marks · `P2` `ui` · from M5
   - `Ledger` names each CLI with an 8 px dot and has no row dividers. → Use the 14 px brand marks and `divide-y divide-edge`.
 
@@ -485,18 +487,18 @@ Checked a second time on 2026-11-23, every item against the code, the captures a
 - [ ] **BL-LAND-54** "opens in a new tab" reads as separate words · `P4` `a11y` `unmeasured` · from M7
   - The screen-reader span in [button-link.tsx](../site/components/landing/button-link.tsx) and [site-footer.tsx](../site/components/landing/site-footer.tsx) has no leading space. Chromium's accessibility tree already names the links with the space ("Download for macOS (opens in a new tab)", "GitHub (opens in a new tab)"); Safari with VoiceOver is not measured. → Add one.
 - [ ] **BL-LAND-55** Tests assert `LP-A1`, `LP-A4` and `LP-A5` · `P2` `test` · from M7
-  - [landing-facts.test.mjs](../site/tests/landing-facts.test.mjs) checks none of the three. `LP-A4` and `LP-A5` hold today; an `LP-A1` assertion fails until BL-LAND-22 has removed `/hero-lab`. → Add them.
+  - [landing-facts.test.mjs](../site/tests/landing-facts.test.mjs) checks none of the three. All three hold today: BL-LAND-22 removed `/hero-lab`, so `npm run build` lists `/` and `/_not-found` only. → Add them.
 - [ ] **BL-LAND-56** Tests cover the remaining files and redirects · `P2` `test` · from M7
   - Screens are checked for existence, the brand marks and `og.jpg` are not; [redirects.test.mjs](../site/tests/redirects.test.mjs) checks `/vi/live` and `/vi/deck`, not `/vi/free-tier`, `/vi/vote` and `/vi/vote/privacy`. → Add the missing cases.
 
 ### Dead code
 
-- [ ] **BL-LAND-57** Remove the unused `style` prop · `P4` `refactor` · from housekeeping
-  - No caller passes `style` to `AppWindow` in [app-window.tsx](../site/components/landing/app-window.tsx). → Remove it.
+- [ ] **BL-LAND-57** Remove the unused `AppWindow` props · `P4` `refactor` · from housekeeping
+  - No caller passes `style` to `AppWindow` in [app-window.tsx](../site/components/landing/app-window.tsx). Since BL-LAND-22 took the windows out of the hero, none passes `lights`, `priority`, `bleed` or `className` either: [cli-bands.tsx](../site/components/landing/cli-bands.tsx) passes `shot` and `caption` only. → Remove the five props, the `LIGHTS` list they drew and the three `--color-light-*` tokens only it reads.
 - [ ] **BL-LAND-58** Remove unused tokens · `P4` `refactor` · from housekeeping
-  - `--shadow-lift` and `--font-mono` in [globals.css](../site/app/globals.css) are unused. → Remove them. The `opacity` rules of `.scene__surface`, `.scene__spill` and the download variant in [scene.css](../site/app/scene.css) are not dead: `scene-breathe` overrides them only while it runs, and under `prefers-reduced-motion` they are the values in use (0.7, 0.62, 0.55). Keep them.
+  - `--shadow-lift`, `--font-mono` and `--color-accent-text` in [globals.css](../site/app/globals.css) are unused. → Remove them.
 - [ ] **BL-LAND-59** Tidy the header markup · `P4` `refactor` · from housekeeping
-  - [site-header.tsx](../site/components/landing/site-header.tsx) has a redundant `aria-label` / `aria-hidden` pair and a `sm:contents` wrapper. → Remove them.
+  - [site-header.tsx](../site/components/landing/site-header.tsx) has a redundant `aria-label` / `aria-hidden` pair on the brand link. → Remove it. The `sm:contents` wrapper went with BL-LAND-1.
 - [ ] **BL-LAND-60** Remove the `start` script · `P4` `refactor` · from housekeeping
   - `"start": "next start"` in [package.json](../site/package.json) cannot serve an `output: "export"` build. → Remove it.
 - [ ] **BL-LAND-61** Fix stale comments · `P4` `refactor` · from housekeeping
