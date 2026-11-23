@@ -109,13 +109,13 @@ function Jobs() {
   );
 }
 
-/** The state colour of a reading: its text colour and the fill of its meter. */
+/** The state colour of a reading: its figure and the fill of its meter. The page icon stays neutral (PRODUCT.md, Colour). */
 const TONE = {
   ok: { figure: "text-ok", fill: "bg-ok" },
   warn: { figure: "text-warn", fill: "bg-warn" },
 } as const;
 
-/** Layout B: one panel, one reading per screen. The figure leads; the icon carries the state colour. */
+/** Layout B: one panel, one reading per screen. The figure leads and carries the state colour; the page icon is neutral. */
 function Readings() {
   return (
     <figure className="grid gap-3">
@@ -129,8 +129,8 @@ function Readings() {
                 href={`#${reading.band}`}
                 className="group grid grid-cols-[auto_5.5rem_minmax(0,1fr)_auto] items-center gap-x-4 rounded-card px-4 py-3.5 no-underline transition-colors duration-150 hover:bg-s3"
               >
-                <Icon size={18} strokeWidth={1.8} aria-hidden="true" className={tone.figure} />
-                <span className="tnum text-stat font-semibold text-ink-0">
+                <Icon size={18} strokeWidth={1.8} aria-hidden="true" className="text-ink-1" />
+                <span className={`tnum text-stat font-semibold ${tone.figure}`}>
                   {reading.figure}
                   {reading.unit ? <span className="ml-0.5 text-sec font-medium text-ink-1">{reading.unit}</span> : null}
                 </span>
