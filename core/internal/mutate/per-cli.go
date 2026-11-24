@@ -9,6 +9,7 @@ import (
 
 	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/coreerr"
+	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/roots"
@@ -99,7 +100,7 @@ func (tx *Tx) copyTo(id string, targetIDs []string) (CopyToResult, error) {
 	}
 	var ops []Op
 	if item.Kind == inventory.KindSkill {
-		tree, err := listSkillFolder(realPath(item.Path))
+		tree, err := listSkillFolder(fsx.RealPath(item.Path))
 		if err != nil {
 			return CopyToResult{}, err
 		}

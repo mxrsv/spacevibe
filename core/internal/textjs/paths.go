@@ -31,3 +31,29 @@ func Dirname(path string) string {
 	}
 	return trimmed[:slash]
 }
+
+// JoinPath is NSString's appendingPathComponent: single slashes, nothing cleaned.
+func JoinPath(base string, parts ...string) string {
+	for _, p := range parts {
+		base = strings.TrimRight(base, "/") + "/" + p
+	}
+	return base
+}
+
+// Normalize is path.resolve for an absolute path: "." and ".." folded, no trailing slash. Symlinks are not
+// followed.
+func Normalize(path string) string {
+	var stack []string
+	for _, part := range strings.Split(path, "/") {
+		switch part {
+		case "", ".":
+		case "..":
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
+		default:
+			stack = append(stack, part)
+		}
+	}
+	return "/" + strings.Join(stack, "/")
+}

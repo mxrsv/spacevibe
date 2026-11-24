@@ -5,9 +5,11 @@ import (
 	"strconv"
 	"strings"
 
+	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
+	"spacevibe.dev/core/internal/textjs"
 )
 
 // Hooks.
@@ -60,10 +62,10 @@ func parseHooks(config ojson.Value, cli CLI, owner *string, sourceFile string, p
 				// may well work.
 				allMissing, anyUnknown := true, false
 				for _, p := range paths {
-					switch pathPresence(p) {
-					case present:
+					switch fsx.PathPresence(p) {
+					case fsx.Present:
 						allMissing = false
-					case unknown:
+					case fsx.Unknown:
 						allMissing, anyUnknown = false, true
 					}
 				}
@@ -137,7 +139,7 @@ type plugin struct{ name, path string }
 // plugin. known is false when the set cannot be told: installed_plugins.json is there but unusable, or it lists
 // plugins while the settings file that enables them (read with settingsStatus) is unusable.
 func plugins(r roots.Roots, settings ojson.Value, settingsStatus jsonStatus, problems *[]string) (out []plugin, known bool) {
-	file := join(r.Claude.Root, "plugins", "installed_plugins.json")
+	file := textjs.JoinPath(r.Claude.Root, "plugins", "installed_plugins.json")
 	installed, status := readJSON(file)
 	if status != jsonValue {
 		if reason := unusableReason(status); reason != "" {

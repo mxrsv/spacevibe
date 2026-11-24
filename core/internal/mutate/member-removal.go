@@ -10,6 +10,7 @@ import (
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/roots"
+	"spacevibe.dev/core/internal/textjs"
 	"spacevibe.dev/core/internal/usage"
 )
 
@@ -166,12 +167,12 @@ func (tx *Tx) memberBase(item inventory.Item) error {
 			bases = append(bases, tx.r.AgentsSkills)
 		}
 	}
-	path := normalize(item.Path)
+	path := textjs.Normalize(item.Path)
 	for _, base := range bases {
 		if base == "" {
 			continue
 		}
-		if filepath.Dir(path) == normalize(base) && strings.HasPrefix(path, normalize(base)+"/") &&
+		if filepath.Dir(path) == textjs.Normalize(base) && strings.HasPrefix(path, textjs.Normalize(base)+"/") &&
 			roots.ResolvedPath(filepath.Dir(path)) == roots.ResolvedPath(base) {
 			return nil
 		}
@@ -203,7 +204,7 @@ func (tx *Tx) removeMembers(members []inventory.Item) ([]Op, error) {
 		}
 		pick := plain[0]
 		for _, item := range plain {
-			if normalize(item.Path) == item.RealPath {
+			if textjs.Normalize(item.Path) == item.RealPath {
 				pick = item
 				break
 			}

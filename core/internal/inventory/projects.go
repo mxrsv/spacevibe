@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
 	"spacevibe.dev/core/internal/textjs"
@@ -40,7 +41,7 @@ func DiscoverProjects(r roots.Roots) []string { return discoverProjects(context.
 // discoverProjects is DiscoverProjects that stops early when the context ends; the caller checks the
 // context afterwards, so a partial list is never used.
 func discoverProjects(ctx context.Context, r roots.Roots) []string {
-	globalClaude := realPath(r.Claude.Root)
+	globalClaude := fsx.RealPath(r.Claude.Root)
 	seen := []string{}
 	known := map[string]struct{}{}
 	candidates := append(logCwds(ctx, r.Claude.Logs), codexProjectKeys(filepath.Join(r.Codex.Root, "config.toml"))...)
@@ -51,13 +52,13 @@ func discoverProjects(ctx context.Context, r roots.Roots) []string {
 		if !strings.HasPrefix(path, "/") || strings.Contains(path, "/.claude/worktrees/") {
 			continue
 		}
-		dir := join(path, ".claude")
+		dir := textjs.JoinPath(path, ".claude")
 		// A .claude that cannot be looked up (a denied parent) is kept: Read reports the project as not readable.
-		there := isDirectory(dir) || pathPresence(dir) == unknown
-		if !there || realPath(dir) == globalClaude {
+		there := isDirectory(dir) || fsx.PathPresence(dir) == fsx.Unknown
+		if !there || fsx.RealPath(dir) == globalClaude {
 			continue
 		}
-		resolved := normalize(path)
+		resolved := textjs.Normalize(path)
 		if _, dup := known[resolved]; !dup {
 			known[resolved] = struct{}{}
 			seen = append(seen, resolved)
@@ -79,7 +80,7 @@ func logCwds(ctx context.Context, logsDir string) []string {
 		if ctx.Err() != nil {
 			return nil
 		}
-		base := join(logsDir, folder)
+		base := textjs.JoinPath(logsDir, folder)
 		type logFile struct {
 			name  string
 			mtime float64
@@ -89,7 +90,7 @@ func logCwds(ctx context.Context, logsDir string) []string {
 			if !strings.HasSuffix(name, ".jsonl") {
 				continue
 			}
-			if m, ok := modifiedMs(join(base, name)); ok {
+			if m, ok := modifiedMs(textjs.JoinPath(base, name)); ok {
 				logs = append(logs, logFile{name, m})
 			}
 		}
@@ -103,7 +104,7 @@ func logCwds(ctx context.Context, logsDir string) []string {
 			logs = logs[:projectLogsPerFolder]
 		}
 		for _, log := range logs {
-			cwd, matched, valid := cwdInHead(join(base, log.name))
+			cwd, matched, valid := cwdInHead(textjs.JoinPath(base, log.name))
 			if !matched {
 				continue
 			}

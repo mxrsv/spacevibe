@@ -6,9 +6,11 @@ import (
 	"strconv"
 	"strings"
 
+	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
+	"spacevibe.dev/core/internal/textjs"
 	"spacevibe.dev/core/internal/toml"
 )
 
@@ -46,10 +48,10 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 		if err := ctx.Err(); err != nil {
 			return Snapshot{}, nil, err
 		}
-		switch pathPresence(c.r.Root) {
-		case missing:
+		switch fsx.PathPresence(c.r.Root) {
+		case fsx.Missing:
 			continue
-		case unknown:
+		case fsx.Unknown:
 			problems = append(problems, c.r.Root+" cannot be read, so its skills, agents and hooks cannot be shown.")
 			unreadable = unreadable.mark(c.cli, KindSkill, KindAgent, KindHook)
 			continue
@@ -95,11 +97,11 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 		}
 		owner := plugin.name
 		base := absolute(plugin.path)
-		skills, skillsUnreadable := readSkills(join(base, "skills"), Claude, &owner, nil, &problems)
-		agents, agentsUnreadable := readAgents(join(base, "agents"), Claude, &owner, nil, &problems)
+		skills, skillsUnreadable := readSkills(textjs.JoinPath(base, "skills"), Claude, &owner, nil, &problems)
+		agents, agentsUnreadable := readAgents(textjs.JoinPath(base, "agents"), Claude, &owner, nil, &problems)
 		items = append(append(items, skills...), agents...)
 		unreadable = unreadable.markIf(skillsUnreadable, Claude, KindSkill).markIf(agentsUnreadable, Claude, KindAgent)
-		hookFile := join(base, "hooks", "hooks.json")
+		hookFile := textjs.JoinPath(base, "hooks", "hooks.json")
 		config, status := readJSON(hookFile)
 		unreadable = unreadable.markIf(unusableReason(status) != "", Claude, KindHook)
 		if status == jsonValue {
@@ -115,18 +117,18 @@ func read(ctx context.Context, r roots.Roots) (Snapshot, []string, error) {
 			return Snapshot{}, nil, err
 		}
 		project := path
-		dir := join(path, ".claude")
-		if pathPresence(dir) == unknown {
+		dir := textjs.JoinPath(path, ".claude")
+		if fsx.PathPresence(dir) == fsx.Unknown {
 			problems = append(problems, path+" cannot be read, so its skills, agents and hooks cannot be shown.")
 			continue
 		}
 		// A project row holds Claude items only, so an unreadable project folder leaves no row whose Claude cell
 		// could read unknown: the problem line is all there is to say.
-		skills, _ := readSkills(join(dir, "skills"), Claude, nil, &project, &problems)
-		agents, _ := readAgents(join(dir, "agents"), Claude, nil, &project, &problems)
+		skills, _ := readSkills(textjs.JoinPath(dir, "skills"), Claude, nil, &project, &problems)
+		agents, _ := readAgents(textjs.JoinPath(dir, "agents"), Claude, nil, &project, &problems)
 		items = append(append(items, skills...), agents...)
 		for _, name := range []string{"settings.json", "settings.local.json"} {
-			file := join(dir, name)
+			file := textjs.JoinPath(dir, name)
 			config, status := readJSON(file)
 			switch status {
 			case jsonValue:
@@ -243,11 +245,11 @@ func readSkills(dir string, cli CLI, owner, project *string, problems *[]string)
 		if isSystemName(entry) {
 			continue
 		}
-		path := join(dir, entry)
-		file := join(path, "SKILL.md")
+		path := textjs.JoinPath(dir, entry)
+		file := textjs.JoinPath(path, "SKILL.md")
 		text, ok := readText(file, maxTextBytes)
 		if !ok {
-			if pathPresence(file) != missing {
+			if fsx.PathPresence(file) != fsx.Missing {
 				*problems = append(*problems, file+" cannot be read, so this skill is not shown.")
 			}
 			continue
@@ -277,7 +279,7 @@ func readAgents(dir string, cli CLI, owner, project *string, problems *[]string)
 		if !isMarkdown && !strings.HasSuffix(entry, ".toml") {
 			continue
 		}
-		path := join(dir, entry)
+		path := textjs.JoinPath(dir, entry)
 		text, ok := readText(path, maxTextBytes)
 		if !ok {
 			*problems = append(*problems, path+" cannot be read, so this agent is not shown.")
