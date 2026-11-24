@@ -1,0 +1,47 @@
+# The public text of a pull request is English (AGENTS.md, B11): its title, its body and every commit message it
+# adds. scripts/check-english.sh refuses the letters only Vietnamese uses; the commit-msg hook runs the same check
+# locally. A title or body that is fixed on GitHub re-runs this job (the `edited` event).
+name: english
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+concurrency:
+  group: english-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  text:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Title and body reach the script through the environment, never through ${{ }} inside `run`.
+      - name: Title and body
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          status=0
+          printf '%s\n' "${TITLE}" | scripts/check-english.sh || { echo "::error::The pull request title is not English (AGENTS.md, B11)."; status=1; }
+          printf '%s\n' "${BODY}" | scripts/check-english.sh || { echo "::error::The pull request body is not English (AGENTS.md, B11)."; status=1; }
+          exit "${status}"
+
+      - name: Commit messages
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          status=0
+          for sha in $(git rev-list --no-merges "${BASE}..${HEAD}"); do
+            git log -1 --format=%B "${sha}" | scripts/check-english.sh \
+              || { echo "::error::Commit ${sha} has a message that is not English (AGENTS.md, B11)."; status=1; }
+          done
+          exit "${status}"

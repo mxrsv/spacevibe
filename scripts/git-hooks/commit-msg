@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Keeps docs/BACKLOG.md true at the moment work is committed (AGENTS.md, B10), so nobody has to
-# remind whoever commits.
+# Checks a commit message as it is written, so nobody has to remind whoever commits.
+#
+#   0. Refuses a message in Vietnamese: commit messages are English (AGENTS.md, B11;
+#      scripts/check-english.sh). The same check runs on every pull request in CI.
+#
+# Keeps docs/BACKLOG.md true at the moment work is committed (AGENTS.md, B10):
 #
 #   1. Refuses a commit whose message has a `Backlog: BL-<DOMAIN>-<n>` line while the backlog in
 #      that same commit still has the item unticked, or has no such item.
@@ -19,6 +23,12 @@ msg_file="${1:-}"
 git_dir="$(git rev-parse --git-dir 2>/dev/null)" || exit 0
 # A merge carries files of commits that were asked already.
 [[ -f "${git_dir}/MERGE_HEAD" ]] && exit 0
+
+english="$(git rev-parse --show-toplevel 2>/dev/null)/scripts/check-english.sh"
+if [[ -x "${english}" ]] && ! "${english}" --skip-comments <"${msg_file}"; then
+  echo "english: write the commit message in English (AGENTS.md, B11). The lines above are not." >&2
+  exit 1
+fi
 
 # The backlog as this commit records it. `git commit -- <paths>` builds a temporary index, and
 # `:path` and `--cached` both read that one.
