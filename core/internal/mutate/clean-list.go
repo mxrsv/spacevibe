@@ -1,8 +1,6 @@
 package mutate
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"io/fs"
 	"os"
@@ -56,11 +54,11 @@ func (tx *Tx) newSlotName() (string, error) {
 	if err := fsx.MkdirAll(tx.stagingRoot(), 0o700); err != nil {
 		return "", err
 	}
-	var b [4]byte
-	if _, err := rand.Read(b[:]); err != nil {
+	name, ok := stampedName()
+	if !ok {
 		return "", fail("Could not create the staging folder.", coreerr.StatusInternalFailure)
 	}
-	return strconv.FormatInt(time.Now().UnixMilli(), 10) + "-" + hex.EncodeToString(b[:]), nil
+	return name, nil
 }
 
 func plannedGroups(tx *Tx, files []TrashFile) []cleanListGroup {

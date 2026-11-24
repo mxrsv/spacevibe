@@ -43,13 +43,23 @@ func ensureDataFolders(r roots.Roots) error {
 	return nil
 }
 
-// slot makes a fresh trash folder and returns the path where name goes inside it.
-func slot(r roots.Roots, name string) (string, error) {
+// stampedName is a fresh "<ms>-<8 hex>" folder name, as the trash and the Clean staging folders use; false when
+// the system has no randomness to give.
+func stampedName() (string, bool) {
 	var b [4]byte
 	if _, err := rand.Read(b[:]); err != nil {
+		return "", false
+	}
+	return strconv.FormatInt(time.Now().UnixMilli(), 10) + "-" + hex.EncodeToString(b[:]), true
+}
+
+// slot makes a fresh trash folder and returns the path where name goes inside it.
+func slot(r roots.Roots, name string) (string, error) {
+	stamped, ok := stampedName()
+	if !ok {
 		return "", fail("Could not create the SpaceVibe trash folder.", coreerr.StatusInternalFailure)
 	}
-	folder := filepath.Join(trashDir(r), strconv.FormatInt(time.Now().UnixMilli(), 10)+"-"+hex.EncodeToString(b[:]))
+	folder := filepath.Join(trashDir(r), stamped)
 	if err := fsx.MkdirAll(folder, 0o700); err != nil {
 		return "", fail("Could not create the SpaceVibe trash folder.", coreerr.StatusInternalFailure)
 	}

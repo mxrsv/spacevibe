@@ -39,9 +39,6 @@ func begin(r roots.Roots) *Tx {
 	return tx
 }
 
-// Roots are the roots the handle works on.
-func (tx *Tx) Roots() roots.Roots { return tx.r }
-
 // lockedContext is locked for a request that can be cancelled. The wait for the lock ends as soon as ctx does, and ctx
 // is looked at again as the first step inside the lock, so a request that was cancelled while it waited for the lock
 // never changes anything.

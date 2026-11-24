@@ -32,9 +32,6 @@ var allowlist = []Cache{
 	{ID: "codex:shell_snapshots", CLI: "codex", Rel: "shell_snapshots"},
 }
 
-// Allowlist is a copy of the cache allowlist.
-func Allowlist() []Cache { return append([]Cache(nil), allowlist...) }
-
 func cacheByID(id string) (Cache, bool) {
 	for _, c := range allowlist {
 		if c.ID == id {
