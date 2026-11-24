@@ -131,62 +131,6 @@ struct RulesModelEngineTests {
         #expect(changed.isEmpty, "differs from the original: \(changed)")
     }
 
-    @Test("a grid write and its Undo from the screen put the home back, byte for byte")
-    func gridWriteFromTheScreen() async throws {
-        let fixture = try await CoreFixtureHome.make()
-        defer { fixture.remove() }
-        let (model, client) = try model(fixture)
-        defer { client.shutdown() }
-        try await settled(model)
-        let before = try await fixture.tree()
-
-        model.requestSet(.push, to: .deny)
-        try await wait("the confirmation") { model.pending != nil }
-        #expect(model.pending?.question == "Set Push and deploy to Deny?")
-        model.confirmPending()
-        try await wait("the toast") { model.env.toasts.current?.message == "Set Push and deploy to Deny" }
-        try await wait("the re-read") { model.isSettled && model.snapshot?.grid.first { $0.capability == .push }?.state == .deny }
-        #expect(try await fixture.tree() != before)
-
-        model.env.toasts.runCurrentAction()
-        try await wait("the Undo toast") { model.env.toasts.current?.message.hasPrefix("Undid") == true }
-        try await wait("the grid back") { model.isSettled && model.snapshot?.grid.first { $0.capability == .push }?.state != .deny }
-        let changed = try await fixture.tree().difference(from: before)
-        #expect(changed.isEmpty, "differs from the original: \(changed)")
-    }
-
-    @Test("a rule added from the screen shows; a duplicate and an invalid rule are refused next to the field; Undo takes the rule out again")
-    func addFromTheScreen() async throws {
-        let fixture = try await CoreFixtureHome.make()
-        defer { fixture.remove() }
-        let (model, client) = try model(fixture)
-        defer { client.shutdown() }
-        try await settled(model)
-        try await pick(model, "spacevibe-bench", .shared)
-        let before = try await fixture.tree()
-
-        model.draft = "Bash(npm test *)"
-        model.draftVerdict = .ask
-        model.submitDraft()
-        try await wait("the add") { model.env.toasts.current?.message == "Added Bash(npm test *) to Ask first" && model.isSettled }
-        #expect(model.snapshot?.rules.contains { $0.rule == "Bash(npm test *)" } == true)
-
-        model.draft = "Bash(npm test *)"
-        model.submitDraft()
-        try await wait("the duplicate message") { model.addError != nil && !model.isWriting }
-        let duplicate = model.addError
-        model.draft = "(nope)"
-        model.submitDraft()
-        try await wait("the shape message") { model.addError != duplicate }
-        #expect(duplicate != nil && model.addError != nil)
-        model.draft = ""
-
-        model.env.toasts.runCurrentAction()
-        try await wait("the Undo") { model.env.toasts.current?.message.hasPrefix("Undid") == true }
-        let changed = try await fixture.tree().difference(from: before)
-        #expect(changed.isEmpty, "differs from the original: \(changed)")
-    }
-
     // MARK: Refusals
 
     /// Status and sentence of each refusal.

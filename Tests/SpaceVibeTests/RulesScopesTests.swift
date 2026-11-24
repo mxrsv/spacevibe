@@ -4,43 +4,6 @@ import Testing
 
 @Suite("Rules scopes and wording")
 struct RulesScopesTests {
-    // MARK: RulesPending
-
-    private func pending(
-        _ capability: CoreCapability = .run, _ verdict: CoreVerdict = .allow, label: String = "Run commands", resulting: CoreCapabilityState,
-        replaces: [CoreVerdictRule] = [], writes: [CoreVerdictRule] = []
-    ) -> RulesPending {
-        let preview = CoreCapabilityPreview(
-            capability: capability, verdict: verdict, scopeLabel: "~/.claude/settings.json", current: .none,
-            resulting: resulting, replaces: replaces, writes: writes
-        )
-        return RulesPending(preview: preview, scope: .global, scopeTitle: "Global", capabilityLabel: label)
-    }
-
-    @Test("a write is a no-op when the file already holds the same rules, whatever their order")
-    func isNoOp() {
-        let push = CoreVerdictRule(verdict: .deny, rule: "Bash(git push:*)")
-        let publish = CoreVerdictRule(verdict: .deny, rule: "Bash(npm publish:*)")
-        #expect(pending(resulting: .deny, replaces: [push, publish], writes: [publish, push]).isNoOp)
-        #expect(!pending(resulting: .deny, replaces: [push], writes: [push, publish]).isNoOp)
-        #expect(!pending(resulting: .deny, replaces: [], writes: [push]).isNoOp)
-    }
-
-    @Test("when the result is what was chosen, the no-op message says the cell already reads it, and there is no warning")
-    func noOpMessageWhenResultMatches() {
-        let same = pending(.run, .allow, resulting: .allow)
-        #expect(same.noOpMessage == "Run commands already reads Allow here.")
-        #expect(same.warning == nil)
-    }
-
-    @Test("when a rule that stays wins, the no-op message names the resulting state, and a warning explains it")
-    func noOpMessageWhenAKeptRuleWins() throws {
-        let kept = pending(.push, .allow, label: "Push and deploy", resulting: .ask)
-        #expect(kept.noOpMessage == "Push and deploy stays Ask here: a rule that stays in this file wins.")
-        let warning = try #require(kept.warning)
-        #expect(warning.contains("Push and deploy will read Ask, not Allow"))
-    }
-
     // MARK: projects
 
     @Test("a project shows its folder name, and parent/name when another project has the same folder name")

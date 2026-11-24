@@ -123,6 +123,10 @@ struct RulesModelTests {
         #expect(done(), "\(what) did not happen")
     }
 
+    private static func push(in model: RulesModel) throws -> CoreRule {
+        try #require(model.page.rules.first { $0.rule == "Bash(git push:*)" })
+    }
+
     private func started(_ core: FakeRulesCore) async throws -> RulesModel {
         let model = model(core)
         model.start()
@@ -142,13 +146,13 @@ struct RulesModelTests {
         #expect(model.snapshot?.rules.count == 2)
 
         core.snapshot = Self.snapshot(scope: .project, dir: Self.project)
-        model.selectProject(Self.project)
+        model.select(RulesSelection(dir: Self.project, file: model.selection.file))
         try await settle("the scope switch") { model.isSettled && model.snapshot?.selection.dir == Self.project }
         #expect(core.calls.last == "snapshot project /work/web refresh=false")
         #expect(model.snapshot?.title == "web (shared)")
 
         core.snapshot = Self.snapshot(scope: .local, dir: Self.project)
-        model.selectFile(.local)
+        model.select(RulesSelection(dir: model.selection.dir, file: .local))
         try await settle("the local file") { model.isSettled && core.calls.count == 3 }
         #expect(core.calls.last == "snapshot local /work/web refresh=false")
 
@@ -161,7 +165,7 @@ struct RulesModelTests {
     func projectGone() async throws {
         let core = FakeRulesCore(snapshot: Self.snapshot())
         let model = try await started(core)
-        model.selectProject(Self.project)
+        model.select(RulesSelection(dir: Self.project, file: model.selection.file))
         try await settle("the fallback") { model.isSettled && model.selection == .global }
         #expect(model.snapshot?.selection == .global)
     }
@@ -191,15 +195,6 @@ struct RulesModelTests {
         #expect(model.snapshot == nil)
     }
 
-    @Test("a scope the core could not look at is not editable: a click on its grid asks for no preview")
-    func notReadableIsNotEditable() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot(notReadable: true, problems: ["~/.claude/settings.json could not be read."]))
-        let model = try await started(core)
-        model.requestSet(.push, to: .deny)
-        try await Task.sleep(for: .milliseconds(50))
-        #expect(model.pending == nil && core.calls == ["snapshot global - refresh=true"])
-    }
-
     @Test("an unreadable config.toml reaches the page as the fixed unknown sentence, never as the defaults, whether or not the file is present")
     func codexNotReadable() async throws {
         for present in [false, true] {
@@ -217,49 +212,12 @@ struct RulesModelTests {
 
     // MARK: Grid writes
 
-    @Test("a grid click asks the core for a preview and opens the confirmation with the row's own label; Confirm writes the previewed scope")
-    func previewConfirmAndUndo() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        let model = try await started(core)
-        model.requestSet(.push, to: .deny)
-        try await settle("the confirmation") { model.pending != nil }
-        #expect(core.calls.last == "preview global - push deny")
-        #expect(model.pending?.question == "Set Push and deploy to Deny?")
-        #expect(model.pending?.location == "Writes to Global: ~/.claude/settings.json.")
-        #expect(model.pending?.preview.replaces == [CoreVerdictRule(verdict: .allow, rule: "Bash(git push:*)")])
-        #expect(model.env.toasts.current == nil)
-
-        model.confirmPending()
-        try await settle("the toast") { model.env.toasts.current != nil && model.isSettled }
-        #expect(core.calls.contains("set global - push deny"))
-        #expect(model.env.toasts.current?.message == "Set Push and deploy to Deny" && model.env.toasts.current?.tone == .info)
-        #expect(core.calls.filter { $0.hasPrefix("snapshot") }.count == 2)
-
-        model.env.toasts.runCurrentAction()
-        try await settle("the Undo toast") { model.env.toasts.current?.message.hasPrefix("Undid") == true && model.isSettled }
-        #expect(core.calls.contains("undo entry-1"))
-        #expect(model.env.toasts.current?.message == "Undid Set Push and deploy to Deny (global)")
-        #expect(core.calls.filter { $0.hasPrefix("snapshot") }.count == 3)
-    }
-
-    @Test("a mixed cell, and a click on the state the cell already has, ask for nothing")
-    func nothingToPreview() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        let model = try await started(core)
-        model.requestSet(.run, to: .deny)
-        model.requestSet(.push, to: .allow)
-        try await Task.sleep(for: .milliseconds(50))
-        #expect(model.pending == nil && core.calls.count == 1)
-    }
-
     @Test("a write the core refuses shows its sentence in a danger toast and frees the model for the next write")
     func writeRefused() async throws {
         let core = FakeRulesCore(snapshot: Self.snapshot())
         let model = try await started(core)
         core.writeFailure = CoreError("~/.claude/settings.json is not valid JSON, so SpaceVibe left it alone.", status: 409)
-        model.requestSet(.push, to: .deny)
-        try await settle("the confirmation") { model.pending != nil }
-        model.confirmPending()
+        model.set(try Self.push(in: model), to: .deny)
         try await settle("the refusal") { model.env.toasts.current != nil && !model.isWriting }
         #expect(model.env.toasts.current?.message == "~/.claude/settings.json is not valid JSON, so SpaceVibe left it alone.")
         #expect(model.env.toasts.current?.tone == .danger)
@@ -267,27 +225,12 @@ struct RulesModelTests {
         #expect(core.calls.filter { $0.hasPrefix("snapshot") }.count == 2, "a refused write reads the rules again: the file may have changed")
     }
 
-    @Test("a setCapability that answers no entry is the 409 sentence, never a success toast")
-    func nothingToChange() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        core.capabilityEntry = nil
-        let model = try await started(core)
-        model.requestSet(.push, to: .deny)
-        try await settle("the confirmation") { model.pending != nil }
-        model.confirmPending()
-        try await settle("the message") { model.env.toasts.current != nil && !model.isWriting }
-        #expect(model.env.toasts.current?.message == "Nothing to change: the file already holds that.")
-        #expect(model.env.toasts.current?.tone == .danger)
-    }
-
     @Test("an Undo the core refuses shows its sentence")
     func undoRefused() async throws {
         let core = FakeRulesCore(snapshot: Self.snapshot())
         let model = try await started(core)
-        model.requestSet(.push, to: .deny)
-        try await settle("the confirmation") { model.pending != nil }
-        model.confirmPending()
-        try await settle("the toast") { model.env.toasts.current?.message == "Set Push and deploy to Deny" }
+        model.set(try Self.push(in: model), to: .deny)
+        try await settle("the toast") { model.env.toasts.current?.message == RulesTabWording.ruleChanged("Bash(git push:*)", to: .deny) }
         core.undoFailure = CoreError("That change was already undone.", status: 409)
         model.env.toasts.runCurrentAction()
         try await settle("the refusal") { model.env.toasts.current?.tone == .danger }
@@ -296,85 +239,6 @@ struct RulesModelTests {
 
     // MARK: Rule writes
 
-    @Test("Add checks the rule with the core first, then writes the trimmed rule under the chosen verdict and clears the field")
-    func addRule() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        let model = try await started(core)
-        model.draft = "  Bash(npm test *)  "
-        model.draftVerdict = .deny
-        model.submitDraft()
-        try await settle("the toast") { model.env.toasts.current != nil && model.isSettled }
-        #expect(core.calls.contains("check Bash(npm test *)") && core.calls.contains("add global - deny Bash(npm test *)"))
-        #expect(model.env.toasts.current?.message == "Added Bash(npm test *) to Deny")
-        #expect(model.draft == "" && model.addError == nil)
-    }
-
-    @Test("Add keeps the submitted project scope while its shape check waits and the user switches to Global")
-    func addKeepsSubmittedScope() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        let model = try await started(core)
-        core.snapshot = Self.snapshot(scope: .project, dir: Self.project)
-        model.selectProject(Self.project)
-        try await settle("project read") { model.isSettled && model.snapshot?.selection.dir == Self.project }
-        let gate = AsyncStream<Void>.makeStream()
-        core.waitForCheck = { for await _ in gate.stream {} }
-        defer { gate.continuation.finish() }
-        model.draft = "Bash(npm test *)"
-        model.draftVerdict = .allow
-        model.submitDraft()
-        try await settle("shape check") { core.calls.contains("check Bash(npm test *)") }
-        core.snapshot = Self.snapshot()
-        model.selectProject(nil)
-        try await settle("Global read") { model.isSettled && model.snapshot?.selection == .global }
-        gate.continuation.finish()
-        try await settle("add") { core.calls.contains { $0.hasPrefix("add ") } && !model.isWriting }
-        #expect(core.calls.contains("add project \(Self.project) allow Bash(npm test *)"))
-        #expect(!core.calls.contains("add global - allow Bash(npm test *)"))
-    }
-
-    @Test("a rule the core calls invalid shows its sentence next to the field and writes nothing", arguments: [
-        (CoreRuleCheck(valid: false, message: "Enter a rule such as Bash(npm test *)."), "Enter a rule such as Bash(npm test *)."),
-        (CoreRuleCheck(valid: false, message: nil), "That is not a valid rule. Use Tool or Tool(pattern) on one line."),
-    ])
-    func invalidRule(check: CoreRuleCheck, shown: String) async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        let model = try await started(core)
-        core.check = check
-        model.draft = "(nope)"
-        model.submitDraft()
-        try await settle("the message") { model.addError != nil }
-        #expect(model.addError == shown)
-        #expect(!core.calls.contains { $0.hasPrefix("add") } && model.draft == "(nope)" && model.env.toasts.current == nil)
-    }
-
-    @Test("a duplicate the core refuses on write shows its sentence next to the field, not a toast, and keeps the text")
-    func duplicate() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        let model = try await started(core)
-        core.writeFailure = CoreError("That rule is already in .claude/settings.json.", status: 409)
-        model.draft = "Bash(git push:*)"
-        model.submitDraft()
-        try await settle("the message") { model.addError != nil && !model.isWriting }
-        #expect(model.addError == "That rule is already in .claude/settings.json.")
-        #expect(model.env.toasts.current == nil && model.draft == "Bash(git push:*)")
-    }
-
-    @Test("Remove and Move send the rule's own verdict to the core and say what they did")
-    func removeAndMove() async throws {
-        let core = FakeRulesCore(snapshot: Self.snapshot())
-        let model = try await started(core)
-        let push = try #require(model.snapshot?.rules.first { $0.verdict == .allow })
-        model.remove(push)
-        try await settle("the removal") { model.env.toasts.current != nil && model.isSettled }
-        #expect(core.calls.contains("remove global - allow Bash(git push:*)"))
-        #expect(model.env.toasts.current?.message == "Removed Bash(git push:*) from Allow")
-
-        model.env.toasts.dismiss()
-        model.move(push, to: .ask)
-        try await settle("the move") { model.env.toasts.current != nil && model.isSettled }
-        #expect(core.calls.contains("move global - Bash(git push:*) allow>ask"))
-        #expect(model.env.toasts.current?.message == "Moved Bash(git push:*) from Allow to Ask first")
-    }
 }
 
 @Suite("Rules spine columns")
