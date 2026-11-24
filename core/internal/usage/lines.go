@@ -2,9 +2,7 @@ package usage
 
 import (
 	"bytes"
-	"math"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -140,17 +138,17 @@ func hookRecord(text string, rec *fileRecord, day string) {
 	if !ok || attachment.Kind() != ojson.KindObject {
 		return
 	}
-	typeValue, ok := stringMember(attachment, "type")
+	typeValue, ok := attachment.StringMember("type")
 	if !ok || !strings.HasPrefix(typeValue, "hook_") {
 		return
 	}
-	command, ok := stringMember(attachment, "command")
+	command, ok := attachment.StringMember("command")
 	if !ok {
 		nested, found := attachment.Member("blockingError")
 		if !found {
 			return
 		}
-		if command, ok = stringMember(nested, "command"); !ok {
+		if command, ok = nested.StringMember("command"); !ok {
 			return
 		}
 	}
@@ -158,7 +156,7 @@ func hookRecord(text string, rec *fileRecord, day string) {
 	hash := hashes.HookHash(jsString(event, present), command)
 	h := rec.Hook[hash]
 	h.Runs++
-	if ms, ok := finiteMember(attachment, "durationMs"); ok {
+	if ms, ok := attachment.FiniteMember("durationMs"); ok {
 		h.Ms += ms
 		h.Timed++
 	}
@@ -169,7 +167,7 @@ func hookRecord(text string, rec *fileRecord, day string) {
 	}
 	onDay := days[day]
 	onDay.Runs++
-	if code, ok := finiteMember(attachment, "exitCode"); strings.Contains(typeValue, "error") || (ok && code != 0) {
+	if code, ok := attachment.FiniteMember("exitCode"); strings.Contains(typeValue, "error") || (ok && code != 0) {
 		h.Errors++
 		onDay.Errors++
 	}
@@ -179,31 +177,6 @@ func hookRecord(text string, rec *fileRecord, day string) {
 		h.Last = &d
 	}
 	rec.Hook[hash] = h
-}
-
-func stringMember(v ojson.Value, key string) (string, bool) {
-	m, ok := v.Member(key)
-	if !ok {
-		return "", false
-	}
-	return m.StringValue()
-}
-
-// finiteMember is Number.isFinite: a JSON number only (not a boolean or a string).
-func finiteMember(v ojson.Value, key string) (float64, bool) {
-	m, ok := v.Member(key)
-	if !ok {
-		return 0, false
-	}
-	text, ok := m.NumberText()
-	if !ok {
-		return 0, false
-	}
-	f, err := strconv.ParseFloat(text, 64)
-	if err != nil || math.IsNaN(f) || math.IsInf(f, 0) {
-		return 0, false
-	}
-	return f, true
 }
 
 // jsString is `${value}` of a JSON value, for the hook identity: "undefined" when the field is missing

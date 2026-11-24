@@ -35,7 +35,7 @@ func readClaudeCache(r roots.Roots) Entry {
 	if err != nil {
 		return Entry{CLI: Claude, State: Unreadable}
 	}
-	cache, ok := member(document.Root(), "cachedUsageUtilization")
+	cache, ok := document.Root().PresentMember("cachedUsageUtilization")
 	if !ok {
 		return Entry{CLI: Claude, State: NotRecorded}
 	}
@@ -48,15 +48,15 @@ func readClaudeCache(r roots.Roots) Entry {
 
 func cacheState(cache ojson.Value) Entry {
 	fail := func(state State) Entry { return Entry{CLI: Claude, State: state} }
-	fetchedMs, ok := memberNumber(cache, "fetchedAtMs")
+	fetchedMs, ok := cache.FiniteMember("fetchedAtMs")
 	if !ok {
 		return fail(Unreadable)
 	}
-	utilization, ok := member(cache, "utilization")
+	utilization, ok := cache.PresentMember("utilization")
 	if !ok {
 		return fail(Unreadable)
 	}
-	list, ok := member(utilization, "limits")
+	list, ok := utilization.PresentMember("limits")
 	if !ok {
 		return fail(Unreadable)
 	}
@@ -80,15 +80,15 @@ func cacheState(cache ojson.Value) Entry {
 
 // cacheWindow reads `{ kind, group, percent, resets_at, scope: { model: { display_name } }, is_active }`.
 func cacheWindow(entry ojson.Value) (Window, bool) {
-	kind, ok := memberString(entry, "kind")
+	kind, ok := entry.StringMember("kind")
 	if !ok {
 		return Window{}, false
 	}
-	percent, ok := memberNumber(entry, "percent")
+	percent, ok := entry.FiniteMember("percent")
 	if !ok || percent < 0 {
 		return Window{}, false
 	}
-	resetText, ok := memberString(entry, "resets_at")
+	resetText, ok := entry.StringMember("resets_at")
 	if !ok {
 		return Window{}, false
 	}
@@ -97,7 +97,7 @@ func cacheWindow(entry ojson.Value) (Window, bool) {
 		return Window{}, false
 	}
 	var group *string
-	if g, ok := memberString(entry, "group"); ok {
+	if g, ok := entry.StringMember("group"); ok {
 		group = &g
 	}
 	var scope *string
@@ -109,7 +109,7 @@ func cacheWindow(entry ojson.Value) (Window, bool) {
 		id = kind + ":" + *scope
 	}
 	active := true
-	if v, ok := member(entry, "is_active"); ok {
+	if v, ok := entry.PresentMember("is_active"); ok {
 		if b, isBool := v.BoolValue(); isBool {
 			active = b
 		}
@@ -121,15 +121,15 @@ func cacheWindow(entry ojson.Value) (Window, bool) {
 }
 
 func scopeName(entry ojson.Value) (string, bool) {
-	scope, ok := member(entry, "scope")
+	scope, ok := entry.PresentMember("scope")
 	if !ok {
 		return "", false
 	}
-	model, ok := member(scope, "model")
+	model, ok := scope.PresentMember("model")
 	if !ok {
 		return "", false
 	}
-	return memberString(model, "display_name")
+	return model.StringMember("display_name")
 }
 
 // windowMinutes: seen on the owner's Mac, `weekly_all` and `weekly_scoped` in group `weekly`. The five-hour names

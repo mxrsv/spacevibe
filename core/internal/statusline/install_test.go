@@ -24,7 +24,7 @@ func (h tempHome) statusLine() (command string, doc ojson.Value) {
 	if err != nil {
 		h.t.Fatal(err)
 	}
-	command, _ = stringMember(mustMember(h.t, parsed.Root(), "statusLine"), "command")
+	command, _ = mustMember(h.t, parsed.Root(), "statusLine").StringMember("command")
 	return command, parsed.Root()
 }
 
@@ -317,7 +317,7 @@ func TestUninstallRestoresTheOriginalAndKeepsLaterEdits(t *testing.T) {
 	if command != "printf 'hello'" {
 		t.Errorf("command = %q, want the original", command)
 	}
-	if model, _ := stringMember(root, "model"); model != "sonnet" {
+	if model, _ := root.StringMember("model"); model != "sonnet" {
 		t.Errorf("model = %q: the later edit was lost", model)
 	}
 	padding, _ := mustMember(t, root, "statusLine").Member("padding")
@@ -350,7 +350,7 @@ func TestUninstallRemovesAStatusLineThatWasEmpty(t *testing.T) {
 	if _, present := parsed.Root().Member("statusLine"); present {
 		t.Errorf("statusLine stayed: %s", h.text(".claude/settings.json"))
 	}
-	if model, _ := stringMember(parsed.Root(), "model"); model != "opus" {
+	if model, _ := parsed.Root().StringMember("model"); model != "opus" {
 		t.Errorf("model = %q", model)
 	}
 }

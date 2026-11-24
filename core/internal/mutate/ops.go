@@ -109,10 +109,10 @@ func entryFromValue(v ojson.Value) (Entry, bool) {
 		return Entry{}, false
 	}
 	e := Entry{ID: id}
-	if s, ok := stringMember(v, "at"); ok {
+	if s, ok := v.StringMember("at"); ok {
 		e.At = s
 	}
-	if s, ok := stringMember(v, "label"); ok {
+	if s, ok := v.StringMember("label"); ok {
 		e.Label = s
 	}
 	if u, ok := v.Member("undone"); ok {
@@ -126,14 +126,6 @@ func entryFromValue(v ojson.Value) (Entry, bool) {
 		}
 	}
 	return e, true
-}
-
-func stringMember(v ojson.Value, key string) (string, bool) {
-	m, ok := v.Member(key)
-	if !ok {
-		return "", false
-	}
-	return m.StringValue()
 }
 
 func (e Entry) markedUndone() Entry {
