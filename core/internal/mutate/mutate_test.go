@@ -268,7 +268,7 @@ func TestAgentRoundTrip(t *testing.T) {
 		t.Errorf("label %q", toCodex.Label)
 	}
 	toml := h.read(".codex/agents/round.toml")
-	if tomlInstructions(toml) != instructions || tomlDescription(toml) != description {
+	if tomlInstructions(toml) != instructions || inventory.TOMLFields(toml)["description"] != description {
 		t.Errorf("toml %q", toml)
 	}
 	// And back: a Codex-only agent becomes a Claude Code file with the same words.

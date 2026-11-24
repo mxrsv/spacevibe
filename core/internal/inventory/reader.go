@@ -291,7 +291,7 @@ func readAgents(dir string, cli CLI, owner, project *string, problems *[]string)
 			fields = ParseFrontmatter(text)
 			fallback = strings.TrimSuffix(entry, ".md")
 		} else {
-			fields = tomlFields(text)
+			fields = TOMLFields(text)
 		}
 		out = append(out, Item{
 			ID: string(cli) + ":agent:" + idTag(owner, project) + ":" + entry, CLI: cli, Kind: KindAgent,
@@ -303,9 +303,9 @@ func readAgents(dir string, cli CLI, owner, project *string, problems *[]string)
 	return out, folderUnreadable
 }
 
-// tomlFields are the name and description of a Codex agent .toml: the first assignment of each key, in any
+// TOMLFields are the name and description of a Codex agent .toml: the first assignment of each key, in any
 // table, as the Node regex finds it.
-func tomlFields(text string) map[string]string {
+func TOMLFields(text string) map[string]string {
 	doc := toml.Read(text)
 	out := map[string]string{}
 	for _, key := range []string{"name", "description"} {
