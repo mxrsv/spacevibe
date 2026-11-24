@@ -128,13 +128,6 @@ final class CLIPreferences {
         return nil
     }
 
-    /// Pins or unpins one CLI for Balance; nil when it changed (a partner may have moved with it, `changePin`) or already
-    /// was so.
-    @discardableResult
-    func setPinned(_ isPinned: Bool, for id: String, in registry: [CoreRegistryCLI], installed: Set<String>? = nil) -> Refusal? {
-        changePin(isPinned, for: id, in: registry, installed: installed).refusal
-    }
-
     /// Pins or unpins one CLI for Balance, keeping the pins none, two or three (RD55): unpinning one of two unpins the other
     /// too (Balance off); pinning one when none is pinned pins with it the first other CLI in registry order that can be
     /// compared and is installed (`installed`, as the default pins), and is refused when there is none.

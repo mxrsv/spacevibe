@@ -54,11 +54,7 @@ struct JournalList: Equatable {
     }
 
     /// The entry's `at` (ISO 8601 UTC with milliseconds; without them too).
-    static func date(_ at: String) -> Date? {
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return withFraction.date(from: at) ?? ISO8601DateFormatter().date(from: at)
-    }
+    static func date(_ at: String) -> Date? { ActivityFormat.date(at) }
 }
 
 extension FrameWrite {

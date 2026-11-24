@@ -23,11 +23,16 @@ enum ActivityFormat {
     /// The engine writes ISO 8601 with milliseconds (`2026-11-02T11:58:00.000Z`).
     static func date(_ iso: String?) -> Date? {
         guard let iso else { return nil }
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let parsed = withFraction.date(from: iso) { return parsed }
-        return ISO8601DateFormatter().date(from: iso)
+        return isoWithFraction.date(from: iso) ?? isoPlain.date(from: iso)
     }
+
+    /// Built once: `date` runs per row and inside sort comparators. ISO8601DateFormatter is thread-safe.
+    private static let isoWithFraction: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private static let isoPlain = ISO8601DateFormatter()
 
     private static func formatted(_ date: Date, _ format: String, locale: String) -> String {
         let formatter = DateFormatter()
@@ -78,11 +83,6 @@ enum ActivityFormat {
     static func projects(_ list: [String]) -> String? {
         if list.isEmpty { return nil }
         return list.count <= 2 ? list.joined(separator: ", ") : "\(list.count) projects"
-    }
-
-    /// The engine's fallback title when no request is readable: "2026-11-02 · 1a2b3c4d" (or "unknown date · ...").
-    static func isFallbackTitle(_ title: String) -> Bool {
-        title.range(of: #"^(\d{4}-\d{2}-\d{2}|unknown date) · \S{0,8}$"#, options: .regularExpression) != nil
     }
 
     static func plural(_ n: Int, _ one: String, _ many: String? = nil) -> String {

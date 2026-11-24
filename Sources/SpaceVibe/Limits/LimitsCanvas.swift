@@ -182,7 +182,7 @@ struct LimitsCanvas: View {
         Tile("Usage windows", maxHeight: Metrics.Tile.spineMaxHeight, stretches: true, isOpen: open(Self.windowsCardID)) {
             BandStack {
                 ForEach(facts.bands) { band in
-                    Band(LimitsWording.cliName(band.cli), count: band.count, state: band.mark.map(stateMark), isOpen: open(Self.bandOpenID(band.id))) {
+                    Band(band.cli.label, count: band.count, state: band.mark.map(stateMark), isOpen: open(Self.bandOpenID(band.id))) {
                         bandBody(band, current: current)
                     } lead: {
                         CLIMark(band.cli, size: .control)

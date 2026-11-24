@@ -15,8 +15,6 @@ final class ShellModel {
     var settingsSection = SettingsSection.appearance
     var isPaletteOpen = false
     var paletteQuery = ""
-    /// A short line at the bottom of the sidebar ("Counting usage 3/9"). Nil hides it.
-    var statusMessage: String?
 
     init(tabs: [any SpaceVibeTab], appearance: AppearanceStore, activeID: String? = nil) {
         precondition(!tabs.isEmpty, "TabRegistry returned no tabs")

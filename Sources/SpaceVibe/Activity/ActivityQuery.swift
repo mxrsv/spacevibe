@@ -104,7 +104,7 @@ struct ActivitySessionBand: Identifiable, Equatable, Sendable {
     var note: String?
 
     var id: String { cli.rawValue }
-    var name: String { LimitsWording.cliName(cli) }
+    var name: String { cli.label }
     var waiting: Int { items.filter(\.isWaiting).count }
     var unmeasurable: Int { items.filter(\.isUnmeasurable).count }
     /// Holds a session that waits for the user, or one the log cannot show (the Answer names it): its band comes first and opens by

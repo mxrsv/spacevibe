@@ -53,24 +53,11 @@ struct LimitsWordingTests {
         #expect(LimitsWording.name(window("monthly_cap", minutes: nil, used: 0, resets: 1)) == "Monthly cap")
     }
 
-    @Test("a list line names the CLI and the time to the reset, or that the reset has passed")
-    func entryLine() {
-        let soon = window(used: 23, resets: 3 * Self.hour + 12 * 60)
-        #expect(LimitsWording.entryLine(soon, cli: .codex, now: Self.now) == "Codex · resets in 3 h 12 min")
-        let week = window(minutes: 10080, used: 8, resets: 2 * 86_400 + 22 * Self.hour)
-        #expect(LimitsWording.entryLine(week, cli: .claude, now: Self.now) == "Claude Code · resets in 2 d 22 h")
-        let passed = window(used: 88, resets: -26 * 60)
-        #expect(LimitsWording.entryLine(passed, cli: .codex, now: Self.now) == "Codex · reset passed")
-    }
-
-    @Test("the first fact counts down to the reset, then says how long ago it passed")
-    func resetFact() {
-        let soon = window(used: 23, resets: 3 * Self.hour + 12 * 60)
-        #expect(LimitsWording.resetFact(soon, now: Self.now).label == "Resets in")
-        #expect(LimitsWording.resetFact(soon, now: Self.now).value == "3 h 12 min")
-        let passed = window(used: 88, resets: -26 * 60)
-        #expect(LimitsWording.resetFact(passed, now: Self.now).label == "Reset was")
-        #expect(LimitsWording.resetFact(passed, now: Self.now).value == "26 min ago")
+    @Test("the time to the reset reads in hours and minutes, then days and hours; a passed reset has none")
+    func resetsInWording() {
+        #expect(LimitsWording.resetsIn(window(used: 23, resets: 3 * Self.hour + 12 * 60), now: Self.now) == "3 h 12 min")
+        #expect(LimitsWording.resetsIn(window(minutes: 10080, used: 8, resets: 2 * 86_400 + 22 * Self.hour), now: Self.now) == "2 d 22 h")
+        #expect(LimitsWording.resetsIn(window(used: 88, resets: -26 * 60), now: Self.now) == nil)
     }
 
     @Test("the tightest window is the current, active one with the least left; a passed reset never leads")
@@ -136,7 +123,6 @@ struct LimitsWordingTests {
         let later = Self.now.addingTimeInterval(elapsed)
         #expect(LimitsWording.tightest([cached], now: later) == nil)
         #expect(LimitsWording.resetsIn(cached, now: later) == nil)
-        #expect(LimitsWording.resetFact(cached, now: later).label == "Reset was")
         #expect(LimitsWording.summary(measured(.codex, at: 0, [cached]), now: later) == .unknown)
     }
 

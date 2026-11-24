@@ -44,9 +44,8 @@ final class LoadoutModel {
     /// Bumped by every jump from the palette; the table scrolls to `selectedKey` when it changes.
     private(set) var jumpToken = 0
 
-    /// Screenshots only: show row actions without hover, and show only some sections.
+    /// Screenshots only: show row actions without hover.
     var revealRowActions = false
-    var shotKinds: Set<LoadoutKind>?
 
     @ObservationIgnored private var raw: CoreLoadoutRows?
     @ObservationIgnored private var started = false
