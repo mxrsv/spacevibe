@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/hashes"
@@ -32,11 +33,10 @@ const (
 	msgRefreshList = "This item no longer exists. Refresh the list."
 )
 
-var cliLabels = map[usage.CLI]string{inventory.Claude: "Claude Code", inventory.Codex: "Codex"}
-
+// label is the CLI's display name from the registry, or the id itself for one the registry does not hold.
 func label(cli usage.CLI) string {
-	if l, ok := cliLabels[cli]; ok {
-		return l
+	if c, ok := cliregistry.Lookup(cliregistry.ID(cli)); ok {
+		return c.Name
 	}
 	return string(cli)
 }
