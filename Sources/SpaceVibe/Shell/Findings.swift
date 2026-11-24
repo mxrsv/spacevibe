@@ -123,7 +123,7 @@ enum Findings {
         shownCLIs: [String], facts: FindingFacts, folders: [CoreReadersFolder] = []
     ) -> (open: [InboxFinding], kept: [InboxFinding]) {
         var found: [InboxFinding] = []
-        let quiet = rows.filter { !$0.isRecentlyAdded && !$0.isPlugin && !$0.isProject && !$0.isHookSpaceVibeDoesNotWrite }
+        let quiet = rows.filter(\.isSuggestible)
         for row in quiet where row.status == .dead {
             found.append(InboxFinding(id: row.id, job: .cleanUp, severity: .critical, subject: .row(row)))
         }
@@ -182,4 +182,8 @@ extension FrameRow {
     /// only) is a fact in the Hooks hero but, like a plugin item, never suggested, never an Inbox Clean up finding and never
     /// offered Remove.
     var isHookSpaceVibeDoesNotWrite: Bool { kind == .hook && !hooks.contains { $0.cli == .claude } }
+
+    /// The member ids SpaceVibe removes for this row: every member of a Skill or Subagent, a Hook's Claude Code members only
+    /// (D25).
+    var membersOfWritableCLIs: [String] { kind == .hook ? hooks.filter { $0.cli == .claude }.map(\.id) : memberIDs }
 }

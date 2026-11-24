@@ -112,10 +112,13 @@ struct FrameRow: Identifiable, Equatable, Sendable {
     /// The Never ran / Dead set every surface shares (Skills hero, Hooks hero, Inbox Clean up, Clean's Agents section).
     var isCandidate: Bool { status == .neverRan || status == .dead }
 
-    /// Suggested for removal: a candidate that was not just added, is not plugin-owned, not a project item and not kept
-    /// (RD26, RD-R4 "What counts").
+    /// Open to a removal suggestion: not just added, not plugin-owned, not a project item and not a Hook SpaceVibe does not
+    /// write (RD26, RD-R4 "What counts", D25). Whether it is a candidate or kept is asked separately.
+    var isSuggestible: Bool { !isRecentlyAdded && !isPlugin && !isProject && !isHookSpaceVibeDoesNotWrite }
+
+    /// Suggested for removal: a suggestible candidate that is not kept.
     func isSuggested(kept: Set<String>) -> Bool {
-        isCandidate && !isRecentlyAdded && !isPlugin && !isProject && !kept.contains(id)
+        isCandidate && isSuggestible && !kept.contains(id)
     }
 
     /// The tile's heat step for one CLI (RD-R12), by the one rule in `HeatStep.step(sessions:top:)`: its count (sessions, or
