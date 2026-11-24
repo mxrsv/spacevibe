@@ -90,7 +90,7 @@ func logCwds(ctx context.Context, logsDir string) []string {
 			if !strings.HasSuffix(name, ".jsonl") {
 				continue
 			}
-			if m, ok := modifiedMs(textjs.JoinPath(base, name)); ok {
+			if m, ok := fsx.ModifiedMs(textjs.JoinPath(base, name)); ok {
 				logs = append(logs, logFile{name, m})
 			}
 		}

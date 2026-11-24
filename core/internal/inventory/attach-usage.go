@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"spacevibe.dev/core/internal/cliregistry"
+	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/hashes"
 	"spacevibe.dev/core/internal/usage"
 )
@@ -131,7 +132,7 @@ func attachUsage(inv Snapshot, in *usage.Input, now time.Time, firstSeen map[str
 			return known.ms
 		}
 		var ms *float64
-		if v, ok := modifiedMs(file); ok {
+		if v, ok := fsx.ModifiedMs(file); ok {
 			ms = &v
 		}
 		mtimes[file] = mtime{ms}

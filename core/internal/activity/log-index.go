@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/logs"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
@@ -105,14 +106,13 @@ func threadID(path string) (string, bool) {
 	return tail, true
 }
 
-// mtimeMs is the modification time in milliseconds, computed as seconds*1000 + nanoseconds/1e6 in floating point.
+// mtimeMs is the modification time in milliseconds, bounded to a valid JS timestamp.
 func mtimeMs(path string) (float64, bool) {
-	info, err := os.Stat(path)
-	if err != nil {
+	ms, ok := fsx.ModifiedMs(path)
+	if !ok {
 		return 0, false
 	}
-	t := info.ModTime()
-	return textjs.BoundedTimestamp(float64(t.Unix())*1000 + float64(t.Nanosecond())/1e6)
+	return textjs.BoundedTimestamp(ms)
 }
 
 // readRegularFile reads a file that is a regular file. A FIFO would block a reader that has no writer.

@@ -83,7 +83,7 @@ func (s *Service) firstSeenMs(snapshot Snapshot, now time.Time) map[string]float
 			}
 			entry.Last = nowMs
 		case seed:
-			ms, found := modifiedMs(file)
+			ms, found := fsx.ModifiedMs(file)
 			if !found {
 				return // the same as without the store: no time, no "added" note
 			}

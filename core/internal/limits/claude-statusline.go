@@ -117,7 +117,8 @@ func SnapshotFiles(cfg config.Config, r roots.Roots) []string {
 		if info, err := os.Lstat(path); err != nil || !info.Mode().IsRegular() {
 			continue
 		}
-		files = append(files, stamped{path, modifiedMs(path)})
+		ms, _ := fsx.ModifiedMs(path) // 0 when it cannot be statted
+		files = append(files, stamped{path, ms})
 	}
 	slices.SortStableFunc(files, func(a, b stamped) int {
 		switch {
@@ -133,16 +134,6 @@ func SnapshotFiles(cfg config.Config, r roots.Roots) []string {
 		paths[i] = f.path
 	}
 	return paths
-}
-
-// modifiedMs is the modification time in ms since 1970, following links; 0 when it cannot be statted.
-func modifiedMs(path string) float64 {
-	info, err := os.Stat(path)
-	if err != nil {
-		return 0
-	}
-	t := info.ModTime()
-	return float64(t.Unix())*1000 + float64(t.Nanosecond())/1_000_000
 }
 
 // ReadSnapshot reads and parses one snapshot file: at most MaxSnapshotBytes, a regular file only (a FIFO is

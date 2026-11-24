@@ -132,17 +132,6 @@ func isDirectory(path string) bool {
 	return err == nil && info.IsDir()
 }
 
-// modifiedMs is the modification time in ms since 1970, following symlinks; false when it cannot be statted.
-// Computed as seconds*1000 + nanoseconds/1e6 in floating point, like the Swift reader.
-func modifiedMs(path string) (float64, bool) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return 0, false
-	}
-	t := info.ModTime()
-	return float64(t.Unix())*1000 + float64(t.Nanosecond())/1_000_000, true
-}
-
 // isSymlink reports whether the path itself is a symlink.
 func isSymlink(path string) bool {
 	info, err := os.Lstat(path)
