@@ -108,7 +108,7 @@ Each item is its own commit in `site/`, named by a `Backlog:` line (AGENTS.md, B
 | LP-A5 The "In development" band shows no capture in an older look, and says "Not in the current download"; no `<form>` or `<input>` is in `site/out/index.html`. | LP-R5 |
 | LP-A6 The owner approves the page by eye at 1440 and at 390, beside the app. | L10 |
 | LP-A8 Audit of 2026-11-22 holds: text contrast at least 4.5:1, every link at least 24 px tall, no horizontal scroll at 320, 390 and 1440, a link that opens a new tab says so to a screen reader, headings read as separate words. | LP-R2 |
-| LP-A7 No Vercel project, deploy or DNS change was made by an agent. | LP-R7 |
+| LP-A7 No Vercel project, deploy or DNS change is made by an agent unless the owner says so for that step. On 2026-11-24 the owner said so for WEB1 ("ok làm đi"): the agent created the project and one deployment that is not public; no domain and no DNS record was touched. | LP-R7 |
 | LP-A9 `/` built from the repository is compared with the review's merged build (`all/`, with the picks of L17 to L19) at 320, 390, 768, 1024 and 1440: the same text and the same layout, surface by surface. At those widths the page has no horizontal scroll; `document.getAnimations()` is empty three seconds after load; every item of L20 is ticked in the backlog except the one that shipped in part. | LP-R3, LP-R8 |
 
 ## Traceability (W20)
