@@ -44,6 +44,10 @@ Code, comments and tests are English.
 
 ## Commits and pull requests
 
+- Write commit messages, pull request titles and bodies, and issues in English (B11). The
+  [`english`](.github/workflows/english.yml) check fails a pull request whose title, body or commits
+  are not; turn on the local hook once with `git config core.hooksPath scripts/git-hooks` to catch it
+  before you push.
 - [Conventional Commits](https://www.conventionalcommits.org) with a scope:
   `fix(core): skip a rollout that cannot be read`. One commit is one complete piece of work.
 - One concern per pull request. Say what changed and why, and paste the test output.
