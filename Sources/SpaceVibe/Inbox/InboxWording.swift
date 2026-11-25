@@ -45,7 +45,7 @@ struct InboxWording {
     /// The member ids a removal passes (`loadout.removeMany`): every member of a Skill or Subagent, a Hook's Claude Code members
     /// only (D25: SpaceVibe writes Hooks only into Claude Code).
     static func removableMembers(_ rows: [FrameRow]) -> Set<String> {
-        Set(rows.flatMap { row in row.kind == .hook ? row.hooks.filter { $0.cli == .claude }.map(\.id) : row.memberIDs })
+        Set(rows.flatMap(\.membersOfWritableCLIs))
     }
 
     /// "Remove from Claude Code and Codex"; a shared file "Remove…" (it asks first, so it ends in an ellipsis).

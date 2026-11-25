@@ -7,15 +7,16 @@ enum ActivityStopWording {
 
     /// "Sends SIGTERM to pid 41002 (Claude Code, spacevibe-academy). ..." with the pid in bold.
     static func message(_ session: CoreActivitySession) -> Text {
-        let who = [session.cli.label, session.project].compactMap { $0 }.joined(separator: ", ")
-        return Text("Sends SIGTERM to pid ") + Text(String(session.pid)).bold()
-            + Text(" (\(who)). Unsaved work in that session may be lost. This cannot be undone.")
+        Text("Sends SIGTERM to pid ") + Text(String(session.pid)).bold() + Text(tail(session))
     }
 
-    /// The same sentence as plain text, for VoiceOver and the tests.
-    static func plainMessage(_ session: CoreActivitySession) -> String {
+    /// The same sentence as plain text, for the tests.
+    static func plainMessage(_ session: CoreActivitySession) -> String { "Sends SIGTERM to pid \(session.pid)" + tail(session) }
+
+    /// Everything after the pid: " (Claude Code, spacevibe-academy). Unsaved work ... cannot be undone."
+    private static func tail(_ session: CoreActivitySession) -> String {
         let who = [session.cli.label, session.project].compactMap { $0 }.joined(separator: ", ")
-        return "Sends SIGTERM to pid \(session.pid) (\(who)). Unsaved work in that session may be lost. This cannot be undone."
+        return " (\(who)). Unsaved work in that session may be lost. This cannot be undone."
     }
 
     static let note = "SpaceVibe checks that the pid still belongs to this session before it sends anything."

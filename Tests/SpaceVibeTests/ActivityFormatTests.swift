@@ -78,14 +78,6 @@ struct ActivityFormatTests {
         #expect(ActivityFormat.projects(["app-a", "app-b", "app-c"]) == "3 projects")
     }
 
-    @Test("the engine's fallback title is recognised, a real request is not",
-          arguments: [("2026-11-02 \u{00B7} 1a2b3c4d", true), ("unknown date \u{00B7} 1a2b3c4d", true), ("2026-11-02 \u{00B7} ", true),
-                      ("Fix the login form", false), ("2026-11-02 \u{00B7} 1a2b3c4d5", false), ("2026-11-02 \u{00B7} two words", false),
-                      ("2026-1-02 \u{00B7} 1a2b3c4d", false), ("", false)])
-    func fallbackTitle(title: String, expected: Bool) {
-        #expect(ActivityFormat.isFallbackTitle(title) == expected)
-    }
-
     @Test("ago: just now under a minute, minutes and hours, yesterday up to two days, then a date")
     func agoWording() {
         #expect(ActivityFormat.ago(isoAgo(seconds: 30), now: now) == "just now")

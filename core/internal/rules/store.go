@@ -93,11 +93,11 @@ func (s *Store) locate(scope Scope) (string, folderState, error) {
 	if !strings.HasPrefix(scope.Dir, "/") {
 		return "", folderReadable, coreerr.New(needAbsoluteMessage)
 	}
-	known := normalize(scope.Dir)
+	known := textjs.Normalize(scope.Dir)
 	if !slices.Contains(s.discover(), known) {
 		return "", folderReadable, coreerr.NewStatus(unknownProjectMessage, coreerr.StatusNotFound)
 	}
-	file := join(known, ".claude", name)
+	file := textjs.JoinPath(known, ".claude", name)
 	switch fsx.PathPresence(known) {
 	case fsx.Missing:
 		return file, folderGone, nil
@@ -402,31 +402,6 @@ func readCapped(path string, max int64) (data []byte, truncated bool, err error)
 		return data[:max], true, nil
 	}
 	return data, false, nil
-}
-
-// join is NSString's appendingPathComponent: single slashes, nothing cleaned.
-func join(base string, parts ...string) string {
-	for _, p := range parts {
-		base = strings.TrimRight(base, "/") + "/" + p
-	}
-	return base
-}
-
-// normalize is path.resolve for an absolute path: "." and ".." folded, no trailing slash. Symlinks are not followed.
-func normalize(path string) string {
-	var stack []string
-	for _, part := range strings.Split(path, "/") {
-		switch part {
-		case "", ".":
-		case "..":
-			if len(stack) > 0 {
-				stack = stack[:len(stack)-1]
-			}
-		default:
-			stack = append(stack, part)
-		}
-	}
-	return "/" + strings.Join(stack, "/")
 }
 
 // pathPresent is true only when the path is there.

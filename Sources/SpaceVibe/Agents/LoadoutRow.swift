@@ -11,14 +11,6 @@ enum LoadoutKind: CaseIterable {
         }
     }
 
-    var sectionTitle: String {
-        switch self {
-        case .skill: "Skills"
-        case .agent: "Agents"
-        case .hook: "Hooks"
-        }
-    }
-
     var noun: String {
         switch self {
         case .skill: "skill"

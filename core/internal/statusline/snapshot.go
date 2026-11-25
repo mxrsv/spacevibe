@@ -57,11 +57,11 @@ func Capture(cfg config.Config, r roots.Roots, data []byte, now time.Time) error
 		return fail(ReasonInvalidInput, "Status line input is not valid JSON.")
 	}
 	input := document.Root()
-	session, _ := stringMember(input, "session_id")
+	session, _ := input.StringMember("session_id")
 	if session == "" || len(session) > maxSessionIDBytes || !limits.SessionIDSyntax(session) {
 		return fail(ReasonInvalidInput, "Status line session identity is invalid.")
 	}
-	raw, ok := objectMember(input, "rate_limits")
+	raw, ok := input.PresentMember("rate_limits")
 	if !ok {
 		return nil
 	}
@@ -83,13 +83,13 @@ func Capture(cfg config.Config, r roots.Roots, data []byte, now time.Time) error
 	file := filepath.Join(folder, session+".json")
 	// A session first captured under another account cannot relabel its old in-memory quota after a login switch.
 	if old, ok := limits.ReadSnapshot(file); ok {
-		if got, _ := stringMember(old, "account"); got != account {
+		if got, _ := old.StringMember("account"); got != account {
 			return nil
 		}
 	}
 	var windows []ojson.Member
 	for _, spec := range limits.StatuslineWindows() {
-		window, ok := objectMember(raw, spec.Key)
+		window, ok := raw.PresentMember(spec.Key)
 		if !ok {
 			continue
 		}
@@ -119,7 +119,7 @@ func Capture(cfg config.Config, r roots.Roots, data []byte, now time.Time) error
 	if len(files) > limits.MaxSessions {
 		for _, old := range files[limits.MaxSessions:] {
 			if snapshot, ok := limits.ReadSnapshot(old); ok {
-				if _, isOurs := stringMember(snapshot, "account"); isOurs {
+				if _, isOurs := snapshot.StringMember("account"); isOurs {
 					// A 404 means a concurrent capture pruned it first, which is what this loop wanted.
 					if err := removeSnapshot(old); err != nil && !isNotFound(err) {
 						return &Failure{Reason: ReasonWriteFailed, Err: asCoreError(err)}
@@ -146,24 +146,6 @@ func asCoreError(err error) coreerr.Error {
 		return e
 	}
 	return coreerr.NewStatus("The quota snapshot could not be written.", coreerr.StatusInternalFailure)
-}
-
-// stringMember is a string member of an object (false for a missing key or another type).
-func stringMember(v ojson.Value, key string) (string, bool) {
-	value, ok := v.Member(key)
-	if !ok {
-		return "", false
-	}
-	return value.StringValue()
-}
-
-// objectMember is a member that is present and not JSON null (limitsMember in Swift).
-func objectMember(v ojson.Value, key string) (ojson.Value, bool) {
-	value, ok := v.Member(key)
-	if !ok || value.Kind() == ojson.KindNull {
-		return ojson.Value{}, false
-	}
-	return value, true
 }
 
 // isNotFound is true for the 404 fsx.RemoveFile gives a path that is already gone.

@@ -128,8 +128,8 @@ type CodexPermissions struct {
 // (git b58269d), minus the file path.
 func ReadCodexPermissions(r roots.Roots) CodexPermissions {
 	out := CodexPermissions{Warnings: []string{}, Profiles: []Profile{}, Projects: []CodexProject{}}
-	out.Rules = summarizeRules(join(r.Codex.Root, "rules"))
-	config := join(r.Codex.Root, "config.toml")
+	out.Rules = summarizeRules(textjs.JoinPath(r.Codex.Root, "rules"))
+	config := textjs.JoinPath(r.Codex.Root, "config.toml")
 	switch fsx.PathPresence(config) {
 	case fsx.Present:
 		out.Present = true

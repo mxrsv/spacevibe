@@ -96,16 +96,19 @@ func (s *Scanner) scan(ctx context.Context, progress func(Progress)) (Result, er
 		targets = append(targets, target{p, Codex})
 	}
 	next := make(map[string]cachedFile, len(targets))
+	reparsed := false
 	for index, t := range targets {
 		if err := ctx.Err(); err != nil {
 			return Result{}, err
 		}
-		entry, ok, err := s.entry(ctx, t, cache[t.path], maxLine)
+		old, had := cache[t.path]
+		entry, ok, err := s.entry(ctx, t, old, maxLine)
 		if err != nil {
 			return Result{}, err
 		}
 		if ok {
 			next[t.path] = entry
+			reparsed = reparsed || !had || old.Stamp != entry.Stamp || old.V != entry.V
 		}
 		if done := index + 1; done%ProgressEvery == 0 && progress != nil {
 			progress(Progress{Done: done, Total: len(targets)})
@@ -118,7 +121,10 @@ func (s *Scanner) scan(ctx context.Context, progress func(Progress)) (Result, er
 	if err := ctx.Err(); err != nil {
 		return Result{}, err
 	}
-	saveCache(next, s.roots.Data)
+	// Every entry reused and none dropped: the cache on disk already says this, so it is not rewritten.
+	if reparsed || len(next) != len(cache) {
+		saveCache(next, s.roots.Data)
+	}
 	// CL-R3: the logs Clean moved still count, from their archived records; a parsed live log at the same path, or a
 	// twin of it (same folder and base name), wins.
 	merged, archived, problems := withArchive(next, s.roots.Data)

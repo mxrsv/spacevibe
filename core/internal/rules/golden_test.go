@@ -16,6 +16,7 @@ import (
 	"spacevibe.dev/core/internal/mutate"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/roots"
+	"spacevibe.dev/core/internal/textjs"
 )
 
 // RulesGoldenTests.swift: the Go rules against the frozen golden/rules.json, projection "rules-view" (plan "Parity
@@ -72,7 +73,7 @@ type goldenView struct {
 func scopeFrom(root, kind, rel string) Scope {
 	dir := ""
 	if rel != "" {
-		dir = join(root, rel)
+		dir = textjs.JoinPath(root, rel)
 	}
 	switch kind {
 	case "project":
@@ -185,7 +186,7 @@ func (v goldenView) reads(expected obj) (obj, int) {
 	}
 	sort.Strings(mergedKeys)
 	for _, rel := range mergedKeys {
-		listing, err := v.store.ListRules(ScopesFor(join(v.root, rel))...)
+		listing, err := v.store.ListRules(ScopesFor(textjs.JoinPath(v.root, rel))...)
 		if err != nil {
 			v.t.Fatalf("merged %s: %v", rel, err)
 		}
@@ -459,7 +460,7 @@ func TestGoldenRules(t *testing.T) {
 	if n := len(asObj(asObj(golden["main"])["lists"])); n == 0 || mainPreviews != n*len(Capabilities)*len(Verdicts) {
 		t.Errorf("main: %d previews for %d lists", mainPreviews, n)
 	}
-	if n := len(main.list(ProjectScope(join(home.root, "proj-broken"))).Problems); n != 1 {
+	if n := len(main.list(ProjectScope(textjs.JoinPath(home.root, "proj-broken"))).Problems); n != 1 {
 		t.Errorf("proj-broken has %d problems, want 1", n)
 	}
 	goldentest.AssertCaseCount(t, "shared previews", sharedPreviews, 126)

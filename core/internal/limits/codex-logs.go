@@ -113,7 +113,7 @@ func codexReading(line []byte) Entry {
 	if err != nil {
 		return unreadable
 	}
-	text, ok := memberString(document.Root(), "timestamp")
+	text, ok := document.Root().StringMember("timestamp")
 	if !ok {
 		return unreadable
 	}
@@ -121,18 +121,18 @@ func codexReading(line []byte) Entry {
 	if !ok {
 		return unreadable
 	}
-	payload, ok := member(document.Root(), "payload")
+	payload, ok := document.Root().PresentMember("payload")
 	if !ok {
 		return unreadable
 	}
-	limits, ok := member(payload, "rate_limits")
+	limits, ok := payload.PresentMember("rate_limits")
 	if !ok {
 		return unreadable
 	}
 	observed := dateSeconds(ms / 1000)
 	var windows []Window
 	for _, id := range []string{"primary", "secondary"} {
-		raw, ok := member(limits, id)
+		raw, ok := limits.PresentMember(id)
 		if !ok {
 			continue
 		}
@@ -143,7 +143,7 @@ func codexReading(line []byte) Entry {
 		windows = append(windows, window)
 	}
 	var plan *string
-	if p, ok := memberString(limits, "plan_type"); ok {
+	if p, ok := limits.StringMember("plan_type"); ok {
 		plan = &p
 	}
 	if len(windows) == 0 {
@@ -157,20 +157,20 @@ func codexReading(line []byte) Entry {
 // codexWindow reads `{ used_percent, window_minutes, resets_at }`, or the older `resets_in_seconds` counted from
 // the event time.
 func codexWindow(id string, raw ojson.Value, observed float64) (Window, bool) {
-	used, ok := memberNumber(raw, "used_percent")
+	used, ok := raw.FiniteMember("used_percent")
 	if !ok || used < 0 {
 		return Window{}, false
 	}
 	var resetsAt float64
-	if seconds, ok := memberNumber(raw, "resets_at"); ok {
+	if seconds, ok := raw.FiniteMember("resets_at"); ok {
 		resetsAt = dateSeconds(seconds)
-	} else if relative, ok := memberNumber(raw, "resets_in_seconds"); ok {
+	} else if relative, ok := raw.FiniteMember("resets_in_seconds"); ok {
 		resetsAt = addingSeconds(observed, relative)
 	} else {
 		return Window{}, false
 	}
 	var minutes *int
-	if m, ok := memberNumber(raw, "window_minutes"); ok && m > 0 && m == math.Round(m) && m < math.MaxInt64 {
+	if m, ok := raw.FiniteMember("window_minutes"); ok && m > 0 && m == math.Round(m) && m < math.MaxInt64 {
 		// Swift traps on Int(m) past the Int range; a length no CLI writes is read as unknown here instead.
 		n := int(m)
 		minutes = &n

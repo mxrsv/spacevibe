@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"spacevibe.dev/core/internal/cliregistry"
 	"spacevibe.dev/core/internal/coreerr"
 	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/hashes"
@@ -32,11 +33,10 @@ const (
 	msgRefreshList = "This item no longer exists. Refresh the list."
 )
 
-var cliLabels = map[usage.CLI]string{inventory.Claude: "Claude Code", inventory.Codex: "Codex"}
-
+// label is the CLI's display name from the registry, or the id itself for one the registry does not hold.
 func label(cli usage.CLI) string {
-	if l, ok := cliLabels[cli]; ok {
-		return l
+	if c, ok := cliregistry.Lookup(cliregistry.ID(cli)); ok {
+		return c.Name
 	}
 	return string(cli)
 }
@@ -243,13 +243,13 @@ func (tx *Tx) removeFile(item inventory.Item) (Entry, error) {
 		base = cli.Skills
 	}
 	outside := fail("Refusing a path outside the CLI folder.", coreerr.StatusForbidden)
-	if !strings.HasPrefix(normalize(item.Path), normalize(base)+"/") {
+	if !strings.HasPrefix(textjs.Normalize(item.Path), textjs.Normalize(base)+"/") {
 		return Entry{}, outside
 	}
 	// The check above is lexical. The item's parent must also be the CLI folder itself once links are followed, so a
 	// link in the middle of the path cannot send the removal to some other folder. The CLI folder may be a link (a
 	// dotfiles setup); the item itself may be one too, which is why only its parent is resolved.
-	if roots.ResolvedPath(filepath.Dir(normalize(item.Path))) != roots.ResolvedPath(base) {
+	if roots.ResolvedPath(filepath.Dir(textjs.Normalize(item.Path))) != roots.ResolvedPath(base) {
 		return Entry{}, outside
 	}
 	op, err := removePath(tx.r, item.Path)
@@ -301,7 +301,7 @@ func (tx *Tx) copyItem(item inventory.Item) (Entry, error) {
 		if err := need(target != inventory.Codex || !tx.sharedSkillExists(name), "Codex already reads a skill named "+name+" from ~/.agents/skills, so nothing was copied.", coreerr.StatusConflict); err != nil {
 			return Entry{}, err
 		}
-		source := realPath(item.Path)
+		source := fsx.RealPath(item.Path)
 		ops, err := tx.createAll([]usage.CLI{target}, func(usage.CLI) (createPlan, error) {
 			tree, err := listSkillFolder(source)
 			if err != nil {
@@ -404,31 +404,4 @@ func writeSkill(dir, text string) (bool, error) {
 		return false, err
 	}
 	return true, fsx.CreateFileExclusive(filepath.Join(dir, "SKILL.md"), []byte(text), fsx.NewFileMode)
-}
-
-// normalize is path.resolve for an absolute path: "." and ".." folded, no trailing slash. Links are not followed
-// (InventoryFileIO.normalize).
-func normalize(path string) string {
-	var stack []string
-	for _, part := range strings.Split(path, "/") {
-		switch part {
-		case "", ".":
-		case "..":
-			if len(stack) > 0 {
-				stack = stack[:len(stack)-1]
-			}
-		default:
-			stack = append(stack, part)
-		}
-	}
-	return "/" + strings.Join(stack, "/")
-}
-
-// realPath is the path with links followed, or the normalized path when it does not exist.
-func realPath(path string) string {
-	abs := normalize(path)
-	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
-		return resolved
-	}
-	return abs
 }

@@ -60,7 +60,7 @@ struct LimitsAnswer: Equatable {
         let warning: Warning?
 
         /// "Codex Weekly": the popover's head.
-        var title: String { "\(LimitsWording.cliName(cli)) \(name)" }
+        var title: String { "\(cli.label) \(name)" }
         var spoken: String { "\(title), \(left.map { "\($0)% left" } ?? "not known")" }
     }
 
@@ -120,13 +120,13 @@ struct LimitsAnswer: Equatable {
             sentence = nil
             verdict = nil
             resets = nil
-            sources = CoreLimitsCLI.allCases.map { SourceLine(cli: $0, name: LimitsWording.cliName($0), state: "reading") }
+            sources = CoreLimitsCLI.allCases.map { SourceLine(cli: $0, name: ($0).label, state: "reading") }
             bands = CoreLimitsCLI.allCases.map { Band(cli: $0, count: nil, mark: nil, staleAge: nil, body: .loading) }
         case .failed:
             sentence = "No reading yet."
             verdict = Verdict(glyph: .nm, title: "The read did not finish", text: "Refresh to try again.")
             resets = []
-            sources = CoreLimitsCLI.allCases.map { SourceLine(cli: $0, name: LimitsWording.cliName($0), state: "no reading") }
+            sources = CoreLimitsCLI.allCases.map { SourceLine(cli: $0, name: ($0).label, state: "no reading") }
             bands = CoreLimitsCLI.allCases.map {
                 Band(cli: $0, count: nil, mark: Mark(kind: .danger, label: "Read failed"), staleAge: nil,
                      body: .note("The last read did not finish.", .retry))
@@ -152,7 +152,7 @@ struct LimitsAnswer: Equatable {
 
         var left: Int { LimitsWording.shareLeft(tightest) }
         var isLow: Bool { LimitsWording.tone(tightest) != .normal }
-        var name: String { LimitsWording.cliName(entry.cli) }
+        var name: String { entry.cli.label }
     }
 
     private static func planWide(_ windows: [CoreLimitWindow], now: Date) -> [CoreLimitWindow] {
@@ -173,7 +173,7 @@ struct LimitsAnswer: Equatable {
                 ? exactLeft(a.element.tightest) > exactLeft(b.element.tightest) : a.offset < b.offset
         }.map(\.element)
         let stale = readings.filter { LimitsWording.isStale(at: $0.1, now: now) }
-            .map { "\(LimitsWording.cliName($0.0.cli)) was read \(LimitsWording.readAge(at: $0.1, now: now))." }
+            .map { "\(($0.0.cli).label) was read \(LimitsWording.readAge(at: $0.1, now: now))." }
         let small = stale.isEmpty ? nil : stale.joined(separator: " ")
 
         guard let best = ranked.first else {
@@ -197,7 +197,7 @@ struct LimitsAnswer: Equatable {
         let longest = planWide(best.windows, now: now).max { ($0.minutes ?? 0) < ($1.minutes ?? 0) } ?? best.tightest
         let sentence = "Do heavy work in \(best.name) until \(clock(longest.resetsAt, now: now, calendar: calendar))."
         let other = readings.lazy.filter { $0.0.cli != best.entry.cli }.compactMap { entry, _, windows -> (String, CoreLimitWindow)? in
-            windows.filter { $0.isCurrent(at: now) && $0.active }.min { exactLeft($0) < exactLeft($1) }.map { (LimitsWording.cliName(entry.cli), $0) }
+            windows.filter { $0.isCurrent(at: now) && $0.active }.min { exactLeft($0) < exactLeft($1) }.map { (entry.cli.label, $0) }
         }.first
         if let other {
             let text = "\(LimitsWording.name(other.1)) has \(LimitsWording.shareLeft(other.1))% left."
@@ -226,7 +226,7 @@ struct LimitsAnswer: Equatable {
                 let (entry, window) = row
                 return Reset(id: "\(entry.cli.rawValue):\(window.id)", cli: entry.cli,
                              time: LimitsWording.resetsAt(window, now: now, calendar: calendar),
-                             title: "\(LimitsWording.cliName(entry.cli)) \(LimitsWording.name(window))",
+                             title: "\(entry.cli.label) \(LimitsWording.name(window))",
                              resetsAt: window.resetsAtDate, tone: LimitsWording.tone(window),
                              countdownLead: LimitsCountdown.lead(window, cli: entry.cli, weekly: weeklyLead))
             }
@@ -235,7 +235,7 @@ struct LimitsAnswer: Equatable {
     // MARK: Source
 
     private static func source(_ entry: CoreLimitsEntry, now: Date) -> SourceLine {
-        let cli = LimitsWording.cliName(entry.cli)
+        let cli = entry.cli.label
         if let reading = entry.reading {
             let name = entry.plan.map { "\(cli) \(LimitsWording.planName($0))" } ?? cli
             return SourceLine(cli: entry.cli, name: name, state: "read \(LimitsWording.readAge(at: reading.at, now: now))")
@@ -247,7 +247,7 @@ struct LimitsAnswer: Equatable {
     // MARK: Bands
 
     private static func band(_ entry: CoreLimitsEntry, showUnused: Bool, now: Date, calendar: Calendar) -> Band {
-        let cli = LimitsWording.cliName(entry.cli)
+        let cli = entry.cli.label
         guard let reading = entry.reading else {
             switch entry.state {
             case .notRecorded:

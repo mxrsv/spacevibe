@@ -37,14 +37,6 @@ enum LimitsWording {
     static let outShare = 5.0
     static let copyHint = "/usage"
 
-    static func cliName(_ cli: CoreLimitsCLI) -> String {
-        switch cli {
-        case .claude: "Claude Code"
-        case .codex: "Codex"
-        case .gemini: "Gemini CLI"
-        }
-    }
-
     /// The plan the record names, as a tag: "pro" reads "Pro".
     static func planName(_ plan: String) -> String { plan.prefix(1).uppercased() + plan.dropFirst() }
 
@@ -96,18 +88,6 @@ enum LimitsWording {
     /// The reset's clock time: "21:12", "Fri 16:00", "Nov 10".
     static func resetsAt(_ window: CoreLimitWindow, now: Date, calendar: Calendar = .current) -> String {
         clock(window.resetsAtDate, now: now, calendar: calendar)
-    }
-
-    /// The second line of a window in the page's list: "Codex · resets in 3 h 12 min", or "Codex · reset passed".
-    static func entryLine(_ window: CoreLimitWindow, cli: CoreLimitsCLI, now: Date) -> String {
-        let reset = resetsIn(window, now: now).map { "resets in \($0)" } ?? "reset passed"
-        return "\(cliName(cli)) · \(reset)"
-    }
-
-    /// The detail's first fact: "Resets in" and "3 h 12 min", or "Reset was" and "26 min ago" once it has passed.
-    static func resetFact(_ window: CoreLimitWindow, now: Date) -> (label: String, value: String) {
-        if let left = resetsIn(window, now: now) { return ("Resets in", left) }
-        return ("Reset was", ago(now.timeIntervalSince(window.resetsAtDate)))
     }
 
     // MARK: Page
@@ -168,7 +148,7 @@ enum LimitsWording {
 
     /// Title and sentence of the tile that stands in for windows when a CLI has no reading. Nil when it has one.
     static func stateNote(_ limits: CoreLimitsEntry) -> (title: String, body: String)? {
-        let name = cliName(limits.cli)
+        let name = limits.cli.label
         switch limits.state {
         case .measured: return nil
         case .notMeasurable:
@@ -187,7 +167,7 @@ enum LimitsWording {
 
     /// What the page says for a CLI that lists no window: its state note, or that no window applies right now.
     static func entryNote(_ limits: CoreLimitsEntry) -> (title: String, body: String) {
-        stateNote(limits) ?? ("No current window", "\(cliName(limits.cli)) records no limit that applies right now.")
+        stateNote(limits) ?? ("No current window", "\(limits.cli.label) records no limit that applies right now.")
     }
 
     /// Where a CLI's usage reading comes from, shown with the reading's age on the page.

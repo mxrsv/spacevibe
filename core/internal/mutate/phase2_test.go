@@ -412,8 +412,8 @@ func TestTomlEscapesDelete(t *testing.T) {
 	if strings.ContainsRune(text, 0x7f) || !strings.Contains(text, `before\u007fafter`) || !strings.Contains(text, `desc\u007f`) {
 		t.Errorf("toml %q", text)
 	}
-	if tomlInstructions(text) != instructions || tomlDescription(text) != "desc\x7f" {
-		t.Errorf("round trip: %q, %q", tomlInstructions(text), tomlDescription(text))
+	if tomlInstructions(text) != instructions || inventory.TOMLFields(text)["description"] != "desc\x7f" {
+		t.Errorf("round trip: %q, %q", tomlInstructions(text), inventory.TOMLFields(text)["description"])
 	}
 	// The markdown header keeps JSON quoting, which YAML reads.
 	if got := quote("a\x7fb"); got != "\"a\x7fb\"" {

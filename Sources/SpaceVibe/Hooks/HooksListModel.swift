@@ -290,16 +290,15 @@ struct HooksListModel: Sendable {
         let first = row.hooks.first
         let event = first?.event ?? ""
         let cli = first?.cli.rawValue ?? ""
-        let claude = row.hooks.filter { $0.cli == .claude }
         let readOnly: HooksListRow.ReadOnly? = row.isProject ? .project(Self.projectName(row.project))
             : row.isPlugin ? .plugin
-            : claude.isEmpty ? .notClaudeCode : nil
+            : row.isHookSpaceVibeDoesNotWrite ? .notClaudeCode : nil
         return HooksListRow(
             row: row, label: row.name, command: first?.command ?? "", event: event,
             stage: HooksLifecycle.stage(of: event, cli: cli), matcher: first?.matcher, cli: cli,
             status: row.status, errorsLastWeek: errorsLastWeek, runs: runs(row, busiest: busiest),
             statusLine: statusLine(row, errorsLastWeek: errorsLastWeek, now: now), readOnly: readOnly,
-            removalIDs: readOnly == nil ? claude.map(\.id).filter(row.writableMembers.contains) : []
+            removalIDs: readOnly == nil ? row.membersOfWritableCLIs.filter(row.writableMembers.contains) : []
         )
     }
 

@@ -3,6 +3,8 @@
 package inventory
 
 import (
+	"spacevibe.dev/core/internal/fsx"
+
 	"os"
 	"strings"
 	"syscall"
@@ -138,14 +140,14 @@ func TestPresenceKinds(t *testing.T) {
 	requireNotRoot(t)
 	h := newTempHome(t)
 	h.write("a/file.txt", "x")
-	if pathPresence(h.path("a/file.txt")) != present || pathPresence(h.path("a/none.txt")) != missing || pathPresence(h.path("a/file.txt/below")) != missing {
+	if fsx.PathPresence(h.path("a/file.txt")) != fsx.Present || fsx.PathPresence(h.path("a/none.txt")) != fsx.Missing || fsx.PathPresence(h.path("a/file.txt/below")) != fsx.Missing {
 		t.Error("present, missing, missing expected")
 	}
 	if err := os.Chmod(h.path("a"), 0); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.Chmod(h.path("a"), 0o755) })
-	if pathPresence(h.path("a/file.txt")) != unknown || exists(h.path("a/file.txt")) {
+	if fsx.PathPresence(h.path("a/file.txt")) != fsx.Unknown || exists(h.path("a/file.txt")) {
 		t.Error("a denied folder must read as unknown, and not exist")
 	}
 }

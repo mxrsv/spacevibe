@@ -116,7 +116,7 @@ struct FrameWorld: Sendable {
     /// The candidates `Select N Suggested` ticks: not just added, not plugin or project, not kept, not a Hook SpaceVibe does
     /// not write (D25).
     var suggested: Set<String> {
-        Set(candidates.filter { $0.isSuggested(kept: facts.findings.kept) && !$0.isHookSpaceVibeDoesNotWrite }.map(\.id))
+        Set(candidates.filter { $0.isSuggested(kept: facts.findings.kept) }.map(\.id))
     }
 
     var groups: [InboxGroup] { Findings.groups(findings) }

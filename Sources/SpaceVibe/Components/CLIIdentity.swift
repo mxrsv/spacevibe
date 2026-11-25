@@ -10,13 +10,12 @@ struct CLIIdentity: Hashable, Identifiable, Sendable {
     init(id: String, name: String, shortName: String? = nil) {
         self.id = id
         self.name = name
-        self.shortName = shortName ?? Self.defaultShortName(id: id, name: name)
+        self.shortName = shortName ?? Self.defaultShortName(name: name)
     }
 
     /// The short names the reference mock writes (`SHORT` in `src/b-chrome.js`): the first word for a two-word name ("Cursor"
     /// for Cursor CLI), "Claude" for Claude Code, the name itself otherwise.
-    static func defaultShortName(id: String, name: String) -> String {
-        if id == "claude" { return "Claude" }
+    static func defaultShortName(name: String) -> String {
         let words = name.split(separator: " ")
         guard words.count > 1, let last = words.last, last == "CLI" || last == "Code" else { return name }
         return words.dropLast().joined(separator: " ")

@@ -256,6 +256,9 @@ func truthyPtr(p *float64) (float64, bool) {
 // codexSessions is one row per live `codex` process; a child rollout, or a thread-less row whose pid already holds
 // a thread, gets none.
 func codexSessions(ctx context.Context, threads []proc.Thread, rc *readContext) []Session {
+	if len(threads) == 0 {
+		return nil
+	}
 	var sessions []Session
 	names := codexThreadNames(rc.roots)
 	for _, t := range threads {
@@ -362,8 +365,4 @@ func codexUnreadableRollout(row Session) Session {
 	reason := ReasonCodexRolloutUnreadable
 	row.StateReason, row.ReasonCode, row.CostNote = reason.Text(), &reason, strPtr(reason.Text())
 	return row
-}
-
-func isCompressedLog(path string) bool {
-	return filepath.Ext(path) == ".zst" || filepath.Ext(path) == ".zstd"
 }

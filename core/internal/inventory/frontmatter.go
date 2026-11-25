@@ -41,7 +41,7 @@ func ParseFrontmatter(text string) map[string]string {
 			}
 			out[key] = trimSpace(strings.Join(block, sep))
 		} else {
-			out[key] = unquote(raw)
+			out[key] = Unquote(raw)
 		}
 	}
 	return out
@@ -50,8 +50,8 @@ func ParseFrontmatter(text string) map[string]string {
 // trimSpace trims Unicode White_Space, which is Foundation's whitespacesAndNewlines.
 func trimSpace(s string) string { return strings.TrimFunc(s, unicode.IsSpace) }
 
-// unquote reads a YAML-ish scalar: "double" (JSON escapes), 'single' (” is a quote), or plain text.
-func unquote(value string) string {
+// Unquote reads a YAML-ish scalar: "double" (JSON escapes), 'single' (” is a quote), or plain text.
+func Unquote(value string) string {
 	t := trimSpace(value)
 	if strings.HasPrefix(t, `"`) {
 		if doc, err := ojson.ParseString(t); err == nil {

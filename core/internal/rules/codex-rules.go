@@ -42,7 +42,7 @@ func summarizeRules(folder string) RulesSummary {
 		if !strings.HasSuffix(name, ".rules") {
 			continue
 		}
-		data, truncated, err := readCapped(join(folder, name), maxRulesFileBytes)
+		data, truncated, err := readCapped(textjs.JoinPath(folder, name), maxRulesFileBytes)
 		if err != nil {
 			out.Unreadable++
 			continue

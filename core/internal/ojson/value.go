@@ -11,7 +11,10 @@
 // last one, as JSON.parse does. Nesting deeper than MaxDepth is rejected.
 package ojson
 
-import "strconv"
+import (
+	"math"
+	"strconv"
+)
 
 // Kind tells which JSON type a Value holds.
 type Kind uint8
@@ -165,4 +168,44 @@ func Path(steps ...any) []Step {
 		}
 	}
 	return out
+}
+
+// StringMember is the member's string value; false when the member is missing or not a string.
+func (v Value) StringMember(key string) (string, bool) {
+	m, ok := v.Member(key)
+	if !ok {
+		return "", false
+	}
+	return m.StringValue()
+}
+
+// PresentMember is a member that is present and not JSON null.
+func (v Value) PresentMember(key string) (Value, bool) {
+	m, ok := v.Member(key)
+	if !ok || m.kind == KindNull {
+		return Value{}, false
+	}
+	return m, true
+}
+
+// FiniteNumber is Number.isFinite: a JSON number (not a boolean or a string) that parses to a finite float.
+func (v Value) FiniteNumber() (float64, bool) {
+	text, ok := v.NumberText()
+	if !ok {
+		return 0, false
+	}
+	f, err := strconv.ParseFloat(text, 64)
+	if err != nil || math.IsNaN(f) || math.IsInf(f, 0) {
+		return 0, false
+	}
+	return f, true
+}
+
+// FiniteMember is the member as a finite number (see FiniteNumber).
+func (v Value) FiniteMember(key string) (float64, bool) {
+	m, ok := v.Member(key)
+	if !ok {
+		return 0, false
+	}
+	return m.FiniteNumber()
 }

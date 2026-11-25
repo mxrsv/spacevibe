@@ -163,11 +163,11 @@ enum GlanceCountdownWording {
 
     /// A Limits row's second line: "Claude Code · resets at 21:12".
     static func detail(_ window: GlanceCountdownWindow) -> String {
-        "\(LimitsWording.cliName(window.cli)) · resets at \(window.resetTime)"
+        "\(window.cli.label) · resets at \(window.resetTime)"
     }
 
     /// What VoiceOver reads for the pill and a row: "Claude Code 5-hour limit, 42 min 17 s left".
     static func spoken(_ window: GlanceCountdownWindow, now: Date) -> String {
-        "\(LimitsWording.cliName(window.cli)) \(window.name) limit, \(LimitsCountdown.spoken(window.remaining(at: now) ?? 0))"
+        "\(window.cli.label) \(window.name) limit, \(LimitsCountdown.spoken(window.remaining(at: now) ?? 0))"
     }
 }

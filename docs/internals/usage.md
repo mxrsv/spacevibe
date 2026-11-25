@@ -26,7 +26,7 @@ Code: [`core/internal/usage`](../../core/internal/usage) (line parsers, the scan
 3. `logs.Walk` lists the Claude logs, then the Codex logs, each sorted by path.
 4. Per log: `os.Stat`, stamp `<size>:<mtime ms>`. Same stamp and `ScanVersion`: reuse the record. Otherwise `scanFile` streams every line through `claudeLine` or `codexLine`.
 5. Progress goes out after every 20 logs and once at the end.
-6. If the context is still live, `saveCache` writes the records of this run, the records of `<data>/usage-archive.json` whose log is not live are added (the logs Clean moved, CL-R3; [clean.md](clean.md#rules-that-are-easy-to-get-wrong)), `aggregate` builds the `Result`, and `Scanner` keeps it as `last`.
+6. If the context is still live and a log was parsed again or dropped, `saveCache` writes the records of this run (a run that reused every cached record leaves the file alone); the records of `<data>/usage-archive.json` whose log is not live are added (the logs Clean moved, CL-R3; [clean.md](clean.md#rules-that-are-easy-to-get-wrong)), `aggregate` builds the `Result`, and `Scanner` keeps it as `last`.
 7. `loadout.rows` reads `last` through `Last()`: `usage.Ready(result)`, or `usage.Scanning` before any scan finished in this process. The cells are built in [inventory.md](inventory.md#usage-cell-states).
 8. Cost is a separate path: Activity folds tokens per log, [`costFor`](../../core/internal/activity/engine.go) sums them per session and model, and `pricing.EstimateCost` prices them.
 

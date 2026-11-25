@@ -166,7 +166,7 @@ struct CleanPlan: Equatable, Sendable {
         isMeasured = scan != nil
         let sizes = Dictionary((scan?.items ?? []).map { ($0.key, $0.bytes) }, uniquingKeysWith: { first, _ in first })
         agentRows = candidates.map { row in
-            AgentRow(row: row, readOnly: Self.readOnly(row), isSuggested: row.isSuggested(kept: kept) && !row.isHookSpaceVibeDoesNotWrite,
+            AgentRow(row: row, readOnly: Self.readOnly(row), isSuggested: row.isSuggested(kept: kept),
                      bytes: row.kind == .hook ? 0 : scan == nil ? nil : sizes[row.id])
         }
         let scanned = (scan?.clis ?? []).filter { shownCLIs.contains($0.cli) }

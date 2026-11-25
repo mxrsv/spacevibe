@@ -68,23 +68,14 @@ func AccountKey(r roots.Roots) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	account, ok := memberOf(oauth, "accountUuid")
+	account, ok := oauth.StringMember("accountUuid")
 	if !ok || account == "" {
 		return "", false
 	}
-	organization, _ := memberOf(oauth, "organizationUuid")
+	organization, _ := oauth.StringMember("organizationUuid")
 	// URL.standardizedFileURL.path in Swift: "." and ".." folded, no trailing slash.
 	root := filepath.Clean(r.Claude.Root)
 	return hashes.SHA256Hex([]byte(root + "\n" + account + "\n" + organization)), true
-}
-
-// memberOf is a string member, not filtered for null (a null is not a string anyway).
-func memberOf(v ojson.Value, key string) (string, bool) {
-	value, ok := v.Member(key)
-	if !ok {
-		return "", false
-	}
-	return value.StringValue()
 }
 
 // SessionIDSyntax reports whether s uses only the characters a session id or a snapshot file stem may have:
@@ -126,7 +117,8 @@ func SnapshotFiles(cfg config.Config, r roots.Roots) []string {
 		if info, err := os.Lstat(path); err != nil || !info.Mode().IsRegular() {
 			continue
 		}
-		files = append(files, stamped{path, modifiedMs(path)})
+		ms, _ := fsx.ModifiedMs(path) // 0 when it cannot be statted
+		files = append(files, stamped{path, ms})
 	}
 	slices.SortStableFunc(files, func(a, b stamped) int {
 		switch {
@@ -142,16 +134,6 @@ func SnapshotFiles(cfg config.Config, r roots.Roots) []string {
 		paths[i] = f.path
 	}
 	return paths
-}
-
-// modifiedMs is the modification time in ms since 1970, following links; 0 when it cannot be statted.
-func modifiedMs(path string) float64 {
-	info, err := os.Stat(path)
-	if err != nil {
-		return 0
-	}
-	t := info.ModTime()
-	return float64(t.Unix())*1000 + float64(t.Nanosecond())/1_000_000
 }
 
 // ReadSnapshot reads and parses one snapshot file: at most MaxSnapshotBytes, a regular file only (a FIFO is
@@ -177,12 +159,12 @@ func ParseWindows(raw ojson.Value) ([]Window, error) {
 	}
 	var windows []Window
 	for _, spec := range StatuslineWindows() {
-		value, ok := member(raw, spec.Key)
+		value, ok := raw.PresentMember(spec.Key)
 		if !ok {
 			continue
 		}
-		used, okUsed := memberNumber(value, "used_percentage")
-		reset, okReset := memberNumber(value, "resets_at")
+		used, okUsed := value.FiniteMember("used_percentage")
+		reset, okReset := value.FiniteMember("resets_at")
 		if !okUsed || used < 0 || used > 100 || !okReset || reset <= 0 || reset >= 253_402_300_800 || reset != float64(int64(reset)) {
 			return nil, coreerr.NewStatus("Invalid status line window.", coreerr.StatusBadRequest)
 		}
@@ -217,11 +199,11 @@ func readClaude(ctx context.Context, cfg config.Config, r roots.Roots, now float
 		if !ok {
 			continue
 		}
-		if got, _ := memberOf(snapshot, "account"); got != account {
+		if got, _ := snapshot.StringMember("account"); got != account {
 			continue
 		}
 		seconds, ok := snapshot.Member("observedAt")
-		observed, okNumber := number(seconds)
+		observed, okNumber := seconds.FiniteNumber()
 		if !ok || !okNumber || observed <= 0 || observed > now {
 			continue
 		}

@@ -9,7 +9,6 @@ import (
 	"spacevibe.dev/core/internal/inventory"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/textjs"
-	"spacevibe.dev/core/internal/toml"
 	"spacevibe.dev/core/internal/usage"
 )
 
@@ -48,22 +47,9 @@ func skillText(name, description, body string) string {
 // agentFields is what an agent file says, as the Node copy reads it: markdown header plus body, or the TOML keys.
 func agentFields(isTOML bool, text string) (description, instructions string) {
 	if isTOML {
-		return tomlDescription(text), tomlInstructions(text)
+		return inventory.TOMLFields(text)["description"], tomlInstructions(text)
 	}
 	return inventory.ParseFrontmatter(text)["description"], stripHeader(text)
-}
-
-// tomlDescription is the first string assignment of description, in any table, as the Node regex finds it
-// (Inventory.tomlFields).
-func tomlDescription(text string) string {
-	for _, e := range toml.Read(text).Entries {
-		if len(e.KeyPath) == 1 && e.KeyPath[0] == "description" && e.Value != nil {
-			if s, ok := e.Value.AsString(); ok {
-				return s
-			}
-		}
-	}
-	return ""
 }
 
 // ICU (NSRegularExpression) rules the two developer_instructions patterns depend on. RE2 has no backreference and
@@ -144,7 +130,7 @@ func tomlInstructions(text string) string {
 			continue
 		}
 		if end := quotedEnd(text, i); end > 0 {
-			return unquote(text[i:end])
+			return inventory.Unquote(text[i:end])
 		}
 	}
 	return ""
@@ -172,32 +158,6 @@ func quotedEnd(text string, i int) int {
 		}
 	}
 	return -1
-}
-
-// unquote reads a YAML-ish scalar: "double" (JSON escapes), 'single' (two single quotes make one), or plain text
-// (Frontmatter.unquote).
-func unquote(value string) string {
-	t := strings.TrimFunc(value, unicode.IsSpace)
-	if strings.HasPrefix(t, `"`) {
-		if doc, err := ojson.ParseString(t); err == nil {
-			if s, ok := doc.Root().StringValue(); ok {
-				return s
-			}
-		}
-		return dropEnds(t)
-	}
-	if strings.HasPrefix(t, "'") && strings.HasSuffix(t, "'") && utf8.RuneCountInString(t) >= 2 {
-		return strings.ReplaceAll(dropEnds(t), "''", "'")
-	}
-	return t
-}
-
-// dropEnds is dropFirst().dropLast() by code point.
-func dropEnds(s string) string {
-	_, first := utf8.DecodeRuneInString(s)
-	s = s[first:]
-	_, last := utf8.DecodeLastRuneInString(s)
-	return s[:len(s)-last]
 }
 
 var headerRE = regexp.MustCompile(`\A---\r?\n[\s\S]*?\r?\n---\r?\n?`)

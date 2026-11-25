@@ -68,8 +68,8 @@ func editSettings(r roots.Roots) (*mutate.Entry, error) {
 		current, present := doc.Root().Member("statusLine")
 		command := ""
 		if present && current.Kind() != ojson.KindNull {
-			kind, _ := stringMember(current, "type")
-			text, hasCommand := stringMember(current, "command")
+			kind, _ := current.StringMember("type")
+			text, hasCommand := current.StringMember("command")
 			if _, isObject := current.ObjectValue(); !isObject || kind != "command" || !hasCommand {
 				return nil, coreerr.NewStatus("The current status line is unsupported; nothing was replaced.", coreerr.StatusConflict)
 			}
@@ -105,7 +105,7 @@ func Uninstall(r roots.Roots) (*mutate.Entry, error) {
 		if !present {
 			return doc, nil
 		}
-		text, hasCommand := stringMember(current, "command")
+		text, hasCommand := current.StringMember("command")
 		if _, isObject := current.ObjectValue(); !isObject || !hasCommand {
 			return doc, nil
 		}

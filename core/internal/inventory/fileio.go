@@ -1,15 +1,12 @@
 package inventory
 
 import (
-	"errors"
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"slices"
-	"strings"
-	"syscall"
 
+	"spacevibe.dev/core/internal/fsx"
 	"spacevibe.dev/core/internal/ojson"
 	"spacevibe.dev/core/internal/textjs"
 )
@@ -35,53 +32,12 @@ const (
 	jsonValue
 )
 
-// presence is the answer to "is anything there?".
-type presence int
-
-const (
-	present presence = iota
-	// missing is ENOENT or ENOTDIR: nothing is there.
-	missing
-	// unknown means the lookup failed for another reason (EACCES, EPERM, ELOOP, ...): the path may well exist.
-	unknown
-)
-
-// pathPresence is stat following symlinks. Only ENOENT and ENOTDIR mean missing; a denied parent folder must
-// not read as "gone".
-func pathPresence(path string) presence {
-	_, err := os.Stat(path)
-	switch {
-	case err == nil:
-		return present
-	case errors.Is(err, syscall.ENOENT), errors.Is(err, syscall.ENOTDIR), errors.Is(err, fs.ErrNotExist):
-		return missing
-	default:
-		return unknown
-	}
-}
-
 // exists is true only when the path is there.
-func exists(path string) bool { return pathPresence(path) == present }
-
-// openRegular opens a regular file without blocking and checks the opened descriptor, not a path that could
-// change between stat and open. Symlinks to regular files are followed (shared skill installs). A FIFO, a
-// device or a folder is refused.
-func openRegular(path string) (*os.File, error) {
-	f, err := openNonblocking(path)
-	if err != nil {
-		return nil, err
-	}
-	info, err := f.Stat()
-	if err != nil || !info.Mode().IsRegular() {
-		_ = f.Close()
-		return nil, errors.New("not a regular file")
-	}
-	return f, nil
-}
+func exists(path string) bool { return fsx.PathPresence(path) == fsx.Present }
 
 // readData is up to maxBytes of the file; nil, false when it cannot be read.
 func readData(path string, maxBytes int) ([]byte, bool) {
-	f, err := openRegular(path)
+	f, err := fsx.OpenRegular(path)
 	if err != nil {
 		return nil, false
 	}
@@ -104,9 +60,9 @@ func readText(path string, maxBytes int) (string, bool) {
 
 // readJSON reads and parses a settings or hook file, classifying every failure.
 func readJSON(path string) (ojson.Value, jsonStatus) {
-	f, err := openRegular(path)
+	f, err := fsx.OpenRegular(path)
 	if err != nil {
-		if pathPresence(path) == missing {
+		if fsx.PathPresence(path) == fsx.Missing {
 			return ojson.Value{}, jsonMissing
 		}
 		return ojson.Value{}, jsonUnreadable
@@ -157,10 +113,10 @@ func listDir(path string) []string {
 // isUnreadableFolder: the folder exists but cannot be listed, or a parent denies the lookup so nobody can
 // tell (a denied folder reads as "not readable", never as empty).
 func isUnreadableFolder(path string) bool {
-	switch pathPresence(path) {
-	case missing:
+	switch fsx.PathPresence(path) {
+	case fsx.Missing:
 		return false
-	case unknown:
+	case fsx.Unknown:
 		return true
 	}
 	if !isDirectory(path) {
@@ -176,56 +132,10 @@ func isDirectory(path string) bool {
 	return err == nil && info.IsDir()
 }
 
-// modifiedMs is the modification time in ms since 1970, following symlinks; false when it cannot be statted.
-// Computed as seconds*1000 + nanoseconds/1e6 in floating point, like the Swift reader.
-func modifiedMs(path string) (float64, bool) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return 0, false
-	}
-	t := info.ModTime()
-	return float64(t.Unix())*1000 + float64(t.Nanosecond())/1_000_000, true
-}
-
 // isSymlink reports whether the path itself is a symlink.
 func isSymlink(path string) bool {
 	info, err := os.Lstat(path)
 	return err == nil && info.Mode()&fs.ModeSymlink != 0
-}
-
-// join is NSString's appendingPathComponent: single slashes, nothing cleaned.
-func join(base string, parts ...string) string {
-	for _, p := range parts {
-		base = strings.TrimRight(base, "/") + "/" + p
-	}
-	return base
-}
-
-// normalize is path.resolve for an absolute path: "." and ".." folded, no trailing slash. Symlinks are not
-// followed.
-func normalize(path string) string {
-	var stack []string
-	for _, part := range strings.Split(path, "/") {
-		switch part {
-		case "", ".":
-		case "..":
-			if len(stack) > 0 {
-				stack = stack[:len(stack)-1]
-			}
-		default:
-			stack = append(stack, part)
-		}
-	}
-	return "/" + strings.Join(stack, "/")
-}
-
-// realPath is the path with symlinks followed, or the normalized path when it does not exist.
-func realPath(path string) string {
-	abs := normalize(path)
-	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
-		return resolved
-	}
-	return abs
 }
 
 func osStat(path string) (fs.FileInfo, error) { return os.Stat(path) }

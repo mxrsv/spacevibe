@@ -15,7 +15,7 @@ enum RowRemoval {
     static func members(_ rows: [FrameRow], in world: FrameWorld) -> [String] {
         var out: [String] = []
         for row in rows {
-            let own = row.kind == .hook ? row.hooks.filter { $0.cli == .claude }.map(\.id) : row.memberIDs
+            let own = row.membersOfWritableCLIs
             for id in RowReaders(row, in: world).removal(of: own) where !out.contains(id) { out.append(id) }
         }
         return out
