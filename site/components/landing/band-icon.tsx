@@ -1,5 +1,8 @@
 import type { BandId } from "./content";
 
+/** The three kinds of gear beside the five screens: `Resources/PageIcons.json` keys `skills`, `subagents`, `hooks`. */
+export type IconKey = BandId | "subagents" | "hooks";
+
 /**
  * SpaceVibe's own page icons, style Bold (RD23), one per screen, shared by the band headers and the hero.
  * The shapes are the five entries of `Resources/PageIcons.json` of the app, same key as the band id: drawn on a
@@ -15,7 +18,18 @@ interface PageIconShape {
 const STROKE = 24;
 const VIEW_BOX = "28 28 200 200";
 
-const PAGE_ICON: Record<BandId, PageIconShape> = {
+const PAGE_ICON: Record<IconKey, PageIconShape> = {
+  subagents: {
+    lines: ["M198.9 115.5A72 72 0 1 1 140.5 57.1"],
+    dots: [
+      [128, 128, 26],
+      [178.9, 77.1, 20],
+    ],
+  },
+  hooks: {
+    lines: ["M152 66a22 22 0 1 0 44 0a22 22 0 1 0 -44 0", "M174 88v78a48 48 0 0 1-96 0v-28", "M58 158l20-20 20 20"],
+    dots: [],
+  },
   clean: {
     lines: ["M212 44l-68 68", "M124 92l40 40-48 80-72-72Z", "M84 116l56 56", "M64 40v40", "M44 60h40"],
     dots: [],
@@ -42,7 +56,7 @@ const PAGE_ICON: Record<BandId, PageIconShape> = {
 };
 
 interface BandIconProps {
-  readonly band: BandId;
+  readonly band: IconKey;
   readonly size: number;
   readonly className?: string;
 }

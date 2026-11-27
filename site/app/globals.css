@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../components/landing/app-stage/app-stage.css";
 
 /* ----------------------------------------------------------------------------
    Tokens. One near-black ground, one accent (the new app's violet, L35), two CLI identities carried over from
@@ -75,13 +76,21 @@
   --color-stage-green-dim: #378855;
   --color-stage-amber: #f2a94b;
   --color-stage-red: #f5646a;
+  /* The ranked list's medals (gold, silver, bronze, each with its ink) and the "worth it" tile of an agent that lacks the item. */
+  --color-stage-gold: #e9b949;
+  --color-stage-gold-ink: #2a1e02;
+  --color-stage-silver: #c5c9d1;
+  --color-stage-silver-ink: #1d2027;
+  --color-stage-bronze: #c58853;
+  --color-stage-bronze-ink: #261403;
+  --color-stage-worth-line: #8672f0;
+  --color-stage-worth-bg: #2b2543;
 
   --radius-ctl: 8px;
   --radius-card: 12px;
   --radius-panel: 14px;
   --radius-tile: 14px;
 
-  --shadow-glass: 0 20px 44px rgb(3 4 6 / 58%);
   --shadow-panel: 0 24px 60px rgb(3 4 6 / 45%);
   --shadow-lift: 0 24px 48px rgb(3 4 6 / 50%);
 
@@ -91,10 +100,6 @@
   --text-h1: clamp(40px, 5.3vw, 78px);
   --text-h1--line-height: 1;
   --text-h1--letter-spacing: -0.035em;
-  /* The hero's heading while it shares the row with the readings panel (goes with the hero, LR-T3). */
-  --text-h1-split: clamp(40px, 4.4vw, 64px);
-  --text-h1-split--line-height: 1.02;
-  --text-h1-split--letter-spacing: -0.035em;
   --text-h2: clamp(30px, 3.3vw, 48px);
   --text-h2--line-height: 1.08;
   --text-h2--letter-spacing: -0.03em;
@@ -218,30 +223,6 @@
   .display {
     font-family: var(--font-display);
     font-weight: 300;
-  }
-
-  /* A card on the ground: 62% surface, a 1px light on the top edge that fades at both ends (lit from above, not
-     framed). Goes when the hero's panel is replaced (LR-T3). */
-  .glass {
-    position: relative;
-    background: var(--color-glass);
-    border: 1px solid var(--color-edge);
-    box-shadow: var(--shadow-glass);
-    backdrop-filter: blur(14px);
-  }
-
-  .glass::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgb(255 255 255 / 11%) 28%,
-      rgb(255 255 255 / 11%) 72%,
-      transparent 100%
-    );
   }
 
   /* Reveal on scroll. Default is VISIBLE: the client chunk flags the root with

@@ -60,10 +60,7 @@ export const HEADER = {
   cta: { href: DOWNLOAD_URL, label: "Download", rest: " for macOS" },
 } as const;
 
-/**
- * The hero (owner, 2026-11-22: a visitor cannot tell at a glance what the app is for). Picked on 2026-11-23: the
- * logo row under the heading and one reading per screen beside it.
- */
+/** The hero (L25): the eyebrow, the headline, the "Works with" row and the download note; HERO_LINE is the one dim line. */
 export const HERO = {
   headline: ["See what your", "coding agents carry."],
   // The app is for agent CLIs in general (RD13), so this line names the category; the row under the heading says which CLIs.
@@ -79,22 +76,8 @@ export const HERO = {
       { name: "Codex", mark: "/landing/brand/codex-blossom-white.svg" },
     ],
   },
-  /** The lede. It does not say what the app is: the eyebrow above the heading already does. */
-  ledeShort: "SpaceVibe counts, from your own session logs, how often every skill, subagent and hook ran, lists what never ran, and says plainly when a CLI logs nothing to count.",
-  cta: { note: "Free · macOS 15 or later · Apple silicon", label: "Download for macOS", href: DOWNLOAD_URL },
-  /** Layout B: one reading per screen, the figures of the captures below (the app's illustration data). */
-  readingsCaption: "What SpaceVibe shows · demo data",
-  readings: [
-    { band: "clean", figure: "780", unit: "MB", label: "can be cleaned", tone: "warn" },
-    { band: "skills", figure: "5", unit: "", label: "skills never ran", tone: "warn" },
-    { band: "rules", figure: "2", unit: "", label: "rules allow a whole tool", tone: "warn" },
-    { band: "limits", figure: "77", unit: "%", label: "left in the Codex 5-hour window", tone: "warn", meter: 0.77 },
-    { band: "activity", figure: "1", unit: "", label: "session waiting for you", tone: "warn" },
-  ],
-} as const satisfies {
-  readonly readings: readonly { readonly band: BandId; readonly tone: "ok" | "warn"; readonly meter?: number; readonly [key: string]: unknown }[];
-  readonly [key: string]: unknown;
-};
+  cta: { note: "Free · macOS 15 or later · Apple silicon", label: "Download for macOS", href: DOWNLOAD_URL },
+} as const;
 
 /* ---------------------------------------------------------------- the bands */
 
@@ -344,3 +327,32 @@ export const FOOTER_COLUMNS = [
     ],
   },
 ] as const;
+
+/** The one dim line under the hero heading (L25): the first clause of the old lede; the manifesto says the rest. */
+export const HERO_LINE = "SpaceVibe counts, from your own session logs, how often every skill, subagent and hook ran.";
+
+/** The caption of every frame that shows a render of the unshipped look (L7, LP-R5 wording). */
+export const PREVIEW_CAPTION = "Design preview · not in the current download";
+
+/**
+ * The tiles around the hero (L30), icons only: the app's own skill, subagent and hook icons.
+ * `x` and `y` are the tile's centre as a share of the hero's width and height; `lg` is where it stands from 1024 to 1279 px, where the words are wider than the room beside them.
+ */
+export type TileKind = "skills" | "subagents" | "hooks";
+export const TILES: readonly { readonly id: string; readonly kind: TileKind; readonly x: number; readonly y: number; readonly lg?: readonly [number, number] }[] = [
+  { id: "t1", kind: "skills", x: 6, y: 13 },
+  { id: "t2", kind: "hooks", x: 15, y: 40, lg: [11, 28] },
+  { id: "t3", kind: "skills", x: 5, y: 68 },
+  { id: "t4", kind: "subagents", x: 94, y: 12 },
+  { id: "t5", kind: "skills", x: 85, y: 40, lg: [89, 28] },
+  { id: "t6", kind: "hooks", x: 95, y: 68 },
+  { id: "t7", kind: "hooks", x: 22, y: 90 },
+];
+/** Pairs of tiles joined by a thin line. */
+export const TILE_LINKS: readonly (readonly [string, string])[] = [
+  ["t1", "t2"],
+  ["t2", "t3"],
+  ["t4", "t5"],
+  ["t5", "t6"],
+  ["t3", "t7"],
+];
