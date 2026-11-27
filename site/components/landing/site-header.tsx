@@ -22,7 +22,7 @@ export function SiteHeader() {
             href={ANNOUNCE.link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-1 font-medium text-accent-text no-underline hover:text-ink-0"
+            className="group inline-flex min-h-6 items-center gap-1 font-medium text-accent-text no-underline hover:text-ink-0"
           >
             {ANNOUNCE.link.label}
             <ArrowRight size={12} aria-hidden="true" className="transition-transform duration-150 ease-out group-hover:translate-x-0.5" />

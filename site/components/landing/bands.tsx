@@ -94,7 +94,7 @@ function Visual({ band }: { readonly band: Band }) {
       </div>
 
       {/* The one floating figure of the screen (the reference's "$4,546" card). It hangs over the card's lower edge, under the frame, so it covers no pixel of the drawing and not the caption. */}
-      <div className="card relative z-10 -mt-14 ml-4 w-fit min-w-[200px] bg-s2 px-5 py-4 shadow-lift max-xl:self-start xl:absolute xl:-bottom-12 xl:left-8 xl:mt-0 xl:ml-0">
+      <div className="card relative z-10 -mt-14 ml-4 w-fit min-w-[200px] max-w-[min(300px,calc(100%-2rem))] bg-s2 px-5 py-4 shadow-lift max-xl:self-start xl:absolute xl:-bottom-12 xl:left-8 xl:mt-0 xl:ml-0">
         <p className={`display text-stat tnum ${TONE[reading.tone]}`}>
           <span role="img" aria-label={reading.figure}>
             <span aria-hidden="true" data-count={reading.figure}>
@@ -122,7 +122,7 @@ function Ledger({ ledger }: { readonly ledger: Record<CLI, CliLine> }) {
               <span translate="no" className="inline-flex items-center gap-2 text-sec font-medium text-ink-0">
                 <Image src={CLI_MARK[cli]} alt="" width={14} height={14} className="size-3.5 shrink-0" />
                 {CLI_LABEL[cli]}
-              </span>
+              </span>{" "}
               <span className="inline-flex items-center gap-1.5 text-sec font-medium text-ink-0">
                 <Icon size={14} strokeWidth={2} aria-hidden="true" className={`shrink-0 ${tone}`} />
                 {line.verdict}

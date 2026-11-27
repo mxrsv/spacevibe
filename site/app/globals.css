@@ -171,6 +171,16 @@
     color: var(--color-ink-0);
     text-wrap: balance;
   }
+
+  /* A word longer than its column (a long skill name or path in copy) breaks instead of widening the page. */
+  h1,
+  h2,
+  h3,
+  p,
+  dd,
+  summary {
+    overflow-wrap: anywhere;
+  }
 }
 
 /* Page frame: 1280px cap, 48px gutters on desktop, 28px on tablets (768 to 1023px), 20px on phones. */

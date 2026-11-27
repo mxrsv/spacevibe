@@ -31,7 +31,7 @@ export function Figures() {
               <dt className="text-label uppercase text-ink-2">{item.label}</dt>
               {/* The number, then its note on its own line below md:, so the three notes sit at the same place on a phone. */}
               <dd className="grid gap-3 md:flex md:items-baseline md:gap-x-6">
-                <span className="display tnum text-figure text-ink-0">{item.value}</span>
+                <span className="display tnum text-figure text-ink-0">{item.value}</span>{" "}
                 <span className="max-w-[360px] text-sec text-ink-1">{item.note}</span>
               </dd>
             </div>

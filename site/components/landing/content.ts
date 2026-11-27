@@ -17,12 +17,12 @@ export const SITE = {
   title: "SpaceVibe — see what your coding agents carry",
   description:
     "A local Mac app that shows every skill, subagent and hook Claude Code and Codex carry, how often each ran, what each may do, and what it cost. Nothing leaves the machine.",
-  // The first viewport at 1200 x 630 without the header, saved from the built page; retake it when the hero changes.
+  // The first viewport at 1200 x 630 without the announcement bar and the header, saved from the built page (headless Chrome, header and bar removed, 1200 wide); retake it when the hero changes.
   ogImage: {
     src: "/og.jpg",
     width: 1200,
     height: 630,
-    alt: "SpaceVibe: See what your coding agents carry. Beside the headline, five readings: 780 MB can be cleaned, 5 skills never ran, 2 rules allow a whole tool, 77% left in the Codex 5-hour window, 1 session waiting for you.",
+    alt: "SpaceVibe: See what your coding agents carry. Under the headline, the Download for macOS button and GitHub, the line \"Free, macOS 15 or later, Apple silicon\", Claude Code and Codex under \"Works with\", and the top of the Skills list drawn in a window, between icon tiles for skills, subagents and hooks.",
   },
 } as const;
 
