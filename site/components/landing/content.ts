@@ -46,12 +46,12 @@ export interface NavLink {
   readonly label: string;
 }
 
+/** The header pill and the footer's Screens column (L31, L39): the four screens the page's bands draw. */
 export const NAV = [
-  { href: "#clean", label: "Clean" },
   { href: "#skills", label: "Skills" },
+  { href: "#subagents", label: "Subagents" },
+  { href: "#hooks", label: "Hooks" },
   { href: "#rules", label: "Rules" },
-  { href: "#limits", label: "Limits" },
-  { href: "#activity", label: "Activity" },
 ] as const;
 
 /** The header button reads `label` on a phone and `label` + `rest` from `sm:` up; `rest` stays in the accessible name. */
@@ -323,6 +323,24 @@ export const FOOTER = {
   disclaimer: "SpaceVibe is not affiliated with Anthropic or OpenAI. Claude\u00A0Code and Codex are trademarks of their owners.",
   brand: "SpaceVibe",
   by: "SpaceVibe",
-  nav: NAV,
-  github: { href: GITHUB_URL, label: "GitHub" },
 } as const;
+
+/** The bar above the header (L31). It repeats the left card of the ending on purpose. */
+export const ANNOUNCE = {
+  text: "Tokens is in development",
+  link: { href: UPCOMING.watch.href, label: "Watch releases" },
+} as const;
+
+/** Footer columns (reference): only links and words the page already has. */
+export const FOOTER_COLUMNS = [
+  { title: "Screens", links: NAV },
+  {
+    title: "SpaceVibe",
+    links: [
+      { href: DOWNLOAD_URL, label: "Download for macOS" },
+      { href: UPCOMING.watch.href, label: "Watch releases" },
+      { href: GITHUB_URL, label: "GitHub" },
+      { href: `#${FAQ.id}`, label: "Questions" },
+    ],
+  },
+] as const;
