@@ -9,7 +9,7 @@ The public page for `spacevibe.dev`: Next.js 16 (App Router, static export) and 
 | `npm run lint`  | ESLint                                                    |
 | `node --test tests/*.test.mjs` | `vercel.json` redirects (live family, old Hub routes, no shadowing) and the landing facts |
 
-Layout: `app/` (layout, page, `globals.css` tokens, `scene.css` planet scene), `components/landing/` (one file per section; `content.ts` holds every word of `/`, `shots.ts` the app captures and how they were taken, `band-icon.tsx` a hand copy of the app's five page icons from [`Resources/PageIcons.json`](../Resources/PageIcons.json): no script writes it, so a page icon that changes is changed in both), `public/landing/` (the deep-space raster and three star tiles, shared with the Academy landing; `app/` holds the captures).
+Layout: `app/` (layout, page, `globals.css` tokens), `components/landing/` (one file per section; `content.ts` holds every word of `/`, `shots.ts` the app captures and how they were taken, `band-icon.tsx` a hand copy of the app's five page icons from [`Resources/PageIcons.json`](../Resources/PageIcons.json): no script writes it, so a page icon that changes is changed in both), `public/landing/` (`app/` holds the captures, `brand/` the CLI marks).
 
 The app captures show the app's synthetic illustration data, never a real `~/.claude`; every caption says "demo data".
 

@@ -5,12 +5,11 @@ import type { CSSProperties } from "react";
 import { BandIcon } from "./band-icon";
 import { ButtonLink } from "./button-link";
 import { HERO } from "./content";
-import { Scene } from "./scene";
 
 const rise = (ms: number) => ({ "--rise": `${ms}ms` }) as CSSProperties;
 
 /**
- * The first viewport over the planet limb (owner's pick, 2026-11-23): words left, under the heading the marks of
+ * The first viewport (owner's pick, 2026-11-23; redone in LR-T3): words left, under the heading the marks of
  * the CLIs the core reads, and right one legible panel, a reading per screen, each a link to its band.
  * First glance, second glance: the readings, then the heading.
  */
@@ -47,9 +46,7 @@ export function Hero() {
   );
 
   return (
-    <section id="top" className="relative isolate overflow-clip bg-void pt-28 pb-24 max-md:pt-20 max-md:pb-14">
-      <Scene variant="hero" />
-
+    <section id="top" className="relative isolate overflow-clip bg-bg pt-28 pb-24 max-md:pt-20 max-md:pb-14">
       <div className="shell grid items-center gap-12 max-md:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
         {words}
         <div data-rise style={rise(380)}>

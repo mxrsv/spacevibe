@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 
 import { SITE } from "@/components/landing/content";
 
@@ -11,6 +11,9 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
+
+/* L32, L36: the display face for headlines and large figures, picked by the owner on the mock. Open licence (OFL). */
+const space = Space_Grotesk({ variable: "--font-space", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -29,11 +32,11 @@ export const metadata: Metadata = {
 };
 
 /** The browser chrome on a phone takes the page's own ground, `--color-bg` in globals.css. */
-export const viewport: Viewport = { themeColor: "#0c0c0d" };
+export const viewport: Viewport = { themeColor: "#0a0a0b" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${space.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <a
           href="#main"

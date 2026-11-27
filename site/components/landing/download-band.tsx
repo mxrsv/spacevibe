@@ -1,14 +1,12 @@
 import { ButtonLink } from "./button-link";
 import { DOWNLOAD } from "./content";
-import { Scene } from "./scene";
 
-/** The scene returns once, dimmer, cropped to its lower-right corner, behind the one download panel and its centred veil. */
+/** The one download panel (replaced by the ending cards in LR-T5). */
 export function DownloadBand() {
   return (
     <section id={DOWNLOAD.id} className="border-t border-edge band">
       <div className="shell">
         <div className="relative isolate overflow-clip rounded-panel border border-edge bg-s1 px-8 py-16 text-center max-md:px-5 max-md:py-10">
-          <Scene variant="download" />
           <div className="mx-auto grid max-w-[520px] justify-items-center gap-4">
             <h2 className="text-h2 font-medium" data-reveal>
               {DOWNLOAD.heading}

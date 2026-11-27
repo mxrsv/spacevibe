@@ -1,36 +1,41 @@
 @import "tailwindcss";
-@import "./scene.css";
 
 /* ----------------------------------------------------------------------------
-   Tokens. One graphite ground, one accent (the planet's light), two CLI identities
-   carried over from the app (Claude Code clay, Codex mono: PRODUCT.md, Colour). Everything in the
-   components reads these names; no raw colour lives in a className.
+   Tokens. One near-black ground, one accent (the new app's violet, L35), two CLI identities carried over from
+   the app (Claude Code clay, Codex mono: PRODUCT.md, Colour). Everything in the components reads these names;
+   no raw colour lives in a className.
    ---------------------------------------------------------------------------- */
 @theme {
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* L32, L36: Space Grotesk (OFL) is for headlines and large figures only; body text stays Inter. */
+  --font-display: var(--font-space), var(--font-inter), system-ui, sans-serif;
 
   /* Graphite surfaces, no hue cast (RD9). `s1`, `s2`, `s3` are the app's `canvasSurface`, `sidebarSurface` and
-     `groupSurface` (dark; DS-R1, `ColorRole.swift`), lowest to highest. The app has nothing darker than its
-     canvas, so `bg` is derived: `s1` minus the 5, 6, 7 steps the old `bg` sat below the old `s1` (#0c0c0d).
-     `void` is the scene's deep-space black, not a surface of the app: unchanged. `themeColor` in layout.tsx
-     copies `bg`; landing-facts.test.mjs keeps the two equal. */
-  --color-void: #050608;
-  --color-bg: #0c0c0d;
+     `groupSurface` (dark; DS-R1, `ColorRole.swift`), lowest to highest. `bg` is the page's own ground, darker than
+     any surface of the app (L24). `themeColor` in layout.tsx copies `bg`; landing-facts.test.mjs keeps the two equal. */
+  --color-bg: #0a0a0b;
   --color-s1: #111214;
   --color-s2: #141518;
   --color-s3: #191a1d;
 
-  /* The app's primary action (RD11: `primaryAction`, same in both themes) and its two steps: hover is the primary
-     with 8% black, pressed with 16% black (DS2, `ColorRole.swift`). Hover is darker so white text keeps 4.5:1. */
-  --color-accent: #0b6fe4;
-  --color-accent-hover: #0a66d2;
-  --color-accent-pressed: #095dc0;
-  --color-accent-text: #82a5ff;
+  /* The accent is the violet of the new app renders (L35: system.md `--accent`, `--accent-hi`). Hover is the primary
+     with 8% black, pressed with 16% black; white text on it is 4.8:1. */
+  --color-accent: #7256f6;
+  --color-accent-hover: #694fe2;
+  --color-accent-pressed: #6048cf;
+  --color-accent-text: #ac9cff;
 
   --color-ink-0: #f4f5f7;
   --color-ink-1: #a4a8b0;
-  --color-ink-2: #767b84;
+  --color-ink-2: #868b94;
+
+  /* L23, L24: the dot grid, the faint tiles and the thin lines of the reference, still graphite. */
+  --color-tile: rgb(255 255 255 / 3%);
+  --color-dot: rgb(255 255 255 / 11%);
+  --color-line: rgb(255 255 255 / 12%);
+  --color-on-accent: #ffffff;
+  --color-accent-line: rgb(255 255 255 / 34%);
 
   --color-edge: rgb(255 255 255 / 8%);
   --color-edge-strong: rgb(255 255 255 / 13%);
@@ -49,36 +54,69 @@
   --color-light-min: #febc2e;
   --color-light-zoom: #28c840;
 
+  /* The drawn app stages (components/landing/app-stage). The Kanu renders' warm surfaces (#1B191A and its steps) are
+     retuned to a cool ramp on the landing's ground: window = s1, card = s3, then two steps up for a selected row and a
+     meter track. The accent, the medals, the greens, the amber and the red are the render's own. Body text on a card
+     is 8.2:1 or more, the quietest text 4.9:1 on a selected row, a meter 3.6:1 on its track. */
+  --color-stage-bg: #111214;
+  --color-stage-surface: #191a1d;
+  --color-stage-raised: #222327;
+  --color-stage-inset: #1e1f22;
+  --color-stage-line: #27282c;
+  --color-stage-line-2: #34353a;
+  --color-stage-text: #f4f5f7;
+  --color-stage-text-2: #b4b8bf;
+  --color-stage-text-3: #8d9199;
+  --color-stage-tile: #33343a;
+  --color-stage-track: #34353b;
+  --color-stage-accent: #7256f6;
+  --color-stage-accent-hi: #ac9cff;
+  --color-stage-green: #49de80;
+  --color-stage-green-dim: #378855;
+  --color-stage-amber: #f2a94b;
+  --color-stage-red: #f5646a;
+
   --radius-ctl: 8px;
   --radius-card: 12px;
   --radius-panel: 14px;
+  --radius-tile: 14px;
 
   --shadow-glass: 0 20px 44px rgb(3 4 6 / 58%);
   --shadow-panel: 0 24px 60px rgb(3 4 6 / 45%);
-  --shadow-lift: 0 -32px 64px rgb(3 4 6 / 50%);
+  --shadow-lift: 0 24px 48px rgb(3 4 6 / 50%);
 
   --ease-out-expo: cubic-bezier(0.22, 0.8, 0.26, 1);
 
-  --text-h1: clamp(46px, 6.1vw, 84px);
-  --text-h1--line-height: 0.98;
-  --text-h1--letter-spacing: -0.04em;
-  /* The hero's heading: it shares the row with the readings panel, so it is smaller than a full-width h1. */
+  /* L32: light-weight display sizes, set in the display face. */
+  --text-h1: clamp(40px, 5.3vw, 78px);
+  --text-h1--line-height: 1;
+  --text-h1--letter-spacing: -0.035em;
+  /* The hero's heading while it shares the row with the readings panel (goes with the hero, LR-T3). */
   --text-h1-split: clamp(40px, 4.4vw, 64px);
   --text-h1-split--line-height: 1.02;
   --text-h1-split--letter-spacing: -0.035em;
-  --text-h2: clamp(28px, 2.5vw, 36px);
-  --text-h2--line-height: 1.15;
-  --text-h2--letter-spacing: -0.025em;
+  --text-h2: clamp(30px, 3.3vw, 48px);
+  --text-h2--line-height: 1.08;
+  --text-h2--letter-spacing: -0.03em;
+  --text-manifesto: clamp(22px, 2.55vw, 36px);
+  --text-manifesto--line-height: 1.32;
+  --text-manifesto--letter-spacing: -0.02em;
+  --text-figure: clamp(60px, 8.4vw, 124px);
+  --text-figure--line-height: 0.95;
+  --text-figure--letter-spacing: -0.04em;
   --text-h3: 17px;
   --text-h3--line-height: 24px;
   --text-h3--letter-spacing: -0.01em;
-  --text-stat: 28px;
+  --text-stat: clamp(34px, 3.4vw, 46px);
   --text-stat--line-height: 1;
-  --text-stat--letter-spacing: -0.03em;
+  --text-stat--letter-spacing: -0.035em;
   --text-body: 15px;
   --text-body--line-height: 23px;
   --text-sec: 13px;
   --text-sec--line-height: 20px;
+  --text-label: 11px;
+  --text-label--line-height: 16px;
+  --text-label--letter-spacing: 0.1em;
   --text-tiny: 11px;
   --text-tiny--line-height: 16px;
 }
@@ -103,7 +141,7 @@
     color: #fff;
   }
 
-  /* Opaque primary: 3.65:1 on `s3` up to 4.26:1 on `void`, so every surface of the page clears WCAG 1.4.11. No
+  /* Opaque primary: 3.63:1 on `s3` up to 4.13:1 on `bg`, so every surface of the page clears WCAG 1.4.11. No
      `border-radius`: an outline follows the element's own corner. */
   :focus-visible {
     outline: 2px solid var(--color-accent);
@@ -162,8 +200,28 @@
     }
   }
 
-  /* A card that stands on the scene: 62% ground so the stars show through, a
-     1px light on the top edge that fades at both ends (lit from above, not framed). */
+  /* The ground of the page: a faint dot grid that fades towards its edges, behind the hero and the figures. */
+  .dot-grid {
+    background-image: radial-gradient(var(--color-dot) 1px, transparent 1.6px);
+    background-size: 24px 24px;
+    background-position: center top;
+    mask-image: radial-gradient(ellipse 70% 65% at 50% 38%, #000 25%, transparent 78%);
+  }
+
+  /* The same dots, unmasked, on a card's inner ground. */
+  .dot-grid-flat {
+    background-image: radial-gradient(var(--color-dot) 1px, transparent 1.6px);
+    background-size: 24px 24px;
+  }
+
+  /* The display face: light, for headlines and large figures only (L32, L36). */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 300;
+  }
+
+  /* A card on the ground: 62% surface, a 1px light on the top edge that fades at both ends (lit from above, not
+     framed). Goes when the hero's panel is replaced (LR-T3). */
   .glass {
     position: relative;
     background: var(--color-glass);
