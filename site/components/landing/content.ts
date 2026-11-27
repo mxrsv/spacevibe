@@ -9,6 +9,7 @@
 // SV ledger D-1). Change both together.
 export const GITHUB_URL = "https://github.com/mxrsv/spacevibe";
 export const DOWNLOAD_URL = `${GITHUB_URL}/releases/latest`;
+export const WATCH_URL = `${GITHUB_URL}/releases`;
 
 export const SITE = {
   brand: "SpaceVibe",
@@ -185,41 +186,10 @@ export const BANDS: readonly Band[] = [
   },
 ];
 
-export const UPCOMING = {
-  id: "next",
-  heading: "Tokens is in development.",
-  label: "In development",
-  body: "Tokens and estimated cost per day, model and project for both CLIs, kept as a local history. Not in the current download.",
-  watch: { href: `${GITHUB_URL}/releases`, label: "Watch releases on GitHub" },
-} as const;
-
-export const PRIVATE = {
-  id: "private",
-  heading: "Private by construction.",
-  items: [
-    {
-      lead: "No network listener, no account, no telemetry.",
-      body: "The only requests the app makes are its daily update check and the download you click. No user data passes through the site either.",
-    },
-    {
-      lead: "Nothing is executed.",
-      body: "A hook is shown and written, never run by the app. Session logs are read-only.",
-    },
-    {
-      lead: "Every write has a way back.",
-      body: "Writes go only to the skill, subagent, hook and permission locations of each CLI, and each one keeps a restorable copy. Undo is one click.",
-    },
-    {
-      lead: "Secrets stay unread.",
-      body: "Values that may be secrets are never read into the interface or logged. Plugin-owned items are read-only.",
-    },
-  ],
-} as const;
-
 export const FAQ = {
   id: "faq",
   heading: "Before you download.",
-  /** Only what the bands and the privacy panel do not already answer; every answer is a fact from PRODUCT.md. */
+  /** Only what the bands and the figures band do not already answer; every answer is a fact from PRODUCT.md. */
   items: [
     {
       q: "Is it free?",
@@ -252,14 +222,6 @@ export const FAQ = {
   ],
 } as const;
 
-export const DOWNLOAD = {
-  id: "download",
-  heading: "Download SpaceVibe for macOS",
-  body: "Free. macOS\u00A015 or later on Apple\u00A0silicon.",
-  cta: { href: DOWNLOAD_URL, label: "Download for macOS" },
-  secondary: { href: GITHUB_URL, label: "GitHub" },
-} as const;
-
 export const FOOTER = {
   /** Goes with the CLI marks in the hero: naming a product is not a claim of a tie to its maker. */
   disclaimer: "SpaceVibe is not affiliated with Anthropic or OpenAI. Claude\u00A0Code and Codex are trademarks of their owners.",
@@ -270,7 +232,7 @@ export const FOOTER = {
 /** The bar above the header (L31). It repeats the left card of the ending on purpose. */
 export const ANNOUNCE = {
   text: "Tokens is in development",
-  link: { href: UPCOMING.watch.href, label: "Watch releases" },
+  link: { href: WATCH_URL, label: "Watch releases" },
 } as const;
 
 /** Footer columns (reference): only links and words the page already has. */
@@ -280,7 +242,7 @@ export const FOOTER_COLUMNS = [
     title: "SpaceVibe",
     links: [
       { href: DOWNLOAD_URL, label: "Download for macOS" },
-      { href: UPCOMING.watch.href, label: "Watch releases" },
+      { href: WATCH_URL, label: "Watch releases" },
       { href: GITHUB_URL, label: "GitHub" },
       { href: `#${FAQ.id}`, label: "Questions" },
     ],
@@ -315,3 +277,49 @@ export const TILE_LINKS: readonly (readonly [string, string])[] = [
   ["t5", "t6"],
   ["t3", "t7"],
 ];
+
+/**
+ * The manifesto (L26): PRODUCT.md's Mechanism sentence, word for word. A string is words; an object is a bare icon set
+ * in the sentence.
+ */
+export type ChipKey = "skills" | "subagents" | "hooks";
+export const MANIFESTO = {
+  label: "How it works",
+  parts: [
+    "One inventory across both CLIs, joined to usage counted from local session logs: installed but never invoked, invoked often, present in one CLI and missing in the other, and exactly which hook",
+    { chip: "hooks" },
+    "commands fire on each event.",
+  ],
+} as const satisfies { readonly label: string; readonly parts: readonly (string | { readonly chip: ChipKey })[] };
+
+/**
+ * The band of large figures (L28), "Private by construction.": what the app does not do, each a zero that holds on
+ * every Mac. Each note restates PRODUCT.md and AGENTS.md (S-R3 to S-R5). No figure here is a count of users and none
+ * repeats a demo reading (a number shows once). Every figure is a zero, so none counts up.
+ */
+export const FIGURES = {
+  id: "private",
+  label: "On every Mac",
+  heading: "Private by construction.",
+  line: "The only requests the app makes are its daily update check and the download you click. No user data passes through the site either.",
+  items: [
+    { value: 0, label: "Network listeners", note: "The app opens no port; it only checks for updates and downloads the one you click." },
+    { value: 0, label: "Hooks or recorded commands the app runs", note: "A hook is shown and written, never run by the app." },
+    { value: 0, label: "Secret values read into the interface", note: "Values that may be secrets are never read into the interface or logged." },
+  ],
+} as const;
+
+/** The two cards that end the page (L29): Tokens in development (L8), then the download (L14, L15). */
+export const ENDING = {
+  watch: {
+    label: "In development",
+    heading: "Watch releases on GitHub",
+    body: "Tokens is in development. Tokens and estimated cost per day, model and project for both CLIs, kept as a local history. Not in the current download.",
+    cta: { href: WATCH_URL, label: "Watch releases" },
+  },
+  download: {
+    heading: "Download for macOS",
+    note: HERO.cta.note,
+    cta: { href: DOWNLOAD_URL, label: "Download" },
+  },
+} as const;

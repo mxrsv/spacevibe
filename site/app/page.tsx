@@ -1,17 +1,17 @@
 import { Bands } from "@/components/landing/bands";
-import { DownloadBand } from "@/components/landing/download-band";
+import { Ending } from "@/components/landing/ending";
 import { FaqSection } from "@/components/landing/faq-section";
+import { Figures } from "@/components/landing/figures";
 import { Hero } from "@/components/landing/hero";
-import { PrivateSection } from "@/components/landing/private-section";
-import { LANDING_ROOT_ID, ScrollReveal } from "@/components/landing/scroll-reveal";
+import { Manifesto } from "@/components/landing/manifesto";
+import { LANDING_ROOT_ID, Motion } from "@/components/landing/motion";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
-import { Upcoming } from "@/components/landing/upcoming";
 
 /**
- * spacevibe.dev, one page, redesigned after the Dstudio reference (landing spec L21 to L39): the centred hero with the
- * app drawn in a window, one "Your Gateway" band per screen (Skills, Subagents, Hooks, Rules), then, until LR-T5 replaces
- * them, the page still in development, the privacy guarantees, the questions left open and the download band.
+ * spacevibe.dev, one page, redesigned after the Dstudio reference (landing spec L21 to L32): the centred hero with a
+ * real app window, the manifesto, one "Your Gateway" band per screen, the band of large figures, the questions, and the
+ * two ending cards.
  */
 export default function LandingPage() {
   return (
@@ -19,14 +19,14 @@ export default function LandingPage() {
       <SiteHeader />
       <main id="main">
         <Hero />
+        <Manifesto />
         <Bands />
-        <Upcoming />
-        <PrivateSection />
+        <Figures />
         <FaqSection />
-        <DownloadBand />
+        <Ending />
       </main>
       <SiteFooter />
-      <ScrollReveal />
+      <Motion />
     </div>
   );
 }

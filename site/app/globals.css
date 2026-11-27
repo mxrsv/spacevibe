@@ -227,39 +227,30 @@
     border-radius: var(--radius-panel);
   }
 
+  /* A corner fade for a card's inner dots: they thin out towards the lower right, away from the card's words. */
+  .dot-grid-corner {
+    mask-image: linear-gradient(200deg, #000, transparent 65%);
+  }
+
   /* The display face: light, for headlines and large figures only (L32, L36). */
   .display {
     font-family: var(--font-display);
     font-weight: 300;
   }
 
-  /* Reveal on scroll. Default is VISIBLE: the client chunk flags the root with
-     `data-motion-ready` only once the observer exists, so a lost bundle never
-     leaves the page blank. */
-  [data-motion-ready] [data-reveal] {
-    opacity: 0;
-    transform: translateY(10px);
-    transition:
-      opacity 520ms ease,
-      transform 520ms var(--ease-out-expo);
-    transition-delay: var(--d, 0ms);
-  }
+  /* ---------------------------------------------------------------- motion (L26)
+     Every effect runs once and never loops. The runtime (motion.tsx) flags the root with `data-motion-ready` only
+     when it will animate: a lost bundle, and reduced motion both leave the final state. */
 
-  [data-reveal].in {
-    opacity: 1;
-    transform: none;
-  }
-
-  /* Hero entrance: eyebrow-less, so the heading leads. `backwards` keeps the
-     first frame from flashing. */
+  /* 1. The hero rises in steps on load. `backwards` keeps the first frame from flashing. */
   [data-rise] {
-    animation: rise-in 620ms var(--ease-out-expo) var(--rise, 0ms) backwards;
+    animation: rise-in 700ms var(--ease-out-expo) var(--rise, 0ms) backwards;
   }
 
   @keyframes rise-in {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(18px);
     }
 
     to {
@@ -267,6 +258,74 @@
       transform: none;
     }
   }
+
+  /* 2. Headings and figures slide up from behind a mask line. */
+  [data-motion-ready] [data-mask] {
+    overflow: hidden;
+    /* room for descenders so the mask does not clip a "g" at rest */
+    padding-bottom: 0.12em;
+    margin-bottom: -0.12em;
+  }
+
+  [data-motion-ready] [data-mask] > * {
+    transform: translateY(112%);
+    transition: transform 900ms var(--ease-out-expo);
+    transition-delay: var(--d, 0ms);
+  }
+
+  [data-motion-ready] [data-mask].in > * {
+    transform: none;
+  }
+
+  /* 3. Section labels slide in from the side. */
+  [data-motion-ready] [data-slide] {
+    opacity: 0;
+    transform: translateX(-22px);
+    transition:
+      opacity 600ms ease,
+      transform 700ms var(--ease-out-expo);
+    transition-delay: var(--d, 0ms);
+  }
+
+  [data-motion-ready] [data-slide].in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* 4. Logo rows, cards and rows appear in turn (the delay is set per item). */
+  [data-motion-ready] [data-reveal] {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 600ms ease,
+      transform 700ms var(--ease-out-expo);
+    transition-delay: var(--d, 0ms);
+  }
+
+  [data-motion-ready] [data-reveal].in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* 5. The manifesto lights word by word as the page scrolls: the runtime sets `.on` on the words passed. */
+  [data-motion-ready] [data-w] {
+    color: var(--color-ink-2);
+    transition: color 260ms ease;
+  }
+
+  [data-motion-ready] [data-w].on {
+    color: var(--color-ink-0);
+  }
+
+  [data-motion-ready] [data-chip] {
+    opacity: 0.35;
+    transition: opacity 260ms ease;
+  }
+
+  [data-motion-ready] [data-chip].on {
+    opacity: 1;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -281,7 +340,6 @@
     scroll-behavior: auto;
   }
 
-  [data-reveal],
   [data-rise] {
     opacity: 1 !important;
     transform: none !important;
@@ -289,7 +347,9 @@
 }
 
 @media print {
-  [data-reveal] {
+  [data-reveal],
+  [data-slide],
+  [data-mask] > * {
     opacity: 1;
     transform: none;
   }

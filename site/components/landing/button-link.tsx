@@ -1,7 +1,7 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
 
-type Variant = "solid" | "ghost";
+type Variant = "solid" | "ghost" | "light";
 
 interface ButtonLinkProps {
   readonly href: string;
@@ -19,6 +19,7 @@ const BASE =
 
 const VARIANT: Record<Variant, string> = {
   solid: "bg-accent text-on-accent border border-transparent hover:bg-accent-hover active:bg-accent-pressed",
+  light: "bg-ink-0 text-bg border border-transparent hover:bg-ink-1 active:bg-ink-1",
   ghost: "bg-transparent text-ink-1 border border-edge-strong hover:border-edge-hover hover:text-ink-0 active:bg-s2",
 };
 

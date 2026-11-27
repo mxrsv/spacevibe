@@ -15,7 +15,7 @@ test("no copy makes the status line the source of a limit", () => {
 // LR-T4 stopgap: LR-T7 rewrites this file for the redesign.
 test("every band has a drawing and a line per CLI", () => {
   const start = content.indexOf("export const BANDS");
-  const section = content.slice(start, content.indexOf("export const UPCOMING"));
+  const section = content.slice(start, content.indexOf("\nexport const ", start + 10));
   const ids = [...section.matchAll(/\n    id: "(\w+)",\n    label:/g)].map((m) => m[1]);
   assert.deepEqual(ids, ["skills", "subagents", "hooks", "rules"], "the four bands were not found in content.ts");
   const stages = bands.match(/const STAGES = \{([^}]*)\}/)?.[1] ?? "";
