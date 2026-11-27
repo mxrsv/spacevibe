@@ -1,12 +1,9 @@
 /**
  * Every word and number on the landing page. Product truth comes from `../../PRODUCT.md` and the
- * landing spec in `docs/specs/` (ledger L1 to L16 and its 2026-11-22 amendments); every claim below
+ * landing spec in `docs/specs/` (ledger L1 to L39); every claim below
  * is one the app shows on its own screen or PRODUCT.md states, and nothing here is a number about
- * real users. `site/tests/landing-facts.test.mjs` checks the Limits wording and that every screen
- * named here exists.
+ * real users. `site/tests/landing-facts.test.mjs` checks that every band has a drawing and a line per CLI.
  */
-
-import type { ShotKey } from "./shots";
 
 // The same `mxrsv/spacevibe` as GITHUB_REPO in scripts/release.sh (settled by the owner on 2026-11-21,
 // SV ledger D-1). Change both together.
@@ -81,72 +78,9 @@ export const HERO = {
 
 /* ---------------------------------------------------------------- the bands */
 
-export type BandId = "clean" | "skills" | "rules" | "limits" | "activity";
-
-export interface Band {
-  readonly id: BandId;
-  /** The screen's name in the app's sidebar. */
-  readonly label: string;
-  readonly question: string;
-  readonly answer: string;
-  readonly shot: ShotKey;
-  /** The shot is the inspector alone, so it sits beside the words instead of under them. */
-  readonly narrow?: boolean;
-  readonly caption: string;
-}
-
-const DEMO = "demo data";
-
-/** In the order of the jobs in PRODUCT.md: clean up, balance and control, then watch. */
-export const BANDS: readonly Band[] = [
-  {
-    id: "clean",
-    label: "Clean",
-    question: "What can go, and how much does it free?",
-    answer:
-      "Skills, subagents and hooks that never ran, hooks whose script is gone, and old session logs and caches, each with its size. Tick what goes and remove it in one step; Undo brings it back.",
-    shot: "clean",
-    caption: `Clean · ${DEMO}`,
-  },
-  {
-    id: "skills",
-    label: "Skills",
-    question: "What is installed, and how often did it run?",
-    answer:
-      "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other, with an action to add it there. Subagents have a page like it; Hooks lists which commands fire on each event.",
-    shot: "skills",
-    caption: `Skills · ${DEMO}`,
-  },
-  {
-    id: "rules",
-    label: "Rules",
-    question: "What is each CLI allowed to do?",
-    answer:
-      "Claude Code’s rules as Allow, Ask or Deny per capability, with the rule behind each one and a warning on a rule that allows a whole tool. Codex’s sandbox and approvals are shown in its own words.",
-    shot: "rules",
-    caption: `Rules · ${DEMO}`,
-  },
-  {
-    id: "limits",
-    label: "Limits",
-    question: "How much of my limit is left?",
-    answer:
-      "Read from Claude Code’s own usage cache, or optionally its status-line capture, and from Codex’s session logs, with no login and no API call. A CLI that keeps no usage file reads as not measurable; SpaceVibe never guesses.",
-    shot: "limits",
-    narrow: true,
-    caption: `A limit window · ${DEMO}`,
-  },
-  {
-    id: "activity",
-    label: "Activity",
-    question: "What is running, and what is waiting for me?",
-    answer:
-      "Running, waiting and idle sessions with their current tool and their own estimated cost, and failed commands grouped with a count. Cost per day and model is Tokens, in development. Stop a session from here. Where a CLI cannot be read, SpaceVibe says so instead of guessing.",
-    shot: "activity",
-    narrow: true,
-    caption: `A session · ${DEMO}`,
-  },
-];
+/** L39: the four screens the Kanu renders cover, in the order of PRODUCT.md's equipment. Clean, Limits and Activity have no band yet. */
+export type BandId = "skills" | "subagents" | "hooks" | "rules";
+export type ReadingTone = "ok" | "warn" | "plain";
 
 /**
  * How much of a screen one CLI lets the app do. `full`: read (and where the screen writes, written) in
@@ -162,69 +96,94 @@ export interface CliLine {
   readonly detail: string;
 }
 
-/** What differs between the two CLIs on each screen, in the app's own words. */
-export const DIFFS: Record<BandId, Record<CLI, CliLine>> = {
-  clean: {
-    claude: {
-      reach: "full",
-      verdict: "Moved, with Undo",
-      detail: "Old session logs, shell snapshots and the debug cache go to the macOS Trash. Logs a running session holds stay locked.",
-    },
-    codex: {
-      reach: "full",
-      verdict: "Moved, .jsonl.zst too",
-      detail: "Old session logs, plain or compressed, by the age you pick (30, 90 or 180 days), and the cache go the same way. Logs a running session holds stay locked.",
-    },
-  },
-  skills: {
-    claude: {
-      reach: "full",
-      verdict: "All three counted",
-      detail: "Counts how often each skill, subagent and hook ran, and which hook commands fire on each event.",
-    },
-    codex: {
-      reach: "partial",
-      verdict: "Hooks not measurable",
-      detail: "Counts skills and subagents. Codex does not log hook runs, so a hook reads not measurable, never 0.",
-    },
-  },
-  rules: {
-    claude: {
-      reach: "full",
-      verdict: "Editable",
-      detail: "Allow, Ask or Deny for each capability, with the concrete rules behind each one.",
-    },
-    codex: {
-      reach: "readonly",
-      verdict: "Read only",
-      detail: "Sandbox and approval settings in Codex’s own words, shown and never edited.",
-    },
-  },
-  limits: {
-    claude: {
-      reach: "full",
-      verdict: "Usage cache",
-      detail: "The share left in each window, from Claude Code’s own usage cache or, once installed, its status-line capture.",
-    },
-    codex: {
-      reach: "full",
-      verdict: "Last turn",
-      detail: "The share left, read from the last Codex turn, with how old that reading is.",
+export interface Band {
+  readonly id: BandId;
+  /** The screen's name in the app's sidebar. */
+  readonly label: string;
+  readonly question: string;
+  readonly answer: string;
+  /** The sentence that stands for the drawn stage (components/landing/app-stage) for a reader who does not see it. */
+  readonly stageLabel: string;
+  /** The band's one figure: a reading that is true in the render and whose evidence is in the crop. */
+  readonly reading: { readonly figure: string; readonly unit: string; readonly label: string; readonly tone: ReadingTone };
+  readonly ledger: Record<CLI, CliLine>;
+}
+
+/**
+ * Skills and Rules keep the words the page had before the redesign. Subagents and Hooks are INFERRED wording built from
+ * the Skills band's answer, PRODUCT.md (Mechanism) and the ledger. The figures are those of the render's own tiles; the
+ * cards read "never ran" where the render's tile reads "Never used" (GLOSSARY.md: Never ran).
+ */
+export const BANDS: readonly Band[] = [
+  {
+    id: "skills",
+    label: "Skills",
+    question: "What is installed, and how often did it run?",
+    answer:
+      "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other, with an action to add it there. Subagents have a page like it; Hooks lists which commands fire on each event.",
+    stageLabel: "Design preview of Skills, the bottom of the list: five skills with no sessions in 24 days, four at 0 and one not known, each with the agents that carry it; two are marked with a lock or a clock.",
+    reading: { figure: "4", unit: "", label: "skills never ran", tone: "warn" },
+    ledger: {
+      claude: {
+        reach: "full",
+        verdict: "All three counted",
+        detail: "Counts how often each skill, subagent and hook ran, and which hook commands fire on each event.",
+      },
+      codex: {
+        reach: "partial",
+        verdict: "Hooks not measurable",
+        detail: "Counts skills and subagents. Codex does not log hook runs, so a hook reads not measurable, never 0.",
+      },
     },
   },
-  activity: {
-    claude: {
-      reach: "partial",
-      verdict: "Prompts not logged",
-      detail: "Claude Code does not record permission prompts, so a long tool run and a wait for approval look the same.",
-    },
-    codex: {
-      reach: "partial",
-      verdict: "Silent while a tool runs",
-      detail: "Codex logs nothing while a tool runs and writes no log until the first prompt is sent.",
+  {
+    id: "subagents",
+    label: "Subagents",
+    question: "Which subagents do I have, and which ever ran?",
+    answer:
+      "The same list for subagents, joined to usage counted from your local session logs: ran often, never ran, and present in one CLI and missing in the other.",
+    stageLabel: "Design preview of Subagents: six subagents most used first with a bar and a session count for each; the last two, architect and migration-reviewer, have 0 sessions.",
+    reading: { figure: "2", unit: "", label: "subagents never ran", tone: "warn" },
+    ledger: {
+      claude: { reach: "full", verdict: "Counted", detail: "Counts how often each subagent ran, from Claude Code’s session logs." },
+      codex: { reach: "full", verdict: "Counted", detail: "Counts how often each subagent ran, from Codex’s session logs." },
     },
   },
-};
+  {
+    id: "hooks",
+    label: "Hooks",
+    question: "Which commands fire on each event?",
+    answer:
+      "Every hook under the event it fires on, with how often it ran. A hook whose script is gone is marked, and a hook of Codex, which does not log hook runs, reads not measurable, never 0.",
+    stageLabel: "Design preview of Hooks: nine hooks grouped by the event they fire on, each with its command, a run count and, for two, an error count; one hook of Codex reads unmeasurable.",
+    reading: { figure: "9", unit: "", label: "hooks, each under the event it fires on", tone: "plain" },
+    ledger: {
+      claude: { reach: "full", verdict: "Counted", detail: "Counts how often each hook ran and which hook commands fire on each event." },
+      codex: { reach: "partial", verdict: "Hooks not measurable", detail: "Codex does not log hook runs, so a hook reads not measurable, never 0." },
+    },
+  },
+  {
+    id: "rules",
+    label: "Rules",
+    question: "What is each CLI allowed to do?",
+    answer:
+      "Claude Code’s rules as Allow, Ask or Deny per capability, with the rule behind each one and a warning on a rule that allows a whole tool. Codex’s sandbox and approvals are shown in its own words.",
+    stageLabel: "Design preview of Rules: five rule files, each with its counts of rules, allow, ask and deny, and a lock on the files that hold a wide allow; Codex below, read only.",
+    reading: { figure: "5", unit: "", label: "rule files, each one standing alone", tone: "plain" },
+    ledger: {
+      claude: {
+        reach: "full",
+        verdict: "Editable",
+        detail: "Allow, Ask or Deny for each capability, with the concrete rules behind each one.",
+      },
+      codex: {
+        reach: "readonly",
+        verdict: "Read only",
+        detail: "Sandbox and approval settings in Codex’s own words, shown and never edited.",
+      },
+    },
+  },
+];
 
 export const UPCOMING = {
   id: "next",

@@ -493,7 +493,7 @@ Built on 2026-11-23: the owner approved the before/after review of this section 
 
 ### Dead code
 
-- [ ] **BL-LAND-57** Remove the unused `AppWindow` props · `P4` `refactor` · from housekeeping
+- [x] **BL-LAND-57** Remove the unused `AppWindow` props · `P4` `refactor` · from housekeeping
   - No caller passes `style` to `AppWindow` in [app-window.tsx](../site/components/landing/app-window.tsx). Since BL-LAND-22 took the windows out of the hero, none passes `lights`, `priority`, `bleed` or `className` either: [cli-bands.tsx](../site/components/landing/cli-bands.tsx) passes `shot` and `caption` only. → Remove the five props, the `LIGHTS` list they drew and the three `--color-light-*` tokens only it reads. `phoneShift` in [shots.ts](../site/components/landing/shots.ts) is `0` for every capture that has it since BL-LAND-22, so it only flags a capture that pans: make it a flag and drop the `--phone-offset` shift.
 - [ ] **BL-LAND-58** Remove unused tokens · `P4` `refactor` · from housekeeping
   - `--shadow-lift`, `--font-mono`, `--color-accent-text` and `--color-danger` in [globals.css](../site/app/globals.css) are unused. So are `--color-claude` and `--color-codex` since BL-LAND-31 replaced the CLI dots with the marks, and `--text-h1` with its two values since BL-LAND-22 removed the full-width hero. → Remove them, and the "two CLI identities" sentence of the token comment with the two colours.

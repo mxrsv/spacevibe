@@ -1,14 +1,14 @@
 import type { BandId } from "./content";
 
-/** The three kinds of gear beside the five screens: `Resources/PageIcons.json` keys `skills`, `subagents`, `hooks`. */
-export type IconKey = BandId | "subagents" | "hooks";
+/** Skills, Subagents, Hooks and Rules (L39): the keys of `Resources/PageIcons.json` the page draws. */
+export type IconKey = BandId;
 
 /**
- * SpaceVibe's own page icons, style Bold (RD23), one per screen, shared by the band headers and the hero.
- * The shapes are the five entries of `Resources/PageIcons.json` of the app, same key as the band id: drawn on a
+ * SpaceVibe's own page icons, style Bold (RD23), one per screen the page draws, shared by the band headers and the hero.
+ * The shapes are the entries of `Resources/PageIcons.json` of the app, same key as the band id: drawn on a
  * 256 grid, each line stroked at 24 with round caps and joins, each dot `[cx, cy, r]` filled. The view box is the
  * live area (40 to 216) plus half a stroke, so the glyph fills the box it is sized to. Rules (the shield's two
- * points) and Activity (the outer arcs) reach about 8 units past it, so the svg must not clip: `overflow-visible`.
+ * points) reaches about 8 units past it, so the svg must not clip: `overflow-visible`.
  */
 interface PageIconShape {
   readonly lines: readonly string[];
@@ -30,10 +30,6 @@ const PAGE_ICON: Record<IconKey, PageIconShape> = {
     lines: ["M152 66a22 22 0 1 0 44 0a22 22 0 1 0 -44 0", "M174 88v78a48 48 0 0 1-96 0v-28", "M58 158l20-20 20 20"],
     dots: [],
   },
-  clean: {
-    lines: ["M212 44l-68 68", "M124 92l40 40-48 80-72-72Z", "M84 116l56 56", "M64 40v40", "M44 60h40"],
-    dots: [],
-  },
   skills: {
     lines: [
       "M40 80a40 40 0 0 1 40-40h96a40 40 0 0 1 40 40v96a40 40 0 0 1-40 40H80a40 40 0 0 1-40-40Z",
@@ -44,14 +40,6 @@ const PAGE_ICON: Record<IconKey, PageIconShape> = {
   rules: {
     lines: ["M128 32l80 28v60c0 52-32 84-80 104c-48-20-80-52-80-104V60Z", "M96 108h64", "M96 144h36"],
     dots: [],
-  },
-  limits: {
-    lines: ["M68.6 187.4A84 84 0 1 1 187.4 187.4", "M128 128l42-42"],
-    dots: [[128, 128, 18]],
-  },
-  activity: {
-    lines: ["M168 88a56 56 0 0 1 0 80", "M196 60a96 96 0 0 1 0 136", "M88 88a56 56 0 0 0 0 80", "M60 60a96 96 0 0 0 0 136"],
-    dots: [[128, 128, 22]],
   },
 };
 

@@ -31,7 +31,24 @@ export function AgentTile({ name, on }: { readonly name: AgentName; readonly on:
   );
 }
 
+/** A tile with no state in its title: identity only (the Hooks rows). */
+export function AgentMark({ name }: { readonly name: AgentName }) {
+  const path = name === "Codex" ? null : MARKS[name];
+  return (
+    <i className="ag on" title={name}>
+      {path ? (
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+          <path d={path} />
+        </svg>
+      ) : (
+        "C"
+      )}
+    </i>
+  );
+}
+
 export const FIVE: readonly AgentName[] = ["Claude Code", "Codex", "Gemini CLI", "Cursor", "OpenCode"];
+export const TWO: readonly AgentName[] = ["Claude Code", "Codex"];
 
 export function Strip({ agents, has }: { readonly agents: readonly AgentName[]; readonly has: readonly (0 | 1)[] }) {
   return (

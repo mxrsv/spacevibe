@@ -9,9 +9,9 @@ The public page for `spacevibe.dev`: Next.js 16 (App Router, static export) and 
 | `npm run lint`  | ESLint                                                    |
 | `node --test tests/*.test.mjs` | `vercel.json` redirects (live family, old Hub routes, no shadowing) and the landing facts |
 
-Layout: `app/` (layout, page, `globals.css` tokens), `components/landing/` (one file per section; `content.ts` holds every word of `/`, `shots.ts` the app captures and how they were taken, `band-icon.tsx` a hand copy of the app's five page icons from [`Resources/PageIcons.json`](../Resources/PageIcons.json): no script writes it, so a page icon that changes is changed in both), `public/landing/` (`app/` holds the captures, `brand/` the CLI marks).
+Layout: `app/` (layout, page, `globals.css` tokens), `components/landing/` (one file per section; `content.ts` holds every word of `/`, `app-stage/` the app drawn as HTML from the Kanu renders (design previews, L37), `band-icon.tsx` a hand copy of the app's page icons from [`Resources/PageIcons.json`](../Resources/PageIcons.json): no script writes it, so a page icon that changes is changed in both), `public/landing/` (`brand/` holds the CLI marks).
 
-The app captures show the app's synthetic illustration data, never a real `~/.claude`; every caption says "demo data".
+The app drawings use the Kanu renders' synthetic illustration data, never a real `~/.claude`; every frame is captioned "Design preview · not in the current download" (L7).
 
 `vercel.json` holds the redirects (`output: "export"` rules out `next.config` ones): the `/live` family goes to `https://active.spacevibe.dev`, every other old Hub route goes to the same path on `https://kyant.dev`. Hub's own `/` is not redirected; this site serves it.
 

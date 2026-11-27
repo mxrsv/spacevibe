@@ -1,36 +1,31 @@
 // The landing copy against the app's own facts. No network.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const path = (rel) => fileURLToPath(new URL(rel, import.meta.url));
 const content = readFileSync(path("../components/landing/content.ts"), "utf8");
-const shots = readFileSync(path("../components/landing/shots.ts"), "utf8");
+const bands = readFileSync(path("../components/landing/bands.tsx"), "utf8");
 
-test("Limits copy does not make the status line the source", () => {
+test("no copy makes the status line the source of a limit", () => {
   assert.doesNotMatch(content, /status-line snapshot/i);
-  assert.match(content, /usage cache/);
 });
 
-test("every screen the page names is a file in public/", () => {
-  const sources = [...shots.matchAll(/src: "([^"]+)"/g)].map((m) => m[1]);
-  assert.ok(sources.length >= 5, "the shot list was not found in shots.ts");
-  for (const src of sources) assert.ok(existsSync(path(`../public${src}`)), `${src} is missing from public/`);
-});
-
-test("every band shows a screen that exists, and has a line per CLI", () => {
-  const keys = new Set([...shots.matchAll(/^  (\w+): \{$/gm)].map((m) => m[1]));
-  const bands = [...content.matchAll(/id: "(\w+)",\n    label:[\s\S]*?shot: "(\w+)"/g)];
-  assert.ok(bands.length >= 5, "the bands were not found in content.ts");
-  const diffs = content.slice(content.indexOf("export const DIFFS"), content.indexOf("export const UPCOMING"));
-  for (const [, id, shot] of bands) {
-    assert.ok(keys.has(shot), `band ${id} names the unknown shot ${shot}`);
-    const block = diffs.match(new RegExp(`\\n  ${id}: \\{\\n([\\s\\S]*?)\\n  \\},`))?.[1] ?? "";
+// LR-T4 stopgap: LR-T7 rewrites this file for the redesign.
+test("every band has a drawing and a line per CLI", () => {
+  const start = content.indexOf("export const BANDS");
+  const section = content.slice(start, content.indexOf("export const UPCOMING"));
+  const ids = [...section.matchAll(/\n    id: "(\w+)",\n    label:/g)].map((m) => m[1]);
+  assert.deepEqual(ids, ["skills", "subagents", "hooks", "rules"], "the four bands were not found in content.ts");
+  const stages = bands.match(/const STAGES = \{([^}]*)\}/)?.[1] ?? "";
+  ids.forEach((id, i) => {
+    assert.match(stages, new RegExp(`\\b${id}:`), `band ${id} has no drawing in bands.tsx`);
+    const block = section.slice(section.indexOf(`id: "${id}"`), i + 1 < ids.length ? section.indexOf(`id: "${ids[i + 1]}"`) : undefined);
     for (const cli of ["claude", "codex"]) {
-      assert.match(block, new RegExp(`${cli}: \\{\\n      reach: "(full|partial|readonly)",\\n      verdict: "[^"]+",\\n      detail:\\s+"[^"]+",`), `band ${id} has no line for ${cli}`);
+      assert.match(block, new RegExp(`${cli}: \\{[^}]*reach: "(full|partial|readonly)",[^}]*verdict: "[^"]+",[^}]*detail: "[^"]+"`), `band ${id} has no line for ${cli}`);
     }
-  }
+  });
 });
 
 test("the colours the page copies as literals follow the tokens", () => {

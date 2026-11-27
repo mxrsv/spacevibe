@@ -1,5 +1,5 @@
 /* The drawn app stages: the CSS of the Kanu renders (`~/scratch/spacevibe-reins/2026-11-27-kanu-redesign/src/base.css` and the pages'
-   own rules), reduced to the parts the landing draws so far and scoped under `.ak`. Cascade order is the render's: where a later rule
+   own rules), reduced to the parts the landing draws and scoped under `.ak`. Cascade order is the render's: where a later rule
    there overrides an earlier one, only the winner is kept here. The only change is the neutral ramp: --bg, --surface, --raised
    and the greys come from the stage tokens in globals.css (a cool ramp on the landing's ground), not from the warm #1B191A set.
    `.card` of the render is `.kcard` here, because the landing has its own `.card`. */
@@ -82,6 +82,47 @@
 .ak .all li.idle .nm, .ak .all li.idle b { color: var(--text-3); font-weight: 400; }
 .ak .all li.worth .ag:not(.on) { border-color: var(--color-stage-worth-line); background: var(--color-stage-worth-bg); color: var(--accent-hi); }
 .ak .all li.worth .ag:not(.on) svg { opacity: 0.9; }
+.ak .sub .all li { height: 40px; }
 
 /* O1 of the render, last and !important there too: the selected row keeps its ring on every list, a group label's neighbour included */
-.ak .all li.on { box-shadow: inset 0 0 0 1px var(--accent) !important; border-radius: 9px; }
+.ak .all li.on, .ak .rl-list li.on, .ak .rl-codex-list li.on { box-shadow: inset 0 0 0 1px var(--accent) !important; border-radius: 9px; }
+
+/* the Hooks list: fixed 40px rows, quiet event labels, no ranks */
+.ak .hk .all li { height: 40px; grid-template-columns: 20px minmax(0, 1fr) 84px 44px; column-gap: 12px; }
+.ak .hk .all li.grp { display: flex; align-items: flex-end; height: 34px; padding: 0 10px 7px; border-radius: 0; font-size: 12.5px; color: var(--text-3); box-shadow: none; }
+.ak .hk .all li.grp + li { box-shadow: none; }
+.ak .hk .all li.on + li.grp { box-shadow: none; }
+.ak .hk-m { display: inline-flex; align-items: center; max-width: 100%; height: 20px; padding: 0 7px; border: 1px solid var(--line-2); border-radius: 6px; font: 400 11.5px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; }
+.ak .hk .all .cm { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ak .hk .all .cm code { flex: 0 1 auto; min-width: 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ak .hk .all li.idle .cm code { color: var(--text-3); }
+.ak .hk .all .mk { flex: none; color: var(--text-3); }
+.ak .hk .all .mk.dead { color: var(--amber); }
+.ak .hk .all li.idle .hk-m { color: var(--text-3); }
+.ak .hk .all .er { display: flex; justify-content: flex-end; }
+.ak .hk .all .e { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; color: var(--red-text); }
+.ak .hk .all .um { grid-column: 3; text-align: right; font-size: 12.5px; color: var(--text-3); }
+
+/* the Rules file table */
+.ak .rl-card { display: flex; flex-direction: column; }
+.ak .rl-head, .ak .rl-list li { display: grid; grid-template-columns: minmax(0, 1fr) 38px 40px 40px 40px 56px; align-items: center; column-gap: 10px; }
+.ak .rl-head { padding: 0 10px; margin: 0 -10px; height: 26px; font-size: 12.5px; color: var(--text-3); }
+.ak .rl-head span + span { text-align: right; }
+.ak .rl-list { flex: none; }
+.ak .rl-list li { flex: none; height: 40px; padding: 0 10px; margin: 0 -10px; border-radius: 9px; font-size: 13.5px; }
+.ak .rl-list li + li { box-shadow: 0 -1px 0 var(--line); }
+.ak .rl-list li.on { background: var(--raised); box-shadow: inset 0 0 0 1px var(--accent); }
+.ak .rl-list li.on + li { box-shadow: none; }
+.ak .rl-list li.on .nm { font-weight: 500; }
+.ak .rl-list .f-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.ak .rl-list .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ak .rl-list .sc { flex: none; font-size: 12.5px; color: var(--text-3); }
+.ak .rl-list .f-n { text-align: right; font-weight: 500; }
+.ak .rl-fig { text-align: right; color: var(--text-2); }
+.ak .rl-fig.zero { color: var(--text-3); }
+.ak .rl-list .f-wide { display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: var(--amber); font-weight: 500; }
+.ak .rl-codex-list { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.ak .rl-codex-list li { grid-template-columns: minmax(0, 1fr); }
+.ak .rl-codex-list .f-name { align-items: center; gap: 10px; }
+.ak .rl-codex-list .nm { color: var(--text-2); }
+.ak .rl-codex-list .mk { flex: none; display: flex; color: var(--text-3); }
