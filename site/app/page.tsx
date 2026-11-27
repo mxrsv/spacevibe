@@ -9,9 +9,9 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 
 /**
- * spacevibe.dev, one page, redesigned after the Dstudio reference (landing spec L21 to L32): the centred hero with a
- * real app window, the manifesto, one "Your Gateway" band per screen, the band of large figures, the questions, and the
- * two ending cards.
+ * spacevibe.dev, one page, redesigned after the Dstudio reference (landing spec L21 to L39): the centred hero with the
+ * app drawn in a window, the manifesto, one "Your Gateway" band per screen (Skills, Subagents, Hooks, Rules), the band of
+ * large figures, the questions, and the two ending cards.
  */
 export default function LandingPage() {
   return (

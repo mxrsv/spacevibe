@@ -388,14 +388,14 @@ Built on 2026-11-23: the owner approved the before/after review of this section 
 
 ### Captures and Open Graph
 
-- [ ] **BL-LAND-12** Re-shoot `rules.webp` · `P2` `ui` · from M2
-  - The capture cuts the top of the `2` hero and the inspector's header. → Retake it with both whole.
-- [ ] **BL-LAND-13** Re-shoot `skills.webp` · `P2` `ui` · from M2
-  - The capture has no toolbar and no skill title, clips `CLIs` to `C...`, and its selected row is off screen. → Retake it.
-- [ ] **BL-LAND-14** Whole-page Limits capture (`LP-R4`) · `P2` `ui` `blocked` (the redesigned Limits page does not render in a headless capture) · from M2
-  - `limits.webp` is a 672 px inspector crop, upscaled on Retina. → Capture the page at 2112 px and drop `narrow` on the band.
-- [ ] **BL-LAND-15** Whole-page Activity capture (`LP-R4`) · `P2` `ui` `blocked` (the redesigned Activity page does not render in a headless capture) · from M2
-  - `activity.webp` is a 672 px inspector crop and shows none of `Stop`, `Show Terminal`, `Copy Session Id`. → Capture the page at 2112 px and drop `narrow` on the band.
+- [x] **BL-LAND-12** Re-shoot `rules.webp` · `P2` `ui` · from M2
+  - Obsolete: the redesign (spec L21–L39, 2026-11-27) removed the capture `rules.webp`; the Rules band is drawn as HTML.
+- [x] **BL-LAND-13** Re-shoot `skills.webp` · `P2` `ui` · from M2
+  - Obsolete: the redesign (spec L21–L39, 2026-11-27) removed the capture `skills.webp`; the Skills band is drawn as HTML.
+- [x] **BL-LAND-14** Whole-page Limits capture (`LP-R4`) · `P2` `ui` `blocked` (the redesigned Limits page does not render in a headless capture) · from M2
+  - Obsolete: the redesign (spec L21–L39, 2026-11-27) removed the Limits band and its capture; the page shows Skills, Subagents, Hooks and Rules (L39).
+- [x] **BL-LAND-15** Whole-page Activity capture (`LP-R4`) · `P2` `ui` `blocked` (the redesigned Activity page does not render in a headless capture) · from M2
+  - Obsolete: the redesign (spec L21–L39, 2026-11-27) removed the Activity band and its capture; the page shows Skills, Subagents, Hooks and Rules (L39).
 - [x] **BL-LAND-16** Activity `alt` describes what the image shows · `P1` `a11y` · from M2
   - The `alt` in [shots.ts](../site/components/landing/shots.ts) names `Show Terminal` and `Copy Session Id`, which the image does not show. → Describe the image as it is, until BL-LAND-15.
 - [x] **BL-LAND-17** Hero `77%` has the app's colour · `P1` `bug` · from M2
@@ -476,12 +476,12 @@ Built on 2026-11-23: the owner approved the before/after review of this section 
   - The page has no structured data. → Add `SoftwareApplication` and `FAQPage`.
 - [x] **BL-LAND-49** Dark 404 page · `P2` `ui` · from M7
   - There is no `not-found.tsx`. → Add a dark-only one.
-- [ ] **BL-LAND-50** Heading paints at once · `P4` `perf` · from M7
-  - The hero `<h1>` starts at `opacity: 0` for 80 ms before its entrance. Measured, it does not delay LCP: at 1440 and at 390 the LCP element is the scene raster of [scene.tsx](../site/components/landing/scene.tsx), 7 to 11 times the heading's area. What is left is a heading that appears 80 ms late. → Remove the delay on the heading.
+- [x] **BL-LAND-50** Heading paints at once · `P4` `perf` · from M7
+  - Obsolete: the redesign (spec L21–L39, 2026-11-27) removed the planet scene and its raster, which the item measured against. The hero now rises in steps on purpose (the headline after 120 ms, L26), so the item no longer describes a defect.
 - [ ] **BL-LAND-51** Hero CLI marks load eagerly · `P2` `perf` · from M7
   - The two brand SVGs under the heading render with `loading="lazy"`. → Load them eagerly.
-- [ ] **BL-LAND-52** Content already in view is visible at once on a mid-page load · `P4` `perf` · from M7
-  - [scroll-reveal.tsx](../site/components/landing/scroll-reveal.tsx) hides in-view `[data-reveal]` nodes until the observer fires. Measured, nothing flashes: after a reload at the FAQ a node in view starts at `opacity: 0` and takes about 0.5 s to fade in; with the script 700 ms late it never leaves `opacity: 1`; on `/#faq` the smooth scroll starts at the top, so the node is hidden only while off screen. → Mark the nodes already in view `.in` before setting `data-motion-ready`.
+- [x] **BL-LAND-52** Content already in view is visible at once on a mid-page load · `P4` `perf` · from M7
+  - Done 2026-11-27 with the redesign: [motion.tsx](../site/components/landing/motion.tsx) marks every `[data-mask]`, `[data-slide]` and `[data-reveal]` node that is in or above the viewport `.in`, and lights the manifesto words already passed, before it sets `data-motion-ready`, so a reload mid-page or a restored scroll position never hides what the reader can see.
 - [ ] **BL-LAND-53** Plain `<img>` for unoptimized images · `P4` `refactor` · from M7
   - `next/image` runs with `unoptimized: true`. → Replace the wrappers with `<img>`.
 - [ ] **BL-LAND-54** "opens in a new tab" reads as separate words · `P4` `a11y` `unmeasured` · from M7
@@ -495,8 +495,8 @@ Built on 2026-11-23: the owner approved the before/after review of this section 
 
 - [x] **BL-LAND-57** Remove the unused `AppWindow` props · `P4` `refactor` · from housekeeping
   - No caller passes `style` to `AppWindow` in [app-window.tsx](../site/components/landing/app-window.tsx). Since BL-LAND-22 took the windows out of the hero, none passes `lights`, `priority`, `bleed` or `className` either: [cli-bands.tsx](../site/components/landing/cli-bands.tsx) passes `shot` and `caption` only. → Remove the five props, the `LIGHTS` list they drew and the three `--color-light-*` tokens only it reads. `phoneShift` in [shots.ts](../site/components/landing/shots.ts) is `0` for every capture that has it since BL-LAND-22, so it only flags a capture that pans: make it a flag and drop the `--phone-offset` shift.
-- [ ] **BL-LAND-58** Remove unused tokens · `P4` `refactor` · from housekeeping
-  - `--shadow-lift`, `--font-mono`, `--color-accent-text` and `--color-danger` in [globals.css](../site/app/globals.css) are unused. So are `--color-claude` and `--color-codex` since BL-LAND-31 replaced the CLI dots with the marks, and `--text-h1` with its two values since BL-LAND-22 removed the full-width hero. → Remove them, and the "two CLI identities" sentence of the token comment with the two colours.
+- [x] **BL-LAND-58** Remove unused tokens · `P4` `refactor` · from housekeeping
+  - Done 2026-11-27 with the redesign: removed `--font-mono`, `--color-danger`, `--color-claude`, `--color-codex`, `--radius-card` and `--color-stage-inset` (with its `--inset`) from [globals.css](../site/app/globals.css), and the "two CLI identities" sentence of the token comment. `--shadow-lift`, `--color-accent-text` and `--text-h1` stay: the redesign reads them.
 - [ ] **BL-LAND-59** Tidy the header markup · `P4` `refactor` · from housekeeping
   - [site-header.tsx](../site/components/landing/site-header.tsx) has a redundant `aria-label` / `aria-hidden` pair on the brand link. → Remove it. The `sm:contents` wrapper went with BL-LAND-1.
 - [ ] **BL-LAND-60** Remove the `start` script · `P4` `refactor` · from housekeeping

@@ -121,20 +121,12 @@ export const BANDS: readonly Band[] = [
     label: "Skills",
     question: "What is installed, and how often did it run?",
     answer:
-      "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other, with an action to add it there. Subagents have a page like it; Hooks lists which commands fire on each event.",
-    stageLabel: "Design preview of Skills, the bottom of the list: five skills with no sessions in 24 days, four at 0 and one not known, each with the agents that carry it; two are marked with a lock or a clock.",
+      "One list across both CLIs, joined to usage counted from your local session logs: never ran, ran often, present in one CLI and missing in the other, with an action to add it there.",
+    stageLabel: "Design preview of Skills, the bottom of the list: five skills with no sessions in 24 days, four at 0 and one not known, each with the agents that carry it; three are marked with a lock or a clock.",
     reading: { figure: "4", unit: "", label: "skills never ran", tone: "warn" },
     ledger: {
-      claude: {
-        reach: "full",
-        verdict: "All three counted",
-        detail: "Counts how often each skill, subagent and hook ran, and which hook commands fire on each event.",
-      },
-      codex: {
-        reach: "partial",
-        verdict: "Hooks not measurable",
-        detail: "Counts skills and subagents. Codex does not log hook runs, so a hook reads not measurable, never 0.",
-      },
+      claude: { reach: "full", verdict: "Counted", detail: "Counts how often each skill ran, from Claude Code’s session logs." },
+      codex: { reach: "full", verdict: "Counted", detail: "Counts how often each skill ran, from Codex’s session logs." },
     },
   },
   {
@@ -169,7 +161,7 @@ export const BANDS: readonly Band[] = [
     question: "What is each CLI allowed to do?",
     answer:
       "Claude Code’s rules as Allow, Ask or Deny per capability, with the rule behind each one and a warning on a rule that allows a whole tool. Codex’s sandbox and approvals are shown in its own words.",
-    stageLabel: "Design preview of Rules: five rule files, each with its counts of rules, allow, ask and deny, and a lock on the files that hold a wide allow; Codex below, read only.",
+    stageLabel: "Design preview of Rules: five rule files, each with its counts of rules, allow, ask and deny, and an open-lock icon on the files that hold a wide allow; Codex below, read only.",
     reading: { figure: "5", unit: "", label: "rule files, each one standing alone", tone: "plain" },
     ledger: {
       claude: {
@@ -224,7 +216,7 @@ export const FAQ = {
 
 export const FOOTER = {
   /** Goes with the CLI marks in the hero: naming a product is not a claim of a tie to its maker. */
-  disclaimer: "SpaceVibe is not affiliated with Anthropic or OpenAI. Claude\u00A0Code and Codex are trademarks of their owners.",
+  disclaimer: "SpaceVibe is not affiliated with the makers of the agents it shows. Claude\u00A0Code, Codex, Gemini\u00A0CLI, Cursor and OpenCode are trademarks of their owners.",
   brand: "SpaceVibe",
   by: "SpaceVibe",
 } as const;
@@ -304,8 +296,8 @@ export const FIGURES = {
   line: "The only requests the app makes are its daily update check and the download you click. No user data passes through the site either.",
   items: [
     { value: 0, label: "Network listeners", note: "The app opens no port; it only checks for updates and downloads the one you click." },
-    { value: 0, label: "Hooks or recorded commands the app runs", note: "A hook is shown and written, never run by the app." },
-    { value: 0, label: "Secret values read into the interface", note: "Values that may be secrets are never read into the interface or logged." },
+    { value: 0, label: "Hooks or recorded commands the app starts", note: "The app never executes a hook or a recorded command; Claude Code, not the app, starts the status-line capture once you install it." },
+    { value: 0, label: "Secret values from settings read into the interface", note: "Secret values in settings are never read into the interface or logged; in the commands shown, recognisable credentials are masked." },
   ],
 } as const;
 

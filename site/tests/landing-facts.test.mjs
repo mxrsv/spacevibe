@@ -8,6 +8,9 @@ const path = (rel) => fileURLToPath(new URL(rel, import.meta.url));
 const read = (rel) => readFileSync(path(rel), "utf8");
 const content = read("../components/landing/content.ts");
 const bands = read("../components/landing/bands.tsx");
+// content.ts and the stage data are plain TypeScript (no JSX), so Node reads them as they are.
+const { BANDS, FOOTER } = await import("../components/landing/content.ts");
+const { STAGE_FACTS } = await import("../components/landing/app-stage/data.ts");
 
 /** Every .tsx and .css file the page is made of, except the token file itself (globals.css is where raw colours belong). */
 function sources(dir = path("../components/")) {
@@ -61,6 +64,7 @@ test("every colour is a token: no raw colour in a className, a style or a compon
       [/#[0-9a-fA-F]{3,8}\b(?![\w-])/g, "hex colour"],
       [/\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(/g, "colour function"],
       [/\b(?:bg|text|border|fill|stroke|from|via|to|ring|shadow|outline|divide|decoration|accent|caret)-(?:white|black|\[#|\[rgb)/g, "colour utility"],
+      [/\b(?:bg|text|border|ring|fill|stroke|from|via|to|outline|divide|shadow|decoration|accent|caret)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g, "Tailwind default palette class"],
     ]) {
       for (const m of text.matchAll(pattern)) bad.push(`${file.split("/site/")[1]}: ${what} ${m[0]}`);
     }
@@ -122,4 +126,32 @@ test("the open-graph image is the one the content says", () => {
   const sof = jpeg.indexOf(Buffer.from([0xff, 0xc0])) !== -1 ? jpeg.indexOf(Buffer.from([0xff, 0xc0])) : jpeg.indexOf(Buffer.from([0xff, 0xc2]));
   assert.ok(sof > 0, "og.jpg is not a JPEG");
   assert.deepEqual([jpeg.readUInt16BE(sof + 7), jpeg.readUInt16BE(sof + 5)], [1200, 630], "og.jpg must be 1200 x 630");
+});
+
+test("every figure and drawing description says what the drawn rows hold", () => {
+  const band = Object.fromEntries(BANDS.map((b) => [b.id, b]));
+  const f = STAGE_FACTS;
+  const words = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine" };
+  const says = (id, phrase) => assert.ok(band[id].stageLabel.includes(phrase), `${id}: the description should say "${phrase}", it says "${band[id].stageLabel}"`);
+  // the band's one figure is counted from the rows, not typed
+  assert.equal(band.skills.reading.figure, String(f.skillsNeverRan));
+  assert.equal(band.subagents.reading.figure, String(f.subagentsNeverRan));
+  assert.equal(band.hooks.reading.figure, String(f.hooks));
+  assert.equal(band.rules.reading.figure, String(f.ruleFiles));
+  // the drawing descriptions
+  says("skills", `${words[f.skillsIdleShown]} skills with no sessions in 24 days, ${words[f.skillsIdleAtZero]} at 0 and ${words[f.skillsIdleUnknown]} not known`);
+  says("skills", `${words[f.skillsIdleMarked]} are marked with a lock or a clock`);
+  says("subagents", `${words[f.subagents]} subagents most used first`);
+  says("subagents", `the last ${words[f.subagentsNeverRan]}`);
+  says("hooks", `${words[f.hooks]} hooks grouped by the event`);
+  says("hooks", `for ${words[f.hooksWithErrors]}, an error count`);
+  says("hooks", `${words[f.hooksUnmeasurable]} hook of Codex reads unmeasurable`);
+  says("rules", `${words[f.ruleFiles]} rule files`);
+  assert.ok(f.ruleFilesWithWideAllow > 0 && band.rules.stageLabel.includes("open-lock icon"), "Rules: the wide-allow mark is an open-lock icon");
+  // the hero's window shows the top rows
+  assert.ok(read("../components/landing/hero.tsx").includes(`${words[f.skillsHeroRows]} skills most used first`), "the hero's drawing description names the rows it shows");
+});
+
+test("the footer disclaimer names every agent the drawings show", () => {
+  for (const name of ["Claude\u00A0Code", "Codex", "Gemini\u00A0CLI", "Cursor", "OpenCode"]) assert.ok(FOOTER.disclaimer.includes(name), `the disclaimer lacks ${name}`);
 });

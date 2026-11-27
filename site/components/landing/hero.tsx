@@ -15,8 +15,8 @@ const at = (tile: (typeof TILES)[number]) =>
 
 /**
  * L25: centered. A pill eyebrow, a large light-weight headline in the display face, one
- * dim line, two buttons, the "Works with" row of the CLI marks, then a real window of the app that starts inside the
- * first viewport. L24, L30: the dot grid behind, and faint tiles with the app's own icons joined by thin lines.
+ * dim line, two buttons, the "Works with" row of the CLI marks, then the app drawn in a window (a design preview) that
+ * starts inside the first viewport. L24, L30: the dot grid behind, and faint tiles with the app's own icons joined by thin lines.
  */
 export function Hero() {
   return (
@@ -59,7 +59,7 @@ export function Hero() {
             {HERO.cta.note}
           </p>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 max-sm:gap-x-8" role="group" aria-label={HERO.support.lead}>
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 max-sm:gap-x-8">
             <p className="text-label uppercase text-ink-2 max-sm:w-full" data-rise style={rise(460)}>
               {HERO.support.lead}
             </p>
@@ -99,6 +99,13 @@ function Tile({ kind }: { readonly kind: (typeof TILES)[number]["kind"] }) {
   );
 }
 
+/** A tile by id; a link that names a tile `TILES` does not have is a content error, so it stops the build. */
+function tileById(byId: ReadonlyMap<string, (typeof TILES)[number]>, id: string) {
+  const tile = byId.get(id);
+  if (!tile) throw new Error(`TILE_LINKS names the unknown tile ${id}`);
+  return tile;
+}
+
 /** From `lg:` up: the tiles stand around the words, still, and appear in turn. The lines run beneath them. */
 function Tiles() {
   const byId = new Map(TILES.map((tile) => [tile.id, tile]));
@@ -108,8 +115,8 @@ function Tiles() {
       {(["lg", "xl"] as const).map((size) => (
         <svg key={size} className={`absolute inset-0 size-full ${size === "lg" ? "xl:hidden" : "max-xl:hidden"}`} viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" data-rise style={rise(380)}>
           {TILE_LINKS.map(([from, to]) => {
-            const a = byId.get(from)!;
-            const b = byId.get(to)!;
+            const a = tileById(byId, from);
+            const b = tileById(byId, to);
             const [ax, ay] = size === "lg" ? (a.lg ?? [a.x, a.y]) : [a.x, a.y];
             const [bx, by] = size === "lg" ? (b.lg ?? [b.x, b.y]) : [b.x, b.y];
             return <path key={`${from}-${to}`} d={`M${ax} ${ay} H${bx} V${by}`} stroke="var(--color-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" />;

@@ -13,7 +13,7 @@ interface StageWindowProps {
 /**
  * A drawn app stage in a window of the landing: a dashed frame (L7: a render of the unshipped look), an optional title bar,
  * the stage at 1x. The stage is 596 px wide and never scales: where the page is narrower, the window pans sideways (focusable,
- * so the keyboard can pan it), as the captures did, so no text is ever drawn smaller than the render draws it.
+ * so the keyboard can pan it), so no text is ever drawn smaller than the render draws it.
  */
 export function StageWindow({ label, children, lights = false, caption, className = "" }: StageWindowProps) {
   return (
@@ -27,10 +27,11 @@ export function StageWindow({ label, children, lights = false, caption, classNam
               <span className="size-3 rounded-full bg-light-zoom" />
             </div>
           ) : null}
-          <div className="overflow-x-auto overflow-y-hidden" tabIndex={0} role="group" aria-label={`${label}, scrolls sideways`}>
-            <div role="img" aria-label={label} className="w-[596px]">
-              {children}
-            </div>
+          {/* One name, on the picture: the drawing is a single image for a screen reader. The scroller is a tab stop so a
+              keyboard can pan it where the page is narrower than the stage; its focus ring is drawn inside the frame,
+              because the frame clips anything outside it. */}
+          <div className="overflow-x-auto overflow-y-hidden rounded-b-[13px] focus-visible:outline-offset-[-2px]" tabIndex={0} role="img" aria-label={label}>
+            <div className="w-[596px]">{children}</div>
           </div>
         </div>
         <span aria-hidden="true" className="pointer-events-none absolute inset-y-px right-px w-10 rounded-r-panel bg-linear-to-l from-stage-bg to-transparent md:hidden" />

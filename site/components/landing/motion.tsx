@@ -4,17 +4,16 @@ import { useEffect } from "react";
 
 export const LANDING_ROOT_ID = "spacevibe-landing";
 
-const COUNT_MS = 1300;
-
 /**
  * The page's motion (landing spec L26), each effect once and none while the page is idle:
  *  - `[data-mask]`, `[data-slide]`, `[data-reveal]` get `.in` the first time they enter the viewport (CSS does the
  *    slide, the rise and the delay in turn);
- *  - `[data-count]` counts up to its own text once, when it enters, never through 0, and only a figure of 10 or more;
  *  - `[data-manifesto]` lights its `[data-w]` words and `[data-chip]` icons as the page scrolls past it, and keeps them lit.
  * The hero's rise is CSS only. Renders nothing and runs over the server-rendered DOM, so the page stays a Server
  * Component whose HTML already holds every final state. The root is flagged `data-motion-ready` only when this
- * will animate: not under reduced motion, not without the observer.
+ * will animate: not under reduced motion, not without the observer. Before the flag is set, everything already in or
+ * above the viewport (a reload mid-page, a restored scroll position) gets its final state, so nothing the reader can
+ * see is ever hidden first. No figure counts up: none on the page is 10 or more (spec, "Inferred, not decided").
  */
 export function Motion() {
   useEffect(() => {
@@ -22,37 +21,13 @@ export function Motion() {
     if (!root || typeof IntersectionObserver === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const counters = Array.from(root.querySelectorAll<HTMLElement>("[data-count]"));
-    const finals = counters.map((node) => node.textContent?.trim() ?? "");
-
-    // A figure is never shown as 0 unless it is 0: the count starts at a third of the target and only a figure of
-    // 10 or more counts at all. A small figure (5, 2, 1) appears with its card. The digits are aria-hidden; the
-    // final value is the label of their wrapper (bands.tsx), so a screen reader never hears the steps.
-    const countUp = (node: HTMLElement, index: number) => {
-      const target = Number(node.dataset.count);
-      if (!Number.isFinite(target) || target < 10) return;
-      const from = Math.max(1, Math.floor(target / 3));
-      const started = performance.now();
-      const step = (now: number) => {
-        const t = Math.min(1, (now - started) / COUNT_MS);
-        const eased = 1 - Math.pow(1 - t, 4);
-        node.textContent = t >= 1 ? finals[index] : String(Math.round(from + (target - from) * eased));
-        if (t < 1) requestAnimationFrame(step);
-      };
-      node.textContent = String(from);
-      requestAnimationFrame(step);
-    };
-
     const targets = Array.from(root.querySelectorAll<HTMLElement>("[data-mask], [data-slide], [data-reveal]"));
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
-          const node = entry.target as HTMLElement;
-          // The count is set before the card fades in, so the final value never flashes first.
-          node.querySelectorAll<HTMLElement>("[data-count]").forEach((c) => countUp(c, counters.indexOf(c)));
-          node.classList.add("in");
-          observer.unobserve(node);
+          entry.target.classList.add("in");
+          observer.unobserve(entry.target);
         }
       },
       { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
@@ -60,9 +35,10 @@ export function Motion() {
 
     let frame = 0;
     const paragraphs = Array.from(root.querySelectorAll<HTMLElement>("[data-manifesto]"));
+    /** Lights the words the page has scrolled past; true once every word and icon is lit. */
     const light = () => {
-      frame = 0;
       const vh = window.innerHeight;
+      let allLit = true;
       for (const p of paragraphs) {
         const marks = Array.from(p.querySelectorAll<HTMLElement>("[data-w], [data-chip]"));
         const rect = p.getBoundingClientRect();
@@ -73,26 +49,38 @@ export function Motion() {
         marks.forEach((m, i) => {
           if (i < lit) m.classList.add("on"); // lit once, and it stays lit when the page scrolls back
         });
+        if (lit < marks.length) allLit = false;
       }
+      return allLit;
     };
     const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(light);
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        if (light()) detach(); // everything is lit: nothing left to listen for
+      });
+    };
+    const detach = () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
     };
 
-    for (const node of targets) observer.observe(node);
+    // What is already in or above the viewport is final before the flag hides anything below it.
+    for (const node of targets) {
+      if (node.getBoundingClientRect().top < window.innerHeight) node.classList.add("in");
+      else observer.observe(node);
+    }
+    const done = light();
     root.setAttribute("data-motion-ready", "");
-    light();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
+    if (!done) {
+      window.addEventListener("scroll", schedule, { passive: true });
+      window.addEventListener("resize", schedule);
+    }
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
+      detach();
       if (frame) cancelAnimationFrame(frame);
-      counters.forEach((c, i) => {
-        c.textContent = finals[i];
-      });
       root.removeAttribute("data-motion-ready");
     };
   }, []);

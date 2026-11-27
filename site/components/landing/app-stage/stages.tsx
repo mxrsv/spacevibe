@@ -2,52 +2,13 @@ import type { CSSProperties } from "react";
 
 import { AgentMark, FIVE, Strip, TWO, type AgentName } from "./agents";
 import { Icon } from "./icons";
+import { HOOKS, RULE_FILES, SKILLS, SKILLS_HERO_ROWS, SKILLS_IDLE_FROM, SUBAGENTS, type RankRow } from "./data";
 
 /**
  * The regions of the Kanu renders that the landing shows, drawn as live markup (2026-11-27). The data is the renders'
  * own (`data.md`; the pages' tables), so every name, count and state is what the render draws. Each stage is the part of its
  * 1440 x 900 render that the earlier crops cut (x 266 to 862), at 1x: a 584 px card inside 6 px of the window.
  */
-
-type Has = readonly (0 | 1)[];
-
-interface RankRow {
-  readonly name: string;
-  readonly has: Has;
-  /** Sessions in 24 days; null = not known. */
-  readonly sessions: number | null;
-  readonly worth?: boolean;
-  readonly selected?: boolean;
-  readonly mark?: { readonly icon: "lock" | "clock"; readonly title: string };
-}
-
-/** Skills, from `build.mjs` (SK, after the reach of D25) in the order of the list: ranked by sessions, then the idle ones. */
-const SKILLS: readonly RankRow[] = [
-  { name: "lint-fixer", has: [1, 1, 1, 1, 1], sessions: 67, selected: true },
-  { name: "commit-helper", has: [1, 1, 1, 1, 1], sessions: 43 },
-  { name: "test-scaffold", has: [1, 0, 0, 1, 1], sessions: 36, worth: true },
-  { name: "tidy-imports", has: [1, 1, 0, 1, 1], sessions: 27, worth: true },
-  { name: "review-pr", has: [1, 0, 1, 1, 1], sessions: 24, worth: true },
-  { name: "screenshot-diff", has: [0, 1, 0, 1, 0], sessions: 11 },
-  { name: "db-seed", has: [1, 1, 1, 1, 1], sessions: 8 },
-  { name: "api-docs", has: [1, 1, 0, 1, 1], sessions: 6 },
-  { name: "sql-explain", has: [1, 1, 1, 1, 1], sessions: 4 },
-  { name: "pdf-extract", has: [1, 1, 0, 1, 1], sessions: 0 },
-  { name: "changelog-writer-for-monorepos-with-conventional-commits", has: [1, 0, 0, 1, 1], sessions: 0 },
-  { name: "release-notes", has: [1, 1, 1, 1, 1], sessions: 0, mark: { icon: "clock", title: "Added 2 hours ago, too new to judge" } },
-  { name: "brand-voice", has: [1, 1, 0, 0, 0], sessions: 0, mark: { icon: "lock", title: "From a plugin, open only" } },
-  { name: "checkout-flows", has: [1, 1, 0, 0, 0], sessions: null, mark: { icon: "lock", title: "From a plugin, open only" } },
-];
-
-/** Subagents, from `pages/subagents.mjs`: only Claude Code and Codex carry subagents. */
-const SUBAGENTS: readonly RankRow[] = [
-  { name: "typescript-reviewer", has: [1, 0], sessions: 34 },
-  { name: "react-reviewer", has: [1, 0], sessions: 19 },
-  { name: "database-reviewer", has: [1, 0], sessions: 6 },
-  { name: "security-reviewer", has: [1, 1], sessions: 4, selected: true },
-  { name: "architect", has: [1, 0], sessions: 0 },
-  { name: "migration-reviewer", has: [1, 0], sessions: 0, mark: { icon: "lock", title: "Project subagent (spacevibe-bench): read-only. It can be copied, not removed" } },
-];
 
 function RankList({ rows, agents, max, first = 0, ranked }: { readonly rows: readonly RankRow[]; readonly agents: readonly AgentName[]; readonly max: number; readonly first?: number; readonly ranked: number }) {
   return (
@@ -86,7 +47,7 @@ export function SkillsTopStage() {
           <h4>All skills · most used first</h4>
           <span>Sessions · last 24 days</span>
         </div>
-        <RankList rows={SKILLS.slice(0, 8)} agents={FIVE} max={67} ranked={9} />
+        <RankList rows={SKILLS.slice(0, SKILLS_HERO_ROWS)} agents={FIVE} max={67} ranked={SKILLS_IDLE_FROM} />
       </section>
     </div>
   );
@@ -97,7 +58,7 @@ export function SkillsIdleStage() {
   return (
     <div className="ak" style={{ paddingTop: 0, paddingBottom: 4 }}>
       <section className="kcard all-card cut-top" style={{ paddingBottom: 25 }}>
-        <RankList rows={SKILLS.slice(9)} agents={FIVE} max={67} first={9} ranked={9} />
+        <RankList rows={SKILLS.slice(SKILLS_IDLE_FROM)} agents={FIVE} max={67} first={SKILLS_IDLE_FROM} ranked={SKILLS_IDLE_FROM} />
       </section>
     </div>
   );
@@ -119,43 +80,7 @@ export function SubagentsStage() {
 
 /* ------------------------------------------------------------------ Hooks */
 
-interface HookRow {
-  readonly cmd: string;
-  readonly matcher?: string;
-  readonly cli: AgentName;
-  /** null = unmeasurable (Codex does not log hook runs). */
-  readonly runs: number | null;
-  readonly errors?: number;
-  readonly state?: "dead" | "project";
-  readonly selected?: boolean;
-}
-
-const HOOKS: readonly { readonly event: string; readonly rows: readonly HookRow[] }[] = [
-  { event: "SessionStart", rows: [{ cmd: "load-context.sh", cli: "Claude Code", runs: 58 }] },
-  {
-    event: "PreToolUse",
-    rows: [
-      { cmd: "guard-destructive.sh", matcher: "Bash", cli: "Claude Code", runs: 412 },
-      { cmd: "block-env-edit.sh", matcher: "Edit|Write", cli: "Claude Code", runs: 96, errors: 3 },
-    ],
-  },
-  {
-    event: "PostToolUse",
-    rows: [
-      { cmd: 'prettier --write "$FILE"', matcher: "Edit|Write", cli: "Claude Code", runs: 1204, errors: 17, selected: true },
-      { cmd: "tools/tsc-watch.sh", matcher: "Edit", cli: "Claude Code", runs: 0, state: "dead" },
-      { cmd: "echo checked", matcher: "Edit", cli: "Claude Code", runs: 0, state: "project" },
-    ],
-  },
-  {
-    event: "Stop",
-    rows: [
-      { cmd: "notify-done.sh", cli: "Claude Code", runs: 203 },
-      { cmd: "notify-done.sh", cli: "Codex", runs: null },
-      { cmd: "old-dotfiles/notify.sh", cli: "Claude Code", runs: 0, state: "dead" },
-    ],
-  },
-];
+/* ------------------------------------------------------------------ Hooks */
 
 export function HooksStage() {
   return (
@@ -220,13 +145,7 @@ export function HooksStage() {
 
 /* ------------------------------------------------------------------ Rules */
 
-const RULE_FILES = [
-  { name: "Global", scope: "all projects", rules: 11, allow: 6, ask: 2, deny: 3, wide: 1 },
-  { name: "spacevibe-bench", scope: "shared", rules: 2, allow: 2, ask: 0, deny: 0, wide: 0 },
-  { name: "spacevibe-api", scope: "shared", rules: 1, allow: 0, ask: 0, deny: 1, wide: 0 },
-  { name: "spacevibe-academy", scope: "shared", rules: 6, allow: 2, ask: 3, deny: 1, wide: 2, selected: true },
-  { name: "spacevibe-academy", scope: "local", rules: 1, allow: 1, ask: 0, deny: 0, wide: 0 },
-] as const;
+/* ------------------------------------------------------------------ Rules */
 
 export function RulesStage() {
   const fig = (n: number) => <span className={`rl-fig${n ? "" : " zero"}`}>{n}</span>;

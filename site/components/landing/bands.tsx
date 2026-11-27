@@ -96,11 +96,7 @@ function Visual({ band }: { readonly band: Band }) {
       {/* The one floating figure of the screen (the reference's "$4,546" card). It hangs over the card's lower edge, under the frame, so it covers no pixel of the drawing and not the caption. */}
       <div className="card relative z-10 -mt-14 ml-4 w-fit min-w-[200px] max-w-[min(300px,calc(100%-2rem))] bg-s2 px-5 py-4 shadow-lift max-xl:self-start xl:absolute xl:-bottom-12 xl:left-8 xl:mt-0 xl:ml-0">
         <p className={`display text-stat tnum ${TONE[reading.tone]}`}>
-          <span role="img" aria-label={reading.figure}>
-            <span aria-hidden="true" data-count={reading.figure}>
-              {reading.figure}
-            </span>
-          </span>
+          {reading.figure}
           {reading.unit ? <span className="ml-1 text-body font-normal text-ink-1">{reading.unit}</span> : null}
         </p>
         <p className="mt-1.5 text-sec text-ink-1">{reading.label}</p>
