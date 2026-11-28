@@ -1,6 +1,6 @@
 # SpaceVibe: landing redesign, build plan
 
-Started 2026-11-27. Status: built (LR-T1 to LR-T8); waiting for the owner's eye approval (LR-T9). The owner approved the build with four bands on 2026-11-27 ("Build with 4 bands", L39).
+Historical since 2026-11-28: the current status lives in the spec's [Status](../specs/2026-11-05-spacevibe-landing.md#status). Started 2026-11-27. Status: built (LR-T1 to LR-T8); the owner approved the built page by eye on 2026-11-28 (LR-T9, L40). The owner approved the build with four bands on 2026-11-27 ("Build with 4 bands", L39).
 Spec: [2026-11-05-spacevibe-landing](../specs/2026-11-05-spacevibe-landing.md) (ledger L21 to L38, LP-R9 to LP-R16, LP-A10 to LP-A14; LP-R4, LP-R6, LP-R7 and LP-A6 still hold). This plan does not repeat the requirements.
 Mock picked by the owner (L38): `~/scratch/spacevibe/2026-11-27-landing-redesign/mock.html`, its page in `~/scratch/spacevibe/2026-11-27-landing-redesign/site/` (dev server `:3213`). Kanu renders the app drawings follow: `~/scratch/spacevibe-reins/2026-11-27-kanu-redesign/` (read only).
 Checkout: this repository on `main` (baseline `9fa2235`), one commit per task, nothing pushed. A branch switch is avoided because other sessions and the owner's dev server (`:3200`) use this checkout. Commit with `git commit -- <paths>`, never `git stash`.
@@ -50,6 +50,6 @@ Observed checks, last run after the review fixes:
 - LP-A14: `AGENTS.md` names Space Grotesk as the one exception for `site/`.
 - Review: `code-reviewer` on `9fa2235..HEAD` gave WARNING (0 critical, 2 high, 7 medium, 3 low); every high and medium and the low items were fixed in the last commit. Backlog ticked with the work: BL-LAND-12, 13, 14, 15, 50, 52, 57, 58.
 
-Open: LR-T9 (owner's eye at 1440 and 390 on `:3200`); Clean, Limits and Activity bands wait for Kanu renders (L39); the Next.js security notice is out of scope and not acted on; BL-LAND-16, 55, 56 still describe removed files or the old test (doc only).
+Open: Clean, Limits and Activity bands wait for Kanu renders (L39); the Next.js security notice is out of scope and not acted on; BL-LAND-16, 55, 56 still describe removed files or the old test (doc only).
 
 /goal Build the landing redesign of docs/specs/2026-11-05-spacevibe-landing.md (L21–L39) into site/ on main per docs/plans/2026-11-27-landing-redesign.md, until LP-A10 to LP-A14 pass with their output pasted in the plan's handoff and the owner has approved the built page by eye (LP-A6); deploy nothing.
