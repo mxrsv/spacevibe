@@ -9,8 +9,8 @@ const read = (rel) => readFileSync(path(rel), "utf8");
 const content = read("../components/landing/content.ts");
 const bands = read("../components/landing/bands.tsx");
 // content.ts and the stage data are plain TypeScript (no JSX), so Node reads them as they are.
-const { BANDS, FOOTER } = await import("../components/landing/content.ts");
-const { STAGE_FACTS } = await import("../components/landing/app-stage/data.ts");
+const { BANDS, FOOTER, HERO_WINDOW_LABEL } = await import("../components/landing/content.ts");
+const { STAGE_FACTS, WINDOW_FACTS } = await import("../components/landing/app-stage/data.ts");
 
 /** Every .tsx and .css file the page is made of, except the token file itself (globals.css is where raw colours belong). */
 function sources(dir = path("../components/")) {
@@ -154,4 +154,20 @@ test("every figure and drawing description says what the drawn rows hold", () =>
 
 test("the footer disclaimer names every agent the drawings show", () => {
   for (const name of ["Claude\u00A0Code", "Codex", "Gemini\u00A0CLI", "Cursor", "OpenCode"]) assert.ok(FOOTER.disclaimer.includes(name), `the disclaimer lacks ${name}`);
+});
+
+test("the hero window's description says what the window draws (L41, LP-A15)", () => {
+  const w = WINDOW_FACTS;
+  for (const phrase of [
+    `${w.installed} skills installed`,
+    `${w.inUse} in use`,
+    `${w.neverUsed} never used`,
+    `${w.worthAdding} worth adding`,
+    `ranked list of ${w.installed} skills`,
+    `the ${w.neverUsed} skills never used, ${["", "one", "two", "three", "four"][w.readyToDecide]} of them with Keep and Remove`,
+    `the ${w.worthAdding} skills worth adding`,
+  ]) assert.ok(HERO_WINDOW_LABEL.includes(phrase), `the window's description should say "${phrase}"`);
+  const hero = read("../components/landing/hero.tsx");
+  assert.match(hero, /aria-label=\{HERO_WINDOW_LABEL\}/, "the window carries its description");
+  assert.match(hero, /max-xl:hidden[\s\S]*SkillsWindowStage[\s\S]*xl:hidden[\s\S]*SkillsTopStage/, "the window shows from 1280 px and the list below it (LP-R17)");
 });

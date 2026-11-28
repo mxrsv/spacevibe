@@ -3,9 +3,10 @@ import type { CSSProperties } from "react";
 
 import { StageWindow } from "./app-stage/stage-window";
 import { SkillsTopStage } from "./app-stage/stages";
+import { SkillsWindowStage } from "./app-stage/window";
 import { BandIcon } from "./band-icon";
 import { ButtonLink } from "./button-link";
-import { GITHUB_URL, HERO, HERO_LINE, PREVIEW_CAPTION, TILES, TILE_LINKS } from "./content";
+import { GITHUB_URL, HERO, HERO_LINE, HERO_WINDOW_LABEL, PREVIEW_CAPTION, TILES, TILE_LINKS } from "./content";
 
 const rise = (ms: number) => ({ "--rise": `${ms}ms` }) as CSSProperties;
 
@@ -14,7 +15,7 @@ const at = (tile: (typeof TILES)[number]) =>
   ({ "--x": `${tile.x}%`, "--y": `${tile.y}%`, "--x-lg": `${(tile.lg ?? [tile.x, tile.y])[0]}%`, "--y-lg": `${(tile.lg ?? [tile.x, tile.y])[1]}%` }) as CSSProperties;
 
 /**
- * L25: centered. A pill eyebrow, a large light-weight headline in the display face, one
+ * L25, L41: centered. A pill eyebrow, a large light-weight headline in the display face, one
  * dim line, two buttons, the "Works with" row of the CLI marks, then the app drawn in a window (a design preview) that
  * starts inside the first viewport. L24, L30: the dot grid behind, and faint tiles with the app's own icons joined by thin lines.
  */
@@ -79,7 +80,20 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="shell mt-14 md:mt-14" data-rise style={rise(760)}>
+      {/* L41: from 1280 px the whole app window; narrower, the top of the Skills list at 1x, where the window's text would be
+          near 8 px. The window has its own traffic lights in its sidebar, so its frame has no title bar. */}
+      <div className="shell mt-14 max-xl:hidden" data-rise style={rise(760)}>
+        <figure className="mx-auto grid w-fit gap-3">
+          <div className="overflow-hidden rounded-panel border border-dashed border-edge-hover bg-stage-bg shadow-panel">
+            <div className="ak-fit" role="img" aria-label={HERO_WINDOW_LABEL}>
+              <SkillsWindowStage />
+            </div>
+          </div>
+          <figcaption className="text-right text-tiny text-ink-2">{PREVIEW_CAPTION}</figcaption>
+        </figure>
+      </div>
+
+      <div className="shell mt-14 xl:hidden" data-rise style={rise(760)}>
         <div className="relative mx-auto max-w-[720px]">
           <StageWindow label="Design preview of Skills: the top of the list, eight skills most used first, lint-fixer selected, each with the agents that carry it, a bar and its sessions in 24 days." lights caption={PREVIEW_CAPTION}>
             <SkillsTopStage />

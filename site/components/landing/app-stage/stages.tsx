@@ -10,13 +10,14 @@ import { HOOKS, RULE_FILES, SKILLS, SKILLS_HERO_ROWS, SKILLS_IDLE_FROM, SUBAGENT
  * 1440 x 900 render that the earlier crops cut (x 266 to 862), at 1x: a 584 px card inside 6 px of the window.
  */
 
-function RankList({ rows, agents, max, first = 0, ranked }: { readonly rows: readonly RankRow[]; readonly agents: readonly AgentName[]; readonly max: number; readonly first?: number; readonly ranked: number }) {
+/** `select: false` draws the list with no row selected (the window's idle state, L41). */
+export function RankList({ rows, agents, max, first = 0, ranked, select = true }: { readonly rows: readonly RankRow[]; readonly agents: readonly AgentName[]; readonly max: number; readonly first?: number; readonly ranked: number; readonly select?: boolean }) {
   return (
     <ol className="all">
       {rows.map((row, i) => {
         const place = first + i + 1;
         const isRanked = place <= ranked;
-        const cls = [row.selected ? "on" : "", isRanked ? "" : "idle", row.worth ? "worth" : ""].join(" ").trim();
+        const cls = [select && row.selected ? "on" : "", isRanked ? "" : "idle", row.worth ? "worth" : ""].join(" ").trim();
         return (
           <li key={row.name} className={cls || undefined} title={row.name}>
             <span className={`num${isRanked ? (place <= 3 ? ` r${place}` : "") : " none"}`}>{isRanked ? place : ""}</span>

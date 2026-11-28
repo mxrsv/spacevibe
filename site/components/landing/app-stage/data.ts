@@ -100,6 +100,42 @@ export const RULE_FILES = [
   { name: "spacevibe-academy", scope: "local", rules: 1, allow: 1, ask: 0, deny: 0, wide: 0 },
 ] as const;
 
+/* ------------------------------------------------- the hero's window (L41) */
+
+/**
+ * The parts of the render `skills-c-idle` that the rows above do not hold. The sidebar counts of Skills, Subagents, Hooks and
+ * Rules are counted from the rows; the other pages have no band (L39), so theirs are the render's own words.
+ */
+export const WINDOW = {
+  inbox: "12",
+  clean: "780 MB",
+  limits: "77% left",
+  activity: "1 running",
+  agents: "6 tracked",
+  agentsFoot: "5 pinned · 6 tracked · 7 found",
+  /** When each never-used skill was added, by name; a skill missing here shows no date. */
+  added: {
+    "pdf-extract": "added 41 days ago",
+    "changelog-writer-for-monorepos-with-conventional-commits": "added 63 days ago",
+    "release-notes": "added 2 hours ago",
+  } as Readonly<Record<string, string>>,
+} as const;
+
+const missingSomewhere = SKILLS.filter((row) => row.has.includes(0));
+
+/** What the window's tiles, filters and panel read, counted from SKILLS (the render's own numbers). */
+export const WINDOW_FACTS = {
+  installed: SKILLS.length,
+  inUse: SKILLS.filter((row) => (row.sessions ?? 0) > 0).length,
+  neverUsed: SKILLS.filter((row) => row.sessions === 0).length,
+  notKnown: SKILLS.filter((row) => row.sessions === null).length,
+  /** Never used and neither too new nor from a plugin: the ones with Keep and Remove. */
+  readyToDecide: SKILLS.filter((row) => row.sessions === 0 && !row.mark).length,
+  worthAdding: SKILLS.filter((row) => row.worth).length,
+  missingSomewhere: missingSomewhere.length,
+  rules: RULE_FILES.reduce((sum, file) => sum + file.rules, 0),
+} as const;
+
 /** What the bands' figures and drawing descriptions say, counted from the rows above. */
 export const STAGE_FACTS = {
   skillsNeverRan: SKILLS.filter((row) => row.sessions === 0).length,

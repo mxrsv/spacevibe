@@ -244,6 +244,13 @@ export const FOOTER_COLUMNS = [
 /** The one dim line under the hero heading (L25): the first clause of the old lede; the manifesto says the rest. */
 export const HERO_LINE = "SpaceVibe counts, from your own session logs, how often every skill, subagent and hook ran.";
 
+/**
+ * The hero's window (L41) for a reader who does not see it. Its counts are the window's own (`WINDOW_FACTS` in
+ * app-stage/data.ts); the facts test keeps them equal.
+ */
+export const HERO_WINDOW_LABEL =
+  "Design preview of the whole SpaceVibe window on the Skills page: the sidebar with every page, four tiles (14 skills installed, 9 in use, 4 never used, 3 worth adding), the ranked list of 14 skills, and beside it the 4 skills never used, two of them with Keep and Remove, and the 3 skills worth adding, each with Add to.";
+
 /** The caption of every frame that shows a render of the unshipped look (L7, LP-R5 wording). */
 export const PREVIEW_CAPTION = "Design preview · not in the current download";
 
