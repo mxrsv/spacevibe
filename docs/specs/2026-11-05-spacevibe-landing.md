@@ -12,6 +12,7 @@ Parent: [SpaceVibe](2026-11-02-spacevibe.md). Earlier record of the first build:
 2026-11-28. The redesign (L21 to L39) is built on `main` in `site/` with four bands (Skills, Subagents, Hooks, Rules), commits `df4dfe5` to `58ae3a3`, nothing pushed or deployed. The owner approved the built page by eye (L40), so LR-T9 is done.
 
 - Checks, last run 2026-11-27 after the review fixes and pasted in the [plan's handoff](../plans/2026-11-27-landing-redesign.md#handoff): `tsc`, `eslint` and `npm run build` exit 0; `node --test site/tests/*.test.mjs` 16 pass; LP-A10, LP-A12, LP-A13 and LP-A14 hold. 2026-11-28: headless shots of `:3200` at 1440 and 390 after a full scroll show every section at opacity 1 and no horizontal scroll at 390.
+- Intro round, 2026-11-28 (L41, L42): the hero's whole-window drawing (LP-R17) is built and committed on branch `claude/landing-page-intro-improve-61d4ee` (worktree `.claude/worktrees/spacevibe-continue-previous-553575`): `app-stage/window.tsx`, its CSS in `app-stage.css`, counts in `data.ts` (`WINDOW`, `WINDOW_FACTS`), `HERO_WINDOW_LABEL` in `content.ts`, a new facts test. Checks run: `tsc` and `eslint` exit 0, `npm run build` exit 0 (the first run stopped on Next's security notice, the rerun passed), `node --test site/tests/*.test.mjs` 17 pass; headless on the static build: window 1160 x 725 from 1280 px, list below 1280, no horizontal scroll at 320, 390, 768, 1024, 1279, 1280, 1440 and 1920, `document.getAnimations()` empty after 3 s, reduced motion shows the window at once; side by side with `skills-c-idle.png` in `~/scratch/spacevibe/2026-11-28-landing-intro/shots/side-by-side.png`. The owner approved the built hero by eye (L42); nothing pushed. `og.jpg` stays: it is taken at 1200 px, where the hero keeps the list.
 - Remaining: Clean, Limits and Activity bands wait for their Kanu renders (L39); the lines under "Inferred, not decided" were not gone through one by one; WEB0b (a SpaceVibe build as the latest release) and WEB1 to WEB3 are open, so the page is not deployed.
 - Out of scope, not acted on: the Next.js 16.4.4 security notice of the dev overlay (`next upgrade --agent=security`); BL-LAND-16, 55 and 56 still describe removed files or the old test.
 
@@ -67,6 +68,8 @@ Quotes are the owner's words. "No objection" means the owner was told a recommen
 | L38 | The owner approves the redesign mock as the direction to build (accent violet, Space Grotesk, the app drawn as HTML on the cool ramp, tiles with icons only, motion on), and asks for the build plan. This is the mock pick before code; the eye approval of the built page (LP-A6) stays open. | "Approve, write plan" (2026-11-27) |
 | L39 | Build the redesign with four screen bands (Skills, Subagents, Hooks, Rules), the ones the Kanu renders cover; Clean, Limits and Activity bands are added when their renders exist. Nothing deploys meanwhile. | "Build with 4 bands" (2026-11-27) |
 | L40 | The owner approves the built redesign (L21 to L39) by eye, on the dev server at `localhost:3200` and the headless shots of it at 1440 and 390 taken after a full scroll. Given on the built page, not beside the mock side by side; the lines under "Inferred, not decided" were not gone through one by one. Nothing deploys on it (WEB0b, WEB1 to WEB3). | "Duyệt, ghi vào spec" (2026-11-28) |
+| L41 | Intro round (owner: "landingpage cần thêm nhiều cái giới thiệu tốt hơn, hiển thị tốt hơn để user hình dung app của chúng ta tốt hơn"), on the mock `~/scratch/spacevibe/2026-11-28-landing-intro/mock.html`: the hero shows the whole app window, the sidebar with every page beside the Skills page with nothing selected (tiles, filters, the ranked list, the Never used and Worth adding panel), drawn from the Kanu render `skills-c-idle`. The four bands stay as built: the owner judged the other app stages not polished yet, because the app is not finished. The mock's other proposal (each band as its list and panel) is not taken, and the "In three steps" section was dropped before the owner saw it. | "Hero update khá ổn, nhưng vì các app stage khác chưa được polish hoặc chưa được tối ưu vì app tôi cũng chưa làm xong hẳn nên chúng hơi xấu" (2026-11-28) |
+| L42 | The owner approves the built hero window (L41, LP-R17) by eye, on the static build of the branch at `127.0.0.1:3233` and the side-by-side with the render `skills-c-idle.png`, after reopening the mock; asks for the commit. Nothing is pushed or deployed (WEB0b, WEB1 to WEB3). | "Duyệt, commit" (2026-11-28) |
 
 Conflict kept visible: L6 lets the page show screens the app does not have yet. The app's own rule is to say plainly what it cannot measure, and the Limits page once drifted from its mock. L7 and L8 are the guard: a visibly different frame and label for anything unshipped, replaced by a real screenshot in the release that ships it.
 
@@ -154,6 +157,7 @@ The redesign of L21 to L38 replaces, once it ships, LP-R1's band shape, LP-R2's 
 | LP-R14 | A figures band "Private by construction." with three zero facts from PRODUCT.md and AGENTS.md S-R3 to S-R5, not counted up. | L28 |
 | LP-R15 | After the FAQ, two cards: "Watch releases" (Tokens in development) and the violet "Download for macOS" with "Free · macOS 15 or later · Apple silicon"; no form; a multi-column footer. | L29, L9, L14, L15 |
 | LP-R16 | Motion: the five once-only effects of L26; `document.getAnimations()` is empty three seconds after load and after a full scroll; reduced motion shows every element in its final state, with final numbers in the server HTML. | L26, L19 |
+| LP-R17 | From 1280 px up the hero's drawing is the whole app window of the Kanu render `skills-c-idle` (1440 x 900), drawn as markup at one fixed scale, in the dashed preview frame with its caption; below 1280 px the hero keeps the top of the Skills list at 1x as built, because the window would draw its text near 8 px there. The bands do not change. | L41, L37, L7 |
 
 | Check | Requirement |
 | --- | --- |
@@ -162,6 +166,7 @@ The redesign of L21 to L38 replaces, once it ships, LP-R1's band shape, LP-R2's 
 | LP-A12 At 320, 390, 768, 1024 and 1440 the built page matches the mock surface by surface (headless shots side by side), with no horizontal scroll; text contrast at least 4.5:1, links at least 24 px tall. | LP-R9 to LP-R15 |
 | LP-A13 `document.getAnimations()` is empty three seconds after load and after a full scroll; with reduced motion every figure reads its final value. | LP-R16 |
 | LP-A14 `AGENTS.md` names Space Grotesk as the one exception to "Inter is the only typeface", for `site/` only. | L32, L36 |
+| LP-A15 At 1280 and 1440 a headless shot of the hero shows the window beside the render `skills-c-idle.png`, region by region; at 320, 390, 768 and 1024 the hero shows the list as before; no horizontal scroll at any of them; the facts test checks the window's description against its data. | LP-R17 |
 
 ## Traceability (W20)
 
@@ -182,6 +187,7 @@ The redesign of L21 to L38 replaces, once it ships, LP-R1's band shape, LP-R2's 
 | L19 "ok chốt toàn bộ" (no idle loop) | LP-R8 | LP-A9, LP-A6 |
 | L20 "ok chốt toàn bộ" (the items shown) | LP-R8 | LP-A9, LP-A6 |
 | L21 to L38, quoted in the ledger | LP-R9 to LP-R16 | LP-A10 to LP-A14, LP-A6 |
+| L41 "Hero update khá ổn, nhưng … các app stage khác … hơi xấu", L42 "Duyệt, commit" | LP-R17 | LP-A15, LP-A6 |
 
 ## Inferred, not decided
 
@@ -194,6 +200,9 @@ Lines with no owner decision behind them. The build follows them; the owner sett
 - **Each band opens with the screen's name and an icon, and the two per-CLI text cards are one ledger**: a row per CLI with a verdict (a green check for read in full, an amber eye-off where the CLI logs nothing for part of it, a lock for read only) before the reason. Source: agent's choice (design-direction pass, 2026-11-22), to make what a CLI does not log the page's signature; the verdict words are the agent's.
 - **A band of seven questions sits before the download band** (free, which CLIs, sign-in, what is written, how exact the cost is, whether Clean changes the usage counts, updates), as native disclosures. The sixth came with BL-LAND-42. Source: agent's choice, from the landing guide the owner pasted on 2026-11-22; every answer restates `PRODUCT.md`. The guide's other missing elements were not built: user counts, ratings and testimonials do not exist and are never invented, a signup form is ruled out by L9, a display typeface other than Inter by L2, and ShadCN by L4.
 - **The Codex mark is neutral, not teal**, as in the app (`PRODUCT.md`, Colour). Source: app convention.
+- **The hero window names five agents** where the "Works with" row names two: the tile "Across 5 pinned agents", the sidebar foot "5 pinned · 6 tracked · 7 found" and the five-mark strips, as the render draws them. The mock named this conflict to the owner, who approved the hero without answering it. The third mark stays the one the bands draw (Gemini CLI's), where the newer render draws an "A" for Antigravity CLI. Source: agent's choice, for one look across the page.
+- **The hero sidebar shows every page with the render's counts**: Inbox 12, Clean 780 MB, Limits 77% left, Activity 1 running, Agents 6 tracked. Clean, Limits and Activity have no band (L39); Inbox is not in GLOSSARY.md. Source: the render, declared on the mock.
+- **The window is drawn at 1440 x 900 and scaled to 1160 x 725** (145/180, text near 11 px), which fits the hero's width at 1280 px even with a 15 px classic scrollbar; wider screens centre it. Source: agent's choice, so the size is set in CSS and nothing jumps on load.
 - **No figure counts up.** L26 says figures count up; the count-up was dropped from `motion.tsx` because no figure on the page is 10 or more (the bands read 4, 2, 9 and 5; the figures band reads three zeros), so none could count without passing through a wrong number. It returns with a figure of 10 or more. Source: agent's choice.
 
 From the backlog round of 2026-11-23. The review showed each of these, old beside new, but the owner was not asked about them one by one; L20 covers them only as "the items as shown".

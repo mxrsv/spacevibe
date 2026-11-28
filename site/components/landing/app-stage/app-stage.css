@@ -125,3 +125,101 @@
 .ak .rl-codex-list .f-name { align-items: center; gap: 10px; }
 .ak .rl-codex-list .nm { color: var(--text-2); }
 .ak .rl-codex-list .mk { flex: none; display: flex; color: var(--text-3); }
+
+/* ------------------------------------------------------------------------------------------------------------------------
+   The hero's window (L41): the whole render `skills-c-idle`, 1440 x 900, from `base.css` (sidebar, page head, tiles, filters,
+   the split of option C and the idle panel), in the render's cascade order with only the winning values kept. The render's
+   `nav a` is `.navl .it` here and its `h1` is `.h1`, because the drawing holds no landmarks or headings of the page. */
+
+.ak.win { width: 1440px; height: 900px; padding: 0; }
+.ak .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.ak .dot.g { background: var(--green); }
+.ak .app { display: grid; grid-template-columns: 240px minmax(0, 1fr); height: 900px; }
+
+/* sidebar */
+.ak .side { display: flex; flex-direction: column; padding: 0 12px 12px; border-right: 1px solid var(--line); min-height: 0; }
+.ak .lights { display: flex; gap: 8px; align-items: center; height: 42px; padding: 6px 8px 0; }
+.ak .lights i { width: 12px; height: 12px; border-radius: 50%; }
+.ak .lights .l1 { background: var(--color-light-close); }
+.ak .lights .l2 { background: var(--color-light-min); }
+.ak .lights .l3 { background: var(--color-light-zoom); }
+.ak .brand { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 6px; }
+.ak .logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(145deg, var(--color-stage-logo-from), var(--color-stage-logo-to)); color: var(--color-on-accent); }
+.ak .brand-name { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+.ak .brand-toggle { margin-left: auto; color: var(--text-3); }
+.ak .side-search { display: flex; align-items: center; gap: 9px; height: 38px; margin: 8px 0 12px; padding: 0 9px 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text-3); }
+.ak .side-search span { flex: 1; }
+.ak kbd { font: 400 11.5px var(--font-inter), sans-serif; color: var(--text-3); background: var(--raised); border-radius: 5px; padding: 2px 6px; }
+.ak .navl { display: flex; flex-direction: column; gap: 2px; }
+.ak .navl .it { display: flex; align-items: center; gap: 12px; height: 36px; padding: 0 10px; border-radius: 10px; color: var(--text-2); }
+.ak .navl .it .ic { color: var(--text-3); }
+.ak .navl .it em { margin-left: auto; font-style: normal; font-size: 13px; color: var(--text-3); }
+.ak .navl .it .dot { margin-left: -4px; }
+.ak .navl .it.on { background: var(--raised); color: var(--text); font-weight: 500; }
+.ak .navl .it.on .ic { color: var(--text); }
+.ak .navl .it.on em { color: var(--text-2); }
+.ak .nav-label { font-size: 12.5px; color: var(--text-3); padding: 16px 10px 6px; }
+.ak .side-foot { margin-top: auto; }
+.ak .side-status { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 10px; border-top: 1px solid var(--line); color: var(--text-3); font-size: 13px; }
+.ak .side-status span { flex: 1; }
+.ak .ws { display: flex; align-items: center; gap: 10px; padding: 10px 10px 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text-3); }
+.ak .ws-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; line-height: 1.3; }
+.ak .ws-text small { font-size: 12px; color: var(--text-3); }
+
+/* page head, tiles, filters */
+.ak .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 32px 24px; }
+.ak .head { display: flex; justify-content: space-between; align-items: flex-start; padding-top: 16px; gap: 24px; }
+.ak .head .h1 { display: flex; align-items: center; gap: 12px; font-size: 25px; line-height: 1.2; letter-spacing: -0.015em; font-weight: 500; }
+.ak .head .hsub { margin-top: 5px; color: var(--text-2); font-size: 14px; }
+.ak .kind-ic { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--raised); color: var(--text); }
+.ak .tools { display: flex; gap: 10px; padding-top: 4px; }
+.ak .field { display: flex; align-items: center; gap: 10px; width: 260px; height: 40px; padding: 0 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text-3); }
+.ak .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 40px; padding: 0 15px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--text); font-weight: 500; font-size: 14px; white-space: nowrap; }
+.ak .btn .ic { color: var(--text-2); }
+.ak .btn.sm { height: 30px; padding: 0 11px; border-radius: 8px; font-size: 13px; gap: 6px; }
+.ak .tools .btn { min-width: 98px; }
+.ak .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+.ak .tile { min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.ak .tile.stack { display: block; padding: 15px 18px 14px; }
+.ak .tile.stack small { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ak .tile.stack small .ic { color: var(--text-3); }
+.ak .tile.stack p { display: flex; align-items: baseline; gap: 8px; margin-top: 5px; }
+.ak .tile.stack strong { font-size: 24px; line-height: 1.2; font-weight: 500; letter-spacing: -0.01em; }
+.ak .tile.stack p span { font-size: 12.5px; color: var(--text-3); }
+.ak .tile.stack em { display: block; margin-top: 3px; font-style: normal; font-size: 12.5px; color: var(--text-3); }
+.ak .tile.stack em.v { color: var(--accent-hi); }
+.ak .filters { display: flex; align-items: center; gap: 8px; margin-top: 20px; }
+.ak .filters .gap { flex: 1; }
+.ak .pill { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--text-2); font-size: 13.5px; white-space: nowrap; }
+.ak .pill.on { background: var(--raised); border-color: var(--raised); color: var(--text); font-weight: 500; }
+.ak .pill.drop { color: var(--text); padding-right: 10px; }
+.ak .pill.drop .ic { color: var(--text-3); }
+
+/* option C: the ranked list beside one continuous panel */
+.ak .split-c { display: grid; grid-template-columns: 584px minmax(0, 1fr); gap: 14px; margin-top: 14px; flex: 1; min-height: 0; }
+.ak.win .all-card { width: auto; }
+.ak .rail { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ak .rail.one .kcard { flex: 1; display: flex; flex-direction: column; padding: 0 22px; }
+.ak .rail.one .sec { padding: 13px 0; }
+.ak .rail.one .sec:first-child { padding-top: 16px; }
+.ak .rail.one .sec + .sec { border-top: 1px solid var(--line); }
+.ak .acts li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.ak .rail.one .acts li:first-child { border-top: 0; padding-top: 0; }
+.ak .rail.one .acts li:last-child { padding-bottom: 0; }
+.ak .a-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ak .a-text strong { font-weight: 400; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ak .a-text small { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; }
+.ak .a-text small span { overflow: hidden; text-overflow: ellipsis; }
+.ak .a-right { flex: none; display: flex; gap: 6px; }
+.ak .acts.worth .ag:not(.on) { border-color: var(--color-stage-worth-line); background: var(--color-stage-worth-bg); color: var(--accent-hi); }
+.ak .acts.worth .ag:not(.on) svg { opacity: 0.9; }
+.ak .badge { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.ak .badge.grey { background: var(--raised); color: var(--text-2); }
+.ak .links li { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); }
+.ak .links .ic { color: var(--text-3); }
+.ak .links.seeall li { padding: 11px 0 0; margin-top: 2px; border-top: 1px solid var(--line); }
+.ak .links.seeall li span { flex: 1; color: var(--accent-hi); }
+
+/* The hero shows the window at 145/180 (1160 x 725), the hero's width at 1280 px with room for a classic scrollbar. */
+.ak-fit { width: 1160px; height: 725px; overflow: hidden; }
+.ak-fit > .ak.win { transform-origin: 0 0; scale: calc(145 / 180); }

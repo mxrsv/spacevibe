@@ -79,6 +79,9 @@
   --color-stage-bronze-ink: #261403;
   --color-stage-worth-line: #8672f0;
   --color-stage-worth-bg: #2b2543;
+  /* the app mark of the hero window (L41): the render's logo gradient */
+  --color-stage-logo-from: #8b6cff;
+  --color-stage-logo-to: #6247ea;
 
   --radius-ctl: 8px;
   --radius-panel: 14px;
